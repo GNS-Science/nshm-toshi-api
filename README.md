@@ -25,3 +25,6 @@ sudo npm install -g serverless
 
 `npx @openapitools/openapi-generator-cli generate -i swagger.yaml -g python-flask -o openapi`
 
+## OPTION B flask-restful
+
+ref https://flask-restful.readthedocs.io/en/latest/quickstart.html
