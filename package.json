@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/GNS-Science/nshm-tosh-api#readme",
   "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.0.3",
     "serverless-python-requirements": "^5.1.0",
     "serverless-wsgi": "^1.7.5"
   }

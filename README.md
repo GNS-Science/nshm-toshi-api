@@ -19,3 +19,9 @@ sudo npm install -g serverless
 
 ```
 
+
+
+## OPTION A openapi-generator
+
+`npx @openapitools/openapi-generator-cli generate -i swagger.yaml -g python-flask -o openapi`
+

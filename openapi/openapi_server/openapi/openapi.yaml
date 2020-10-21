@@ -1,0 +1,363 @@
+openapi: 3.0.1
+info:
+  description: 'This is a sample server '
+  title: Stolen / hacked API from the Swagger Petstore
+  version: 1.0.0
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+- url: /v2
+tags:
+- description: Everything about your Toshs
+  externalDocs:
+    description: Find out more
+    url: http://swagger.io
+  name: tosh
+paths:
+  /tosh:
+    post:
+      operationId: add_tosh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tosh'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Tosh'
+        description: Tosh object that needs to be added to the store
+        required: true
+      responses:
+        "405":
+          content: {}
+          description: Invalid input
+      security:
+      - toshstore_auth:
+        - write:toshs
+        - read:toshs
+      summary: Add a new tosh to the store
+      tags:
+      - tosh
+      x-codegen-request-body-name: body
+      x-openapi-router-controller: openapi_server.controllers.tosh_controller
+    put:
+      operationId: update_tosh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tosh'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Tosh'
+        description: Tosh object that needs to be added to the store
+        required: true
+      responses:
+        "400":
+          content: {}
+          description: Invalid ID supplied
+        "404":
+          content: {}
+          description: Tosh not found
+        "405":
+          content: {}
+          description: Validation exception
+      security:
+      - toshstore_auth:
+        - write:toshs
+        - read:toshs
+      summary: Update an existing tosh
+      tags:
+      - tosh
+      x-codegen-request-body-name: body
+      x-openapi-router-controller: openapi_server.controllers.tosh_controller
+  /tosh/findByStatus:
+    get:
+      description: Multiple status values can be provided with comma separated strings
+      operationId: find_toshs_by_status
+      parameters:
+      - description: Status values that need to be considered for filter
+        explode: true
+        in: query
+        name: status
+        required: true
+        schema:
+          items:
+            default: available
+            enum:
+            - available
+            - pending
+            - sold
+            type: string
+          type: array
+        style: form
+      responses:
+        "200":
+          content:
+            application/xml:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Tosh'
+                type: array
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Tosh'
+                type: array
+          description: successful operation
+        "400":
+          content: {}
+          description: Invalid status value
+      security:
+      - toshstore_auth:
+        - write:toshs
+        - read:toshs
+      summary: Finds Toshs by status
+      tags:
+      - tosh
+      x-openapi-router-controller: openapi_server.controllers.tosh_controller
+  /tosh/{toshId}:
+    delete:
+      operationId: delete_tosh
+      parameters:
+      - in: header
+        name: api_key
+        schema:
+          type: string
+      - description: Tosh id to delete
+        in: path
+        name: toshId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "400":
+          content: {}
+          description: Invalid ID supplied
+        "404":
+          content: {}
+          description: Tosh not found
+      security:
+      - toshstore_auth:
+        - write:toshs
+        - read:toshs
+      summary: Deletes a tosh
+      tags:
+      - tosh
+      x-openapi-router-controller: openapi_server.controllers.tosh_controller
+    get:
+      description: Returns a single tosh
+      operationId: get_tosh_by_id
+      parameters:
+      - description: ID of tosh to return
+        in: path
+        name: toshId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      responses:
+        "200":
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Tosh'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tosh'
+          description: successful operation
+        "400":
+          content: {}
+          description: Invalid ID supplied
+        "404":
+          content: {}
+          description: Tosh not found
+      security:
+      - api_key: []
+      summary: Find tosh by ID
+      tags:
+      - tosh
+      x-openapi-router-controller: openapi_server.controllers.tosh_controller
+    post:
+      operationId: update_tosh_with_form
+      parameters:
+      - description: ID of tosh that needs to be updated
+        in: path
+        name: toshId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                name:
+                  description: Updated name of the tosh
+                  type: string
+                status:
+                  description: Updated status of the tosh
+                  type: string
+      responses:
+        "405":
+          content: {}
+          description: Invalid input
+      security:
+      - toshstore_auth:
+        - write:toshs
+        - read:toshs
+      summary: Updates a tosh in the store with form data
+      tags:
+      - tosh
+      x-openapi-router-controller: openapi_server.controllers.tosh_controller
+  /tosh/{toshId}/uploadImage:
+    post:
+      operationId: upload_file
+      parameters:
+      - description: ID of tosh to update
+        in: path
+        name: toshId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                additionalMetadata:
+                  description: Additional data to pass to server
+                  type: string
+                file:
+                  description: file to upload
+                  format: binary
+                  type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+          description: successful operation
+      security:
+      - toshstore_auth:
+        - write:toshs
+        - read:toshs
+      summary: uploads an image
+      tags:
+      - tosh
+      x-openapi-router-controller: openapi_server.controllers.tosh_controller
+components:
+  schemas:
+    Category:
+      example:
+        name: name
+        id: 6
+      properties:
+        id:
+          format: int64
+          type: integer
+        name:
+          type: string
+      type: object
+      xml:
+        name: Category
+    Tag:
+      example:
+        name: name
+        id: 1
+      properties:
+        id:
+          format: int64
+          type: integer
+        name:
+          type: string
+      type: object
+      xml:
+        name: Tag
+    Tosh:
+      example:
+        photoUrls:
+        - photoUrls
+        - photoUrls
+        name: doggie
+        id: 0
+        category:
+          name: name
+          id: 6
+        tags:
+        - name: name
+          id: 1
+        - name: name
+          id: 1
+        status: available
+      properties:
+        id:
+          format: int64
+          type: integer
+        category:
+          $ref: '#/components/schemas/Category'
+        name:
+          example: doggie
+          type: string
+        photoUrls:
+          items:
+            type: string
+          type: array
+          xml:
+            name: photoUrl
+            wrapped: true
+        tags:
+          items:
+            $ref: '#/components/schemas/Tag'
+          type: array
+          xml:
+            name: tag
+            wrapped: true
+        status:
+          description: tosh status in the store
+          enum:
+          - available
+          - pending
+          - sold
+          type: string
+      required:
+      - name
+      - photoUrls
+      type: object
+      xml:
+        name: Tosh
+    ApiResponse:
+      example:
+        code: 0
+        type: type
+        message: message
+      properties:
+        code:
+          format: int32
+          type: integer
+        type:
+          type: string
+        message:
+          type: string
+      type: object
+  securitySchemes:
+    toshstore_auth:
+      flows:
+        implicit:
+          authorizationUrl: http://toshstore.swagger.io/oauth/dialog
+          scopes:
+            write:toshs: modify toshs in your account
+            read:toshs: read your toshs
+      type: oauth2
+      x-tokenInfoFunc: openapi_server.controllers.security_controller_.info_from_toshstore_auth
+      x-scopeValidateFunc: openapi_server.controllers.security_controller_.validate_scope_toshstore_auth
+    api_key:
+      in: header
+      name: api_key
+      type: apiKey
+      x-apikeyInfoFunc: openapi_server.controllers.security_controller_.info_from_api_key
