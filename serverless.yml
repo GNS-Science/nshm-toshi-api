@@ -1,6 +1,5 @@
 # serverless.yml
 
-
 service: nshm-tosh-api
 
 plugins:
@@ -16,13 +15,13 @@ custom:
 
 provider:
   name: aws
-  runtime: python3.6
+  runtime: python3.8
   stage: dev
-  region: us-east-1
+  region: ap-southeast-2
 
 functions:
   app:
-    handler: wsgi.handler
+    handler: wsgi_handler.handler
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
