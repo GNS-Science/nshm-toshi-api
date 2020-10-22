@@ -23,21 +23,18 @@ class Tosh(Resource):
         """
         get a tosh Resource
         ---
+        operationId: getTosh
         parameters:
-         - in: path
-           name: tosh_id
-           type: string
-           required: true
+            - name: tosh_id
+              in: path
+              required: true
+              schema:
+                type: string         
         responses:
           200:
            description: A single tosh item
            schema:
-             id: Tosh
-             properties:
-               name:
-                 type: string
-                 description: The name of the tosh
-                 default: Steven Wilson
+             $ref: '#/components/schemas/Tosh'
         """        
         abort_if_tosh_doesnt_exist(tosh_id)
         return TOSHES[tosh_id]
@@ -63,16 +60,16 @@ class ToshList(Resource):
         """
         List all the tosh Resources
         ---
+        operationId: getToshList
         responses:
           200:
-            description: The tosk data
-            schema:
-              id: ToshList
-              properties:
-                tosh_id:
-                  type: object
-                  schema:
-                    $ref: '#/definitions/Tosh'
+            description: The tosh data
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ToshList'
         """
         return TOSHES
     
@@ -81,16 +78,21 @@ class ToshList(Resource):
         """
         create a new tosh Resource
         ---
-        parameters:
-          - in: body
-            name: body
-            schema:
-              $ref: '#/definitions/Tosh'
+        summary: create a new tosh Resource
+        requestBody:
+          description: Tosh object that needs to be added to the store
+          content:
+            application/json:          
+              schema:
+                $ref: '#/components/schemas/Tosh'
+        required: true
         responses:
           201:
             description: The tosh has been created
-            schema:
-              $ref: '#/definitions/Tosh'
+            content:
+              application/json:            
+                schema:
+                  $ref: '#/components/schemas/Tosh'        
         """          
         args = parser.parse_args()
         print('args:', args)
@@ -98,4 +100,4 @@ class ToshList(Resource):
         tosh_id = 'tosh%i' % tosh_id
         TOSHES[tosh_id] = {'name': args['name']}
         return TOSHES[tosh_id], 201
-    pass
+
