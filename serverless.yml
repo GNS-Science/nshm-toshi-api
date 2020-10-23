@@ -9,10 +9,10 @@ plugins:
 package:
   include:
     - api/**
-
+    - graphql_api/**
 custom:
   wsgi:
-    app: api.api.app
+    app: graphql_api.api.app
     packRequirements: false
   pythonRequirements:
     dockerizePip: non-linux
