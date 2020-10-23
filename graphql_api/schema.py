@@ -1,5 +1,6 @@
 import graphene
 from graphene import relay
+from graphene_file_upload.scalars import Upload
 
 from .data import create_tosh, get_faction, get_tosh, get_toshs
 
@@ -58,6 +59,18 @@ class CreateTosh(relay.ClientIDMutation):
         return CreateTosh(tosh=tosh, faction=faction)
 
 
+class ToshUploadMutation(graphene.Mutation):
+    class Arguments:
+        file_in = Upload(required=True)
+    
+    ok = graphene.Boolean()
+
+    def mutate(self, info, file_in, **kwargs):
+        # do something with your file
+        for line in file_in:
+            print(line)
+        return ToshUploadMutation(ok=True)
+    
 class Query(graphene.ObjectType):
 #     rebels = graphene.Field(Faction)
 #     empire = graphene.Field(Faction)
@@ -78,5 +91,7 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     create_tosh = CreateTosh.Field()
+    my_upload= ToshUploadMutation.Field()
+
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
