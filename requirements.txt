@@ -8,3 +8,4 @@ flasgger==0.9.5
 Flask-RESTful==0.3.8
 Flask-GraphQL==2.0.1
 graphene==2.1.8
+graphene-file-upload==1.2.2
