@@ -5,22 +5,26 @@ service: nshm-tosh-api
 plugins:
   - serverless-python-requirements
   - serverless-wsgi
-
+  - serverless-s3-local
 package:
   include:
     - api/**
     - graphql_api/**
+
 custom:
   wsgi:
     app: graphql_api.api.app
     packRequirements: false
   pythonRequirements:
     dockerizePip: non-linux
+  s3:
+    host: localhost
+    directory: /tmp
 
 provider:
   name: aws
   runtime: python3.8
-  stage: dev
+  stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
 
 functions:
@@ -29,4 +33,14 @@ functions:
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
+    description: The graphql API of foobar Service
+    environment:
+        # S3_BUCKET_NAME: ${self:service}-bucket-${self:provider.stage}
+        S3_BUCKET_NAME: ${self:service}-bucket-${self:provider.stage}
 
+resources:
+  Resources:
+    NewResource:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-bucket-${self:provider.stage}

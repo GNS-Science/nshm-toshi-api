@@ -34,33 +34,28 @@ class TestToshUpload(unittest.TestCase):
     def setUp(self):
         data.setup()
         self.client = Client(schema)
-        self.stringFile = StringIO("""a line\nor two""")
-        self.binaryFile = BytesIO("1 3\n 4.5 8".encode())
-
 
     def test_text_upload(self):
         qry = '''
             mutation m1 ($file: Upload!) {
               myUpload(fileIn: $file) { ok}
             }'''
-        variables = {"file": self.stringFile}
+        variables = {"file": StringIO("""a line\nor two""")}
         
         executed = self.client.execute(qry, variable_values=variables)
         print(executed)
         assert executed['data']['myUpload']['ok'] == True
-        #assert False
         
     def test_binary_upload(self):
         qry = '''
             mutation m1 ($file: Upload!) {
               myUpload(fileIn: $file) { ok}
             }'''
-        variables = {"file": self.binaryFile}
+        variables = {"file": BytesIO("1 3\n 4.5 8".encode())}
         
         executed = self.client.execute(qry, variable_values=variables)
         print(executed)
         assert executed['data']['myUpload']['ok'] == True
-
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

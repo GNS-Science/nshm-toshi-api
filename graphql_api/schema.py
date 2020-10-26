@@ -4,7 +4,6 @@ from graphene_file_upload.scalars import Upload
 
 from .data import create_tosh, get_faction, get_tosh, get_toshs
 
-
 class Tosh(graphene.ObjectType):
     """A tosh in the Star Wars saga"""
 
@@ -16,7 +15,6 @@ class Tosh(graphene.ObjectType):
     @classmethod
     def get_node(cls, info, id):
         return get_tosh(id)
-
 
 class ToshConnection(relay.Connection):
     class Meta:
