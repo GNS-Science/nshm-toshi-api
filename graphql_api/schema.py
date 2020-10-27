@@ -2,7 +2,9 @@ import graphene
 from graphene import relay
 from graphene_file_upload.scalars import Upload
 
-from .data import create_tosh, get_faction, get_tosh, get_toshs
+from .data_s3 import ToshData, get_faction
+# create_tosh, get_faction, get_tosh, get_toshs
+# from .data import create_tosh, get_faction, get_tosh, get_toshs
 
 class Tosh(graphene.ObjectType):
     """A tosh in the Star Wars saga"""
@@ -14,7 +16,7 @@ class Tosh(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, id):
-        return get_tosh(id)
+        return db_root.get_tosh(id)
 
 class ToshConnection(relay.Connection):
     class Meta:
@@ -33,7 +35,7 @@ class Faction(graphene.ObjectType):
 
     def resolve_toshs(self, info, **args):
         # Transform the instance tosh_ids into real instances
-        return [get_tosh(tosh_id) for tosh_id in self.toshs]
+        return [db_root.get_tosh(tosh_id) for tosh_id in self.toshs]
 
     @classmethod
     def get_node(cls, info, id):
@@ -49,10 +51,8 @@ class CreateTosh(relay.ClientIDMutation):
     faction = graphene.Field(Faction)
 
     @classmethod
-    def mutate_and_get_payload(
-        cls, root, info, tosh_name, faction_id, client_mutation_id=None
-    ):
-        tosh = create_tosh(tosh_name, faction_id)
+    def mutate_and_get_payload(cls, root, info, tosh_name, faction_id, client_mutation_id=None):
+        tosh = db_root.create_tosh(tosh_name, faction_id)
         faction = get_faction(faction_id)
         return CreateTosh(tosh=tosh, faction=faction)
 
@@ -79,17 +79,17 @@ class Query(graphene.ObjectType):
     node = relay.Node.Field()
 
     def resolve_tosh(root, info):
-        return get_tosh()
+        return db_root.get_tosh()
 # 
 #     def resolve_empire(root, info):
 #         return get_empire()
 
     def resolve_toshs(root, info):
-        return get_toshs()
+        return db_root.get_toshs()
 
 class Mutation(graphene.ObjectType):
     create_tosh = CreateTosh.Field()
     my_upload= ToshUploadMutation.Field()
 
-
+db_root = ToshData()
 schema = graphene.Schema(query=Query, mutation=Mutation)

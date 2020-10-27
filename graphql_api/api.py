@@ -3,9 +3,9 @@ from flask_graphql import GraphQLView
 from graphene_file_upload.flask import FileUploadGraphQLView
 
 from graphql_api.schema import schema
-from graphql_api import data
+# from graphql_api import data_ as data
 
-data.setup()
+# data.setup()
 
 app = Flask(__name__)
 

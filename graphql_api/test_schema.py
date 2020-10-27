@@ -2,14 +2,13 @@ import unittest
 from graphene.test import Client
 
 from graphql_api.schema import schema
-from graphql_api import data
+from graphql_api import data_fs as data
 from io import StringIO, BytesIO     
 
 class TestTosh(unittest.TestCase):
 
-
     def setUp(self):
-        data.setup()
+        #         data.setup()
         self.client = Client(schema)
 
     def tearDown(self):
@@ -27,12 +26,12 @@ class TestTosh(unittest.TestCase):
             }}'''
         
         executed = self.client.execute(qry)
-        assert len( executed['data']['toshs']['edges']) == len(data.get_toshs())
+        assert len( executed['data']['toshs']['edges']) == len(data.ToshData().get_toshs())
 
 class TestToshUpload(unittest.TestCase):
 
     def setUp(self):
-        data.setup()
+        #data.setup()
         self.client = Client(schema)
 
     def test_text_upload(self):
@@ -57,11 +56,6 @@ class TestToshUpload(unittest.TestCase):
         print(executed)
         assert executed['data']['myUpload']['ok'] == True
         
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    unittest.main()
-
-
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
