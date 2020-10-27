@@ -31,33 +31,37 @@ class TestRuptureGeneratorResults(unittest.TestCase):
             print(executed)
             assert len( executed['data']['ruptureGeneratorResults']['edges']) == 2
 
+
 class TestCreateDataFile(unittest.TestCase):
 
     def setUp(self):
         #data.setup()
         self.client = Client(schema)
 
-    def test_text_upload(self):
+    def test_upload(self):
         qry = '''
-            mutation ($file: Upload!) {
-              createDataFile(fileIn: $file) { ok}
+            mutation ($file: Upload!, $digest: String!, $file_name: String!, $file_size: Int!) {
+              createDataFile(
+                  fileIn: $file
+                  hexDigest: $digest
+                  fileName: $file_name
+                  fileSize: $file_size
+              ) { ok}
             }'''
-        variables = {"file": StringIO("""a line\nor two""")}
         
+        from hashlib import sha256
+        
+        filedata = BytesIO("a line\nor two".encode())
+        digest = sha256(filedata.read()).hexdigest()
+        filedata.seek(0) #important!
+        size = len(filedata.read())
+        filedata.seek(0) #important!
+        variables = dict(file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
         executed = self.client.execute(qry, variable_values=variables)
         print(executed)
         assert executed['data']['createDataFile']['ok'] == True
+
                
-    def test_binary_upload(self):
-        qry = '''
-            mutation m1 ($file: Upload!) {
-              createDataFile(fileIn: $file) { ok}
-            }'''
-        variables = {"file": BytesIO("1 3\n 4.5 8".encode())}
-        
-        executed = self.client.execute(qry, variable_values=variables)
-        print(executed)
-        assert executed['data']['createDataFile']['ok'] == True
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

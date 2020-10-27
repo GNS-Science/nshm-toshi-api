@@ -59,7 +59,7 @@ class CreateOpenshaRuptureGenResult(relay.ClientIDMutation):
         name = graphene.String() # deprecated
         tasktype = graphene.Field(TaskResultType) #deprecated        
         started = graphene.DateTime(description="The time the task was started")
-        duration = graphene.Float(description="the final duraton of the task in seconds")
+        duration = graphene.Float(description="The final duraton of the task in seconds")
         rupture_generator_args = RuptureGeneratorArgsInput()
         
     task_result = graphene.Field(OpenshaRuptureGenResult)
@@ -74,7 +74,10 @@ class CreateOpenshaRuptureGenResult(relay.ClientIDMutation):
 
 class CreateDataFileMutation(graphene.Mutation):
     class Arguments:
+        file_name = graphene.String() # deprecated
         file_in = Upload(required=True)
+        hex_digest = graphene.String("The sha256 hexdigest of the file")
+        file_size = graphene.Int()
 
     ok = graphene.Boolean()
 
@@ -82,7 +85,9 @@ class CreateDataFileMutation(graphene.Mutation):
         # do something with your file
         for line in file_in:
             print(line)
+        print(kwargs)
         return CreateDataFileMutation(ok=True)
+
 
 class Query(graphene.ObjectType):
     rupture_generator_results = relay.ConnectionField(
@@ -100,6 +105,7 @@ class Query(graphene.ObjectType):
 class Mutation(graphene.ObjectType):
     create_task_result = CreateOpenshaRuptureGenResult.Field()
     create_data_file = CreateDataFileMutation.Field()
+
 
 db_root = TaskResultData()
 schema = graphene.Schema(query=Query, mutation=Mutation)
