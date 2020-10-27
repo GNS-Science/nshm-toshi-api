@@ -1,34 +1,37 @@
 import unittest
 from graphene.test import Client
+from unittest import mock
 
-from graphql_api.schema import schema
-from graphql_api import data_fs as data
+from graphql_api.schema import schema, OpenshaRuptureGenResult
+from graphql_api import data_s3
 from io import StringIO, BytesIO     
 
-class TestTosh(unittest.TestCase):
+class TestRuptureGeneratorResults(unittest.TestCase):
 
     def setUp(self):
-        #         data.setup()
         self.client = Client(schema)
+        self.mock_all = lambda x : [OpenshaRuptureGenResult(id="0"), OpenshaRuptureGenResult(id="1")]
 
     def tearDown(self):
         pass
-
-    def test_get_toshs(self):
+    
+    #@unittest.skip("refactoring")
+    def test_get_all(self):
         qry = '''
-            query { toshs {
+            query { ruptureGeneratorResults {
               edges {
                 task: node {
-                  id
-                  name        
+                  id        
                 }
               }
             }}'''
         
-        executed = self.client.execute(qry)
-        assert len( executed['data']['toshs']['edges']) == len(data.ToshData().get_toshs())
+        with mock.patch('graphql_api.data_s3.TaskResultData.get_all', new=self.mock_all):
+            executed = self.client.execute(qry)
+            print(executed)
+            assert len( executed['data']['ruptureGeneratorResults']['edges']) == 2
 
-class TestToshUpload(unittest.TestCase):
+class TestCreateDataFile(unittest.TestCase):
 
     def setUp(self):
         #data.setup()
@@ -36,25 +39,25 @@ class TestToshUpload(unittest.TestCase):
 
     def test_text_upload(self):
         qry = '''
-            mutation m1 ($file: Upload!) {
-              myUpload(fileIn: $file) { ok}
+            mutation ($file: Upload!) {
+              createDataFile(fileIn: $file) { ok}
             }'''
         variables = {"file": StringIO("""a line\nor two""")}
         
         executed = self.client.execute(qry, variable_values=variables)
         print(executed)
-        assert executed['data']['myUpload']['ok'] == True
-        
+        assert executed['data']['createDataFile']['ok'] == True
+               
     def test_binary_upload(self):
         qry = '''
             mutation m1 ($file: Upload!) {
-              myUpload(fileIn: $file) { ok}
+              createDataFile(fileIn: $file) { ok}
             }'''
         variables = {"file": BytesIO("1 3\n 4.5 8".encode())}
         
         executed = self.client.execute(qry, variable_values=variables)
         print(executed)
-        assert executed['data']['myUpload']['ok'] == True
+        assert executed['data']['createDataFile']['ok'] == True
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

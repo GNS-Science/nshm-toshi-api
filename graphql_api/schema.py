@@ -72,7 +72,7 @@ class CreateOpenshaRuptureGenResult(relay.ClientIDMutation):
         return CreateOpenshaRuptureGenResult(task_result=task_result)
 
 
-class ToshUploadMutation(graphene.Mutation):
+class CreateDataFileMutation(graphene.Mutation):
     class Arguments:
         file_in = Upload(required=True)
 
@@ -82,7 +82,7 @@ class ToshUploadMutation(graphene.Mutation):
         # do something with your file
         for line in file_in:
             print(line)
-        return ToshUploadMutation(ok=True)
+        return CreateDataFileMutation(ok=True)
 
 class Query(graphene.ObjectType):
     rupture_generator_results = relay.ConnectionField(
@@ -99,7 +99,7 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     create_task_result = CreateOpenshaRuptureGenResult.Field()
-    my_upload= ToshUploadMutation.Field()
+    create_data_file = CreateDataFileMutation.Field()
 
 db_root = TaskResultData()
 schema = graphene.Schema(query=Query, mutation=Mutation)
