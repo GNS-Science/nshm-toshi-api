@@ -2,25 +2,23 @@ import graphene
 from graphene import relay
 from graphene_file_upload.scalars import Upload
 
-from .data_s3 import ToshData, get_faction
-# create_tosh, get_faction, get_tosh, get_toshs
-# from .data import create_tosh, get_faction, get_tosh, get_toshs
+from .data_s3 import TaskResultData, get_faction
 
-class Tosh(graphene.ObjectType):
-    """A tosh in the Star Wars saga"""
+class TaskResult(graphene.ObjectType):
+    """A TaskResult in the Star Wars saga"""
 
     class Meta:
         interfaces = (relay.Node,)
 
-    name = graphene.String(description="The name of the tosh.")
+    name = graphene.String(description="The name of the TaskResult.")
 
     @classmethod
     def get_node(cls, info, id):
-        return db_root.get_tosh(id)
+        return db_root.get_one(id)
 
-class ToshConnection(relay.Connection):
+class TaskResultConnection(relay.Connection):
     class Meta:
-        node = Tosh
+        node = TaskResult
 
 class Faction(graphene.ObjectType):
     """A faction in the Star Wars saga"""
@@ -29,38 +27,38 @@ class Faction(graphene.ObjectType):
         interfaces = (relay.Node,)
 
     name = graphene.String(description="The name of the faction.")
-    toshs = relay.ConnectionField(
-        ToshConnection, description="The toshs used by the faction."
+    task_results = relay.ConnectionField(
+        TaskResultConnection, description="The TaskResults used by the faction."
     )
 
-    def resolve_toshs(self, info, **args):
-        # Transform the instance tosh_ids into real instances
-        return [db_root.get_tosh(tosh_id) for tosh_id in self.toshs]
+    def resolve_task_results(self, info, **args):
+        # Transform the instance task_result_ids into real instances
+        return [db_root.get_one(task_result_id) for task_result_id in self.task_results]
 
     @classmethod
     def get_node(cls, info, id):
         return get_faction(id)
 
 
-class CreateTosh(relay.ClientIDMutation):
+class CreateTaskResult(relay.ClientIDMutation):
     class Input:
-        tosh_name = graphene.String(required=True)
+        task_result_name = graphene.String(required=True)
         faction_id = graphene.String(required=True)
 
-    tosh = graphene.Field(Tosh)
+    task_result = graphene.Field(TaskResult)
     faction = graphene.Field(Faction)
 
     @classmethod
-    def mutate_and_get_payload(cls, root, info, tosh_name, faction_id, client_mutation_id=None):
-        tosh = db_root.create_tosh(tosh_name, faction_id)
+    def mutate_and_get_payload(cls, root, info, task_result_name, faction_id, client_mutation_id=None):
+        task_result = db_root.create(task_result_name, faction_id)
         faction = get_faction(faction_id)
-        return CreateTosh(tosh=tosh, faction=faction)
+        return CreateTaskResult(task_result=task_result, faction=faction)
 
 
 class ToshUploadMutation(graphene.Mutation):
     class Arguments:
         file_in = Upload(required=True)
-    
+
     ok = graphene.Boolean()
 
     def mutate(self, info, file_in, **kwargs):
@@ -68,28 +66,23 @@ class ToshUploadMutation(graphene.Mutation):
         for line in file_in:
             print(line)
         return ToshUploadMutation(ok=True)
-    
+
 class Query(graphene.ObjectType):
-#     rebels = graphene.Field(Faction)
-#     empire = graphene.Field(Faction)
-    toshs = relay.ConnectionField(
-        ToshConnection, description="The toshs used by the faction."
+    task_results = relay.ConnectionField(
+        TaskResultConnection, description="The TaskResults used by the faction."
     )
-    tosh = graphene.Field(Tosh)
+    task_result = graphene.Field(TaskResult)
     node = relay.Node.Field()
 
-    def resolve_tosh(root, info):
-        return db_root.get_tosh()
-# 
-#     def resolve_empire(root, info):
-#         return get_empire()
+    def resolve_task_result(root, info):
+        return db_root.get_one()
 
-    def resolve_toshs(root, info):
-        return db_root.get_toshs()
+    def resolve_task_results(root, info):
+        return db_root.get_all()
 
 class Mutation(graphene.ObjectType):
-    create_tosh = CreateTosh.Field()
+    create_task_result = CreateTaskResult.Field()
     my_upload= ToshUploadMutation.Field()
 
-db_root = ToshData()
+db_root = TaskResultData()
 schema = graphene.Schema(query=Query, mutation=Mutation)
