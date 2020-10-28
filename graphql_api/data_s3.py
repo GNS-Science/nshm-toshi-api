@@ -5,13 +5,11 @@ from io import BytesIO
 import datetime as dt
 # from graphql import GraphQLError
 
-class TaskResultData():
-  
-    def __init__(self):
-        self.client = boto3.client('s3',
-                          aws_access_key_id='S3RVER', 
-                          aws_secret_access_key='S3RVER',
-                          endpoint_url='http://localhost:4569')
+class BaseS3Data():
+
+    def __init__(self, client_args):
+        args = client_args or {}
+        self.client = boto3.client('s3', **args)
         self.bucket_name = os.environ.get('S3_BUCKET_NAME', "UNDEFINED")
         self.s3 = boto3.resource('s3')
         self.bucket = self.s3.Bucket(self.bucket_name, client=self.client)
@@ -60,6 +58,12 @@ class TaskResultData():
             assert prefix == self.prefix
             task_results.append(self.get_one(task_result_id))
         return task_results
+
+class TaskResultData(BaseS3Data):
+    pass  
+
+class DataFileData(BaseS3Data):
+    pass  
 
 def get_faction(_id):
     from .schema import Faction
