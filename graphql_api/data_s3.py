@@ -5,6 +5,7 @@ from io import BytesIO
 import datetime as dt
 # from graphql import GraphQLError
 
+
 class BaseS3Data():
 
     def __init__(self, client_args):
@@ -64,6 +65,17 @@ class TaskResultData(BaseS3Data):
 
 class DataFileData(BaseS3Data):
     pass  
+
+class DataManager():
+
+    def __init__(self, client_args=None):
+        _args = client_args or {}
+        self._task = TaskResultData(_args)
+
+    @property
+    def task(self):
+        return self._task
+
 
 def get_faction(_id):
     from .schema import Faction

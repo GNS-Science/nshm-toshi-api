@@ -45,7 +45,7 @@ class OpenshaRuptureGenResult(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
-        node =  db_root.get_one(_id)
+        node =  db_root.task.get_one(_id)
         #print('NODE', node, node.id, node.type )
         return node   
     
@@ -67,7 +67,7 @@ class CreateOpenshaRuptureGenResult(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         print("mutate_and_get_payload: ", kwargs)
-        task_result = db_root.create(**kwargs)
+        task_result = db_root.task.create(**kwargs)
         print("task_result", task_result.started)
         return CreateOpenshaRuptureGenResult(task_result=task_result)
     

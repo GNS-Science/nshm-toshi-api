@@ -5,7 +5,7 @@ Created on 28/10/2020
 '''
 import graphene
 from graphene import relay
-from graphql_api.data_s3 import TaskResultData
+from graphql_api.data_s3 import DataManager
 from graphql_api.schema.opensha_task import OpenshaRuptureGenResultConnection,  CreateOpenshaRuptureGenResult
 from graphql_api.schema.task_result import CreateDataFileMutation
 
@@ -19,10 +19,10 @@ class Query(graphene.ObjectType):
     node = relay.Node.Field()
 
     def resolve_rupture_get_result(root, info):
-        return db_root.get_one()
+        return db_root.task.get_one()
 
     def resolve_rupture_generator_results(root, info):
-        return db_root.get_all()
+        return db_root.task.get_all()
 
 class Mutation(graphene.ObjectType):
     create_task_result = CreateOpenshaRuptureGenResult.Field()
@@ -34,7 +34,7 @@ client_args = dict(aws_access_key_id='S3RVER',
 
 #client_args = {}
 
-db_root = TaskResultData(client_args)
+db_root = DataManager(client_args)
 opensha_task.db_root = db_root
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
