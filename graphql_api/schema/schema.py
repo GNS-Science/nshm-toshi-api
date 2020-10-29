@@ -7,9 +7,9 @@ import graphene
 from graphene import relay
 from graphql_api.data_s3 import DataManager
 from graphql_api.schema.opensha_task import OpenshaRuptureGenResultConnection,  CreateOpenshaRuptureGenResult
-from graphql_api.schema.task_result import CreateDataFileMutation
+from graphql_api.schema.data_file import CreateDataFileMutation, DataFile
 
-from graphql_api.schema import opensha_task
+from graphql_api.schema import opensha_task, data_file, task_result
 
 class Query(graphene.ObjectType):
     rupture_generator_results = relay.ConnectionField(
@@ -31,10 +31,11 @@ class Mutation(graphene.ObjectType):
 client_args = dict(aws_access_key_id='S3RVER', 
               aws_secret_access_key='S3RVER',
               endpoint_url='http://localhost:4569')
-
 #client_args = {}
 
 db_root = DataManager(client_args)
 opensha_task.db_root = db_root
+data_file.db_root = db_root
+task_result.db_root = db_root
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

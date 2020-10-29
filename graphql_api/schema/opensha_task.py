@@ -1,4 +1,3 @@
-#!python3
 """
 This module contains the schema definitions used by NSHM Rupture Generation tasks.
 
