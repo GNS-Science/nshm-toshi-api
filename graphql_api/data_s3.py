@@ -10,7 +10,7 @@ class BaseS3Data():
     def __init__(self, client_args):
         args = client_args or {}
         self.client = boto3.client('s3', **args)
-        self.bucket_name = os.environ.get('S3_BUCKET_NAME', "UNDEFINED")
+        self.bucket_name = os.environ.get('S3_BUCKET_NAME', "nshm-tosh-api-test")
         self.s3 = boto3.resource('s3')
         print("BaseS3Data.__init__ buecket:", self.bucket_name)
         self.bucket = self.s3.Bucket(self.bucket_name, client=self.client)
@@ -53,6 +53,7 @@ class TaskResultData(BaseS3Data):
         fo = BytesIO()
         obj.download_fileobj(fo)
         fo.seek(0)
+        print(fo.read().decode())
         jsondata = json.load(fo)
         
         #Field type transforms...

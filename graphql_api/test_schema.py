@@ -11,6 +11,8 @@ import botocore
 from botocore.exceptions import ClientError
 
 import boto3
+import datetime
+from dateutil.tz import tzutc
 
 orig = botocore.client.BaseClient._make_api_call
 
@@ -37,6 +39,38 @@ class TestBotoMocked(unittest.TestCase):
             with self.assertRaises(ClientError):
                 e = client.upload_part_copy()
 
+# r0 = {'ResponseMetadata': {
+#       'HTTPStatusCode': 200, 
+#      'HTTPHeaders': {
+#       'content-type': 'application/xml', 'content-length': '1135', 'date': 'Thu, 29 Oct 2020 04:25:42 GMT', 'connection': 'keep-alive'}, 'RetryAttempts': 0
+#       }, 
+#      'IsTruncated': False, 'Marker': '', 
+#      }
+r1 = {'Contents': [{
+        'Key': 'TaskResultData/0/object.json', 
+        'LastModified': datetime.datetime(2020, 10, 28, 8, 17, 15, tzinfo=tzutc()), 
+        'ETag': '"b91ae62013c8beffb0770a8209a0b426"', 
+        'Size': 240, 'StorageClass': 'STANDARD', 
+        'Owner': {'DisplayName': 'S3rver', 'ID': '123456789000'}}, 
+
+        {'Key': 'TaskResultData/1/object.json', 
+        'LastModified': datetime.datetime(2020, 10, 28, 17, 59, 49, tzinfo=tzutc()), 
+        'ETag': '"31ca7cb08f8efd26a12c5349bc2c976f"', 'Size': 240, 
+        'StorageClass': 'STANDARD', 
+        'Owner': {'DisplayName': 'S3rver', 'ID': '123456789000'}}], 
+        'Name': 'nshm-tosh-api-test', 'Prefix': 'TaskResultData/', 'MaxKeys': 1000}
+
+r2 = {'ResponseMetadata': {'HTTPStatusCode': 200, 'HTTPHeaders': {'accept-ranges': 'bytes', 'content-type': 'binary/octet-stream', 'last-modified': 'Wed, 28 Oct 2020 08:17:15 GMT', 'etag': '"b91ae62013c8beffb0770a8209a0b426"', 'content-length': '240', 'date': 'Thu, 29 Oct 2020 04:43:48 GMT', 'connection': 'keep-alive'}, 'RetryAttempts': 0}, 
+      'AcceptRanges': 'bytes', 
+      'LastModified': datetime.datetime(2020, 10, 28, 8, 17, 15, tzinfo=tzutc()), 
+      'ContentLength': 240, 
+      'ETag': '"b91ae62013c8beffb0770a8209a0b426"', 'ContentType': 'binary/octet-stream', 'Metadata': {}}
+
+obj3 = b'{"id": "0", "name": null, "tasktype": null, "started": "2020-10-28T09:14:00+00:00", "duration": 600.0, "data_files": null, "rupture_generator_args": {"max_jump_distance": 5.5, "max_sub_section_length": 2.0, "max_cumulative_azimuth": 590.0}}'
+r3 = {'ResponseMetadata': {'HTTPStatusCode': 200, 'HTTPHeaders': {'accept-ranges': 'bytes', 'content-type': 'binary/octet-stream', 'last-modified': 'Wed, 28 Oct 2020 08:17:15 GMT', 'etag': '"b91ae62013c8beffb0770a8209a0b426"', 'content-length': '240', 'date': 'Thu, 29 Oct 2020 04:48:40 GMT', 'connection': 'keep-alive'}, 'RetryAttempts': 0}, 'AcceptRanges': 'bytes', 'LastModified': datetime.datetime(2020, 10, 28, 8, 17, 15, tzinfo=tzutc()), 'ContentLength': 240, 'ETag': '"b91ae62013c8beffb0770a8209a0b426"', 'ContentType': 'binary/octet-stream', 'Metadata': {}, 
+      'Body': BytesIO(obj3)}
+      # <botocore.response.StreamingBody object at 0x10c255bd0>}
+
 class TestRuptureGeneratorResults(unittest.TestCase):
 
     def setUp(self):
@@ -57,9 +91,25 @@ class TestRuptureGeneratorResults(unittest.TestCase):
               }
             }}'''
         
+        def mock_make_api_call(self, operation_name, kwarg):
+            if operation_name in ['ListObjects']:
+                return r1 #dict(data=dict(ruptureGeneratorResults=dict(edges=[0,1])))
+            elif operation_name == 'HeadObject':
+                return r2
+            elif operation_name == 'GetObject':
+                return r3
+            else:
+                print('kwarg', kwarg)
+                res = orig(self, operation_name, kwarg)
+                print(res)
+                raise ValueError("got unmocked operation: ", operation_name)
+        
         with mock.patch('graphql_api.data_s3.BaseS3Data.get_all', new=self.mock_all):
+        #with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
             executed = self.client.execute(qry)
             print(executed)
+            print("***")
+            # assert 0
             assert len( executed['data']['ruptureGeneratorResults']['edges']) == 2
 
 
@@ -102,15 +152,6 @@ class TestCreateDataFile(unittest.TestCase):
                 executed = self.client.execute(qry, variable_values=variables)
                 print(executed)
                 assert executed['data']['createDataFile']['ok'] == True
-
- 
-
-
-
-
-
-
-
 
         
 if __name__ == "__main__":
