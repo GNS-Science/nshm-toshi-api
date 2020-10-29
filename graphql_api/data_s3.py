@@ -53,7 +53,7 @@ class TaskResultData(BaseS3Data):
         fo = BytesIO()
         obj.download_fileobj(fo)
         fo.seek(0)
-        print(fo.read().decode())
+        #print(fo.read().decode())
         jsondata = json.load(fo)
         
         #Field type transforms...

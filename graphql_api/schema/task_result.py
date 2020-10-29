@@ -26,7 +26,7 @@ class TaskResult(graphene.Interface):
 
     def resolve_data_files(self, info, **args):
         # Transform the instance ship_ids into real instances
-        return [db_root.task.get_files()]
+        return [db_root.task.get_files(None, **args)]
         # return [data_file(data_file_id) for data_file_id in self.data_files]
     
 
