@@ -1,7 +1,7 @@
 """
-This module contains the schema definitions used by NSHM data file.
+The NSHM data file graphql schema.
 """
-
+import base64
 import graphene
 from graphene import relay
 from graphene_file_upload.scalars import Upload
@@ -17,10 +17,15 @@ class DataFile(graphene.ObjectType):
     file_name = graphene.String(description="The name of the file")
     hex_digest = graphene.String(description="The sha256 hexdigest of the file")
     file_size = graphene.Int(description="The size of the file in bytes")
-    
+    file_url = graphene.String(description="A pre-signed URL to download the file from s3")
+
+    def resolve_file_url(self, info, **args):
+	    return db_root.file.get_presigned_url(self.id)
+
     @classmethod
     def get_node(cls, info, _id):
-        node =  db_root.file.get_one(_id)
+        print("GETNODE")
+        node = db_root.file.get_one(_id)
         return node   
     
 class DataFileConnection(relay.Connection):
@@ -30,7 +35,7 @@ class DataFileConnection(relay.Connection):
 
 class CreateDataFileMutation(graphene.Mutation):
     class Arguments:
-        file_name = graphene.String() # deprecated
+        file_name = graphene.String()
         file_in = Upload(required=True)
         hex_digest = graphene.String("The sha256 hexdigest of the file")
         file_size = graphene.Int()
@@ -39,9 +44,6 @@ class CreateDataFileMutation(graphene.Mutation):
     file_result = graphene.Field(DataFile)
 
     def mutate(self, info, file_in, **kwargs):
-        # # do something with your file
-        # for line in file_in:
-        #     print(line)
         print("CreateDataFileMutation.mutate: ", file_in, kwargs)
         file_result = db_root.file.create(file_in, **kwargs)
         return CreateDataFileMutation(ok=True, file_result=file_result)

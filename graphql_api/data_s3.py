@@ -76,10 +76,41 @@ class DataFileData(BaseS3Data):
         meta_key = "%s/%s/%s" % (self.prefix, next_id, "object.json")
         response = self.bucket.put_object(Key=meta_key, Body=json.dumps(body))
 
-        data_key = "%s/%s/%s" % (self.prefix, next_id, "object.raw")
+        data_key = "%s/%s/%s" % (self.prefix, next_id, body["file_name"])
         file_obj.seek(0)
         response2 = self.bucket.put_object(Key=data_key, Body=file_obj)
         return new
+
+    def get_one(self, _id):
+        from .schema import DataFile
+        key = "%s/%s/%s" % (self.prefix, _id, "object.json")
+        print("KEY:", key)
+        obj = self.s3.Object(bucket_name=self.bucket_name,
+                        key=key,
+                        client=self.client)
+        fo = BytesIO()
+        obj.download_fileobj(fo)
+        fo.seek(0)
+        jsondata = json.load(fo)
+        
+        print("get_one", jsondata)            
+        return DataFile(**jsondata)
+
+    def get_presigned_url(self, _id):
+        datafile = self.get_one(_id)
+        key = "%s/%s/%s" % (self.prefix, _id, datafile.file_name)      
+        url = self.client.generate_presigned_url('get_object',
+            Params={
+                'Bucket': self.bucket_name,
+                'Key': key,
+            },                                  
+            ExpiresIn=3600)
+        return url
+
+    def get_next_id(self):
+        """2 objects stored per ID, so divide object count by 2"""
+        return int(super().get_next_id()/2)
+
 
 class DataManager():
 

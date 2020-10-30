@@ -7,7 +7,7 @@ import graphene
 from graphene import relay
 from graphql_api.data_s3 import DataManager
 from graphql_api.schema.opensha_task import OpenshaRuptureGenResultConnection,  CreateOpenshaRuptureGenResult
-from graphql_api.schema.data_file import CreateDataFileMutation, DataFile
+from graphql_api.schema.data_file import CreateDataFileMutation, DataFile, DataFileConnection
 
 from graphql_api.schema import opensha_task, data_file, task_result
 
@@ -15,14 +15,23 @@ class Query(graphene.ObjectType):
     rupture_generator_results = relay.ConnectionField(
         OpenshaRuptureGenResultConnection, description="The OpenshaRuptureGenResults."
     )
+
+    data_files = relay.ConnectionField(
+        DataFileConnection, description="The DataFiles."
+    )
     #     opensha_rupture_get_results = graphene.Field(OpenshaRuptureGenResult)
     node = relay.Node.Field()
+    data_file = relay.Node.Field(DataFile, id=graphene.ID(required=True))
 
-    def resolve_rupture_get_result(root, info):
-        return db_root.task.get_one()
+
+    # def resolve_data_file(root, info, id):
+    #     return db_root.file.get_one(id)
 
     def resolve_rupture_generator_results(root, info):
         return db_root.task.get_all()
+
+    def resolve_data_files(root, info):
+        return db_root.file.get_all()
 
 class Mutation(graphene.ObjectType):
     create_task_result = CreateOpenshaRuptureGenResult.Field()
