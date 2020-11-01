@@ -33,40 +33,49 @@ ref https://flask-restful.readthedocs.io/en/latest/quickstart.html
 example graphql:
 
 ```
-query q2 {
-  test_outputs: toshs {
+#record a new task
+mutation m1 {
+  createTaskResult(
+    input: {
+      started: "2020-10-30T09:14Z"
+      duration: 600
+      ruptureGeneratorArgs: {
+        maxJumpDistance:55.5
+        maxSubSectionLength: 2
+        maxCumulativeAzimuth:590
+      }
+    }) {
+     taskResult {
+      started
+    }
+  } 
+}
+
+# query tasks
+query q1 {
+  ruptureGeneratorResults {
     edges {
-      task: node {
+      node {
         id
-        name        
+        started
+        ruptureGeneratorArgs {
+          maxJumpDistance
+        }
       }
     }
   }
 }
 
-mutation newTosh {
-  createTosh(
-    input: {
-    toshName: "Bogus3"
-    factionId: "1"
-    }) 
-  {
-    tosh {
-      name
-      id
-    }
-  }
+## create task-file connection
+## NB file upload not available in igraphql client
+mutation m2 {
+  createTaskFile(
+  	fileId:"RGF0YUZpbGU6MA=="
+  	taskId:"T3BlbnNoYVJ1cHR1cmVHZW5SZXN1bHQ6MA==") 
+  {ok} 
 }
 
-query Q1_cast_to_Tosh {
-    node(id: "VG9zaDoxMA==") {
-    __typename
-    id
-    ... on Tosh {
-      name
-    }
-  }
-}
+
 ```
 
 Next thing: [file upload](https://github.com/lmcgartland/graphene-file-upload)
