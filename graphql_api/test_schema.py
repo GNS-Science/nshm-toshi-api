@@ -124,13 +124,15 @@ class TestCreateDataFile(unittest.TestCase):
 
     def test_upload(self):
         qry = '''
-            mutation ($file: Upload!, $digest: String!, $file_name: String!, $file_size: Int!) {
+            mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
               createFile(
-                  fileIn: $file
                   hexDigest: $digest
                   fileName: $file_name
                   fileSize: $file_size
-              ) { ok}
+              ) {
+              ok
+              fileResult { id, fileName, fileSize, hexDigest, postUrl }
+              }
             }'''
         
         from hashlib import sha256
