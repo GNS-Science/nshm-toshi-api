@@ -8,7 +8,7 @@ from graphql_api.data_s3 import DataManager
 
 global db_root
 
-class DataFile(graphene.ObjectType):
+class File(graphene.ObjectType):
     """A data file  """
     class Meta:
         interfaces = (relay.Node, )
@@ -35,12 +35,12 @@ class DataFile(graphene.ObjectType):
         node = db_root.file.get_one(_id)
         return node   
     
-class DataFileConnection(relay.Connection):
-    """A Relay connection listing DataFiles"""
+class FileConnection(relay.Connection):
+    """A Relay connection for Files"""
     class Meta:
-        node = DataFile
+        node = File
 
-class CreateDataFileMutation(graphene.Mutation):
+class CreateFile(graphene.Mutation):
     class Arguments:
         file_name = graphene.String()
         file_in = Upload(required=True)
@@ -48,10 +48,10 @@ class CreateDataFileMutation(graphene.Mutation):
         file_size = graphene.Int()
 
     ok = graphene.Boolean()
-    file_result = graphene.Field(DataFile)
+    file_result = graphene.Field(File)
 
     def mutate(self, info, file_in, **kwargs):
-        print("CreateDataFileMutation.mutate: ", file_in, kwargs)
+        print("CreateFile.mutate: ", file_in, kwargs)
         file_result = db_root.file.create(file_in, **kwargs)
-        return CreateDataFileMutation(ok=True, file_result=file_result)
+        return CreateFile(ok=True, file_result=file_result)
 

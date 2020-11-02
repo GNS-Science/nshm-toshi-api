@@ -7,37 +7,43 @@ import graphene
 from graphene import relay
 from graphql_api.data_s3 import DataManager
 from graphql_api.schema.opensha_task import OpenshaRuptureGenResultConnection,  CreateOpenshaRuptureGenResult
-from graphql_api.schema.data_file import CreateDataFileMutation, DataFile, DataFileConnection
-from .task_file import TaskFile, TaskFileConnection, CreateTaskFile
-
-from .task_result import TaskResult
+from graphql_api.schema.data_file import CreateFile, File, FileConnection
 from graphql_api.schema import opensha_task, data_file, task_result, task_file
+from .task_file import CreateTaskFile
 
 class Query(graphene.ObjectType):
-    rupture_generator_results = relay.ConnectionField(
-        OpenshaRuptureGenResultConnection, description="The OpenshaRuptureGenResults."
+    rupture_generation_tasks = relay.ConnectionField(
+        OpenshaRuptureGenResultConnection,
+        description="The OpenshaRuptureGen tasks."
     )
 
-    data_files = relay.ConnectionField(
-        DataFileConnection, description="The DataFiles."
+    files = relay.ConnectionField(
+        FileConnection,
+        description="The files."
     )
-    #     opensha_rupture_get_results = graphene.Field(OpenshaRuptureGenResult)
+
     node = relay.Node.Field()
-    data_file = relay.Node.Field(DataFile, id=graphene.ID(required=True))
+    file = relay.Node.Field(File, id=graphene.ID(required=True))
 
-
-    # def resolve_data_file(root, info, id):
-    #     return db_root.file.get_one(id)
-
-    def resolve_rupture_generator_results(root, info):
+    @staticmethod
+    def resolve_rupture_generation_tasks(root, info):
+        """
+        Returns:
+            list: rupture generation task list
+        """
         return db_root.task.get_all()
 
-    def resolve_data_files(root, info):
+    @staticmethod
+    def resolve_files(root, info):
+        """
+        Returns:
+            list: file list
+        """
         return db_root.file.get_all()
 
 class Mutation(graphene.ObjectType):
-    create_task_result = CreateOpenshaRuptureGenResult.Field()
-    create_data_file = CreateDataFileMutation.Field()
+    create_task = CreateOpenshaRuptureGenResult.Field()
+    create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
 
 client_args = dict(aws_access_key_id='S3RVER', 

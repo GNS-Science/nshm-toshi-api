@@ -4,17 +4,17 @@ The NSHM data file graphql schema.
 import graphene
 from graphene import relay
 from .task_result import TaskResult
-from .data_file import DataFile
+from .data_file import File
 
 global db_root
 
 class TaskFile(graphene.ObjectType):
-    """A DataFile used in some Task """
+    """A File used in some Task """
     class Meta:
         interfaces = (relay.Node, )
 
     task = graphene.Field(TaskResult, required=True)
-    file = graphene.Field(DataFile, required=True)
+    file = graphene.Field(File, required=True)
 
     @classmethod
     def get_node(cls, info, _id):
@@ -35,6 +35,6 @@ class CreateTaskFile(graphene.Mutation):
         return CreateTaskFile(ok=True, task_file=task_file)
 
 class TaskFileConnection(relay.Connection):
-    """A Relay connection listing DataFiles"""
+    """A Relay connection listing Files"""
     class Meta:
         node = TaskFile

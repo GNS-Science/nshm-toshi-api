@@ -7,7 +7,7 @@ from graphql_api import data_s3
 from io import StringIO, BytesIO     
 
 
-import botocore
+import botocore     
 from botocore.exceptions import ClientError
 
 import boto3
@@ -67,6 +67,7 @@ r2 = {'ResponseMetadata': {'HTTPStatusCode': 200, 'HTTPHeaders': {'accept-ranges
       'ETag': '"b91ae62013c8beffb0770a8209a0b426"', 'ContentType': 'binary/octet-stream', 'Metadata': {}}
 
 obj3 = b'{"id": "0", "name": null, "tasktype": null, "started": "2020-10-28T09:14:00+00:00", "duration": 600.0, "data_files": null, "rupture_generator_args": {"max_jump_distance": 5.5, "max_sub_section_length": 2.0, "max_cumulative_azimuth": 590.0}}'
+
 r3 = {'ResponseMetadata': {'HTTPStatusCode': 200, 'HTTPHeaders': {'accept-ranges': 'bytes', 'content-type': 'binary/octet-stream', 'last-modified': 'Wed, 28 Oct 2020 08:17:15 GMT', 'etag': '"b91ae62013c8beffb0770a8209a0b426"', 'content-length': '240', 'date': 'Thu, 29 Oct 2020 04:48:40 GMT', 'connection': 'keep-alive'}, 'RetryAttempts': 0}, 'AcceptRanges': 'bytes', 'LastModified': datetime.datetime(2020, 10, 28, 8, 17, 15, tzinfo=tzutc()), 'ContentLength': 240, 'ETag': '"b91ae62013c8beffb0770a8209a0b426"', 'ContentType': 'binary/octet-stream', 'Metadata': {}, 
       'Body': BytesIO(obj3)}
       # <botocore.response.StreamingBody object at 0x10c255bd0>}
@@ -83,7 +84,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
     #@unittest.skip("refactoring")
     def test_get_all(self):
         qry = '''
-            query { ruptureGeneratorResults {
+            query { ruptureGenerationTasks {
               edges {
                 task: node {
                   id        
@@ -93,7 +94,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
         
         def mock_make_api_call(self, operation_name, kwarg):
             if operation_name in ['ListObjects']:
-                return r1 #dict(data=dict(ruptureGeneratorResults=dict(edges=[0,1])))
+                return r1 #dict(data=dict(ruptureGenerationTasks=dict(edges=[0,1])))
             elif operation_name == 'HeadObject':
                 return r2
             elif operation_name == 'GetObject':
@@ -110,7 +111,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
             print(executed)
             print("***")
             # assert 0
-            assert len( executed['data']['ruptureGeneratorResults']['edges']) == 2
+            assert len( executed['data']['ruptureGenerationTasks']['edges']) == 2
 
 
 class TestCreateDataFile(unittest.TestCase):
@@ -124,7 +125,7 @@ class TestCreateDataFile(unittest.TestCase):
     def test_upload(self):
         qry = '''
             mutation ($file: Upload!, $digest: String!, $file_name: String!, $file_size: Int!) {
-              createDataFile(
+              createFile(
                   fileIn: $file
                   hexDigest: $digest
                   fileName: $file_name
@@ -151,7 +152,7 @@ class TestCreateDataFile(unittest.TestCase):
                 #with mock.patch('graphql_api.data_s3.DataFileData.create', new=self.mock_create):
                 executed = self.client.execute(qry, variable_values=variables)
                 print(executed)
-                assert executed['data']['createDataFile']['ok'] == True
+                assert executed['data']['createFile']['ok'] == True
 
         
 if __name__ == "__main__":
