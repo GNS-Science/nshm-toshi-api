@@ -29,9 +29,28 @@ class FileData(BaseS3Data):
         response = self._bucket.put_object(Key=meta_key, Body=json.dumps(body))
 
         data_key = "%s/%s/%s" % (self._prefix, next_id, body["file_name"])
-        file_obj.seek(0)
-        #TODO error handling...     
-        response2 = self._bucket.put_object(Key=data_key, Body=file_obj)
+        if file_obj:
+            file_obj.seek(0)
+            #TODO error handling...     
+            response2 = self._bucket.put_object(Key=data_key, Body=file_obj)
+        else:
+            response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
+            parts = self._client.generate_presigned_post(Bucket=self._bucket_name,
+                                              Key=data_key,
+                                              Fields={
+                                                'acl': 'public-read',
+                                                'Content-MD5': body.get('hex_digest'),
+                                                'Content-Type': 'binary/octet-stream'
+                                                },
+                                              Conditions=[
+                                                  {"acl": "public-read"},
+                                                  ["starts-with", "$Content-Type", ""],
+                                                  ["starts-with", "$Content-MD5", ""]
+                                              ]
+                                              )
+                                
+            kwargs['post_url'] = json.dumps(parts['fields'])
+            new = File(next_id, **kwargs)
         return new
 
     def get_one(self, _id):
