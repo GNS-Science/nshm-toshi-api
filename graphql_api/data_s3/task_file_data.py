@@ -1,11 +1,27 @@
+"""
+Object manager for TaskFile schema objects
+"""
 import json
 from io import BytesIO
+import logging
 from . import get_objectid_from_global
 from .base_s3_data import BaseS3Data
 
-class TaskFileData(BaseS3Data):
 
+logger = logging.getLogger(__name__)
+
+class TaskFileData(BaseS3Data):
+    """
+    TaskFileData provides the S3 interface for TaskFile objects
+    """
     def create(self, **kwargs):
+        """
+        Args:
+            **kwargs: the field data
+
+        Returns:
+            TaskFile: the TaskFile object
+        """
         from graphql_api.schema  import TaskFile
         next_id  = str(self.get_next_id())
 
@@ -26,13 +42,21 @@ class TaskFileData(BaseS3Data):
         #TODO update file and task pointers to new TaskFile
         self._db_manager.task.add_task_file(task_id, next_id)
         self._db_manager.file.add_task_file(file_id, next_id)
+
         return new
 
 
     def get_one(self, _id):
+        """
+        Args:
+            _id (string): the object id
+
+        Returns:
+            File: the TaskFile object
+        """        
         from graphql_api.schema import TaskFile
         key = "%s/%s/%s" % (self._prefix, _id, "object.json")
-        print("KEY:", key)
+        logger.info("KEY: %s" % key)
         obj = self._s3.Object(bucket_name=self._bucket_name,
                         key=key,
                         client=self._client)

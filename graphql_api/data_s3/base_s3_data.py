@@ -1,5 +1,5 @@
 """
-Module docstring
+BaseS3Data is the base class for AWS_S3 data handlers
 """
 import os
 import json
@@ -28,7 +28,7 @@ class BaseS3Data():
     def get_next_id(self):
         """
         Returns:
-            int: the next available id for an object
+            int: the next available id
         """
         size = sum(1 for _ in self._bucket.objects.filter(Prefix='%s/' % self._prefix))
         return size

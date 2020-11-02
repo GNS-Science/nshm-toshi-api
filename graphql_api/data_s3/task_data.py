@@ -2,11 +2,24 @@
 Object manager for Task schema objects
 """
 import datetime as dt
+import logging
 from .base_s3_data import BaseS3Data
 
-class TaskResultData(BaseS3Data):
+logger = logging.getLogger(__name__)
 
+class TaskData(BaseS3Data):
+    """
+    TaskData provides the S3 interface for Task objects
+    """
     def create(self, **kwargs):
+        """
+        Args:
+            **kwargs: the field data
+        Returns:
+            OpenshaRuptureGenResult: Description
+        Raises:
+            ValueError: invalid data exception
+        """
         from graphql_api.schema import OpenshaRuptureGenResult
         next_id  = str(self.get_next_id())
         if not  kwargs['started'].tzname(): #must have a timezone set
@@ -19,6 +32,12 @@ class TaskResultData(BaseS3Data):
         return new
     
     def get_one(self, task_result_id):
+        """
+        Args:
+            _id (string): the object id
+        Returns:
+            File: the Task object
+        """        
         from graphql_api.schema import OpenshaRuptureGenResult
 
         jsondata = self._read_object(task_result_id)
@@ -27,7 +46,7 @@ class TaskResultData(BaseS3Data):
         started = jsondata.get('started')
         if started:
             jsondata['started'] = dt.datetime.fromisoformat(started)
-        print("get_one", jsondata)
+        logger.info("get_one: %s" % str(jsondata))
 
         #remove deprecated field(s)...
         jsondata.pop('data_files', None)
