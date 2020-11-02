@@ -8,7 +8,7 @@ from graphene import relay
 from graphql_api.data_s3 import DataManager
 from graphql_api.schema.opensha_task import OpenshaRuptureGenResultConnection,  CreateOpenshaRuptureGenResult
 from graphql_api.schema.file import CreateFile, File, FileConnection
-from graphql_api.schema import opensha_task, file, task_result, task_file
+from graphql_api.schema import opensha_task, file, task, task_file
 from .task_file import CreateTaskFile
 
 class Query(graphene.ObjectType):
@@ -46,15 +46,16 @@ class Mutation(graphene.ObjectType):
     create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
 
+#TODO: fix this for both local and aws deployment
 client_args = dict(aws_access_key_id='S3RVER', 
               aws_secret_access_key='S3RVER',
               endpoint_url='http://localhost:4569')
-#client_args = {}
+client_args = {}
 
 db_root = DataManager(client_args)
 opensha_task.db_root = db_root
 file.db_root = db_root
-task_result.db_root = db_root
+task.db_root = db_root
 task_file.db_root = db_root
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

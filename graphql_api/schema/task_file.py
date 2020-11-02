@@ -3,7 +3,7 @@ The NSHM data file graphql schema.
 """
 import graphene
 from graphene import relay
-from .task_result import TaskResult
+from .task import Task
 from .file import File
 
 global db_root
@@ -13,7 +13,7 @@ class TaskFile(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node, )
 
-    task = graphene.Field(TaskResult, required=True)
+    task = graphene.Field(Task, required=True)
     file = graphene.Field(File, required=True)
 
     @classmethod

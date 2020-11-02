@@ -5,12 +5,12 @@ from graphene import Enum
 
 global db_root
 
-class TaskResultType(Enum):
-    TEST_RESULT = "test_result"
-    JOB_RESULT = "job_result"
+# class TaskResultType(Enum):
+#     TEST_RESULT = "test_result"
+#     JOB_RESULT = "job_result"
 
-class TaskResult(graphene.Interface):
-    """A TaskResult in the NSHM saga"""
+class Task(graphene.Interface):
+    """A Task in the NSHM saga"""
     class Meta:
         interfaces = (relay.Node, ) 
     

@@ -11,7 +11,7 @@ import graphene
 from graphene import relay
 from graphene import Enum
 
-from graphql_api.schema.task_result import TaskResult, TaskResultType
+from graphql_api.schema.task import Task
 
 global db_root
 
@@ -38,7 +38,7 @@ class RuptureGeneratorArgsOutput(RuptureGeneratorArgs, graphene.ObjectType):
 class OpenshaRuptureGenResult(graphene.ObjectType):
     """An OpenshaRuptureGenResult in the NSHM process"""
     class Meta:
-        interfaces = (relay.Node, TaskResult)
+        interfaces = (relay.Node, Task)
  
     rupture_generator_args = graphene.Field(RuptureGeneratorArgsOutput)
 
@@ -56,7 +56,7 @@ class OpenshaRuptureGenResultConnection(relay.Connection):
 class CreateOpenshaRuptureGenResult(relay.ClientIDMutation):
     class Input:
         #name = graphene.String() # deprecated
-        #tasktype = graphene.Field(TaskResultType) #deprecated        
+        #tasktype = graphene.Field(TaskType) #deprecated        
         started = graphene.DateTime(description="The time the task was started")
         duration = graphene.Float(description="The final duraton of the task in seconds")
         rupture_generator_args = RuptureGeneratorArgsInput(description="THe input arguments for the Rupture generator")
