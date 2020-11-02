@@ -4,7 +4,7 @@ The NSHM data file graphql schema.
 import graphene
 from graphene import relay
 from .task_result import TaskResult
-from .data_file import File
+from .file import File
 
 global db_root
 

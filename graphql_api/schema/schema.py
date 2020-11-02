@@ -7,8 +7,8 @@ import graphene
 from graphene import relay
 from graphql_api.data_s3 import DataManager
 from graphql_api.schema.opensha_task import OpenshaRuptureGenResultConnection,  CreateOpenshaRuptureGenResult
-from graphql_api.schema.data_file import CreateFile, File, FileConnection
-from graphql_api.schema import opensha_task, data_file, task_result, task_file
+from graphql_api.schema.file import CreateFile, File, FileConnection
+from graphql_api.schema import opensha_task, file, task_result, task_file
 from .task_file import CreateTaskFile
 
 class Query(graphene.ObjectType):
@@ -53,7 +53,7 @@ client_args = dict(aws_access_key_id='S3RVER',
 
 db_root = DataManager(client_args)
 opensha_task.db_root = db_root
-data_file.db_root = db_root
+file.db_root = db_root
 task_result.db_root = db_root
 task_file.db_root = db_root
 
