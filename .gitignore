@@ -88,8 +88,11 @@ bin/**
 .dmypy.json
 dmypy.json
 
-# Node / serverless
-**/package-lock.json
-**/node_modules/**
-**/.serverless/**
+# Pyre type checker
+.pyre/
 
+##local stuff
+.serverless/*
+bin/*
+node_modules/*
+package-lock.json
