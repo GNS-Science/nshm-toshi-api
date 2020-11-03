@@ -61,14 +61,30 @@ provider:
       Resource:
         -  ${self:custom.s3_role_resource}
         -  ${self:custom.s3_role_resource}/*
+  apiKeys:
+    - name: TempApiKey # let cloudformation name the key (recommended when setting api key value)
+      description: Api key until we have an auth function # Optional
 
 functions:
   app:
+    description: The graphql API of foobar Service
     handler: wsgi_handler.handler
     events:
-      - http: ANY /
-      - http: 'ANY {proxy+}'
-    description: The graphql API of foobar Service
+      # - http: 'ANY /'
+      #   private: true
+      # - http: 'ANY {proxy+}'
+      #   private: true
+      - http:
+          path: graphql
+          method: OPTIONS
+      - http:
+          path: graphql
+          method: POST
+          private: true
+      - http:
+          path: graphql
+          method: GET
+          private: true
 
 resources:
   Resources:
