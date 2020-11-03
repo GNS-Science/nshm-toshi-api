@@ -47,10 +47,10 @@ class Mutation(graphene.ObjectType):
     create_task_file = CreateTaskFile.Field()
 
 #TODO: fix this for both local and aws deployment
-client_args = dict(aws_access_key_id='S3RVER', 
-              aws_secret_access_key='S3RVER',
-              endpoint_url='http://localhost:4569')
-# client_args = {}
+# client_args = dict(aws_access_key_id='S3RVER', 
+#               aws_secret_access_key='S3RVER',
+#               endpoint_url='http://localhost:4569')
+client_args = {}
 
 db_root = DataManager(client_args)
 opensha_task.db_root = db_root

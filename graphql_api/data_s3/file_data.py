@@ -48,7 +48,8 @@ class FileData(BaseS3Data):
                                                   ["starts-with", "$Content-MD5", ""]
                                               ]
                                               )
-                                
+            print('S3 URL: %s' % parts['url'])                    
+            print('fields: %s' % parts['fields'])
             kwargs['post_url'] = json.dumps(parts['fields'])
             new = File(next_id, **kwargs)
         return new
