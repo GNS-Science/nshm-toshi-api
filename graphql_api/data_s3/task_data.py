@@ -16,32 +16,32 @@ class TaskData(BaseS3Data):
         Args:
             **kwargs: the field data
         Returns:
-            OpenshaRuptureGenResult: Description
+            RuptureGenerationTask: Description
         Raises:
             ValueError: invalid data exception
         """
-        from graphql_api.schema import OpenshaRuptureGenResult
+        from graphql_api.schema import RuptureGenerationTask
         next_id  = str(self.get_next_id())
         if not  kwargs['started'].tzname(): #must have a timezone set
             raise ValueError("'started' DateTime() field must have a timezone set.")
-        
-        new = OpenshaRuptureGenResult(next_id, **kwargs)
+
+        new = RuptureGenerationTask(next_id, **kwargs)
         body = new.__dict__.copy()
         body['started'] = body['started'].isoformat()
         self._write_object(next_id, body)
         return new
-    
+
     def get_one(self, task_result_id):
         """
         Args:
             _id (string): the object id
         Returns:
             File: the Task object
-        """        
-        from graphql_api.schema import OpenshaRuptureGenResult
+        """
+        from graphql_api.schema import RuptureGenerationTask
 
         jsondata = self._read_object(task_result_id)
-        
+
         #Field type transforms...
         started = jsondata.get('started')
         if started:
@@ -50,11 +50,11 @@ class TaskData(BaseS3Data):
 
         #remove deprecated field(s)...
         jsondata.pop('data_files', None)
-        
+
         #add new fields
         if not jsondata.get('input_files'):
-            jsondata['input_files'] = []           
-        return OpenshaRuptureGenResult(**jsondata)
+            jsondata['input_files'] = []
+        return RuptureGenerationTask(**jsondata)
 
 
     def add_task_file(self, object_id, task_file_id):
