@@ -13,6 +13,8 @@ from graphql_api.schema import opensha_task, file, task, task_file
 from .task_file import CreateTaskFile
 
 class Query(graphene.ObjectType):
+    """This is the entry point for all graphql query operations"""
+
     rupture_generation_tasks = relay.ConnectionField(
         RuptureGenerationTaskConnection,
         description="The OpenshaRuptureGen tasks."

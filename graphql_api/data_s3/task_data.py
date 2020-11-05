@@ -3,10 +3,13 @@ Object manager for Task schema objects
 """
 import datetime as dt
 import logging
+from benedict import benedict
+
 from .base_s3_data import BaseS3Data
 from . import get_objectid_from_global
 
 logger = logging.getLogger(__name__)
+
 
 class TaskData(BaseS3Data):
     """
@@ -49,16 +52,29 @@ class TaskData(BaseS3Data):
             jsondata['started'] = dt.datetime.fromisoformat(started)
         logger.info("get_one: %s" % str(jsondata))
 
+        arguments = jsondata.pop("rupture_generation_args", None)
+        if arguments:
+            jsondata['arguments'] = arguments
+        arguments = jsondata.pop("rupture_generator_args", None)
+        if arguments:
+            jsondata['arguments'] = arguments
+
         #remove deprecated field(s)...
         jsondata.pop('data_files', None)
 
         #add new fields
         if not jsondata.get('input_files'):
             jsondata['input_files'] = []
+        print('updated json', jsondata)
         return RuptureGenerationTask(**jsondata)
 
 
     def add_task_file(self, object_id, task_file_id):
+        """
+        Args:
+            object_id (TYPE): the task object_id
+            task_file_id (TYPE): the task_file_id
+        """
         obj = self._read_object(object_id)
         try:
             obj['input_files'].append(task_file_id)
@@ -68,11 +84,21 @@ class TaskData(BaseS3Data):
 
 
     def update(self, task_id, **kwargs):
+        """
+        Args:
+            task_id (TYPE): the object id
+            **kwargs: the received schema fields
+
+        Returns:
+            TYPE: the Task object
+        """
         from graphql_api.schema import RuptureGenerationTask
 
-        logger.info('Update() %s', task_id)
+        this_id = get_objectid_from_global(task_id)
 
-        current = self.get_one(get_objectid_from_global(task_id))
-        updated = current.__dict__.copy()
-        updated.update(kwargs)
-        return RuptureGenerationTask(**updated)
+        bd1 = benedict(self.get_one(this_id).__dict__.copy())
+        bd1.merge(kwargs)
+        bd1['started'] = bd1['started'].isoformat()
+        self._write_object(this_id, bd1)
+        # print(bd1)
+        return RuptureGenerationTask(**bd1)

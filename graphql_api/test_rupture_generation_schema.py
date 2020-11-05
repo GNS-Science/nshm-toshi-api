@@ -139,6 +139,8 @@ TASKZERO = lambda _self, _id: {
 class TestUpdateRuptureGenerationTask(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
+
+    TODO: more coverage please
     """
     def setUp(self):
         self.client = Client(schema)
@@ -174,4 +176,10 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
         assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
         assert result['duration'] == 909
         assert result['metrics']['ruptureCount'] == 20
+
+
+    @unittest.skip("TODO")
+    def test_merge_update_is_effective(self):
+        """need to show that the json being saved to S3 is correct"""
+        assert 0
 
