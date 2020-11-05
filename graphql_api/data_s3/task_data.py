@@ -4,6 +4,7 @@ Object manager for Task schema objects
 import datetime as dt
 import logging
 from .base_s3_data import BaseS3Data
+from . import get_objectid_from_global
 
 logger = logging.getLogger(__name__)
 
@@ -64,3 +65,14 @@ class TaskData(BaseS3Data):
         except (AttributeError, KeyError):
             obj['input_files'] = [task_file_id]
         self._write_object(object_id, obj)
+
+
+    def update(self, task_id, **kwargs):
+        from graphql_api.schema import RuptureGenerationTask
+
+        logger.info('Update() %s', task_id)
+
+        current = self.get_one(get_objectid_from_global(task_id))
+        updated = current.__dict__.copy()
+        updated.update(kwargs)
+        return RuptureGenerationTask(**updated)

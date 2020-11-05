@@ -6,7 +6,8 @@ Created on 28/10/2020
 import graphene
 from graphene import relay
 from graphql_api.data_s3 import DataManager
-from graphql_api.schema.opensha_task import RuptureGenerationTaskConnection,  CreateRuptureGenerationTask
+from graphql_api.schema.opensha_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
+    UpdateRuptureGenerationTask
 from graphql_api.schema.file import CreateFile, File, FileConnection
 from graphql_api.schema import opensha_task, file, task, task_file
 from .task_file import CreateTaskFile
@@ -43,6 +44,7 @@ class Query(graphene.ObjectType):
 
 class Mutation(graphene.ObjectType):
     create_rupture_generation_task = CreateRuptureGenerationTask.Field()
+    update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
 
