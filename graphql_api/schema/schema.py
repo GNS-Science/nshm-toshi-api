@@ -3,6 +3,7 @@ Created on 28/10/2020
 
 @author: chrisbc
 '''
+import os
 import graphene
 from graphene import relay
 from graphql_api.data_s3 import DataManager
@@ -50,11 +51,15 @@ class Mutation(graphene.ObjectType):
     create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
 
-#TODO: fix this for both local and aws deployment
-client_args = dict(aws_access_key_id='S3RVER',
+
+if ("-local" in os.environ.get('S3_BUCKET_NAME')):
+    #S3 local credentials
+    client_args = dict(aws_access_key_id='S3RVER',
               aws_secret_access_key='S3RVER',
               endpoint_url='http://localhost:4569')
-# client_args = {}
+else:
+    #AWS S3 creds set up by sls
+    client_args = {}
 
 db_root = DataManager(client_args)
 opensha_task.db_root = db_root
