@@ -9,21 +9,21 @@ global db_root
 class TaskResult(Enum):
     FAILURE = "fail"
     SUCCESS = "success"
-    UNDEFINED = "undefined"
+    UNDEFINED = None
 
 class TaskState(Enum):
     SCHEDULED = "scheduled"
     STARTED = "started"
     DONE = "done"
-    UNDEFINED = "undefined"
+    UNDEFINED = None
 
 class Task(graphene.Interface):
     """A Task in the NSHM saga"""
     class Meta:
         interfaces = (relay.Node, )
 
-    result = TaskResult(required=True)
-    state = TaskState(required=True)
+    result = TaskResult()
+    state = TaskState()
 
     started = graphene.DateTime(description="The time the task was started")
     duration = graphene.Float(description="the final duraton of the task in seconds")

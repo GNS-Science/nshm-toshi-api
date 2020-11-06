@@ -88,8 +88,8 @@ class RuptureGenerationTaskConnection(relay.Connection):
 
 class CreateRuptureGenerationTask(relay.ClientIDMutation):
     class Input:
-        result = TaskResult(required=True, default=TaskResult.UNDEFINED)
-        state = TaskState(required=True, default=TaskState.UNDEFINED)
+        result = TaskResult(required=True)
+        state = TaskState(required=True)
         started = graphene.DateTime(required=True, description="The time the task was started")
         duration = graphene.Float(required=False, description="The final duraton of the task in seconds")
         arguments = RuptureGenerationArgsInput(description="The input arguments for the Rupture generator")

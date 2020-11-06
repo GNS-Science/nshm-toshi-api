@@ -22,7 +22,7 @@ class TaskFileData(BaseS3Data):
         Returns:
             TaskFile: the TaskFile object
         """
-        from graphql_api.schema  import TaskFile
+        from graphql_api.schema  import TaskFile, TaskFileRole
         next_id  = str(self.get_next_id())
 
         task_id = get_objectid_from_global(kwargs['task_id'])
@@ -30,11 +30,12 @@ class TaskFileData(BaseS3Data):
 
         task = self._db_manager.task.get_one(task_id)
         file = self._db_manager.file.get_one(file_id)
+        task_role = kwargs.get('task_role')
 
-        new = TaskFile(id=next_id, task=task, file=file)
+        new = TaskFile(id=next_id, task=task, file=file, task_role=task_role)
         #disk representation has just objectids
-        body = dict(id=next_id, task_id=task_id, file_id=file_id)
-
+        body = dict(id=next_id, task_id=task_id, file_id=file_id, task_role=task_role)
+        print('BODY', body)
         #write new object
         meta_key = "%s/%s/%s" % (self._prefix, next_id, "object.json")
         response = self._bucket.put_object(Key=meta_key, Body=json.dumps(body))
@@ -53,8 +54,8 @@ class TaskFileData(BaseS3Data):
 
         Returns:
             File: the TaskFile object
-        """        
-        from graphql_api.schema import TaskFile
+        """
+        from graphql_api.schema import TaskFile, TaskFileRole
         key = "%s/%s/%s" % (self._prefix, _id, "object.json")
         logger.info("KEY: %s" % key)
         obj = self._s3.Object(bucket_name=self._bucket_name,
@@ -67,5 +68,5 @@ class TaskFileData(BaseS3Data):
 
         task = self._db_manager.task.get_one(jsondata['task_id'])
         file = self._db_manager.file.get_one(jsondata['file_id'])
-
-        return TaskFile(id=jsondata['id'], task=task, file=file)
+        task_role = TaskFileRole.get(jsondata.get('task_role', None))
+        return TaskFile(id=jsondata['id'], task=task, file=file, task_role=task_role)

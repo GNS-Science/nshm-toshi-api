@@ -39,7 +39,7 @@ class FileData(BaseS3Data):
                                               Key=data_key,
                                               Fields={
                                                 'acl': 'public-read',
-                                                'Content-MD5': body.get('hex_digest'),
+                                                'Content-MD5': body.get('md5_digest'),
                                                 'Content-Type': 'binary/octet-stream'
                                                 },
                                               Conditions=[
@@ -71,6 +71,9 @@ class FileData(BaseS3Data):
         ren = jsondata.pop('consumers', None)
         if ren:
             jsondata['tasks'] = ren
+        ren = jsondata.pop('hex_digest', None)
+        if ren:
+            jsondata['md5_digest'] = ren
         return File(**jsondata)
 
     def get_presigned_url(self, _id):

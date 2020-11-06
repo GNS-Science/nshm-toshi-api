@@ -12,15 +12,16 @@ global db_root
 
 class TaskFileRole(Enum):
     READ = "read"
-    write = "write"
+    WRITE = "write"
     READ_WRITE = "read_write"
+    UNDEFINED = None
 
 class TaskFile(graphene.ObjectType):
     """A File used in some Task """
     class Meta:
         interfaces = (relay.Node, )
 
-    task_role = TaskFileRole(required=True)
+    task_role = TaskFileRole()
     task = graphene.Field(Task, required=True)
     file = graphene.Field(File, required=True)
 
@@ -33,6 +34,7 @@ class CreateTaskFile(graphene.Mutation):
     class Arguments:
         task_id = graphene.ID(required=True)
         file_id = graphene.ID(required=True)
+        task_role = TaskFileRole(required=True)
 
     ok = graphene.Boolean()
     task_file = graphene.Field(TaskFile)

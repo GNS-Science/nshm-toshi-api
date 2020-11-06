@@ -14,7 +14,7 @@ class File(graphene.ObjectType):
         interfaces = (relay.Node, )
 
     file_name = graphene.String(description="The name of the file")
-    hex_digest = graphene.String(description="The sha256 hexdigest of the file")
+    md5_digest = graphene.String(description="The base64-encoded md5 digest of the file")
     file_size = graphene.Int(description="The size of the file in bytes")
     file_url = graphene.String(description="A pre-signed URL to download the file from s3")
     post_url = graphene.String(description="A pre-signed URL to post the data to s3")
@@ -43,8 +43,7 @@ class FileConnection(relay.Connection):
 class CreateFile(graphene.Mutation):
     class Arguments:
         file_name = graphene.String()
-        #file_in = Upload(required=False)
-        hex_digest = graphene.String("The sha256 hexdigest of the file")
+        md5_digest = graphene.String("The base64-encoded md5 digest  of the file")
         file_size = graphene.Int()
 
     ok = graphene.Boolean()
