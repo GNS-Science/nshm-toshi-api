@@ -24,11 +24,13 @@ import graphql_api.data_s3 # for mocking
 CREATE = '''
     mutation ($started: DateTime!) {
         createRuptureGenerationTask(input: {
-            started: $started,
-            duration: 600,
+            state: UNDEFINED
+            result: UNDEFINED
+            started: $started
+            duration: 600
             arguments: {
-                maxJumpDistance: 55.5,
-                maxSubSectionLength: 2,
+                maxJumpDistance: 55.5
+                maxSubSectionLength: 2
                 maxCumulativeAzimuth: 590
                 minSubSectionsPerParent: 2
                 permutationStrategy: DOWNDIP

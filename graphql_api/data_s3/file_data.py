@@ -31,7 +31,7 @@ class FileData(BaseS3Data):
         data_key = "%s/%s/%s" % (self._prefix, next_id, body["file_name"])
         if file_obj:
             file_obj.seek(0)
-            #TODO error handling...     
+            #TODO error handling...
             response2 = self._bucket.put_object(Key=data_key, Body=file_obj)
         else:
             response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
@@ -48,7 +48,7 @@ class FileData(BaseS3Data):
                                                   ["starts-with", "$Content-MD5", ""]
                                               ]
                                               )
-            print('S3 URL: %s' % parts['url'])                    
+            print('S3 URL: %s' % parts['url'])
             print('fields: %s' % parts['fields'])
             kwargs['post_url'] = json.dumps(parts['fields'])
             new = File(next_id, **kwargs)
@@ -66,6 +66,11 @@ class FileData(BaseS3Data):
         jsondata = self._read_object(_id)
         #remove deprecated field
         jsondata.pop('reader_tasks', None)
+
+        #rename fields
+        ren = jsondata.pop('consumers', None)
+        if ren:
+            jsondata['tasks'] = ren
         return File(**jsondata)
 
     def get_presigned_url(self, _id):

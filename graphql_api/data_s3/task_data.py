@@ -62,9 +62,17 @@ class TaskData(BaseS3Data):
         #remove deprecated field(s)...
         jsondata.pop('data_files', None)
 
-        #add new fields
+        # #add new fields
         if not jsondata.get('input_files'):
-            jsondata['input_files'] = []
+             jsondata['input_files'] = []
+
+        #rename fields
+        ren = jsondata.pop('input_files', None)
+        if ren:
+            jsondata['files'] = ren
+        elif not jsondata.get('files'):
+             jsondata['files'] = []
+
         print('updated json', jsondata)
         return RuptureGenerationTask(**jsondata)
 
@@ -77,9 +85,9 @@ class TaskData(BaseS3Data):
         """
         obj = self._read_object(object_id)
         try:
-            obj['input_files'].append(task_file_id)
+            obj['files'].append(task_file_id)
         except (AttributeError, KeyError):
-            obj['input_files'] = [task_file_id]
+            obj['files'] = [task_file_id]
         self._write_object(object_id, obj)
 
 

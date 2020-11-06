@@ -11,7 +11,7 @@ import graphene
 from graphene import relay
 from graphene import Enum
 
-from graphql_api.schema.task import Task
+from graphql_api.schema.task import Task, TaskResult, TaskState
 
 global db_root
 
@@ -88,6 +88,8 @@ class RuptureGenerationTaskConnection(relay.Connection):
 
 class CreateRuptureGenerationTask(relay.ClientIDMutation):
     class Input:
+        result = TaskResult(required=True, default=TaskResult.UNDEFINED)
+        state = TaskState(required=True, default=TaskState.UNDEFINED)
         started = graphene.DateTime(required=True, description="The time the task was started")
         duration = graphene.Float(required=False, description="The final duraton of the task in seconds")
         arguments = RuptureGenerationArgsInput(description="The input arguments for the Rupture generator")
@@ -106,6 +108,8 @@ class CreateRuptureGenerationTask(relay.ClientIDMutation):
 class UpdateRuptureGenerationTask(relay.ClientIDMutation):
     class Input:
         task_id = graphene.ID(required=True)
+        result = TaskResult(required=False)
+        state = TaskState(required=False)
         started = graphene.DateTime(required=False, description="The time the task was started", )
         duration = graphene.Float(required=False, description="The final duraton of the task in seconds")
         arguments = RuptureGenerationArgsInput(required=False, description="The input arguments for the Rupture generator")

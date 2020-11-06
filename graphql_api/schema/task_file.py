@@ -6,13 +6,21 @@ from graphene import relay
 from .task import Task
 from .file import File
 
+from graphene import Enum
+
 global db_root
+
+class TaskFileRole(Enum):
+    READ = "read"
+    write = "write"
+    READ_WRITE = "read_write"
 
 class TaskFile(graphene.ObjectType):
     """A File used in some Task """
     class Meta:
         interfaces = (relay.Node, )
 
+    task_role = TaskFileRole(required=True)
     task = graphene.Field(Task, required=True)
     file = graphene.Field(File, required=True)
 
