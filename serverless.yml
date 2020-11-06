@@ -8,8 +8,19 @@ plugins:
   - serverless-s3-local
 package:
   include:
-    - api/**
     - graphql_api/**
+  exclude:
+    - man/**
+    - openapi/**
+    - .git/**
+    - demo/**
+    - bin/**
+    - serverless/**
+    - .tox/**
+    - tests/**
+    - node_modules/**
+    - .pytest_cache/**
+    - lib/**
 
 custom:
   wsgi:
