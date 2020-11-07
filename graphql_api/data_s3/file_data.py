@@ -124,7 +124,7 @@ class FileData(BaseS3Data):
         """
         obj = self._read_object(object_id)
         try:
-            obj['consumers'].append(task_file_id)
+            obj['tasks'].append(task_file_id)
         except AttributeError:
-            obj['consumers'] = [task_file_id]
+            obj['tasks'] = [task_file_id]
         self._write_object(task_file_id, obj)
