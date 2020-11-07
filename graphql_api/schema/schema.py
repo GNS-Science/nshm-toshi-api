@@ -52,7 +52,7 @@ class Mutation(graphene.ObjectType):
     create_task_file = CreateTaskFile.Field()
 
 
-if ("-local" in os.environ.get('S3_BUCKET_NAME')):
+if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
     client_args = dict(aws_access_key_id='S3RVER',
               aws_secret_access_key='S3RVER',

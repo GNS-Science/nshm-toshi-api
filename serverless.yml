@@ -7,20 +7,17 @@ plugins:
   - serverless-wsgi
   - serverless-s3-local
 package:
-  include:
-    - graphql_api/**
+#  include:
+#    - src/graphql_api/graphql_api/**
   exclude:
-    - man/**
-    - openapi/**
     - .git/**
-    - demo/**
-    - bin/**
-    - serverless/**
-    - .tox/**
-    - tests/**
-    - node_modules/**
     - .pytest_cache/**
+    - .tox/**
+    - bin/**
+    - demo/**
     - lib/**
+    - node_modules/**
+    - prof/**
 
 custom:
   wsgi:
@@ -73,7 +70,7 @@ provider:
         -  ${self:custom.s3_role_resource}
         -  ${self:custom.s3_role_resource}/*
   apiKeys:
-    - name: TempApiKey # let cloudformation name the key (recommended when setting api key value)
+    - name: TempApiKey-${self:custom.stage}
       description: Api key until we have an auth function # Optional
 
 functions:

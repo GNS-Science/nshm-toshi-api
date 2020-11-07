@@ -14,7 +14,8 @@ class TaskFileRole(Enum):
     READ = "read"
     WRITE = "write"
     READ_WRITE = "read_write"
-    UNDEFINED = None
+    UNDEFINED = "undefined"
+
 
 class TaskFile(graphene.ObjectType):
     """A File used in some Task """

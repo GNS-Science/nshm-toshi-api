@@ -83,10 +83,10 @@ class TaskData(BaseS3Data):
         # #add new fields
         if not jsondata.get('input_files'):
             jsondata['input_files'] = []
-        # if not jsondata.get('state'):
-        #     jsondata['state'] = TaskState.UNDEFINED
-        # if not jsondata.get('result'):
-        #     jsondata['result'] = TaskResult.UNDEFINED
+        if not jsondata.get('state'):
+            jsondata['state'] = TaskState.UNDEFINED
+        if not jsondata.get('result'):
+            jsondata['result'] = TaskResult.UNDEFINED
         if not jsondata.get('files'):
              jsondata['files'] = []
 

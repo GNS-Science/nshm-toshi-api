@@ -68,5 +68,5 @@ class TaskFileData(BaseS3Data):
 
         task = self._db_manager.task.get_one(jsondata['task_id'])
         file = self._db_manager.file.get_one(jsondata['file_id'])
-        task_role = TaskFileRole.get(jsondata.get('task_role', None))
+        task_role = TaskFileRole.get(jsondata.get('task_role', 'undefined'))
         return TaskFile(id=jsondata['id'], task=task, file=file, task_role=task_role)

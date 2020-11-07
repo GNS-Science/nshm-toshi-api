@@ -9,13 +9,13 @@ global db_root
 class TaskResult(Enum):
     FAILURE = "fail"
     SUCCESS = "success"
-    UNDEFINED = None
+    UNDEFINED = "undefined"
 
 class TaskState(Enum):
     SCHEDULED = "scheduled"
     STARTED = "started"
     DONE = "done"
-    UNDEFINED = None
+    UNDEFINED = "undefined"
 
 class Task(graphene.Interface):
     """A Task in the NSHM saga"""

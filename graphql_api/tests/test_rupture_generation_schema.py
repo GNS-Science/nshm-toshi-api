@@ -34,11 +34,13 @@ CREATE = '''
                 maxCumulativeAzimuth: 590
                 minSubSectionsPerParent: 2
                 permutationStrategy: DOWNDIP
-                openshaUcerf3GitRef: "ABC"
-                openshaCommonsGitRef: "ABC"
-                openshaCoreGitRef: "ABC"
-                nshmNzOpenshaGitRef: "ABC"
                 }
+            gitRefs: {
+                openshaUcerf3: "ABC"
+                openshaCommons: "ABC"
+                openshaCore: "ABC"
+                nshmNzOpensha: "ABC"
+            }
             ##EXTRA_INPUT##
             }
             )
@@ -97,7 +99,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         print(executed)
         assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
 
-
+    @unittest.skip('deprecated behaviour')
     def test_create_with_metrics_needs_all_or_none(self):
         insert = '''
             metrics: {
