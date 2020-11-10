@@ -129,7 +129,7 @@ class UpdateRuptureGenerationTask(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        print("mutate_and_get_payload: ", kwargs)
+        # print("mutate_and_get_payload: ", kwargs)
         task_result = db_root.task.update(**kwargs)
 
         return UpdateRuptureGenerationTask(task_result=task_result)

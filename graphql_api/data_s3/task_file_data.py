@@ -35,15 +35,14 @@ class TaskFileData(BaseS3Data):
         new = TaskFile(id=next_id, task=task, file=file, task_role=task_role)
         #disk representation has just objectids
         body = dict(id=next_id, task_id=task_id, file_id=file_id, task_role=task_role)
-        print('BODY', body)
+        # print('BODY', body)
         #write new object
         meta_key = "%s/%s/%s" % (self._prefix, next_id, "object.json")
         response = self._bucket.put_object(Key=meta_key, Body=json.dumps(body))
 
-        #TODO update file and task pointers to new TaskFile
-        self._db_manager.task.add_task_file(task_id, next_id)
-        self._db_manager.file.add_task_file(file_id, next_id)
-
+        #update file and task pointers to new TaskFile
+        self._db_manager.task.add_task_file(task_id=task_id, task_file_id=next_id)
+        self._db_manager.file.add_task_file(file_id=file_id, task_file_id=next_id)
         return new
 
 

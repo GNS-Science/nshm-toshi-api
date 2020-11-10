@@ -50,7 +50,7 @@ class CreateFile(graphene.Mutation):
     file_result = graphene.Field(File)
 
     def mutate(self, info, file_in=None, **kwargs):
-        print("CreateFile.mutate: ", file_in, kwargs)
+        # print("CreateFile.mutate: ", file_in, kwargs)
         file_result = db_root.file.create(file_in, **kwargs)
         return CreateFile(ok=True, file_result=file_result)
 

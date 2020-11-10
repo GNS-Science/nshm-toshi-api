@@ -95,22 +95,22 @@ class TaskData(BaseS3Data):
         if ren:
             jsondata['files'] = ren
 
-        print('updated json', jsondata)
+        # print('updated json', jsondata)
         return RuptureGenerationTask(**jsondata)
 
 
-    def add_task_file(self, object_id, task_file_id):
+    def add_task_file(self, task_id, task_file_id):
         """
         Args:
-            object_id (TYPE): the task object_id
+            task_id (TYPE): the task_id
             task_file_id (TYPE): the task_file_id
         """
-        obj = self._read_object(object_id)
+        obj = self._read_object(task_id)
         try:
             obj['files'].append(task_file_id)
         except (AttributeError, KeyError):
             obj['files'] = [task_file_id]
-        self._write_object(object_id, obj)
+        self._write_object(task_id, obj)
 
 
     def update(self, task_id, **kwargs):

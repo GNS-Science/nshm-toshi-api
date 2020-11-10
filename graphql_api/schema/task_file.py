@@ -41,7 +41,7 @@ class CreateTaskFile(graphene.Mutation):
     task_file = graphene.Field(TaskFile)
 
     def mutate(self, info, **kwargs):
-        print("CreateTaskFile.mutate: ", kwargs)
+        # print("CreateTaskFile.mutate: ", kwargs)
         task_file = db_root.task_file.create(**kwargs)
         return CreateTaskFile(ok=True, task_file=task_file)
 

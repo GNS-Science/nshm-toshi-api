@@ -48,8 +48,8 @@ class FileData(BaseS3Data):
                                                   ["starts-with", "$Content-MD5", ""]
                                               ]
                                               )
-            print('S3 URL: %s' % parts['url'])
-            print('fields: %s' % parts['fields'])
+            # print('S3 URL: %s' % parts['url'])
+            # print('fields: %s' % parts['fields'])
             kwargs['post_url'] = json.dumps(parts['fields'])
             new = File(next_id, **kwargs)
         return new
@@ -115,16 +115,15 @@ class FileData(BaseS3Data):
                 task_results.append(self.get_one(task_result_id))
         return task_results
 
-    def add_task_file(self, object_id, task_file_id):
-        """Append the new file object id to the related task in S3.
-
+    def add_task_file(self, file_id, task_file_id):
+        """
         Args:
-            object_id (string): the file object id
+            file_id (string): the file object id
             task_file_id (string): the task object id
         """
-        obj = self._read_object(object_id)
+        obj = self._read_object(file_id)
         try:
             obj['tasks'].append(task_file_id)
         except AttributeError:
             obj['tasks'] = [task_file_id]
-        self._write_object(task_file_id, obj)
+        self._write_object(file_id, obj)
