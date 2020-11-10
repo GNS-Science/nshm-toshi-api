@@ -2,22 +2,18 @@
 
 ## Serverless Architecture
 
-Here we look at the technical choices used to meet these requirements
+To meet these requirements
 
  - [X] it is low-cost, for both development and operational dimensions
- - [ ] API is extensible, so new data can be readily included
- - [ ] schema controls to provide validations as required
  - [X] data is equally available to internal and external (to GNS) users and systems
  - [X] easy to integrate for both automated tasks and web applications
- - [ ] authorisations provided via standard Oauth2 JWT-token services
 
+Solution:
 
-Choices:
-
- - the [serverless.com](https://www.serverless.com) development framework to bootstrap and standardise serverless architectures.
-    **DEMO** a fresh deployment to the AW cloud showing the artefacts created.
- - **AWS Lambda** and **AWS S3** (plus API GW, Cloud\*) are all free-tier AWS services. The entire product is
-   able to be run for < a few cent's per day.
- - Using S3 natively provides a ubiquitous data storage service, and  nough metadata is stored directly in S3 to make it feasible to use the data independently of the API layer.
-   **DEMO** take a look at the S3 object naming and json contents.
- - Many styles of API are feasible using this architecure, we've chosen Graphql...
+ - **[serverless.com](https://www.serverless.com)** framework to bootstrap and standardise serverless architectures.
+      - **DEMO** `sls info --stage dev --aws-profile tosh-api`
+ - Harness the **free-tier AWS services**,so the entire stack will cost < a few cent's per day.
+ - **AWS S3** provides cloud data storage, and all the metadata is stored as json files in S3.
+      - **DEMO** the S3 object backet naming and json contents.
+ - **AWS Lambda** is their *serverless function* - here we're running a python Flask web server as a 'function'   
+ - API standard = **Graphql + Relay** 
