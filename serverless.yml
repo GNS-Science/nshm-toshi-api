@@ -1,0 +1,94 @@
+# serverless.yml
+
+service: nshm-tosh-api
+
+plugins:
+  - serverless-python-requirements
+  - serverless-wsgi
+  - serverless-s3-local
+package:
+  include:
+    - api/**
+    - graphql_api/**
+
+custom:
+  wsgi:
+    app: graphql_api.api.app
+    packRequirements: false
+  pythonRequirements:
+    dockerizePip: non-linux
+  s3:
+    host: localhost
+    directory: /tmp
+
+# DRY constants: define all compound/generated names in one place
+# Override args are: .. defaults:
+# --app_acroym          signed-uploader
+# --s3_bucket           self:custom.app_acronym
+# --s3_key_base         self:custom.stage
+# --region              us-east-1
+# --stage               test
+# --deletion_policy     delete
+
+  app_acronym: ${opt:acronym, self:service}
+  default_stage: test
+  stage: ${opt:stage, self:custom.default_stage}
+  stack_name: ${self:custom.app_acronym}-${self:custom.stage}
+  region: ${opt:region, self:provider.region}
+  deletion_policy: Delete
+  # Default to using app_acronym as bucket name
+  s3_bucket: ${opt:s3_bucket, self:custom.app_acronym}-${self:custom.stage}
+  # default to using ${stage} as key base path, keeps stages from namespace collisions
+  s3_bucket_arn: arn:aws:s3:::${self:custom.s3_bucket}
+  s3_role_resource: ${self:custom.s3_bucket_arn}
+  # Put this here rather than in code (presigned URL TTL)
+  url_default_ttl: 60
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: ${opt:stage, 'dev'}
+  region: ap-southeast-2
+  environment:
+    REGION: ${self:custom.region}
+    S3_BUCKET_NAME: ${self:custom.s3_bucket}
+    #S3_KEY_BASE: ${self:custom.s3_key_base}
+    URL_DEFAULT_TTL: ${self:custom.url_default_ttl}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:*
+      Resource:
+        -  ${self:custom.s3_role_resource}
+        -  ${self:custom.s3_role_resource}/*
+  apiKeys:
+    - name: TempApiKey # let cloudformation name the key (recommended when setting api key value)
+      description: Api key until we have an auth function # Optional
+
+functions:
+  app:
+    description: The graphql API of foobar Service
+    handler: wsgi_handler.handler
+    events:
+      # - http: 'ANY /'
+      #   private: true
+      # - http: 'ANY {proxy+}'
+      #   private: true
+      - http:
+          path: graphql
+          method: OPTIONS
+      - http:
+          path: graphql
+          method: POST
+          private: true
+      - http:
+          path: graphql
+          method: GET
+          private: true
+
+resources:
+  Resources:
+    NewResource:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3_bucket}

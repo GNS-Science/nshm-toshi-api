@@ -1,0 +1,29 @@
+{
+  "name": "nshm-tosh-api",
+  "version": "1.0.0",
+  "description": "Where all out tests and outputs are buried  - like so much old fashioned, tedious tosh.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GNS-Science/nshm-tosh-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GNS-Science/nshm-tosh-api/issues"
+  },
+  "homepage": "https://github.com/GNS-Science/nshm-tosh-api#readme",
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.0.3",
+    "serverless-python-requirements": "^5.1.0",
+    "serverless-s3-local": "^0.6.7",
+    "serverless-wsgi": "^1.7.5"
+  }
+}
