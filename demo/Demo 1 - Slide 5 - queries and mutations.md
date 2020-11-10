@@ -1,6 +1,4 @@
-# Demo 1 - Slide 4
-
-## Queries and Mutations
+# Graphql Queries and Mutations
 
 ### Tasks query
 
