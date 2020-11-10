@@ -1,6 +1,4 @@
-# Demo 1 - Slide 2
-
-## Serverless Architecture
+# Serverless Architecture
 
 To meet these requirements
 
