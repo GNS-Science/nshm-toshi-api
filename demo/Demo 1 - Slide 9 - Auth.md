@@ -1,6 +1,4 @@
-# Demo 1 - Slide 4
-
-## Authorisation
+# Authorisation
 
  - [ ] it is low-cost, for both development and operational dimensions
  - [ ] API is extensible, so new data can be readily included
