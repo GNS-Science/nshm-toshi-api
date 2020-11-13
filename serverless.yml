@@ -29,6 +29,7 @@ custom:
     host: localhost
     directory: /tmp
 
+
 # DRY constants: define all compound/generated names in one place
 # Override args are: .. defaults:
 # --app_acroym          signed-uploader
@@ -52,6 +53,12 @@ custom:
   # Put this here rather than in code (presigned URL TTL)
   url_default_ttl: 60
 
+  #elastic search
+  esDomainName: toshi-search-${self:custom.stage}
+  #esRoleName: LambdaServiceRole #review where this crops up!
+  esIndex: toshi_index
+  es_role_resource: arn:aws:es:::domain/${self:custom.esDomainName}
+
 provider:
   name: aws
   runtime: python3.8
@@ -67,8 +74,15 @@ provider:
       Action:
         - s3:*
       Resource:
-        -  ${self:custom.s3_role_resource}
-        -  ${self:custom.s3_role_resource}/*
+        - ${self:custom.s3_role_resource}
+        - ${self:custom.s3_role_resource}/*
+    - Effect: Allow
+      Action:
+        - es:*
+      Resource:
+        - ${self:custom.es_role_resource}
+        - ${self:custom.es_role_resource}/*
+
   apiKeys:
     - name: TempApiKey-${self:custom.stage}
       description: Api key until we have an auth function # Optional
@@ -95,6 +109,11 @@ functions:
           path: graphql
           method: GET
           private: true
+    environment:
+      ES_ENDPOINT: https://search-toshi-search-dev-bjuebpcraamxtlwuhktnyuu2ve.ap-southeast-2.es.amazonaws.com
+      ES_INDEX: ${self:custom.esIndex}
+      ES_REGION: ${self:custom.region}
+      ES_DOMAIN_NAME: ${self:custom.esDomainName}
 
 resources:
   Resources:
@@ -102,3 +121,56 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:custom.s3_bucket}
+
+    # following is from
+    #   https://www.serverless.com/blog/build-geosearch-graphql-api-aws-appsync-elasticsearch
+    ElasticSearchInstance:
+      Type: AWS::Elasticsearch::Domain
+      Properties:
+        ElasticsearchVersion: 6.2
+        DomainName: "${self:custom.esDomainName}"
+        EBSOptions:
+          EBSEnabled: true
+          VolumeType: gp2
+          VolumeSize: 10
+        ElasticsearchClusterConfig:
+          InstanceType: t2.small.elasticsearch
+          InstanceCount: 1
+          DedicatedMasterEnabled: false
+          ZoneAwarenessEnabled: false
+
+    # LambdaESServiceRole:
+    #   Type: "AWS::IAM::Role"
+    #   Properties:
+    #     RoleName: "ElasticSearch-${self:custom.esRoleName}"
+    #     AssumeRolePolicyDocument:
+    #       Version: "2012-10-17"
+    #       Statement:
+    #         -
+    #           Effect: "Allow"
+    #           Principal:
+    #             Service:
+    #               - "lambda.amazonaws.com"
+    #           Action:
+    #             - "sts:AssumeRole"
+    #     Policies:
+    #       -
+    #         PolicyName: "AppSyncESServiceRolePolicy"
+    #         PolicyDocument:
+    #           Version: "2012-10-17"
+    #           Statement:
+    #             -
+    #               Effect: "Allow"
+    #               Action:
+    #                 - "es:*"
+    #               Resource:
+    #                 - 'Fn::Join':
+    #                     - ''
+    #                     -
+    #                       - 'arn:aws:es:'
+    #                       - Ref: 'AWS::Region'
+    #                       - ':'
+    #                       - Ref: 'AWS::AccountId'
+    #                       - ':domain/'
+    #                       - "${self:custom.esDomainName}"
+    #                       - '/*'

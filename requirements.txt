@@ -12,3 +12,4 @@ graphene-file-upload==1.2.2
 s3fs==0.5.1
 boto3>=1.16.4
 python-benedict==0.22.0
+requests_aws4auth==1.0.1

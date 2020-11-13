@@ -12,6 +12,21 @@ from graphql_api.schema.opensha_task import RuptureGenerationTaskConnection, Cre
 from graphql_api.schema.file import CreateFile, File, FileConnection
 from graphql_api.schema import opensha_task, file, task, task_file
 from .task_file import CreateTaskFile
+from .search_manager import SearchManager
+
+
+class Search(graphene.Mutation):
+    class Arguments:
+        search_term = graphene.String(required=True)
+
+    ok = graphene.Boolean()
+    search_result = graphene.String()
+
+    def mutate(root, info, search_term, **kwargs):
+        # print("CreateFile.mutate: ", file_in, kwargs)
+        print('mutate(self, info, search_term= ', search_term )
+        search_result = db_root.search_manager.search(search_term)
+        return Search(ok=True, search_result=search_result)
 
 class Query(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
@@ -50,7 +65,7 @@ class Mutation(graphene.ObjectType):
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
-
+    search = Search.Field()
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
@@ -61,7 +76,10 @@ else:
     #AWS S3 creds set up by sls
     client_args = {}
 
-db_root = DataManager(client_args)
+
+search_manager = SearchManager()
+db_root = DataManager(search_manager, client_args)
+
 opensha_task.db_root = db_root
 file.db_root = db_root
 task.db_root = db_root
