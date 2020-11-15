@@ -4,11 +4,14 @@ Created on 28/10/2020
 @author: chrisbc
 '''
 import os
+import boto3
 import graphene
 from graphene import relay
 from graphql_api.data_s3 import DataManager
 from graphql_api.schema.opensha_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask
+
+from requests_aws4auth import AWS4Auth
 from graphql_api.schema.file import CreateFile, File, FileConnection
 from graphql_api.schema import opensha_task, file, task, task_file
 from .task_file import CreateTaskFile
@@ -67,17 +70,32 @@ class Mutation(graphene.ObjectType):
     create_task_file = CreateTaskFile.Field()
     search = Search.Field()
 
+
+
+
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
     client_args = dict(aws_access_key_id='S3RVER',
               aws_secret_access_key='S3RVER',
               endpoint_url='http://localhost:4569')
+    awsauth = None
+    ES_ENDPOINT = "http://es.none"
+    ES_INDEX = "_none"
 else:
     #AWS S3 creds set up by sls
     client_args = {}
+    credentials = boto3.Session().get_credentials()
+    # region = '' # e.g. us-west-1
+    SERVICE = 'es'
+    ES_ENDPOINT = os.getenv("ES_ENDPOINT")
+    ES_INDEX = os.getenv("ES_INDEX")
+    ES_REGION = os.getenv("ES_REGION")
+    ES_DOMAIN_NAME = os.getenv("ES_DOMAIN_NAME")
+    awsauth = AWS4Auth(credentials.access_key, credentials.secret_key,
+        ES_REGION, SERVICE, session_token=credentials.token)
 
 
-search_manager = SearchManager()
+search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
 db_root = DataManager(search_manager, client_args)
 
 opensha_task.db_root = db_root
