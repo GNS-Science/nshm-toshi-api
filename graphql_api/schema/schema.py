@@ -15,6 +15,7 @@ from .task_file import CreateTaskFile
 from .search_manager import SearchManager
 
 from graphql_api.schema import opensha_task, file, task, task_file
+from .custom.strong_motion_station import CreateStrongMotionStation
 
 global db_root
 
@@ -102,11 +103,14 @@ class QueryRoot(graphene.ObjectType):
         return Search(ok=True, search_result=search_result)
 
 
+
 class MutationRoot(graphene.ObjectType):
     create_rupture_generation_task = CreateRuptureGenerationTask.Field()
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
 
+    #custom = graphene.Field(CustomMutations)
+    create_strong_motion_station = CreateStrongMotionStation.Field()
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
