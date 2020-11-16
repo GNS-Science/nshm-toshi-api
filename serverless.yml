@@ -7,9 +7,17 @@ plugins:
   - serverless-wsgi
   - serverless-s3-local
 package:
-  include:
-    - api/**
-    - graphql_api/**
+#  include:
+#    - src/graphql_api/graphql_api/**
+  exclude:
+    - .git/**
+    - .pytest_cache/**
+    - .tox/**
+    - bin/**
+    - demo/**
+    - lib/**
+    - node_modules/**
+    - prof/**
 
 custom:
   wsgi:
@@ -31,7 +39,7 @@ custom:
 # --deletion_policy     delete
 
   app_acronym: ${opt:acronym, self:service}
-  default_stage: test
+  default_stage: local
   stage: ${opt:stage, self:custom.default_stage}
   stack_name: ${self:custom.app_acronym}-${self:custom.stage}
   region: ${opt:region, self:provider.region}
@@ -47,7 +55,7 @@ custom:
 provider:
   name: aws
   runtime: python3.8
-  stage: ${opt:stage, 'dev'}
+  # stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
   environment:
     REGION: ${self:custom.region}
@@ -62,7 +70,7 @@ provider:
         -  ${self:custom.s3_role_resource}
         -  ${self:custom.s3_role_resource}/*
   apiKeys:
-    - name: TempApiKey # let cloudformation name the key (recommended when setting api key value)
+    - name: TempApiKey-${self:custom.stage}
       description: Api key until we have an auth function # Optional
 
 functions:

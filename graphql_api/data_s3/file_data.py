@@ -31,7 +31,7 @@ class FileData(BaseS3Data):
         data_key = "%s/%s/%s" % (self._prefix, next_id, body["file_name"])
         if file_obj:
             file_obj.seek(0)
-            #TODO error handling...     
+            #TODO error handling...
             response2 = self._bucket.put_object(Key=data_key, Body=file_obj)
         else:
             response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
@@ -39,7 +39,7 @@ class FileData(BaseS3Data):
                                               Key=data_key,
                                               Fields={
                                                 'acl': 'public-read',
-                                                'Content-MD5': body.get('hex_digest'),
+                                                'Content-MD5': body.get('md5_digest'),
                                                 'Content-Type': 'binary/octet-stream'
                                                 },
                                               Conditions=[
@@ -48,8 +48,8 @@ class FileData(BaseS3Data):
                                                   ["starts-with", "$Content-MD5", ""]
                                               ]
                                               )
-            print('S3 URL: %s' % parts['url'])                    
-            print('fields: %s' % parts['fields'])
+            # print('S3 URL: %s' % parts['url'])
+            # print('fields: %s' % parts['fields'])
             kwargs['post_url'] = json.dumps(parts['fields'])
             new = File(next_id, **kwargs)
         return new
@@ -66,6 +66,14 @@ class FileData(BaseS3Data):
         jsondata = self._read_object(_id)
         #remove deprecated field
         jsondata.pop('reader_tasks', None)
+
+        #rename fields
+        ren = jsondata.pop('consumers', None)
+        if ren:
+            jsondata['tasks'] = ren
+        ren = jsondata.pop('hex_digest', None)
+        if ren:
+            jsondata['md5_digest'] = ren
         return File(**jsondata)
 
     def get_presigned_url(self, _id):
@@ -107,16 +115,15 @@ class FileData(BaseS3Data):
                 task_results.append(self.get_one(task_result_id))
         return task_results
 
-    def add_task_file(self, object_id, task_file_id):
-        """Append the new file object id to the related task in S3.
-
+    def add_task_file(self, file_id, task_file_id):
+        """
         Args:
-            object_id (string): the file object id
+            file_id (string): the file object id
             task_file_id (string): the task object id
         """
-        obj = self._read_object(object_id)
+        obj = self._read_object(file_id)
         try:
-            obj['consumers'].append(task_file_id)
+            obj['tasks'].append(task_file_id)
         except AttributeError:
-            obj['consumers'] = [task_file_id]
-        self._write_object(task_file_id, obj)
+            obj['tasks'] = [task_file_id]
+        self._write_object(file_id, obj)

@@ -134,19 +134,19 @@ class TestCreateDataFile(unittest.TestCase):
         qry = '''
             mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
               createFile(
-                  hexDigest: $digest
+                  md5Digest: $digest
                   fileName: $file_name
                   fileSize: $file_size
               ) {
               ok
-              fileResult { id, fileName, fileSize, hexDigest, postUrl }
+              fileResult { id, fileName, fileSize, md5Digest, postUrl }
               }
             }'''
 
-        from hashlib import sha256
+        # from hashlib import sha256, md5
 
         filedata = BytesIO("a line\nor two".encode())
-        digest = sha256(filedata.read()).hexdigest()
+        digest = "sha256(filedata.read()).hexdigest()"
         filedata.seek(0) #important!
         size = len(filedata.read())
         filedata.seek(0) #important!
@@ -157,6 +157,7 @@ class TestCreateDataFile(unittest.TestCase):
                 return {}
             raise ValueError("got unmocked operation: ", operation_name)
 
+        #TODO mock out the presigned URL calls
         with mock.patch('graphql_api.data_s3.BaseS3Data.get_all', new=self.mock_all):
             with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
                 #with mock.patch('graphql_api.data_s3.DataFileData.create', new=self.mock_create):

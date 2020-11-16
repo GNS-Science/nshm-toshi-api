@@ -6,13 +6,23 @@ from graphene import relay
 from .task import Task
 from .file import File
 
+from graphene import Enum
+
 global db_root
+
+class TaskFileRole(Enum):
+    READ = "read"
+    WRITE = "write"
+    READ_WRITE = "read_write"
+    UNDEFINED = "undefined"
+
 
 class TaskFile(graphene.ObjectType):
     """A File used in some Task """
     class Meta:
         interfaces = (relay.Node, )
 
+    task_role = TaskFileRole()
     task = graphene.Field(Task, required=True)
     file = graphene.Field(File, required=True)
 
@@ -25,12 +35,13 @@ class CreateTaskFile(graphene.Mutation):
     class Arguments:
         task_id = graphene.ID(required=True)
         file_id = graphene.ID(required=True)
+        task_role = TaskFileRole(required=True)
 
     ok = graphene.Boolean()
     task_file = graphene.Field(TaskFile)
 
     def mutate(self, info, **kwargs):
-        print("CreateTaskFile.mutate: ", kwargs)
+        # print("CreateTaskFile.mutate: ", kwargs)
         task_file = db_root.task_file.create(**kwargs)
         return CreateTaskFile(ok=True, task_file=task_file)
 
