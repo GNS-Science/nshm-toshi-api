@@ -3,7 +3,6 @@ The NSHM data file graphql schema.
 """
 import graphene
 from graphene import relay
-from graphene_file_upload.scalars import Upload
 from graphql_api.data_s3 import DataManager
 
 global db_root

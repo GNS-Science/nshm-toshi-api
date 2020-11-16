@@ -1,6 +1,5 @@
 import graphene
 from graphene import relay
-from graphene_file_upload.scalars import Upload
 from graphene import Enum
 
 global db_root

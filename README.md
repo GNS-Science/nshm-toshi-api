@@ -16,7 +16,7 @@ sudo npm install -g serverless
 ## OPTION A openapi-generator
 
 
-pre-requisites: 
+pre-requisites:
  - nodejs
  - npm (the node package manager
 
@@ -28,7 +28,7 @@ pre-requisites:
 ref https://flask-restful.readthedocs.io/en/latest/quickstart.html
 
 
-## OPTION C graphql 
+## OPTION C graphql
 
 example graphql:
 
@@ -48,7 +48,7 @@ mutation m1 {
      taskResult {
       started
     }
-  } 
+  }
 }
 
 # query tasks
@@ -71,19 +71,62 @@ query q1 {
 mutation m2 {
   createTaskFile(
   	fileId:"RGF0YUZpbGU6MA=="
-  	taskId:"T3BlbnNoYVJ1cHR1cmVHZW5SZXN1bHQ6MA==") 
-  {ok} 
+  	taskId:"T3BlbnNoYVJ1cHR1cmVHZW5SZXN1bHQ6MA==")
+  {ok}
 }
 
 
 ```
 
-Next thing: [file upload](https://github.com/lmcgartland/graphene-file-upload)
-
+### Search
 
 ```
-curl http://localhost:5000/graphql \
-  -F operations='{"query": "mutation ($file: Upload!) { myUpload(fileIn: $file) { ok }}", "variables": { "file": null }}' \
-  -F map='{ "0": ["variables.file"]}' \
-  -F 0=@requirements.txt
+query q0 {
+  search(searchTerm:"state:done") {
+  #search(searchTerm:"arguments.max_cumulative_azimuth:600&sort=started:desc&size=10&from=0") {
+  #search(searchTerm:"result:SUCCESS&sort=started:desc&size=20&from=0"){
+  #search(searchTerm:"duration:gte(200)") {
+  #search(searchTerm:"file_name:*jump5*580*.zip") {
+  #search(searchTerm:"(started:[2020-11-12 TO *])") {
+    searchResult {
+      totalCount
+      pageInfo {
+        startCursor
+        hasNextPage
+        endCursor
+      }
+      edges {
+        node {
+          # __typename
+          ... on File {
+            fileName
+            fileSize
+          }
+          ... on RuptureGenerationTask {
+            state
+            result
+            started
+            duration
+            arguments {
+            maxJumpDistance
+            maxCumulativeAzimuth
+            }
+            files {
+              edges {
+                  node {
+                  taskRole
+                  file {
+                  id
+                  fileName
+                  fileSize
+                  }
+                  }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 ```

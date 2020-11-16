@@ -17,12 +17,13 @@ class DataManager():
 
     """DataManager provides the entry point to the s3 data handlers
     """
-    
-    def __init__(self, client_args=None):
+
+    def __init__(self, search_manager, client_args=None):
         _args = client_args or {}
         self._task = TaskData(_args, self)
         self._file = FileData(_args, self)
         self._task_file = TaskFileData(_args, self)
+        self._search_manager = search_manager
 
     @property
     def task(self):
@@ -35,3 +36,7 @@ class DataManager():
     @property
     def task_file(self):
         return self._task_file
+
+    @property
+    def search_manager(self):
+        return self._search_manager

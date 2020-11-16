@@ -66,6 +66,9 @@ class BaseS3Data():
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         #TODO: add some error handling here
         response = self._bucket.put_object(Key=key, Body=json.dumps(body))
+        es_key = key.replace("/", "_")
+        self._db_manager.search_manager.index_document(es_key, body)
+
 
     def _read_object(self, object_id):
         """read object contents from the S3 bucket.
