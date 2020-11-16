@@ -109,4 +109,4 @@ class MutationRoot(graphene.ObjectType):
     create_task_file = CreateTaskFile.Field()
 
 
-root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot)
+root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)

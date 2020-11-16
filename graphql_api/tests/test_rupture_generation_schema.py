@@ -23,33 +23,33 @@ import graphql_api.data_s3 # for mocking
 
 CREATE = '''
     mutation ($started: DateTime!) {
-        createRuptureGenerationTask(input: {
+        create_rupture_generation_task(input: {
             state: UNDEFINED
             result: UNDEFINED
             started: $started
             duration: 600
             arguments: {
-                maxJumpDistance: 55.5
-                maxSubSectionLength: 2
-                maxCumulativeAzimuth: 590
-                minSubSectionsPerParent: 2
-                permutationStrategy: DOWNDIP
+                max_jump_distance: 55.5
+                max_sub_section_length: 2
+                max_cumulative_azimuth: 590
+                min_sub_sections_per_parent: 2
+                permutation_strategy: DOWNDIP
                 }
-            gitRefs: {
-                openshaUcerf3: "ABC"
-                openshaCommons: "ABC"
-                openshaCore: "ABC"
-                nshmNzOpensha: "ABC"
+            git_refs: {
+                opensha_ucerf3: "ABC"
+                opensha_commons: "ABC"
+                opensha_core: "ABC"
+                nshm_nz_opensha: "ABC"
             }
             ##EXTRA_INPUT##
             }
             )
             {
-                taskResult {
+                task_result {
                 id
                 started
                 duration
-                arguments { maxJumpDistance }
+                arguments { max_jump_distance }
             }
         }
     }
@@ -72,8 +72,8 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         executed = self.client.execute(CREATE,
             variable_values=dict(started=dt.datetime.now(tzutc())))
         print(executed)
-        assert executed['data']['createRuptureGenerationTask']\
-                        ['taskResult']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        assert executed['data']['create_rupture_generation_task']\
+                        ['task_result']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
 
     def test_date_must_include_timezone(self):
         startdate = dt.datetime.now() #no timesone
@@ -84,11 +84,11 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
     def test_date_must_be_iso_format(self):
         qry = '''
             mutation {
-                createRuptureGenerationTask(input: {
+                create_rupture_generation_task(input: {
                     started: "September 5th, 1999"
                     })
                     {
-                        taskResult {
+                        task_result {
                         id
                     }
                 }
@@ -103,7 +103,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
     def test_create_with_metrics_needs_all_or_none(self):
         insert = '''
             metrics: {
-             ruptureCount: 20
+             rupture_count: 20
             }
             '''
         qry = CREATE.replace('##EXTRA_INPUT##', insert)
@@ -111,24 +111,24 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         print(qry)
         executed = self.client.execute(qry, variable_values=dict(started=dt.datetime.now(tzutc())))
         print(executed)
-        assert 'In field "metrics": In field "subsectionCount":'\
+        assert 'In field "metrics": In field "subsection_count":'\
                 ' Expected "Int!", found null.' in executed['errors'][0]['message']
 
 
     def test_create_with_metrics(self):
         insert = '''
             metrics: {
-             ruptureCount: 20
-             subsectionCount: 20
-             clusterConnectionCount: 20
+             rupture_count: 20
+             subsection_count: 20
+             cluster_connection_count: 20
             }
             '''
         qry = CREATE.replace('##EXTRA_INPUT##', insert)
         print(qry)
         executed = self.client.execute(qry, variable_values=dict(started=dt.datetime.now(tzutc())))
         print(executed)
-        assert executed['data']['createRuptureGenerationTask']\
-                        ['taskResult']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        assert executed['data']['create_rupture_generation_task']\
+                        ['task_result']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
 
 
 TASKZERO = lambda _self, _id: {
@@ -153,21 +153,21 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
     def test_update_with_metrics(self):
         qry = '''
             mutation {
-                updateRuptureGenerationTask(input: {
-                    taskId: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA="
+                update_rupture_generation_task(input: {
+                    task_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA="
                     duration: 909,
                     metrics: {
-                        ruptureCount: 20
-                        subsectionCount: 20
-                        clusterConnectionCount: 20
+                        rupture_count: 20
+                        subsection_count: 20
+                        cluster_connection_count: 20
                     }
                 })
                 {
-                    taskResult {
+                    task_result {
                         id
                         duration
                         metrics {
-                            ruptureCount
+                            rupture_count
                         }
                     }
                 }
@@ -176,10 +176,10 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
         print(qry)
         executed = self.client.execute(qry)
         print(executed)
-        result = executed['data']['updateRuptureGenerationTask']['taskResult']
+        result = executed['data']['update_rupture_generation_task']['task_result']
         assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
         assert result['duration'] == 909
-        assert result['metrics']['ruptureCount'] == 20
+        assert result['metrics']['rupture_count'] == 20
 
 
     @unittest.skip("TODO")
