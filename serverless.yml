@@ -55,9 +55,7 @@ custom:
 
   #elastic search
   esDomainName: toshi-search-${self:custom.stage}
-  #esRoleName: LambdaServiceRole #review where this crops up!
   esIndex: toshi_index
-  es_role_resource: arn:aws:es:::domain/${self:custom.esDomainName}
 
 provider:
   name: aws
@@ -76,12 +74,17 @@ provider:
       Resource:
         - ${self:custom.s3_role_resource}
         - ${self:custom.s3_role_resource}/*
+    # ES Role policy
+    # modelled on https://github.com/serverless/examples/blob/master/aws-golang-dynamo-stream-to-elasticsearch/serverless.yml
     - Effect: Allow
       Action:
-        - es:*
+        - es:ESHttpPost
+        - es:ESHttpPut
+        - es:ESHttpHead
+        - es:ESHttpGet
       Resource:
-        - ${self:custom.es_role_resource}
-        - ${self:custom.es_role_resource}/*
+        - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
+        - { "Fn::Join": ["", ["Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"], "/*"]] }
 
   apiKeys:
     - name: TempApiKey-${self:custom.stage}
@@ -91,7 +94,7 @@ functions:
   app:
     description: The graphql API of ${self:service}
     handler: wsgi_handler.handler
-    memorySize: 512 # optional, in MB, default is 1024
+    memorySize: 384 # optional, in MB, default is 1024
     timeout: 30 # optional, in seconds, default is 6
     events:
       # - http: 'ANY /'
