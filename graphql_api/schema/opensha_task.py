@@ -8,12 +8,20 @@ The core class RuptureGenerationTask implements the `graphql_api.schema.task.Tas
 
 """
 import graphene
+import datetime as dt
+import logging
+
 from graphene import relay
 from graphene import Enum
+from benedict import benedict
+
 
 from graphql_api.schema.task import Task, TaskResult, TaskState
 
 global db_root
+
+logger = logging.getLogger(__name__)
+
 
 class RupturePermutationStrategy(Enum):
     """The available rupture generation strategies"""
@@ -76,6 +84,16 @@ class RuptureGenerationMetricsInput(RuptureGenerationMetrics, graphene.InputObje
 class RuptureGenerationMetricsOutput(RuptureGenerationMetrics, graphene.ObjectType):
     """The metrics returned from the opensha Rupture Generator"""
 
+def rename(dict_obj, from_name, to_name):
+    """Rename a dict field if it exists
+    Args:
+        dict_obj (dict): container dict
+        from_name (String): original field name
+        to_name (String): ned field name
+    """
+    ren = dict_obj.pop(from_name, None)
+    if ren:
+        dict_obj[to_name] = ren
 
 class RuptureGenerationTask(graphene.ObjectType):
     """An RuptureGenerationTask in the NSHM process"""
@@ -89,6 +107,50 @@ class RuptureGenerationTask(graphene.ObjectType):
     @classmethod
     def get_node(cls, info, _id):
         return  db_root.task.get_one(_id)
+
+    @staticmethod
+    def from_json(jsondata):
+        # from graphql_api.schema import RuptureGenerationTask, TaskState, TaskResult
+        #Field type transforms...
+        started = jsondata.get('started')
+        if started:
+            jsondata['started'] = dt.datetime.fromisoformat(started)
+        logger.info("get_one: %s" % str(jsondata))
+
+        # arguments = jsondata.pop("rupture_generation_args", None)
+        # if arguments:
+        #     jsondata['arguments'] = arguments
+        # arguments = jsondata.pop("rupture_generator_args", None)
+        # if arguments:
+        #     jsondata['arguments'] = arguments
+
+        #remove deprecated field(s)...
+        jsondata.pop('input_files', None)
+        # jsondata.pop('data_files', None)
+        jsondata.pop('client_mutation_id', None)
+
+        #rename fields
+        # jsondata.rename('input_files', 'files')
+        rename(jsondata, 'rupture_generator_args', 'rupture_generation_args')
+        rename(jsondata, 'rupture_generation_args', 'arguments')
+
+        # #add new fields
+        if not jsondata.get('input_files'):
+            jsondata['input_files'] = []
+        if not jsondata.get('state'):
+            jsondata['state'] = TaskState.UNDEFINED
+        if not jsondata.get('result'):
+            jsondata['result'] = TaskResult.UNDEFINED
+        if not jsondata.get('files'):
+             jsondata['files'] = []
+
+
+        ren = jsondata.pop('input_files', None)
+        if ren:
+            jsondata['files'] = ren
+
+        # print('updated json', jsondata)
+        return RuptureGenerationTask(**jsondata)
 
 class RuptureGenerationTaskConnection(relay.Connection):
     """A list of RuptureGenerationTask items"""

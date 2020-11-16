@@ -5,13 +5,24 @@ import os
 import re
 import json
 import requests
+import graphene
+
+from .opensha_task import RuptureGenerationTask
+from .file import File
 
 TYPE = '_doc'
+
+# class SearchResult(graphene.Union):
+#     class Meta:
+#         types = (File, RuptureGenerationTask)
+
 
 class SearchManager():
 
     def __init__(self, endpoint, es_index, awsauth):
         self._awsauth = awsauth
+        self._endpoint = endpoint
+        self._es_index = es_index
         self._url = endpoint + '/' + es_index + '/' + TYPE + '/'
 
     def index_document(self, key, document):
@@ -26,10 +37,25 @@ class SearchManager():
 
     def search(self, term):
         headers = {} # "Content-Type": "application/json" }
+        result = []
         try:
             print("SearchManager.search( ", term)
-            response = requests.get(ES_ENDPOINT + '/' + ES_INDEX  + '/_search?q=' + term,
-                auth=self._awsauth, headers=headers)
-            print(response.content)
+            qurl = self._endpoint + '/' + self._es_index  + '/_search?q=' + term
+            print("Query URL: ", qurl)
+            response = requests.get(qurl, auth=self._awsauth, headers=headers).json()
+            print(response)
+            count = response['hits']['total']
+            print ("count",  count)
+            for obj in response['hits']['hits'][:10]:
+                print( obj['_index'], obj['_type'], obj['_id'], obj['_score'])
+                if 'TaskData' in obj['_id']:
+                    result.append(RuptureGenerationTask.from_json(obj['_source']))
+                elif 'FileData' in obj['_id']:
+                    result.append(File(**obj['_source']))
+                else:
+                    raise ValueError("unable to resolve, object id", obj['_source'])
+
         except (Exception) as err:
             print("ERR SearchManager.search() ", err)
+
+        return result

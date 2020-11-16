@@ -9,7 +9,7 @@ import graphene
 from graphene import relay
 from graphql_api.data_s3 import DataManager
 from graphql_api.schema.opensha_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
-    UpdateRuptureGenerationTask
+    UpdateRuptureGenerationTask, RuptureGenerationTask
 
 from requests_aws4auth import AWS4Auth
 from graphql_api.schema.file import CreateFile, File, FileConnection
@@ -18,18 +18,28 @@ from .task_file import CreateTaskFile
 from .search_manager import SearchManager
 
 
-class Search(graphene.Mutation):
-    class Arguments:
-        search_term = graphene.String(required=True)
+
+
+class SearchResult(graphene.Union):
+    class Meta:
+        types = (File, RuptureGenerationTask)
+
+class SearchResultConnection(relay.Connection):
+    class Meta:
+        node = SearchResult
+    total_count = graphene.Field(graphene.Int, default_value=11)
+
+
+class Search(graphene.ObjectType):
 
     ok = graphene.Boolean()
-    search_result = graphene.String()
+    search_result = relay.ConnectionField(SearchResultConnection)
 
-    def mutate(root, info, search_term, **kwargs):
-        # print("CreateFile.mutate: ", file_in, kwargs)
-        print('mutate(self, info, search_term= ', search_term )
-        search_result = db_root.search_manager.search(search_term)
-        return Search(ok=True, search_result=search_result)
+    # def mutate(root, info, search_term, **kwargs):
+    #     # print("CreateFile.mutate: ", file_in, kwargs)
+    #     print('mutate(self, info, search_term= ', search_term )
+    #     search_result = db_root.search_manager.search(search_term)
+    #     return Search(ok=True, search_result=search_result)
 
 class Query(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
@@ -43,6 +53,8 @@ class Query(graphene.ObjectType):
         FileConnection,
         description="The files."
     )
+
+    search = graphene.Field(Search, search_term=graphene.String())
 
     node = relay.Node.Field()
     file = relay.Node.Field(File, id=graphene.ID(required=True))
@@ -63,12 +75,21 @@ class Query(graphene.ObjectType):
         """
         return db_root.file.get_all()
 
+
+    @staticmethod
+    def resolve_search(root, info, **kwargs):
+        print('>>>> search_term', kwargs.get('search_term'))
+        search_result = db_root.search_manager.search(kwargs.get('search_term'))
+        # return Search()
+        return Search(ok=True, search_result=search_result)
+
+
 class Mutation(graphene.ObjectType):
     create_rupture_generation_task = CreateRuptureGenerationTask.Field()
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
-    search = Search.Field()
+
 
 
 
