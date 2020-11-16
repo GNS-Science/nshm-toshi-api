@@ -16,7 +16,7 @@ import unittest
 # from graphql_api import data_s3
 
 from graphene.test import Client
-from graphql_api.schema import schema
+from graphql_api.schema import root_schema
 from graphql_api.schema import search_manager as sm
 from .fixtures import es_query_response as eqr
 from graphql_api.schema import File
@@ -32,7 +32,7 @@ class TestSearchManager(unittest.TestCase):
     """
 
     def setUp(self):
-        self.client = Client(schema)
+        self.client = Client(root_schema)
         self.search_manager = sm.SearchManager(endpoint=FAKE_ENDPOINT, es_index=FAKE_INDEX, awsauth=awsauth)
 
     def test_setup(self):
@@ -82,7 +82,7 @@ class TestSchemaSearch(unittest.TestCase):
 
 
     def setUp(self):
-        self.client = Client(schema)
+        self.client = Client(root_schema)
 
     def test_query_with_mock_requests(self):
         with requests_mock.Mocker() as m:

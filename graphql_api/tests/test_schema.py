@@ -15,7 +15,7 @@ import botocore
 from botocore.exceptions import ClientError
 from graphene.test import Client
 from graphql_api import data_s3
-from graphql_api.schema import schema, RuptureGenerationTask
+from graphql_api.schema import root_schema, RuptureGenerationTask
 
 
 
@@ -83,7 +83,7 @@ r3 = {'ResponseMetadata': {'HTTPStatusCode': 200, 'HTTPHeaders': {'accept-ranges
 class TestRuptureGeneratorResults(unittest.TestCase):
 
     def setUp(self):
-        self.client = Client(schema)
+        self.client = Client(root_schema)
         self.mock_all = lambda x : [RuptureGenerationTask(id="0"), RuptureGenerationTask(id="1")]
 
     def tearDown(self):
@@ -126,7 +126,7 @@ class TestCreateDataFile(unittest.TestCase):
 
     def setUp(self):
         #data.setup()
-        self.client = Client(schema)
+        self.client = Client(root_schema)
         self.mock_all = lambda x : []
         self.mock_create = lambda x, y, **z : None
 

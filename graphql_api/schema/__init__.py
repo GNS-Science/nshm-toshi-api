@@ -1,7 +1,7 @@
 """
 Module entry point
 """
-from graphql_api.schema.schema import schema
+from graphql_api.schema.schema import root_schema
 from graphql_api.schema.opensha_task import (RuptureGenerationTask,
 	RuptureGenerationTaskConnection,
 	CreateRuptureGenerationTask)

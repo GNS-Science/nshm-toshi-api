@@ -12,11 +12,6 @@ from .file import File
 
 TYPE = '_doc'
 
-# class SearchResult(graphene.Union):
-#     class Meta:
-#         types = (File, RuptureGenerationTask)
-
-
 class SearchManager():
 
     def __init__(self, endpoint, es_index, awsauth):
@@ -39,14 +34,14 @@ class SearchManager():
         headers = {} # "Content-Type": "application/json" }
         result = []
         try:
-            print("SearchManager.search( ", term)
+            #print("SearchManager.search( ", term)
             qurl = self._endpoint + '/' + self._es_index  + '/_search?q=' + term
-            print("Query URL: ", qurl)
+            #print("Query URL: ", qurl)
             response = requests.get(qurl, auth=self._awsauth, headers=headers).json()
             print(response)
-            count = response['hits']['total']
-            print ("count",  count)
-            for obj in response['hits']['hits'][:10]:
+            #count = response['hits']['total']
+            #print ("count",  count)
+            for obj in response['hits']['hits']:
                 print( obj['_index'], obj['_type'], obj['_id'], obj['_score'])
                 if 'TaskData' in obj['_id']:
                     result.append(RuptureGenerationTask.from_json(obj['_source']))

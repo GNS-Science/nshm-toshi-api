@@ -16,7 +16,7 @@ from dateutil.tz import tzutc
 from graphene.test import Client
 from graphql_api import data_s3
 
-from graphql_api.schema import schema, RuptureGenerationTask
+from graphql_api.schema import root_schema, RuptureGenerationTask
 
 import graphql_api.data_s3 # for mocking
 
@@ -66,7 +66,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
     """
 
     def setUp(self):
-        self.client = Client(schema)
+        self.client = Client(root_schema)
 
     def test_create_minimum_fields_happy_case(self):
         executed = self.client.execute(CREATE,
@@ -147,7 +147,7 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
     TODO: more coverage please
     """
     def setUp(self):
-        self.client = Client(schema)
+        self.client = Client(root_schema)
 
     @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASKZERO)
     def test_update_with_metrics(self):
