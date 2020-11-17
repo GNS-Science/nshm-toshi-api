@@ -5,6 +5,8 @@ import os
 import boto3
 import graphene
 from graphene import relay
+from graphql_relay import from_global_id, to_global_id
+
 from graphql_api.data_s3 import DataManager
 from .opensha_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask, RuptureGenerationTask
@@ -16,9 +18,8 @@ from .search_manager import SearchManager
 
 from graphql_api.schema import opensha_task, file, task, task_file
 from graphql_api.schema.custom import strong_motion_station
-from .custom.strong_motion_station import CreateStrongMotionStation
-
-global db_root
+from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
+    StrongMotionStationConnection
 
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
@@ -64,6 +65,7 @@ class Search(graphene.ObjectType):
     ok = graphene.Boolean()
     search_result = relay.ConnectionField(SearchResultConnection)
 
+
 class QueryRoot(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
 
@@ -77,10 +79,25 @@ class QueryRoot(graphene.ObjectType):
         description="The files."
     )
 
-    search = graphene.Field(Search, search_term=graphene.String())
-
     node = relay.Node.Field()
+
+    search = graphene.Field(Search, search_term=graphene.String())
     file = relay.Node.Field(File, id=graphene.ID(required=True))
+
+    strong_motion_station = graphene.Field(StrongMotionStation, id=graphene.ID(required=True))
+    strong_motion_stations = relay.ConnectionField(
+        StrongMotionStationConnection,
+        description="The list of strong motion stations"
+    )
+
+    def resolve_strong_motion_stations(root, info):
+        return db_root.thing.get_all()
+
+
+    def resolve_strong_motion_station(root, info, id):
+        _type, _id = from_global_id(id)
+        return db_root.thing.get_one(_id)
+
 
     @staticmethod
     def resolve_rupture_generation_tasks(root, info):
@@ -102,7 +119,6 @@ class QueryRoot(graphene.ObjectType):
     def resolve_search(root, info, **kwargs):
         search_result = db_root.search_manager.search(kwargs.get('search_term'))
         return Search(ok=True, search_result=search_result)
-
 
 
 class MutationRoot(graphene.ObjectType):

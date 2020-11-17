@@ -42,30 +42,29 @@ class ThingData(BaseS3Data):
         return new
 
 
-    def get_one(self, task_result_id):
+    def get_one(self, thing_id):
         """
         Args:
             _id (string): the object id
         Returns:
             File: the Thing object
         """
-        from graphql_api.schema import RuptureGenerationThing
-        jsondata = self._read_object(task_result_id)
-        return RuptureGenerationThing.from_json(jsondata)
+        jsondata = self._read_object(thing_id)
+        return self.from_json(jsondata)
 
 
-    def add_task_file(self, task_id, task_file_id):
-        """
-        Args:
-            task_id (TYPE): the task_id
-            task_file_id (TYPE): the task_file_id
-        """
-        obj = self._read_object(task_id)
-        try:
-            obj['files'].append(task_file_id)
-        except (AttributeError, KeyError):
-            obj['files'] = [task_file_id]
-        self._write_object(task_id, obj)
+    # def add_task_file(self, task_id, task_file_id):
+    #     """
+    #     Args:
+    #         task_id (TYPE): the task_id
+    #         task_file_id (TYPE): the task_file_id
+    #     """
+    #     obj = self._read_object(task_id)
+    #     try:
+    #         obj['files'].append(task_file_id)
+    #     except (AttributeError, KeyError):
+    #         obj['files'] = [task_file_id]
+    #     self._write_object(task_id, obj)
 
 
     def update(self, task_id, **kwargs):
@@ -77,13 +76,27 @@ class ThingData(BaseS3Data):
         Returns:
             TYPE: the Thing object
         """
-        from graphql_api.schema import RuptureGenerationThing
+        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 
         this_id = get_objectid_from_global(task_id)
 
         bd1 = benedict(self.get_one(this_id).__dict__.copy())
         bd1.merge(kwargs)
-        bd1['started'] = bd1['started'].isoformat()
+        bd1['created'] = bd1['created'].isoformat()
         self._write_object(this_id, bd1)
         # print(bd1)
-        return RuptureGenerationThing(**bd1)
+        return clazz(**bd1)
+
+
+    def from_json(self, jsondata):
+        logger.info("get_one: %s" % str(jsondata))
+
+        #datetime comversions
+        created = jsondata.get('created')
+        if created:
+            jsondata['created'] = dt.datetime.fromisoformat(created)
+
+        clazz_name = jsondata.pop('clazz_name')
+        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+        # print('updated json', jsondata)
+        return clazz(**jsondata)
