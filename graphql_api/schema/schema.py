@@ -54,7 +54,7 @@ strong_motion_station.db_root = db_root
 
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask)
+        types = (File, RuptureGenerationTask, StrongMotionStation)
 
 class SearchResultConnection(relay.Connection):
     class Meta:

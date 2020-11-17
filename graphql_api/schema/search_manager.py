@@ -1,14 +1,12 @@
 """
 Search Manager
 """
-import os
-import re
-import json
+#from importlib import import_module
 import requests
-import graphene
-
 from .opensha_task import RuptureGenerationTask
 from .file import File
+
+from graphql_api.data_s3.thing_data import ThingData
 
 TYPE = '_doc'
 
@@ -47,6 +45,10 @@ class SearchManager():
                     result.append(RuptureGenerationTask.from_json(obj['_source']))
                 elif 'FileData' in obj['_id']:
                     result.append(File(**obj['_source']))
+                elif 'ThingData' in obj['_id']:
+                    # clazz_name = obj['_source'].pop('clazz_name')
+                    # clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+                    result.append(ThingData.from_json(obj['_source']))
                 else:
                     raise ValueError("unable to resolve, object id", obj['_source'])
 

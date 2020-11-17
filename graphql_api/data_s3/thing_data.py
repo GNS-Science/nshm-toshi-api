@@ -87,8 +87,8 @@ class ThingData(BaseS3Data):
         # print(bd1)
         return clazz(**bd1)
 
-
-    def from_json(self, jsondata):
+    @staticmethod
+    def from_json(jsondata):
         logger.info("get_one: %s" % str(jsondata))
 
         #datetime comversions
