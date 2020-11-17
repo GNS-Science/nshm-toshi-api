@@ -15,6 +15,7 @@ from .task_file import CreateTaskFile
 from .search_manager import SearchManager
 
 from graphql_api.schema import opensha_task, file, task, task_file
+from graphql_api.schema.custom import strong_motion_station
 from .custom.strong_motion_station import CreateStrongMotionStation
 
 global db_root
@@ -48,7 +49,7 @@ opensha_task.db_root = db_root
 file.db_root = db_root
 task.db_root = db_root
 task_file.db_root = db_root
-
+strong_motion_station.db_root = db_root
 
 class SearchResult(graphene.Union):
     class Meta:

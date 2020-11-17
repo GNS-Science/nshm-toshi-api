@@ -38,7 +38,6 @@ CREATE = '''
         }
     }
 '''
-
 @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
 @mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
 class TestCreateSMS(unittest.TestCase):
@@ -54,7 +53,7 @@ class TestCreateSMS(unittest.TestCase):
             variable_values=dict(created=dt.datetime.now(tzutc())))
         print(executed)
         assert executed['data']['create_strong_motion_station']\
-                        ['strong_motion_station']['id'] == 'U3Ryb25nTW90aW9uU3RhdGlvbjpOb25l'
+                        ['strong_motion_station']['id'] == 'U3Ryb25nTW90aW9uU3RhdGlvbjow'
 
     def test_created_date_must_include_timezone(self):
         created = dt.datetime.now() #no timesone
@@ -80,6 +79,7 @@ class TestCreateSMS(unittest.TestCase):
         print(executed)
         assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
 
+    @unittest.skip("not there yet")
     def test_create_with_metrics(self):
         insert = '''
             metrics: {
