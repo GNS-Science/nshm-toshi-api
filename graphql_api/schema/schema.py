@@ -16,10 +16,11 @@ from .file import CreateFile, File, FileConnection
 from .task_file import CreateTaskFile
 from .search_manager import SearchManager
 
-from graphql_api.schema import opensha_task, file, task, task_file
-from graphql_api.schema.custom import strong_motion_station
+from graphql_api.schema import opensha_task, file, task, task_file, file_relation, thing
+from graphql_api.schema.custom import strong_motion_station, sms_file_link
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
+from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
@@ -50,7 +51,18 @@ opensha_task.db_root = db_root
 file.db_root = db_root
 task.db_root = db_root
 task_file.db_root = db_root
+sms_file_link.db_root = db_root
+file_relation.db_root = db_root
+thing.db_root = db_root
 strong_motion_station.db_root = db_root
+
+class FileThingRelation(graphene.Union):
+    class Meta:
+        types = (SmsFileLink, )
+
+class FileThingRelationConnection(relay.Connection):
+    class Meta:
+        node = FileThingRelation
 
 class SearchResult(graphene.Union):
     class Meta:
@@ -126,7 +138,7 @@ class MutationRoot(graphene.ObjectType):
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
-
+    create_sms_file_link = CreateSmsFileLink.Field()
     #custom = graphene.Field(CustomMutations)
     create_strong_motion_station = CreateStrongMotionStation.Field()
 

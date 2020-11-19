@@ -11,6 +11,7 @@ import logging
 
 from graphene import relay
 from graphene import Enum
+from graphql_api.schema.thing import Thing
 
 global db_root
 
@@ -55,7 +56,7 @@ class StrongMotionStationFields():
 class StrongMotionStation(StrongMotionStationFields, graphene.ObjectType):
     """A Strong Motion Station """
     class Meta:
-        interfaces = (relay.Node,)
+        interfaces = (relay.Node, Thing)
 
 
 class StrongMotionStationConnection(relay.Connection):

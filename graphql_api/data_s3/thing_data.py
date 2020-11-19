@@ -87,6 +87,18 @@ class ThingData(BaseS3Data):
         # print(bd1)
         return clazz(**bd1)
 
+
+    def add_file_relation(self, thing_id, relation_id):
+        obj = self._read_object(thing_id)
+        print("####add_file_relation", thing_id, obj)
+        try:
+            obj['files'].append(relation_id)
+        except (KeyError, AttributeError):
+            obj['files'] = [relation_id]
+        self._write_object(thing_id, obj)
+        return self.from_json(obj)
+
+
     @staticmethod
     def from_json(jsondata):
         logger.info("get_one: %s" % str(jsondata))

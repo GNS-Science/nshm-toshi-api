@@ -1,6 +1,6 @@
 
 """
-Test API function for opensha Rupture Generation
+Test API function for SMS
 
 Mocking our data layer
 

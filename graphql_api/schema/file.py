@@ -21,6 +21,10 @@ class File(graphene.ObjectType):
     tasks = relay.ConnectionField(
     	'graphql_api.schema.task_file.TaskFileConnection', description="tasks using this data file")
 
+    things = relay.ConnectionField(
+        'graphql_api.schema.schema.FileThingRelationConnection', description="things related to this data file")
+
+
     def resolve_file_url(self, info, **args):
 	    return db_root.file.get_presigned_url(self.id)
 
@@ -28,6 +32,12 @@ class File(graphene.ObjectType):
         # Transform the instance ship_ids into real instances
         if not self.tasks: return []
         return [db_root.task_file.get_one(_id) for _id in self.tasks]
+
+    def resolve_things(self, info, **args):
+        # Transform the instance thing_ids into real instances
+        if not self.things: return []
+        return [db_root.file_relation.get_one(_id) for _id in self.things]
+
 
     @classmethod
     def get_node(cls, info, _id):

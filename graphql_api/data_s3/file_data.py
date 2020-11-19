@@ -124,6 +124,23 @@ class FileData(BaseS3Data):
         obj = self._read_object(file_id)
         try:
             obj['tasks'].append(task_file_id)
-        except AttributeError:
+        except (KeyError, AttributeError):
             obj['tasks'] = [task_file_id]
         self._write_object(file_id, obj)
+
+
+    def add_thing_relation(self, file_id, relation_id):
+        """
+        Args:
+            file_id (string): the file object id
+            relation_id (string): the thing object id
+        """
+        from graphql_api.schema import File
+        obj = self._read_object(file_id)
+        print("####", file_id, obj)
+        try:
+            obj['things'].append(relation_id)
+        except (KeyError, AttributeError):
+            obj['things'] = [relation_id]
+        self._write_object(file_id, obj)
+        return File(**obj)
