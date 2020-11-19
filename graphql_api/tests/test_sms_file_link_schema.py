@@ -65,7 +65,7 @@ class TestCreateSMSFileLink(unittest.TestCase):
 
     def test_create_minimum_fields_happy_case(self):
         executed = self.client.execute(CREATE,
-            variable_values=dict(sms_id="U3Ryb25nTW90aW9uU3RhdGlvbjow", file_id="RmlsZToxMA==", file_type="DOWN_HOLE"))
+            variable_values=dict(sms_id="U3Ryb25nTW90aW9uU3RhdGlvbjow", file_id="RmlsZToxMA==", file_type="DH"))
         print(executed)
         new_id =  executed['data']['create_sms_file_link']['sms_file_link']['id']
 

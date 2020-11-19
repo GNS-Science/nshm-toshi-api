@@ -7,6 +7,8 @@ query searching {
     #search_term: "state:started&sort=started:desc&size=10&from=0"
     search_term: "CBGS"
   	#search_term: "bedrock_encountered:true"
+  	#search_term: "clazz_name:StrongMotionStation&size=200&sort=created:asc"
+
   	)
     {
     search_result {

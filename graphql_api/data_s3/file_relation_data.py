@@ -39,7 +39,7 @@ class FileRelationData(BaseS3Data):
         self._write_object(next_id, body)
 
         #update backref to new FileRelation
-        #self._db_manager.thing.add_file_relation(thing_id=related_id, file_relation_id=next_id)
+
         file_relation.file = self._db_manager.file.add_thing_relation(file_id=file_id, relation_id=next_id)
         file_relation.thing = self._db_manager.thing.add_file_relation(thing_id=related_id, relation_id=next_id)
         return file_relation
@@ -53,10 +53,6 @@ class FileRelationData(BaseS3Data):
         """
         jsondata = self._read_object(_id)
         logger.info("get_one: %s" % str(jsondata))
-        print(jsondata)
-        # task = self._db_manager.thing.get_one(jsondata['task_id'])
-        # file = self._db_manager.file.get_one(jsondata['file_id'])
-        # #task_role = TaskFileRole.get(jsondata.get('task_role', 'undefined'))
         relation =  self.from_json(jsondata)
         relation.file = self._db_manager.file.get_one(jsondata['file_id'])
         relation.thing = self._db_manager.thing.get_one(jsondata['thing_id'])
@@ -72,5 +68,4 @@ class FileRelationData(BaseS3Data):
 
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        # print('updated json', jsondata)
         return clazz(**jsondata)

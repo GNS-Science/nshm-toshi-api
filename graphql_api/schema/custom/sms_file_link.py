@@ -8,8 +8,11 @@ from graphql_relay import from_global_id, to_global_id
 global db_root
 
 class SmsFileType(Enum):
-    DOWN_HOLE = "down_hole"
-    SENSOR = "sensor"
+    BH = "bh"
+    CPT = "cpt"
+    DH = "dh"
+    HVSR = "hsvr"
+    SW = "sw"
 
 class SmsFileLink(graphene.ObjectType):
 

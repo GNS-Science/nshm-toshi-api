@@ -53,20 +53,6 @@ class ThingData(BaseS3Data):
         return self.from_json(jsondata)
 
 
-    # def add_task_file(self, task_id, task_file_id):
-    #     """
-    #     Args:
-    #         task_id (TYPE): the task_id
-    #         task_file_id (TYPE): the task_file_id
-    #     """
-    #     obj = self._read_object(task_id)
-    #     try:
-    #         obj['files'].append(task_file_id)
-    #     except (AttributeError, KeyError):
-    #         obj['files'] = [task_file_id]
-    #     self._write_object(task_id, obj)
-
-
     def update(self, task_id, **kwargs):
         """
         Args:
