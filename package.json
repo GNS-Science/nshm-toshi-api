@@ -1,7 +1,7 @@
 {
-  "name": "nshm-tosh-api",
+  "name": "nshm-toshi-api",
   "version": "1.0.0",
-  "description": "Where all out tests and outputs are buried  - like so much old fashioned, tedious tosh.",
+  "description": "A graphql API for NSHM shared resources using  AWS lambda, S3 and ElasticSearch",
   "main": "index.js",
   "directories": {
     "lib": "lib"
@@ -15,13 +15,12 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "",
   "bugs": {
-    "url": "https://github.com/GNS-Science/nshm-tosh-api/issues"
+    "url": "https://github.com/GNS-Science/nshm-toshi-api/issues"
   },
-  "homepage": "https://github.com/GNS-Science/nshm-tosh-api#readme",
+  "homepage": "https://github.com/GNS-Science/nshm-toshi-api#readme",
   "devDependencies": {
-    "@openapitools/openapi-generator-cli": "^2.0.3",
     "serverless-python-requirements": "^5.1.0",
     "serverless-s3-local": "^0.6.7",
     "serverless-wsgi": "^1.7.6"

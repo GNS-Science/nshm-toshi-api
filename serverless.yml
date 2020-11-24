@@ -1,14 +1,10 @@
-# serverless.yml
-
-service: nshm-tosh-api
+service: nshm-toshi-api
 
 plugins:
   - serverless-python-requirements
   - serverless-wsgi
   - serverless-s3-local
 package:
-#  include:
-#    - src/graphql_api/graphql_api/**
   exclude:
     - .git/**
     - .pytest_cache/**
@@ -20,15 +16,17 @@ package:
     - prof/**
 
 custom:
+  #serverless-wsgi settings
   wsgi:
     app: graphql_api.api.app
     packRequirements: false
+  #serverless-python-requirements settings
   pythonRequirements:
     dockerizePip: non-linux
+  #serverless-s3-local settings
   s3:
     host: localhost
     directory: /tmp
-
 
 # DRY constants: define all compound/generated names in one place
 # Override args are: .. defaults:
@@ -50,7 +48,7 @@ custom:
   # default to using ${stage} as key base path, keeps stages from namespace collisions
   s3_bucket_arn: arn:aws:s3:::${self:custom.s3_bucket}
   s3_role_resource: ${self:custom.s3_bucket_arn}
-  # Put this here rather than in code (presigned URL TTL)
+  # presigned URL TTL
   url_default_ttl: 60
 
   #elastic search
@@ -65,16 +63,16 @@ provider:
   environment:
     REGION: ${self:custom.region}
     S3_BUCKET_NAME: ${self:custom.s3_bucket}
-    #S3_KEY_BASE: ${self:custom.s3_key_base}
     URL_DEFAULT_TTL: ${self:custom.url_default_ttl}
   iamRoleStatements:
+    # S3 access policy
     - Effect: Allow
       Action:
         - s3:*
       Resource:
         - ${self:custom.s3_role_resource}
         - ${self:custom.s3_role_resource}/*
-    # ES Role policy
+    # ES access policy
     # modelled on https://github.com/serverless/examples/blob/master/aws-golang-dynamo-stream-to-elasticsearch/serverless.yml
     - Effect: Allow
       Action:
@@ -97,10 +95,6 @@ functions:
     memorySize: 384 # optional, in MB, default is 1024
     timeout: 30 # optional, in seconds, default is 6
     events:
-      # - http: 'ANY /'
-      #   private: true
-      # - http: 'ANY {proxy+}'
-      #   private: true
       - http:
           path: graphql
           method: OPTIONS
@@ -120,12 +114,12 @@ functions:
 
 resources:
   Resources:
-    NewResource:
+    ToshiBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:custom.s3_bucket}
 
-    # following is from
+    # following on from
     #   https://www.serverless.com/blog/build-geosearch-graphql-api-aws-appsync-elasticsearch
     ElasticSearchInstance:
       Type: AWS::Elasticsearch::Domain
@@ -141,39 +135,3 @@ resources:
           InstanceCount: 1
           DedicatedMasterEnabled: false
           ZoneAwarenessEnabled: false
-
-    # LambdaESServiceRole:
-    #   Type: "AWS::IAM::Role"
-    #   Properties:
-    #     RoleName: "ElasticSearch-${self:custom.esRoleName}"
-    #     AssumeRolePolicyDocument:
-    #       Version: "2012-10-17"
-    #       Statement:
-    #         -
-    #           Effect: "Allow"
-    #           Principal:
-    #             Service:
-    #               - "lambda.amazonaws.com"
-    #           Action:
-    #             - "sts:AssumeRole"
-    #     Policies:
-    #       -
-    #         PolicyName: "AppSyncESServiceRolePolicy"
-    #         PolicyDocument:
-    #           Version: "2012-10-17"
-    #           Statement:
-    #             -
-    #               Effect: "Allow"
-    #               Action:
-    #                 - "es:*"
-    #               Resource:
-    #                 - 'Fn::Join':
-    #                     - ''
-    #                     -
-    #                       - 'arn:aws:es:'
-    #                       - Ref: 'AWS::Region'
-    #                       - ':'
-    #                       - Ref: 'AWS::AccountId'
-    #                       - ':domain/'
-    #                       - "${self:custom.esDomainName}"
-    #                       - '/*'
