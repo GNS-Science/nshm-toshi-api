@@ -92,7 +92,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
     #@unittest.skip("refactoring")
     def test_get_all(self):
         qry = '''
-            query { ruptureGenerationTasks {
+            query { rupture_generation_tasks {
               edges {
                 task: node {
                   id
@@ -102,7 +102,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
 
         def mock_make_api_call(self, operation_name, kwarg):
             if operation_name in ['ListObjects']:
-                return r1 #dict(data=dict(ruptureGenerationTasks=dict(edges=[0,1])))
+                return r1 #dict(data=dict(rupture_generation_tasks=dict(edges=[0,1])))
             elif operation_name == 'HeadObject':
                 return r2
             elif operation_name == 'GetObject':
@@ -119,7 +119,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
             print(executed)
             print("***")
             # assert 0
-            assert len( executed['data']['ruptureGenerationTasks']['edges']) == 2
+            assert len( executed['data']['rupture_generation_tasks']['edges']) == 2
 
 
 class TestCreateDataFile(unittest.TestCase):
@@ -133,13 +133,13 @@ class TestCreateDataFile(unittest.TestCase):
     def test_upload(self):
         qry = '''
             mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
-              createFile(
-                  md5Digest: $digest
-                  fileName: $file_name
-                  fileSize: $file_size
+              create_file(
+                  md5_digest: $digest
+                  file_name: $file_name
+                  file_size: $file_size
               ) {
               ok
-              fileResult { id, fileName, fileSize, md5Digest, postUrl }
+              file_result { id, file_name, file_size, md5_digest, post_url }
               }
             }'''
 
@@ -163,7 +163,7 @@ class TestCreateDataFile(unittest.TestCase):
                 #with mock.patch('graphql_api.data_s3.DataFileData.create', new=self.mock_create):
                 executed = self.client.execute(qry, variable_values=variables)
                 print(executed)
-                assert executed['data']['createFile']['ok'] == True
+                assert executed['data']['create_file']['ok'] == True
 
 
 if __name__ == "__main__":

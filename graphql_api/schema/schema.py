@@ -5,6 +5,8 @@ import os
 import boto3
 import graphene
 from graphene import relay
+from graphql_relay import from_global_id, to_global_id
+
 from graphql_api.data_s3 import DataManager
 from .opensha_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask, RuptureGenerationTask
@@ -14,9 +16,11 @@ from .file import CreateFile, File, FileConnection
 from .task_file import CreateTaskFile
 from .search_manager import SearchManager
 
-from graphql_api.schema import opensha_task, file, task, task_file
-
-global db_root
+from graphql_api.schema import opensha_task, file, task, task_file, file_relation, thing
+from graphql_api.schema.custom import strong_motion_station, sms_file_link
+from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
+    StrongMotionStationConnection
+from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
@@ -47,11 +51,22 @@ opensha_task.db_root = db_root
 file.db_root = db_root
 task.db_root = db_root
 task_file.db_root = db_root
+sms_file_link.db_root = db_root
+file_relation.db_root = db_root
+thing.db_root = db_root
+strong_motion_station.db_root = db_root
 
+class FileThingRelation(graphene.Union):
+    class Meta:
+        types = (SmsFileLink, )
+
+class FileThingRelationConnection(relay.Connection):
+    class Meta:
+        node = FileThingRelation
 
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask)
+        types = (File, RuptureGenerationTask, StrongMotionStation)
 
 class SearchResultConnection(relay.Connection):
     class Meta:
@@ -61,6 +76,7 @@ class SearchResultConnection(relay.Connection):
 class Search(graphene.ObjectType):
     ok = graphene.Boolean()
     search_result = relay.ConnectionField(SearchResultConnection)
+
 
 class QueryRoot(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
@@ -75,10 +91,25 @@ class QueryRoot(graphene.ObjectType):
         description="The files."
     )
 
-    search = graphene.Field(Search, search_term=graphene.String())
-
     node = relay.Node.Field()
+
+    search = graphene.Field(Search, search_term=graphene.String())
     file = relay.Node.Field(File, id=graphene.ID(required=True))
+
+    strong_motion_station = graphene.Field(StrongMotionStation, id=graphene.ID(required=True))
+    strong_motion_stations = relay.ConnectionField(
+        StrongMotionStationConnection,
+        description="The list of strong motion stations"
+    )
+
+    def resolve_strong_motion_stations(root, info):
+        return db_root.thing.get_all()
+
+
+    def resolve_strong_motion_station(root, info, id):
+        _type, _id = from_global_id(id)
+        return db_root.thing.get_one(_id)
+
 
     @staticmethod
     def resolve_rupture_generation_tasks(root, info):
@@ -107,6 +138,8 @@ class MutationRoot(graphene.ObjectType):
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
     create_task_file = CreateTaskFile.Field()
+    create_sms_file_link = CreateSmsFileLink.Field()
+    #custom = graphene.Field(CustomMutations)
+    create_strong_motion_station = CreateStrongMotionStation.Field()
 
-
-root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot)
+root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)

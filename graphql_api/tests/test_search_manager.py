@@ -53,10 +53,10 @@ class TestSearchManager(unittest.TestCase):
 
 SEARCH = '''
     query m1 {
-      search(searchTerm:"560") {
+      search(search_term:"560") {
 
-        searchResult {
-            totalCount
+        search_result {
+            total_count
             edges {
                 node {
                     ... on RuptureGenerationTask {
@@ -66,8 +66,8 @@ SEARCH = '''
                     }
                     ... on File {
                         id
-                        fileName
-                        md5Digest
+                        file_name
+                        md5_digest
                     }
                 }
             }
@@ -91,4 +91,4 @@ class TestSchemaSearch(unittest.TestCase):
 
             executed = self.client.execute(SEARCH)
             print(executed)
-            assert executed['data']['search']['searchResult']['totalCount'] == 11
+            assert executed['data']['search']['search_result']['total_count'] == 11

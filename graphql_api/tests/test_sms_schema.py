@@ -1,6 +1,6 @@
 
 """
-Test API function for opensha Rupture Generation
+Test API function for SMS
 
 Mocking our data layer
 
@@ -16,51 +16,31 @@ from dateutil.tz import tzutc
 from graphene.test import Client
 from graphql_api import data_s3
 
-from graphql_api.schema import root_schema, RuptureGenerationTask
+from graphql_api.schema import root_schema
+from graphql_api.schema.custom import StrongMotionStation
 
 import graphql_api.data_s3 # for mocking
 
 
 CREATE = '''
-    mutation ($started: DateTime!) {
-        create_rupture_generation_task(input: {
-            state: UNDEFINED
-            result: UNDEFINED
-            started: $started
-            duration: 600
-            arguments: {
-                max_jump_distance: 55.5
-                max_sub_section_length: 2
-                max_cumulative_azimuth: 590
-                min_sub_sections_per_parent: 2
-                permutation_strategy: DOWNDIP
-                }
-            git_refs: {
-                opensha_ucerf3: "ABC"
-                opensha_commons: "ABC"
-                opensha_core: "ABC"
-                nshm_nz_opensha: "ABC"
-            }
+    mutation ($created: DateTime!) {
+        create_strong_motion_station(input: {
+            created: $created
+            #updated: $updated
             ##EXTRA_INPUT##
             }
             )
             {
-                task_result {
+                strong_motion_station {
                 id
-                started
-                duration
-                arguments { max_jump_distance }
+                created
             }
         }
     }
 '''
-
-
-
-
 @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
 @mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
-class TestCreateRuptureGenerationTask(unittest.TestCase):
+class TestCreateSMS(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
     """
@@ -70,25 +50,25 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
 
     def test_create_minimum_fields_happy_case(self):
         executed = self.client.execute(CREATE,
-            variable_values=dict(started=dt.datetime.now(tzutc())))
+            variable_values=dict(created=dt.datetime.now(tzutc())))
         print(executed)
-        assert executed['data']['create_rupture_generation_task']\
-                        ['task_result']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        assert executed['data']['create_strong_motion_station']\
+                        ['strong_motion_station']['id'] == 'U3Ryb25nTW90aW9uU3RhdGlvbjow'
 
-    def test_date_must_include_timezone(self):
-        startdate = dt.datetime.now() #no timesone
-        executed = self.client.execute(CREATE, variable_values=dict(started=startdate))
+    def test_created_date_must_include_timezone(self):
+        created = dt.datetime.now() #no timesone
+        executed = self.client.execute(CREATE, variable_values=dict(created=created))
         print(executed)
         assert "must have a timezone" in executed['errors'][0]['message']
 
     def test_date_must_be_iso_format(self):
         qry = '''
             mutation {
-                create_rupture_generation_task(input: {
-                    started: "September 5th, 1999"
+                create_strong_motion_station(input: {
+                    created: "September 5th, 1999"
                     })
                     {
-                        task_result {
+                        strong_motion_station {
                         id
                     }
                 }
@@ -99,22 +79,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         print(executed)
         assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
 
-    @unittest.skip('deprecated behaviour')
-    def test_create_with_metrics_needs_all_or_none(self):
-        insert = '''
-            metrics: {
-             rupture_count: 20
-            }
-            '''
-        qry = CREATE.replace('##EXTRA_INPUT##', insert)
-
-        print(qry)
-        executed = self.client.execute(qry, variable_values=dict(started=dt.datetime.now(tzutc())))
-        print(executed)
-        assert 'In field "metrics": In field "subsection_count":'\
-                ' Expected "Int!", found null.' in executed['errors'][0]['message']
-
-
+    @unittest.skip("not there yet")
     def test_create_with_metrics(self):
         insert = '''
             metrics: {
@@ -140,7 +105,7 @@ TASKZERO = lambda _self, _id: {
 
 @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
 @mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
-class TestUpdateRuptureGenerationTask(unittest.TestCase):
+class TestUpdateSMS(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
 
@@ -149,6 +114,7 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
+    @unittest.skip("not there yet")
     @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASKZERO)
     def test_update_with_metrics(self):
         qry = '''
