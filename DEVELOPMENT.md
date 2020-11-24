@@ -24,10 +24,22 @@ cd nshm-toshi-api/
 source bin/activate
 ```
 
-## 2. setup serverless using NPM
+## 2. Setup serverless using NPM
 
 In the project root folder, run `npm install`.
 
 This installs the serverless plugin devDependencies defined in `package.json`.
+
+## 3. Setup the python dependencies with pip
+
+```
+pip install -r requirements.txt
+pip install -r test_requirements.txt
+```
+
+and validate our tests are passing:
+```
+pytest
+```
 
 
