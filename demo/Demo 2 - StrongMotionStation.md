@@ -49,16 +49,9 @@ query search_SMS {
   	)
     {
     search_result {
-      total_count
-      pageInfo {
-        startCursor
-        hasNextPage
-        endCursor
-      }
       edges {
         node {
-          __typename
-					... on StrongMotionStation {
+					... on File {
             id
             site_code
             bedrock_encountered
@@ -68,6 +61,36 @@ query search_SMS {
         }
       }
     }
+  }
+}
+
+```
+
+## after file upload
+```
+query one_sms_CBGS {
+  strong_motion_station(id:"U3Ryb25nTW90aW9uU3RhdGlvbjow") {
+    id
+    site_code
+    created
+    Vs30_mean
+    bedrock_encountered
+    soft_clay_or_peat
+    Vs30_std_dev
+    files {
+      edges {
+        node {
+        __typename
+        ... on SmsFileLink {
+          file_type
+          file {
+            file_name
+            file_size
+          }
+        }
+      }
+    }
+  }
   }
 }
 
