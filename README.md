@@ -9,7 +9,7 @@ following guidance here:
 https://www.serverless.com/blog/flask-python-rest-api-serverless-lambda-dynamodb/
 
 ```
-sudo npm install -g serverless
+npm install -g serverless
 
 ```
 
