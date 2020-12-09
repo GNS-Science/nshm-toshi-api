@@ -29,8 +29,8 @@ if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
         aws_secret_access_key='S3RVER',
         endpoint_url='http://localhost:4569')
     awsauth = None
-    ES_ENDPOINT = "http://es.none"
-    ES_INDEX = "_none"
+    ES_ENDPOINT = "http://localhost:9200"
+    ES_INDEX = "toshi-index"
 else:
     #AWS S3 creds set up by sls
     client_args = {}
