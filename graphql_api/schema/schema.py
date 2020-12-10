@@ -13,11 +13,11 @@ from .custom.rupture_generation import RuptureGenerationTaskConnection, CreateRu
 from requests_aws4auth import AWS4Auth
 
 from .file import CreateFile, File, FileConnection
-from .task_file import CreateTaskFile
+from .thing import CreateFileLink, FileLinkConnection
 from .search_manager import SearchManager
 
-from graphql_api.schema import file, task, task_file, file_relation, thing
-from graphql_api.schema.custom import strong_motion_station, sms_file_link, rupture_generation
+from graphql_api.schema import file, event, thing
+from .custom import strong_motion_station, sms_file_link, rupture_generation
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
 from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
@@ -49,20 +49,9 @@ db_root = DataManager(search_manager, client_args)
 
 rupture_generation.db_root = db_root
 file.db_root = db_root
-task.db_root = db_root
-task_file.db_root = db_root
 sms_file_link.db_root = db_root
-file_relation.db_root = db_root
 thing.db_root = db_root
 strong_motion_station.db_root = db_root
-
-class FileThingRelation(graphene.Union):
-    class Meta:
-        types = (SmsFileLink, )
-
-class FileThingRelationConnection(relay.Connection):
-    class Meta:
-        node = FileThingRelation
 
 class SearchResult(graphene.Union):
     class Meta:
@@ -117,7 +106,7 @@ class QueryRoot(graphene.ObjectType):
         Returns:
             list: rupture generation task list
         """
-        return db_root.task.get_all()
+        return db_root.thing.get_all() #TODO : this needs to use ES to constrain results to correct type
 
     @staticmethod
     def resolve_files(root, info):
@@ -137,7 +126,7 @@ class MutationRoot(graphene.ObjectType):
     create_rupture_generation_task = CreateRuptureGenerationTask.Field()
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
-    create_task_file = CreateTaskFile.Field()
+    create_file_link = CreateFileLink.Field()
     create_sms_file_link = CreateSmsFileLink.Field()
     #custom = graphene.Field(CustomMutations)
     create_strong_motion_station = CreateStrongMotionStation.Field()

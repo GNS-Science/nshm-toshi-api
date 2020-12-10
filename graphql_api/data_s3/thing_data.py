@@ -53,7 +53,7 @@ class ThingData(BaseS3Data):
         return self.from_json(jsondata)
 
 
-    def update(self, task_id, **kwargs):
+    def update(self, clazz_name, thing_id, **kwargs):
         """
         Args:
             task_id (TYPE): the object id
@@ -64,7 +64,7 @@ class ThingData(BaseS3Data):
         """
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 
-        this_id = get_objectid_from_global(task_id)
+        this_id = get_objectid_from_global(thing_id)
 
         bd1 = benedict(self.get_one(this_id).__dict__.copy())
         bd1.merge(kwargs)

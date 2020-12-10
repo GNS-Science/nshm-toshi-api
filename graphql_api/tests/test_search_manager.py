@@ -62,7 +62,7 @@ SEARCH = '''
                     ... on RuptureGenerationTask {
                         id
                         state
-                        started
+                        created
                     }
                     ... on File {
                         id

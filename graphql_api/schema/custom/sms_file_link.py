@@ -2,7 +2,7 @@
 import graphene
 from graphene import relay
 from graphene import Enum
-from graphql_api.schema.file_relation import FileRelation
+# from graphql_api.schema.file_relation import FileRelation
 from graphql_relay import from_global_id, to_global_id
 
 global db_root
@@ -17,9 +17,14 @@ class SmsFileType(Enum):
 class SmsFileLink(graphene.ObjectType):
 
     class Meta:
-        interfaces = (relay.Node, FileRelation)
+        interfaces = (relay.Node, )
 
     file_type = SmsFileType(required=True)
+
+    thing = graphene.Field('graphql_api.schema.thing.Thing', required=True)
+    file = graphene.Field('graphql_api.schema.file.File', required=True)
+    thing_id = graphene.String()
+    file_id = graphene.String()
 
 
 class CreateSmsFileLink(graphene.Mutation):

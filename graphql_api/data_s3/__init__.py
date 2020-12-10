@@ -8,9 +8,9 @@ def get_objectid_from_global(global_id):
     return _id
 
 from .base_s3_data import BaseS3Data
-from .task_data import TaskData
+# from .event_data import EventData
 from .file_data import FileData
-from .task_file_data import TaskFileData
+# from .event_file_data import EventFileData
 from .thing_data import ThingData
 from .file_relation_data import FileRelationData
 
@@ -21,16 +21,16 @@ class DataManager():
 
     def __init__(self, search_manager, client_args=None):
         _args = client_args or {}
-        self._task = TaskData(_args, self)
+        # self._event = EventData(_args, self)
         self._file = FileData(_args, self)
-        self._task_file = TaskFileData(_args, self)
+        # self._event_file = EventFileData(_args, self)
         self._thing = ThingData(_args, self)
         self._file_relation = FileRelationData(_args, self)
         self._search_manager = search_manager
 
-    @property
-    def task(self):
-        return self._task
+    # @property
+    # def event(self):
+    #     return self._event
 
     @property
     def thing(self):
@@ -40,9 +40,9 @@ class DataManager():
     def file(self):
         return self._file
 
-    @property
-    def task_file(self):
-        return self._task_file
+    # @property
+    # def event_file(self):
+    #     return self._event_file
 
     @property
     def file_relation(self):

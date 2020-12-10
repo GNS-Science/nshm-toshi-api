@@ -18,20 +18,12 @@ class File(graphene.ObjectType):
     file_url = graphene.String(description="A pre-signed URL to download the file from s3")
     post_url = graphene.String(description="A pre-signed URL to post the data to s3")
 
-    tasks = relay.ConnectionField(
-    	'graphql_api.schema.task_file.TaskFileConnection', description="tasks using this data file")
-
     things = relay.ConnectionField(
-        'graphql_api.schema.schema.FileThingRelationConnection', description="things related to this data file")
+        'graphql_api.schema.thing.FileThingRelationConnection', description="things related to this data file")
 
 
     def resolve_file_url(self, info, **args):
 	    return db_root.file.get_presigned_url(self.id)
-
-    def resolve_tasks(self, info, **args):
-        # Transform the instance ship_ids into real instances
-        if not self.tasks: return []
-        return [db_root.task_file.get_one(_id) for _id in self.tasks]
 
     def resolve_things(self, info, **args):
         # Transform the instance thing_ids into real instances
@@ -58,8 +50,8 @@ class CreateFile(graphene.Mutation):
     ok = graphene.Boolean()
     file_result = graphene.Field(File)
 
-    def mutate(self, info, file_in=None, **kwargs):
+    def mutate(self, info, **kwargs):
         # print("CreateFile.mutate: ", file_in, kwargs)
-        file_result = db_root.file.create(file_in, **kwargs)
+        file_result = db_root.file.create(**kwargs)
         return CreateFile(ok=True, file_result=file_result)
 
