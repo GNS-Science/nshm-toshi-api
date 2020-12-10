@@ -8,7 +8,7 @@ from graphene import relay
 from graphql_relay import from_global_id, to_global_id
 
 from graphql_api.data_s3 import DataManager
-from .opensha_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
+from .custom.rupture_generation import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask, RuptureGenerationTask
 from requests_aws4auth import AWS4Auth
 
@@ -16,8 +16,8 @@ from .file import CreateFile, File, FileConnection
 from .task_file import CreateTaskFile
 from .search_manager import SearchManager
 
-from graphql_api.schema import opensha_task, file, task, task_file, file_relation, thing
-from graphql_api.schema.custom import strong_motion_station, sms_file_link
+from graphql_api.schema import file, task, task_file, file_relation, thing
+from graphql_api.schema.custom import strong_motion_station, sms_file_link, rupture_generation
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
 from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
@@ -47,7 +47,7 @@ else:
 search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
 db_root = DataManager(search_manager, client_args)
 
-opensha_task.db_root = db_root
+rupture_generation.db_root = db_root
 file.db_root = db_root
 task.db_root = db_root
 task_file.db_root = db_root
