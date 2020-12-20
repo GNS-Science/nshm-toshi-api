@@ -3,13 +3,13 @@ The NSHM data file graphql schema.
 """
 import graphene
 from graphene import relay
-from graphql_api.data_s3 import DataManager
 
 global db_root
 
 class File(graphene.ObjectType):
-    """A data file  """
+    """A data file"""
     class Meta:
+        """standard graphene meta class"""
         interfaces = (relay.Node, )
 
     file_name = graphene.String(description="The name of the file")

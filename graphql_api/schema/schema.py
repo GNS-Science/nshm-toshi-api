@@ -7,7 +7,7 @@ import graphene
 from graphene import relay
 from graphql_relay import from_global_id, to_global_id
 
-from graphql_api.data_s3 import DataManager
+from graphql_api.data_s3.data_manager import DataManager
 from .custom.rupture_generation import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask, RuptureGenerationTask
 from requests_aws4auth import AWS4Auth
