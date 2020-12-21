@@ -11,3 +11,4 @@ from graphql_api.schema.file_relation import FileRelation
 from graphql_api.schema.event import EventState, EventResult
 from graphql_api.schema.file import File, FileConnection, CreateFile
 from graphql_api.schema.custom import StrongMotionStation, SmsFile
+from graphql_api.schema.custom.general_task import GeneralTask

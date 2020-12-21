@@ -39,13 +39,18 @@ mutation new_ruptgen_task {
   }
 }
 
-# mutation m1b {
-#   update_rupture_generation_task(input: {
-
-#   }) {
-#     clientMutationId
-#   }
-# }
+mutation update_ruptgen_task {
+  update_rupture_generation_task(input: {
+    task_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
+    result:SUCCESS
+    state:DONE
+  })
+  {
+    task_result {
+      id
+    }
+  }
+}
 
 mutation new_rupt_file {
   create_file(file_name:"myfile2.txt"
@@ -95,6 +100,47 @@ mutation new_sms_file_relation {
     }
   }
 }
+
+mutation new_general_task {
+  create_general_task(input: {
+    created: "2020-10-10T23:00:00+00:00"
+    title: "My First Manual task"
+    notes: "##Some notes go here/\n/\nand here"
+    agent_name: "chrisbc"
+  }) {
+    general_task {
+      created
+    }
+  }
+}
+
+mutation new_gt_file_relation {
+  create_file_relation(
+    file_id: "RmlsZTow"
+    thing_id:"R2VuZXJhbFRhc2s6Mg=="
+    role:READ
+  ) {
+    ok
+    file_relation{
+      id
+    }
+  }
+}
+
+mutation new_gt_smsfile_relation {
+  create_file_relation(
+    file_id: "U21zRmlsZTox"
+    thing_id:"R2VuZXJhbFRhc2s6Mg=="
+    role:UNDEFINED
+  ) {
+    ok
+    file_relation{
+      id
+    }
+  }
+}
+
+
 
 
 fragment sr on SearchResult {
@@ -154,6 +200,7 @@ fragment sr on SearchResult {
             role
             file {
               ... on File {
+                id
                 file_name
                 file_size
               }
@@ -180,6 +227,41 @@ fragment sr on SearchResult {
             file {
               ... on SmsFile {
                 file_name
+                file_size
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ... on GeneralTask {
+    id
+    created
+    updated
+    title
+    notes
+    agent_name
+
+    files {
+     edges {
+        node {
+          __typename
+          ... on FileRelation {
+            role
+            file {
+              __typename
+              __typename
+              ... on Node {
+                id
+              }
+              ... on File {
+                file_name
+                file_size
+              }
+              ... on SmsFile {
+                file_name
+                file_size
                 file_type
               }
             }
@@ -233,29 +315,44 @@ query search_file {
   }
 }
 
+query search_general_task {
+  search(
+    search_term: "agent_name: chrisbc"
+  ) {
+    search_result {
+      edges {
+        node {
+          ...sr
+        }
+      }
+    }
+  }
+}
 
 query get_file {
   node(id: "RmlsZTow") {
     ... on File {
       file_name
-        relations {
-          edges {
-            node {
-              ... on FileRelation {
-                role
-                thing {
-                  __typename
-                  ... on RuptureGenerationTask {
-                    created
-                    metrics {
-                       rupture_count
-                    }
+      file_size
+      file_url
+      relations {
+        edges {
+          node {
+            ... on FileRelation {
+              role
+              thing {
+                __typename
+                ... on RuptureGenerationTask {
+                  created
+                  metrics {
+                     rupture_count
                   }
                 }
               }
             }
           }
         }
+      }
     }
   }
 }
@@ -266,9 +363,11 @@ query get_task {
       id
       created
       duration
-
+      state
+      result
       metrics {
         rupture_count
+
       }
       files {
         edges {
@@ -288,5 +387,4 @@ query get_task {
     }
   }
 }
-
 '''
