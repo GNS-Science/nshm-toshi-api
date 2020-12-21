@@ -11,7 +11,7 @@ Setup:
 
 then run from http://127.0.0.1:5000/graphql the following
 """
-test_needed = '''
+tests_needed = '''
 mutation new_sms {
   create_strong_motion_station (input: {
     site_code: "ABCD"
@@ -140,8 +140,20 @@ mutation new_gt_smsfile_relation {
   }
 }
 
-
-
+mutation new_task_subtask_relation {
+  create_task_relation(
+    child_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
+    parent_id:"R2VuZXJhbFRhc2s6Mg==")
+  {thing_relation {
+      parent {
+        ... on GeneralTask {id}
+      }
+      child {
+        ... on RuptureGenerationTask{id}
+      }
+  }
+  }
+}
 
 fragment sr on SearchResult {
   __typename
@@ -243,6 +255,22 @@ fragment sr on SearchResult {
     notes
     agent_name
 
+    children {
+      edges {
+        node {
+          child {
+            __typename
+            ... on RuptureGenerationTask {
+              id
+              state
+              result
+              created
+            }
+          }
+        }
+      }
+    }
+
     files {
      edges {
         node {
@@ -288,8 +316,9 @@ query search_sms {
 
 query search_rupture {
   search(
-    search_term: "result:UNDEFINED"
+    search_term: "result:SUCCESS"
     #search_term: "file_name: myfile*"
+    #search_term: "id: UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
   ) {
     search_result {
       edges {
@@ -359,6 +388,7 @@ query get_file {
 
 query get_task {
   node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=") {
+      __typename
     ... on RuptureGenerationTask {
       id
       created
@@ -367,7 +397,18 @@ query get_task {
       result
       metrics {
         rupture_count
-
+      }
+      parents {
+        edges {
+          node {
+            parent {
+              ... on GeneralTask {
+                title
+                notes
+              }
+            }
+          }
+        }
       }
       files {
         edges {
@@ -384,6 +425,17 @@ query get_task {
           }
         }
       }
+    }
+  }
+}
+
+query get_node {
+  node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=")
+  {
+    __typename
+    ... on RuptureGenerationTask {
+      state
+      created
     }
   }
 }

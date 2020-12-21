@@ -30,6 +30,15 @@ class GeneralTask(graphene.ObjectType):
     title = graphene.String(description='A title always helps')
     notes = graphene.String(description='Some descriptive , info describing the task, potentially Markdown')
 
+    children = relay.ConnectionField(
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="sub-tasks of this task")
+
+    def resolve_children(self, info, **args):
+        # Transform the instance thing_ids into real instances
+        if not self.children: return []
+        return [get_data_manager().thing_relation.get_one(_id) for _id in self.children]
+
+
 class GeneralTaskConnection(relay.Connection):
     """A list of GeneralTask items"""
     class Meta:

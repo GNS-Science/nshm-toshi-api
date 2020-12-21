@@ -26,6 +26,8 @@ from graphql_api.data_s3 import get_data_manager
 # from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 from .custom.general_task import GeneralTask, CreateGeneralTask, GeneralTaskConnection
 
+from .task_task_relation import CreateTaskTaskRelation
+
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
     client_args = dict(aws_access_key_id='S3RVER',
@@ -126,5 +128,6 @@ class MutationRoot(graphene.ObjectType):
     create_strong_motion_station = CreateStrongMotionStation.Field()
     create_sms_file = CreateSmsFile.Field()
     create_general_task = CreateGeneralTask.Field()
+    create_task_relation = CreateTaskTaskRelation.Field()
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)

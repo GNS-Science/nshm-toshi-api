@@ -89,6 +89,28 @@ class ThingData(BaseS3Data):
         return self.from_json(obj)
 
 
+    def add_child_relation(self, thing_id, relation_id):
+        obj = self._read_object(thing_id)
+        logger.info("add_child_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
+        # print("####add_file_relation", thing_id, obj)
+        try:
+            obj['children'].append(relation_id)
+        except (KeyError, AttributeError):
+            obj['children'] = [relation_id]
+        self._write_object(thing_id, obj)
+        return self.from_json(obj)
+
+    def add_parent_relation(self, thing_id, relation_id):
+        obj = self._read_object(thing_id)
+        logger.info("add_parent_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
+        try:
+            obj['parents'].append(relation_id)
+        except (KeyError, AttributeError):
+            obj['parents'] = [relation_id]
+        self._write_object(thing_id, obj)
+        return self.from_json(obj)
+
+
     @staticmethod
     def from_json(jsondata):
         logger.info("from_json: %s" % str(jsondata))
