@@ -17,11 +17,12 @@ from .file_relation import CreateFileRelation, FileRelationConnection
 from .search_manager import SearchManager
 
 from graphql_api.schema import file, event, thing
-from .custom import strong_motion_station, strong_motion_station_file, sms_file_link, rupture_generation
+#from .custom import strong_motion_station, strong_motion_station_file, sms_file_link, rupture_generation
 
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
+from graphql_api.data_s3 import get_data_manager
 # from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 
 
