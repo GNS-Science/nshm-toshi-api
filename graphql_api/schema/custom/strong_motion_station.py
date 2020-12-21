@@ -12,8 +12,7 @@ import logging
 from graphene import relay
 from graphene import Enum
 from graphql_api.schema.thing import Thing
-
-global db_root
+from graphql_api.data_s3 import get_data_manager
 
 logger = logging.getLogger(__name__)
 
@@ -87,5 +86,5 @@ class CreateStrongMotionStation(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         print("mutate_and_get_payload: ", kwargs)
-        strong_motion_station = db_root.thing.create('StrongMotionStation', **kwargs)
+        strong_motion_station = get_data_manager().thing.create('StrongMotionStation', **kwargs)
         return CreateStrongMotionStation(strong_motion_station=strong_motion_station)

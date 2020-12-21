@@ -13,14 +13,16 @@ from .custom.rupture_generation import RuptureGenerationTaskConnection, CreateRu
 from requests_aws4auth import AWS4Auth
 
 from .file import CreateFile, File, FileConnection
-from .thing import CreateFileLink, FileLinkConnection
+from .file_relation import CreateFileRelation, FileRelationConnection
 from .search_manager import SearchManager
 
 from graphql_api.schema import file, event, thing
-from .custom import strong_motion_station, sms_file_link, rupture_generation
+from .custom import strong_motion_station, strong_motion_station_file, sms_file_link, rupture_generation
+
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
-from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
+from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
+# from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
@@ -47,15 +49,9 @@ else:
 search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
 db_root = DataManager(search_manager, client_args)
 
-rupture_generation.db_root = db_root
-file.db_root = db_root
-sms_file_link.db_root = db_root
-thing.db_root = db_root
-strong_motion_station.db_root = db_root
-
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask, StrongMotionStation)
+        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile)
 
 class SearchResultConnection(relay.Connection):
     class Meta:
@@ -126,9 +122,8 @@ class MutationRoot(graphene.ObjectType):
     create_rupture_generation_task = CreateRuptureGenerationTask.Field()
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
-    create_file_link = CreateFileLink.Field()
-    create_sms_file_link = CreateSmsFileLink.Field()
-    #custom = graphene.Field(CustomMutations)
+    create_file_relation = CreateFileRelation.Field()
     create_strong_motion_station = CreateStrongMotionStation.Field()
+    create_sms_file = CreateSmsFile.Field()
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)

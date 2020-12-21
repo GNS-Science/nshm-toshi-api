@@ -2,6 +2,11 @@ from .file_data import FileData
 from .thing_data import ThingData
 from .file_relation_data import FileRelationData
 
+dm_instance = None
+
+def get_data_manager():
+    return dm_instance
+
 class DataManager():
 
     """DataManager provides the entry point to the data handlers
@@ -13,6 +18,9 @@ class DataManager():
         self._thing = ThingData(_args, self)
         self._file_relation = FileRelationData(_args, self)
         self._search_manager = search_manager
+        #set up the singleton
+        global dm_instance
+        dm_instance = self
 
     @property
     def thing(self):

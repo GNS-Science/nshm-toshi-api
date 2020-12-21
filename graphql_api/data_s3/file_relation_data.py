@@ -1,13 +1,9 @@
 """
-Object manager for FileRelationInterface schema objects
+Object manager for FileRelation (and subclassed) schema objects
 """
-import json
-from io import BytesIO
 import logging
 from importlib import import_module
-from . import get_objectid_from_global
 from .base_s3_data import BaseS3Data
-
 
 logger = logging.getLogger(__name__)
 

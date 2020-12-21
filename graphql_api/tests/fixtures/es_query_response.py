@@ -17,13 +17,14 @@ response_01 = b'''{
                 "_id": "FileData_282_object.json",
                 "_score": 5.8634133,
                 "_source": {
+                    "clazz_name": "File",
                     "id": "282",
                     "file_name": "ruptset_ddw0.5_jump5.3_ALL_560.0_3_DOWNDIP.zip",
                     "md5_digest": "bYjNwc0n98D3DlslRmmxsg==",
                     "file_size": 21880998,
                     "file_url": null,
                     "post_url": null,
-                    "things": [
+                    "relations": [
                         "560"
                     ]
                 }
@@ -34,13 +35,14 @@ response_01 = b'''{
                 "_id": "FileData_560_object.json",
                 "_score": 4.781921,
                 "_source": {
+                    "clazz_name": "File",
                     "id": "560",
                     "file_name": "ruptset_ddw1.0_jump4.0_SANS_TVZ2_580.0_3_DOWNDIP.zip",
                     "md5_digest": "obk9j+pFjgtXryIGNa6RCg==",
                     "file_size": 1977314,
                     "file_url": null,
                     "post_url": null,
-                    "things": [
+                    "relations": [
                         "1114"
                     ]
                 }

@@ -17,6 +17,7 @@ from graphene.test import Client
 from graphql_api import data_s3
 
 from graphql_api.schema import root_schema, RuptureGenerationTask
+# from graphql_api.schema.file_relation import FileRelation
 
 import graphql_api.data_s3 # for mocking
 

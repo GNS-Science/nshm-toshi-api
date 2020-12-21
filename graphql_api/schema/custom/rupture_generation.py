@@ -20,8 +20,8 @@ from graphene import Enum
 
 from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
+from graphql_api.data_s3 import get_data_manager
 
-global db_root
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ class RuptureGenerationTask(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
-        return  db_root.thing.get_one(_id)
+        return  get_data_manager().thing.get_one(_id)
 
     @staticmethod
     def from_json(jsondata):
@@ -180,7 +180,7 @@ class CreateRuptureGenerationTask(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         print("mutate_and_get_payload: ", kwargs)
-        task_result = db_root.thing.create('RuptureGenerationTask', **kwargs)
+        task_result = get_data_manager().thing.create('RuptureGenerationTask', **kwargs)
         return CreateRuptureGenerationTask(task_result=task_result)
 
 
@@ -201,6 +201,6 @@ class UpdateRuptureGenerationTask(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, **kwargs):
         print("mutate_and_get_payload: ", kwargs)
         thing_id = kwargs.pop('task_id')
-        task_result = db_root.thing.update('RuptureGenerationTask', thing_id, **kwargs)
+        task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **kwargs)
 
         return UpdateRuptureGenerationTask(task_result=task_result)
