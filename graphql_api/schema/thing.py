@@ -11,7 +11,7 @@ class Thing(graphene.Interface):
     class Meta:
         interfaces = (relay.Node, )
 
-    created = graphene.DateTime(description="The time the task was started")
+    created = graphene.DateTime(description="When the thing was created")
 
     files = relay.ConnectionField(
          FileRelationConnection, description="Files associated with this object."

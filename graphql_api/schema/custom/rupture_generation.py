@@ -134,40 +134,6 @@ class RuptureGenerationTask(graphene.ObjectType):
         if created:
             jsondata['created'] = dt.datetime.fromisoformat(started)
         logger.info("get_one: %s" % str(jsondata))
-
-        # arguments = jsondata.pop("rupture_generation_args", None)
-        # if arguments:
-        #     jsondata['arguments'] = arguments
-        # arguments = jsondata.pop("rupture_generator_args", None)
-        # if arguments:
-        #     jsondata['arguments'] = arguments
-
-        #remove deprecated field(s)...
-        jsondata.pop('input_files', None)
-        # jsondata.pop('data_files', None)
-        jsondata.pop('client_mutation_id', None)
-
-        #rename fields
-        # jsondata.rename('input_files', 'files')
-        rename(jsondata, 'rupture_generator_args', 'rupture_generation_args')
-        rename(jsondata, 'rupture_generation_args', 'arguments')
-
-        # #add new fields
-        if not jsondata.get('input_files'):
-            jsondata['input_files'] = []
-        if not jsondata.get('state'):
-            jsondata['state'] = EventState.UNDEFINED
-        if not jsondata.get('result'):
-            jsondata['result'] = EventResult.UNDEFINED
-        if not jsondata.get('files'):
-             jsondata['files'] = []
-
-
-        ren = jsondata.pop('input_files', None)
-        if ren:
-            jsondata['files'] = ren
-
-        # print('updated json', jsondata)
         return RuptureGenerationTask(**jsondata)
 
 class RuptureGenerationTaskConnection(relay.Connection):

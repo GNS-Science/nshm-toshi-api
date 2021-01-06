@@ -24,11 +24,11 @@ class GeneralTask(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node, Thing)
 
-    created = graphene.DateTime(description="When the taskrecord was created", )
-    updated = graphene.DateTime(description="When task was updated", )
+    created = graphene.DateTime(description="When the task record was created", )
+    updated = graphene.DateTime(description="When the task record was last updated", )
     agent_name = graphene.String(description='The name of the person or process responsible for the task')
     title = graphene.String(description='A title always helps')
-    notes = graphene.String(description='Some descriptive , info describing the task, potentially Markdown')
+    description = graphene.String(description='Some description of the task, potentially Markdown')
 
     children = relay.ConnectionField(
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="sub-tasks of this task")
@@ -50,7 +50,7 @@ class CreateGeneralTask(relay.ClientIDMutation):
         updated = graphene.DateTime(description="When task was updated", )
         agent_name = graphene.String(description='The name of the person or process responsible for the task')
         title = graphene.String(description='A title always helps')
-        notes = graphene.String(description='Some descriptive , info describing the task, potentially Markdown')
+        description = graphene.String(description='Some description of the task, potentially Markdown')
 
     general_task = graphene.Field(GeneralTask)
 
