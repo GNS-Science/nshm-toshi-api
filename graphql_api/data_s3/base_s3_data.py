@@ -49,12 +49,12 @@ class BaseS3Data():
         Returns:
             list: a list containing all the objects materialised from the S3 bucket
         """
-        task_results = []
+        results = []
         for obj_summary in self._bucket.objects.filter(Prefix='%s/' % self._prefix):
-            prefix, task_result_id, _ = obj_summary.key.split('/')
+            prefix, result_id, _ = obj_summary.key.split('/')
             assert prefix == self._prefix
-            task_results.append(self.get_one(task_result_id))
-        return task_results
+            results.append(self.get_one(result_id))
+        return results
 
     def _write_object(self, object_id, body):
         """write object contents to the S3 bucket.

@@ -18,9 +18,10 @@ from graphene import Enum
 # from benedict import benedict
 
 
-from graphql_api.schema.task import Task, TaskResult, TaskState
+from graphql_api.schema.event import EventResult, EventState
+from graphql_api.schema.thing import Thing
+from graphql_api.data_s3 import get_data_manager
 
-global db_root
 
 logger = logging.getLogger(__name__)
 
@@ -100,58 +101,39 @@ def rename(dict_obj, from_name, to_name):
 class RuptureGenerationTask(graphene.ObjectType):
     """An RuptureGenerationTask in the NSHM process"""
     class Meta:
-        interfaces = (relay.Node, Task)
+        interfaces = (relay.Node, Thing)
+
+    result = EventResult()
+    state = EventState()
+
+    created = graphene.DateTime(description="The time the event was created")
+    duration = graphene.Float(description="the final duraton of the event in seconds")
+
+    parents = relay.ConnectionField(
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
+        description="parent task(s) of this task")
 
     arguments = graphene.Field(RuptureGenerationArgsOutput)
     metrics = graphene.Field(RuptureGenerationMetricsOutput)
     git_refs = graphene.Field(GitReferencesOutput)
 
+    def resolve_parents(self, info, **args):
+        # Transform the instance thing_ids into real instances
+        if not self.parents: return []
+        return [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
+
+
     @classmethod
     def get_node(cls, info, _id):
-        return  db_root.task.get_one(_id)
+        return  get_data_manager().thing.get_one(_id)
 
     @staticmethod
     def from_json(jsondata):
-        # from graphql_api.schema import RuptureGenerationTask, TaskState, TaskResult
         #Field type transforms...
-        started = jsondata.get('started')
-        if started:
-            jsondata['started'] = dt.datetime.fromisoformat(started)
+        created = jsondata.get('created')
+        if created:
+            jsondata['created'] = dt.datetime.fromisoformat(started)
         logger.info("get_one: %s" % str(jsondata))
-
-        # arguments = jsondata.pop("rupture_generation_args", None)
-        # if arguments:
-        #     jsondata['arguments'] = arguments
-        # arguments = jsondata.pop("rupture_generator_args", None)
-        # if arguments:
-        #     jsondata['arguments'] = arguments
-
-        #remove deprecated field(s)...
-        jsondata.pop('input_files', None)
-        # jsondata.pop('data_files', None)
-        jsondata.pop('client_mutation_id', None)
-
-        #rename fields
-        # jsondata.rename('input_files', 'files')
-        rename(jsondata, 'rupture_generator_args', 'rupture_generation_args')
-        rename(jsondata, 'rupture_generation_args', 'arguments')
-
-        # #add new fields
-        if not jsondata.get('input_files'):
-            jsondata['input_files'] = []
-        if not jsondata.get('state'):
-            jsondata['state'] = TaskState.UNDEFINED
-        if not jsondata.get('result'):
-            jsondata['result'] = TaskResult.UNDEFINED
-        if not jsondata.get('files'):
-             jsondata['files'] = []
-
-
-        ren = jsondata.pop('input_files', None)
-        if ren:
-            jsondata['files'] = ren
-
-        # print('updated json', jsondata)
         return RuptureGenerationTask(**jsondata)
 
 class RuptureGenerationTaskConnection(relay.Connection):
@@ -161,9 +143,9 @@ class RuptureGenerationTaskConnection(relay.Connection):
 
 class CreateRuptureGenerationTask(relay.ClientIDMutation):
     class Input:
-        result = TaskResult(required=True)
-        state = TaskState(required=True)
-        started = graphene.DateTime(description="The time the task was started", )
+        result = EventResult(required=True)
+        state = EventState(required=True)
+        created = graphene.DateTime(description="The time the task was created", )
         duration = graphene.Float(description="The final duraton of the task in seconds")
         arguments = RuptureGenerationArgsInput(description="The input arguments for the Rupture generator")
         metrics = RuptureGenerationMetricsInput(description="The metrics from rupture generation")
@@ -174,16 +156,16 @@ class CreateRuptureGenerationTask(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         print("mutate_and_get_payload: ", kwargs)
-        task_result = db_root.task.create(**kwargs)
+        task_result = get_data_manager().thing.create('RuptureGenerationTask', **kwargs)
         return CreateRuptureGenerationTask(task_result=task_result)
 
 
 class UpdateRuptureGenerationTask(relay.ClientIDMutation):
     class Input:
         task_id = graphene.ID(required=True)
-        result = TaskResult(required=False)
-        state = TaskState(required=False)
-        started = graphene.DateTime(required=False, description="The time the task was started")
+        result = EventResult(required=False)
+        state = EventState(required=False)
+        created = graphene.DateTime(required=False, description="The time the task was created")
         duration = graphene.Float(required=False, description="The final duraton of the task in seconds")
         arguments = RuptureGenerationArgsInput(required=False, description="The input arguments for the Rupture generator")
         metrics = RuptureGenerationMetricsInput(required=False, description="The metrics from rupture generation")
@@ -193,7 +175,8 @@ class UpdateRuptureGenerationTask(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        # print("mutate_and_get_payload: ", kwargs)
-        task_result = db_root.task.update(**kwargs)
+        print("mutate_and_get_payload: ", kwargs)
+        thing_id = kwargs.pop('task_id')
+        task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **kwargs)
 
         return UpdateRuptureGenerationTask(task_result=task_result)

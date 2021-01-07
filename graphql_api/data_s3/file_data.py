@@ -1,80 +1,73 @@
 """
-Object manager for File schema objects
+The object manager for File (and subclassed) schema objects
 """
 import json
+from importlib import import_module
+import logging
+
 from .base_s3_data import BaseS3Data
+
+logger = logging.getLogger(__name__)
+
 
 class FileData(BaseS3Data):
     """
     FileData provides the S3 interface forFile objects
     """
-    def create(self, file_obj, **kwargs):
-        """create the S3 represtentation if the File in S3. This is two files:
-
-         - the object.json contains the file metadata.
-         - the raw file object, named as per the object filename.
+    def create(self, clazz_name, **kwargs):
+        """
+        create the S3 represtentation if the File in S3. This is two files:
 
         Args:
-            file_obj (dict): file meta data fields
-            **kwargs: not used
+         - clazz_name (String): the class name of schema object
+         - kwargs (dict): the file metadata.
+
         Returns:
             File: the File object
         """
         from graphql_api.schema import File
+        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         next_id  = str(self.get_next_id())
-        new = File(next_id, **kwargs)
+
+        new = clazz(next_id, **kwargs)
         body = new.__dict__.copy()
-        meta_key = "%s/%s/%s" % (self._prefix, next_id, "object.json")
+        body['clazz_name'] = clazz_name
+
         #TODO error handling
-        response = self._bucket.put_object(Key=meta_key, Body=json.dumps(body))
+        self._write_object(next_id, body)
 
         data_key = "%s/%s/%s" % (self._prefix, next_id, body["file_name"])
-        if file_obj:
-            file_obj.seek(0)
-            #TODO error handling...
-            response2 = self._bucket.put_object(Key=data_key, Body=file_obj)
-        else:
-            response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
-            parts = self._client.generate_presigned_post(Bucket=self._bucket_name,
-                                              Key=data_key,
-                                              Fields={
-                                                'acl': 'public-read',
-                                                'Content-MD5': body.get('md5_digest'),
-                                                'Content-Type': 'binary/octet-stream'
-                                                },
-                                              Conditions=[
-                                                  {"acl": "public-read"},
-                                                  ["starts-with", "$Content-Type", ""],
-                                                  ["starts-with", "$Content-MD5", ""]
-                                              ]
-                                              )
+
+        response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
+        parts = self._client.generate_presigned_post(Bucket=self._bucket_name,
+                                          Key=data_key,
+                                          Fields={
+                                            'acl': 'public-read',
+                                            'Content-MD5': body.get('md5_digest'),
+                                            'Content-Type': 'binary/octet-stream'
+                                            },
+                                          Conditions=[
+                                              {"acl": "public-read"},
+                                              ["starts-with", "$Content-Type", ""],
+                                              ["starts-with", "$Content-MD5", ""]
+                                          ]
+                                          )
             # print('S3 URL: %s' % parts['url'])
             # print('fields: %s' % parts['fields'])
-            kwargs['post_url'] = json.dumps(parts['fields'])
-            new = File(next_id, **kwargs)
+        new.post_url = json.dumps(parts['fields'])
         return new
 
-    def get_one(self, _id):
+    def get_one(self, file_id):
         """
         Args:
-            _id (string): the object id
+            file_id (string): the object id
 
         Returns:
             File: the File object
         """
-        from graphql_api.schema import File
-        jsondata = self._read_object(_id)
-        #remove deprecated field
-        jsondata.pop('reader_tasks', None)
-
-        #rename fields
-        ren = jsondata.pop('consumers', None)
-        if ren:
-            jsondata['tasks'] = ren
-        ren = jsondata.pop('hex_digest', None)
-        if ren:
-            jsondata['md5_digest'] = ren
-        return File(**jsondata)
+        jsondata = self._read_object(file_id)
+        return self.from_json(jsondata)
+        # return File(**jsondata)
 
     def get_presigned_url(self, _id):
         """
@@ -115,32 +108,31 @@ class FileData(BaseS3Data):
                 task_results.append(self.get_one(task_result_id))
         return task_results
 
-    def add_task_file(self, file_id, task_file_id):
-        """
-        Args:
-            file_id (string): the file object id
-            task_file_id (string): the task object id
-        """
-        obj = self._read_object(file_id)
-        try:
-            obj['tasks'].append(task_file_id)
-        except (KeyError, AttributeError):
-            obj['tasks'] = [task_file_id]
-        self._write_object(file_id, obj)
-
-
     def add_thing_relation(self, file_id, relation_id):
         """
         Args:
             file_id (string): the file object id
             relation_id (string): the thing object id
         """
-        from graphql_api.schema import File
         obj = self._read_object(file_id)
-        print("####", file_id, obj)
+        logger.info("add_thing_relation: file_id %s, thing_id: %s" % (file_id, relation_id))
         try:
-            obj['things'].append(relation_id)
+            obj['relations'].append(relation_id)
         except (KeyError, AttributeError):
-            obj['things'] = [relation_id]
+            obj['relations'] = [relation_id]
         self._write_object(file_id, obj)
-        return File(**obj)
+        return self.from_json(obj)
+
+    @staticmethod
+    def from_json(jsondata):
+        logger.info("get_one: %s" % str(jsondata))
+
+        #datetime comversions
+        created = jsondata.get('created')
+        if created:
+            jsondata['created'] = dt.datetime.fromisoformat(created)
+
+        clazz_name = jsondata.pop('clazz_name')
+        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+        # print('updated json', jsondata)
+        return clazz(**jsondata)

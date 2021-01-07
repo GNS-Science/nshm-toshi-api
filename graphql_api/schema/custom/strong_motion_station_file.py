@@ -1,0 +1,40 @@
+#! strong_motion_station_file.py
+
+
+import graphene
+from graphene import relay
+from graphene import Enum
+from graphql_api.schema.file import File
+from graphql_api.data_s3 import get_data_manager
+
+class SmsFileType(Enum):
+    BH = "bh"
+    CPT = "cpt"
+    DH = "dh"
+    HVSR = "hsvr"
+    SW = "sw"
+
+class SmsFile(File):
+
+    class Meta:
+        """standard graphene meta class"""
+        interfaces = (relay.Node, )
+
+    file_type = SmsFileType(required=True)
+
+
+class CreateSmsFile(graphene.Mutation):
+    class Arguments:
+        file_name = graphene.String()
+        md5_digest = graphene.String("The base64-encoded md5 digest of the file")
+        file_size = graphene.Int()
+        file_type = SmsFileType(required=True)
+
+    ok = graphene.Boolean()
+    file_result = graphene.Field(SmsFile)
+
+    def mutate(self, info, **kwargs):
+        # print("CreateFile.mutate: ", file_in, kwargs)
+        file_result = get_data_manager().file.create('SmsFile', **kwargs)
+        return CreateSmsFile(ok=True, file_result=file_result)
+

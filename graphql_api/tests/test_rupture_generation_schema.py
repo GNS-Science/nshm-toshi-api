@@ -17,16 +17,17 @@ from graphene.test import Client
 from graphql_api import data_s3
 
 from graphql_api.schema import root_schema, RuptureGenerationTask
+# from graphql_api.schema.file_relation import FileRelation
 
 import graphql_api.data_s3 # for mocking
 
 
 CREATE = '''
-    mutation ($started: DateTime!) {
+    mutation ($created: DateTime!) {
         create_rupture_generation_task(input: {
             state: UNDEFINED
             result: UNDEFINED
-            started: $started
+            created: $created
             duration: 600
             arguments: {
                 max_jump_distance: 55.5
@@ -47,7 +48,7 @@ CREATE = '''
             {
                 task_result {
                 id
-                started
+                created
                 duration
                 arguments { max_jump_distance }
             }
@@ -70,14 +71,14 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
 
     def test_create_minimum_fields_happy_case(self):
         executed = self.client.execute(CREATE,
-            variable_values=dict(started=dt.datetime.now(tzutc())))
+            variable_values=dict(created=dt.datetime.now(tzutc())))
         print(executed)
         assert executed['data']['create_rupture_generation_task']\
                         ['task_result']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
 
     def test_date_must_include_timezone(self):
         startdate = dt.datetime.now() #no timesone
-        executed = self.client.execute(CREATE, variable_values=dict(started=startdate))
+        executed = self.client.execute(CREATE, variable_values=dict(created=startdate))
         print(executed)
         assert "must have a timezone" in executed['errors'][0]['message']
 
@@ -85,7 +86,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         qry = '''
             mutation {
                 create_rupture_generation_task(input: {
-                    started: "September 5th, 1999"
+                    created: "September 5th, 1999"
                     })
                     {
                         task_result {
@@ -109,7 +110,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         qry = CREATE.replace('##EXTRA_INPUT##', insert)
 
         print(qry)
-        executed = self.client.execute(qry, variable_values=dict(started=dt.datetime.now(tzutc())))
+        executed = self.client.execute(qry, variable_values=dict(created=dt.datetime.now(tzutc())))
         print(executed)
         assert 'In field "metrics": In field "subsection_count":'\
                 ' Expected "Int!", found null.' in executed['errors'][0]['message']
@@ -125,7 +126,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
             '''
         qry = CREATE.replace('##EXTRA_INPUT##', insert)
         print(qry)
-        executed = self.client.execute(qry, variable_values=dict(started=dt.datetime.now(tzutc())))
+        executed = self.client.execute(qry, variable_values=dict(created=dt.datetime.now(tzutc())))
         print(executed)
         assert executed['data']['create_rupture_generation_task']\
                         ['task_result']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
@@ -133,8 +134,9 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
 
 TASKZERO = lambda _self, _id: {
     "id": "0",
-    "started": "2020-10-30T09:15:00+00:00",
-    "duration": 600.0, "input_files": ["0"],
+    "clazz_name": "RuptureGenerationTask",
+    "created": "2020-10-30T09:15:00+00:00",
+    "duration": 600.0,
     "arguments": {"max_jump_distance": 55.5, "max_sub_section_length": 2.0, "max_cumulative_azimuth": 590.0}
     }
 

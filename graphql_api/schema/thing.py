@@ -1,28 +1,28 @@
 import graphene
 from graphene import relay
+from graphene import Enum
+from graphql_relay import from_global_id
+from graphql_api.schema.file_relation import FileRelationConnection
+from graphql_api.data_s3 import get_data_manager
 
-global db_root
 
 class Thing(graphene.Interface):
-    """A Task in the NSHM saga"""
+    """A Thing in the NSHM saga"""
     class Meta:
         interfaces = (relay.Node, )
 
-    created = graphene.DateTime(description="The time the task was started")
+    created = graphene.DateTime(description="When the thing was created")
 
     files = relay.ConnectionField(
-         'graphql_api.schema.schema.FileThingRelationConnection', description="Files associated with this task."
+         FileRelationConnection, description="Files associated with this object."
     )
 
     def resolve_files(self, info, **args):
         # Transform the instance ship_ids into real instances
         if not self.files: return []
-        return [db_root.file_relation.get_one(_id) for _id in self.files]
-
+        return [get_data_manager().file_relation.get_one(_id) for _id in self.files]
 
 class ThingConnection(relay.Connection):
     """A Relay connection listing Files"""
     class Meta:
         node = Thing
-
-

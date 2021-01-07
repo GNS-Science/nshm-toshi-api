@@ -3,10 +3,11 @@ Search Manager
 """
 #from importlib import import_module
 import requests
-from .opensha_task import RuptureGenerationTask
-from .file import File
+#from .custom.rupture_generation import RuptureGenerationTask
+#from .file import File
 
 from graphql_api.data_s3.thing_data import ThingData
+from graphql_api.data_s3.file_data import FileData
 
 TYPE = '_doc'
 
@@ -41,10 +42,11 @@ class SearchManager():
             #print ("count",  count)
             for obj in response['hits']['hits']:
                 print( obj['_index'], obj['_type'], obj['_id'], obj['_score'])
-                if 'TaskData' in obj['_id']:
-                    result.append(RuptureGenerationTask.from_json(obj['_source']))
-                elif 'FileData' in obj['_id']:
-                    result.append(File(**obj['_source']))
+                # if 'TaskData' in obj['_id']:
+                #     result.append(RuptureGenerationTask.from_json(obj['_source']))
+                # el
+                if 'FileData' in obj['_id']:
+                    result.append(FileData.from_json(obj['_source']))
                 elif 'ThingData' in obj['_id']:
                     # clazz_name = obj['_source'].pop('clazz_name')
                     # clazz = getattr(import_module('graphql_api.schema'), clazz_name)

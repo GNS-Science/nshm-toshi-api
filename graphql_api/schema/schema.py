@@ -7,21 +7,26 @@ import graphene
 from graphene import relay
 from graphql_relay import from_global_id, to_global_id
 
-from graphql_api.data_s3 import DataManager
-from .opensha_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
+from graphql_api.data_s3.data_manager import DataManager
+from .custom.rupture_generation import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask, RuptureGenerationTask
 from requests_aws4auth import AWS4Auth
 
 from .file import CreateFile, File, FileConnection
-from .task_file import CreateTaskFile
+from .file_relation import CreateFileRelation, FileRelationConnection
 from .search_manager import SearchManager
 
-from graphql_api.schema import opensha_task, file, task, task_file, file_relation, thing
-from graphql_api.schema.custom import strong_motion_station, sms_file_link
+from graphql_api.schema import file, event, thing
+#from .custom import strong_motion_station, strong_motion_station_file, sms_file_link, rupture_generation
+
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
-from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
+from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
+from graphql_api.data_s3 import get_data_manager
+# from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
+from .custom.general_task import GeneralTask, CreateGeneralTask, GeneralTaskConnection
 
+from .task_task_relation import CreateTaskTaskRelation
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
@@ -47,26 +52,9 @@ else:
 search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
 db_root = DataManager(search_manager, client_args)
 
-opensha_task.db_root = db_root
-file.db_root = db_root
-task.db_root = db_root
-task_file.db_root = db_root
-sms_file_link.db_root = db_root
-file_relation.db_root = db_root
-thing.db_root = db_root
-strong_motion_station.db_root = db_root
-
-class FileThingRelation(graphene.Union):
-    class Meta:
-        types = (SmsFileLink, )
-
-class FileThingRelationConnection(relay.Connection):
-    class Meta:
-        node = FileThingRelation
-
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask, StrongMotionStation)
+        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask)
 
 class SearchResultConnection(relay.Connection):
     class Meta:
@@ -83,7 +71,7 @@ class QueryRoot(graphene.ObjectType):
 
     rupture_generation_tasks = relay.ConnectionField(
         RuptureGenerationTaskConnection,
-        description="The OpenshaRuptureGen tasks."
+        description="List Opensha Rupture Generation tasks."
     )
 
     files = relay.ConnectionField(
@@ -117,7 +105,7 @@ class QueryRoot(graphene.ObjectType):
         Returns:
             list: rupture generation task list
         """
-        return db_root.task.get_all()
+        return db_root.thing.get_all() #TODO : this needs to use ES to constrain results to correct type
 
     @staticmethod
     def resolve_files(root, info):
@@ -132,14 +120,14 @@ class QueryRoot(graphene.ObjectType):
         search_result = db_root.search_manager.search(kwargs.get('search_term'))
         return Search(ok=True, search_result=search_result)
 
-
 class MutationRoot(graphene.ObjectType):
     create_rupture_generation_task = CreateRuptureGenerationTask.Field()
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_file = CreateFile.Field()
-    create_task_file = CreateTaskFile.Field()
-    create_sms_file_link = CreateSmsFileLink.Field()
-    #custom = graphene.Field(CustomMutations)
+    create_file_relation = CreateFileRelation.Field()
     create_strong_motion_station = CreateStrongMotionStation.Field()
+    create_sms_file = CreateSmsFile.Field()
+    create_general_task = CreateGeneralTask.Field()
+    create_task_relation = CreateTaskTaskRelation.Field()
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
