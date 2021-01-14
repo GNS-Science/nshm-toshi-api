@@ -24,8 +24,8 @@ from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotio
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
 from graphql_api.data_s3 import get_data_manager
 # from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
-from .custom.general_task import GeneralTask, CreateGeneralTask, GeneralTaskConnection
-
+from .custom.grand_inversion import GrandInversionTask, CreateGrandInversionTask, GrandInversionTaskConnection
+from .custom.general_task import GeneralTask, CreateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
@@ -54,7 +54,7 @@ db_root = DataManager(search_manager, client_args)
 
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask)
+        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask)
 
 class SearchResultConnection(relay.Connection):
     class Meta:
@@ -129,5 +129,6 @@ class MutationRoot(graphene.ObjectType):
     create_sms_file = CreateSmsFile.Field()
     create_general_task = CreateGeneralTask.Field()
     create_task_relation = CreateTaskTaskRelation.Field()
+    create_grand_inversion_task = CreateGrandInversionTask.Field()
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
