@@ -1,4 +1,6 @@
-name: deploy-aws-lambdaon:
+name: deploy-aws-lambda
+
+on:
   push:
     branches:
       - deploy-test
