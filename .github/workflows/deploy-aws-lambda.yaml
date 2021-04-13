@@ -12,7 +12,7 @@ jobs:
       matrix:
         node-version: [10.x]
     steps:
-      - uses: actions/checkout
+      - uses: actions/checkout@deploy-test
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
