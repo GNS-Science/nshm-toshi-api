@@ -1,13 +1,13 @@
 {
-  "name": "nshm-toshi-api",
-  "version": "1.0.0",
-  "description": "A graphql API for NSHM shared resources using  AWS lambda, S3 and ElasticSearch",
-  "main": "index.js",
+  "name": "nzshm22-toshi-api",
+  "version": "0.0.5",
+  "description": "A graphql API for NZSHM22 shared resources using  AWS lambda, S3 and ElasticSearch",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "serverless deploy --stage ${STAGE} --aws-profile tosh-api"
   },
   "repository": {
     "type": "git",

@@ -16,7 +16,10 @@ from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 import time
 
-URL = "http://127.0.0.1:5000/graphql"
+import os
+
+api_url = os.getenv('TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
+auth_token = os.getenv('TOSHI_API_KEY', "")
 
 class SmokeTest():
 
@@ -24,7 +27,10 @@ class SmokeTest():
     self.query = query
     self.expected = expected
     self.query_fragment = query_fragment
-    transport = RequestsHTTPTransport(url=URL, use_json=True)
+
+    headers = {"Authorization": "Bearer %s" % auth_token}
+    headers = {"x-api-key": auth_token}
+    transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
 
     self._client = Client(transport=transport,
             fetch_schema_from_transport=True)
@@ -430,7 +436,7 @@ smoketests = [
 
   SmokeTest(query = '''query search_file {
       search(
-        search_term: "file_name: my_sms*"
+        search_term: "file_name:my_sms*"
       ) {
         search_result {
           edges {
@@ -449,7 +455,7 @@ smoketests = [
 
   SmokeTest(query = '''query search_general_task {
       search(
-        search_term: "agent_name: chrisbc"
+        search_term: "agent_name:chrisbc"
       ) {
         search_result {
           edges {
@@ -606,10 +612,13 @@ smoketests = [
 
 
 def setup(queries):
-    transport = RequestsHTTPTransport(url=URL, use_json=True)
+    headers = {"x-api-key": auth_token}
+    transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
     client = Client(transport=transport,
             fetch_schema_from_transport=True)
     for q in queries:
+        print('setup_query: ', q)
+        print()
         client.execute(gql(q))
 
 if __name__ == "__main__":
