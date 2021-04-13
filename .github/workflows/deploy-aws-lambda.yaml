@@ -25,5 +25,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_TOSHI_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_TOSHI_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
+          STAGE: prod
       - name: Serverless Deploy ....
         run: npm run-script deploy
