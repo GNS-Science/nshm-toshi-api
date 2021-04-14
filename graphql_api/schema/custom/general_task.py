@@ -33,11 +33,19 @@ class GeneralTask(graphene.ObjectType):
     children = relay.ConnectionField(
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="sub-tasks of this task")
 
+    parents = relay.ConnectionField(
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
+        description="parent task(s) of this task")
+
     def resolve_children(self, info, **args):
         # Transform the instance thing_ids into real instances
         if not self.children: return []
         return [get_data_manager().thing_relation.get_one(_id) for _id in self.children]
 
+    def resolve_parents(self, info, **args):
+        # Transform the instance thing_ids into real instances
+        if not self.parents: return []
+        return [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
 
 class GeneralTaskConnection(relay.Connection):
     """A list of GeneralTask items"""
