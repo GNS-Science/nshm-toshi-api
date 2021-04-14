@@ -9,13 +9,17 @@ Setup:
  - sls s3 start &
  - sls wsgi serve
 
-then run from http://127.0.0.1:5000/graphql the following
+now python3 smoketests.py
 """
 
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
+import time
 
-URL = "http://127.0.0.1:5000/graphql"
+import os
+
+api_url = os.getenv('TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
+auth_token = os.getenv('TOSHI_API_KEY', "")
 
 class SmokeTest():
 
@@ -23,7 +27,10 @@ class SmokeTest():
     self.query = query
     self.expected = expected
     self.query_fragment = query_fragment
-    transport = RequestsHTTPTransport(url=URL, use_json=True)
+
+    headers = {"Authorization": "Bearer %s" % auth_token}
+    headers = {"x-api-key": auth_token}
+    transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
 
     self._client = Client(transport=transport,
             fetch_schema_from_transport=True)
@@ -39,6 +46,8 @@ class SmokeTest():
     response = self._client.execute(qql_query)
     # print(response)
     if not response == self.expected:
+        print("query", qry)
+        print()
         print("expected", self.expected)
         print()
         print('response', response)
@@ -175,7 +184,56 @@ test_setup = [
           }
       }
       }
-    }''']
+    }''',
+    '''mutation new_inversion {
+      create_grand_inversion_task (input:{
+          result:UNDEFINED
+          state:UNDEFINED
+          created:"2020-10-10T23:00Z"
+          arguments: {
+              constraints: [
+                {constraint_type:MFD_Inequality constraint_weight: 1000}
+                {constraint_type:MFD_Equality constraint_weight:10}
+                {constraint_type:Slip_Rate constraint_weight: 100} ]
+              energy_completion_criteria: {
+                energy_delta:0
+                energy_percent_delta:10
+                look_back_mins:15
+              }
+              time_completion_criteria:{ minutes:60 }
+              sync_interval: 1000
+              gutenberg_richter_mfd: {
+                total_rate_m5: 5.1
+                b_value: 1.0
+                mfd_min: 5.0
+                mfd_max: 8.5
+                mfd_transition_mag: 8.75
+                mfd_num: 40
+              }
+          }
+        git_refs: {
+          opensha_core: "A"
+          opensha_ucerf3:"B"
+          opensha_commons:"C"
+          nshm_nz_opensha:"D"
+        }
+        metrics: {
+          subsection_count: 3600
+          total_energy:3280.2333
+        }
+
+      }) {
+        task_result {
+          id
+          created
+          arguments {
+            energy_completion_criteria {
+              energy_delta
+            }
+          }
+        }
+      }
+      }''']
 
 search_fragments = '''
 fragment sr on SearchResult {
@@ -321,6 +379,18 @@ fragment sr on SearchResult {
       }
     }
   }
+
+  ... on GrandInversionTask {
+    id
+    created
+    arguments {
+      energy_completion_criteria {
+          energy_delta
+          energy_percent_delta
+          look_back_mins
+      }
+    }
+  }
 }
 '''
 
@@ -366,7 +436,7 @@ smoketests = [
 
   SmokeTest(query = '''query search_file {
       search(
-        search_term: "file_name: my_sms*"
+        search_term: "file_name:my_sms*"
       ) {
         search_result {
           edges {
@@ -385,7 +455,7 @@ smoketests = [
 
   SmokeTest(query = '''query search_general_task {
       search(
-        search_term: "agent_name: chrisbc"
+        search_term: "agent_name:chrisbc"
       ) {
         search_result {
           edges {
@@ -502,21 +572,60 @@ smoketests = [
     }
     ''',
     expected = {'node': {'__typename': 'RuptureGenerationTask', 'state': 'DONE', 'created': '2020-10-10T23:00:00+00:00', 'result': 'SUCCESS'}}
-    )
+    ),
+
+  SmokeTest(query = '''query search_grand_inversion_task {
+      search(
+        search_term: "arguments.energy_completion_criteria.energy_percent_delta:10"
+      ) {
+        search_result {
+          edges {
+            node {
+              ...sr
+            }
+          }
+        }
+      }
+    }''',
+    expected = {"search": {
+      "search_result": {
+        "edges": [
+          {
+            "node": {
+              "__typename": "GrandInversionTask",
+              "id": "R3JhbmRJbnZlcnNpb25UYXNrOjM=",
+              "created": "2020-10-10T23:00:00+00:00",
+              "arguments": {
+                "energy_completion_criteria": {
+                  "energy_delta": 0.0,
+                  "energy_percent_delta": 10.0,
+                  "look_back_mins": 15.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    }},
+    query_fragment = search_fragments),
  ]
 
 
 def setup(queries):
-    transport = RequestsHTTPTransport(url=URL, use_json=True)
+    headers = {"x-api-key": auth_token}
+    transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
     client = Client(transport=transport,
             fetch_schema_from_transport=True)
     for q in queries:
+        print('setup_query: ', q)
+        print()
         client.execute(gql(q))
 
 if __name__ == "__main__":
 
-    # setup(test_setup)
-    print("setup...")
+    setup(test_setup)
+    time.sleep(0.5)
+    print("setup complete...")
     for test in smoketests:
         test.execute()
 

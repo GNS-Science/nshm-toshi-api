@@ -1,10 +1,11 @@
-service: nshm-toshi-api
+service: nzshm22-toshi-api
 
 plugins:
   - serverless-python-requirements
   - serverless-wsgi
   - serverless-s3-local
 package:
+  individually: false
   exclude:
     - .git/**
     - .pytest_cache/**
@@ -14,6 +15,9 @@ package:
     - lib/**
     - node_modules/**
     - prof/**
+    - package.json
+    - package-log.json
+    - node_modules/**
 
 custom:
   #serverless-wsgi settings
@@ -52,7 +56,7 @@ custom:
   url_default_ttl: 60
 
   #elastic search
-  esDomainName: toshi-search-${self:custom.stage}
+  esDomainName: ${self:custom.app_acronym}-es-${self:custom.stage}
   esIndex: toshi_index
 
 provider:
@@ -107,8 +111,8 @@ functions:
           method: GET
           private: true
     environment:
-      ES_ENDPOINT: https://search-toshi-search-dev-bjuebpcraamxtlwuhktnyuu2ve.ap-southeast-2.es.amazonaws.com
-      ES_EP: { "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"] }
+      #ES_ENDPOINT: https://search-toshi-search-dev-bjuebpcraamxtlwuhktnyuu2ve.ap-southeast-2.es.amazonaws.com
+      ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
       ES_INDEX: ${self:custom.esIndex}
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
