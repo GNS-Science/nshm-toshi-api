@@ -57,6 +57,10 @@ class StrongMotionStation(StrongMotionStationFields, graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node, Thing)
 
+    @classmethod
+    def get_node(cls, info, id):
+        return get_data_manager().thing.get_one(id)
+
 
 class StrongMotionStationConnection(relay.Connection):
     """A list of StrongMotionStation items"""
