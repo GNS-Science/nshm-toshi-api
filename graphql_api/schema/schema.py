@@ -99,7 +99,7 @@ class QueryRoot(graphene.ObjectType):
     )
 
     def resolve_strong_motion_stations(root, info):
-        return db_root.thing.get_all()
+        return db_root.thing.get_all('StrongMotionStation')
 
 
     def resolve_strong_motion_station(root, info, id):
@@ -113,7 +113,7 @@ class QueryRoot(graphene.ObjectType):
         Returns:
             list: rupture generation task list
         """
-        return db_root.thing.get_all() #TODO : this needs to use ES to constrain results to correct type
+        return db_root.thing.get_all('RuptureGenerationTask')
 
     @staticmethod
     def resolve_files(root, info):
