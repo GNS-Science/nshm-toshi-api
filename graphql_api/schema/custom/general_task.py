@@ -47,6 +47,10 @@ class GeneralTask(graphene.ObjectType):
         if not self.parents: return []
         return [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
 
+    @classmethod
+    def get_node(cls, info, id):
+        return get_data_manager().thing.get_one(id)
+
 class GeneralTaskConnection(relay.Connection):
     """A list of GeneralTask items"""
     class Meta:
