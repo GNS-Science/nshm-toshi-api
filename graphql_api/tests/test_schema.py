@@ -84,7 +84,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
 
     def setUp(self):
         self.client = Client(root_schema)
-        self.mock_all = lambda x : [RuptureGenerationTask(id="0"), RuptureGenerationTask(id="1")]
+        self.mock_all = lambda x, y : [RuptureGenerationTask(id="0"), RuptureGenerationTask(id="1")]
 
     def tearDown(self):
         pass

@@ -27,7 +27,8 @@ from graphql_api.data_s3 import get_data_manager
 from .custom.grand_inversion import GrandInversionTask, CreateGrandInversionTask, GrandInversionTaskConnection
 from .custom.general_task import GeneralTask, CreateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
-trom .custom.rupture_gen_new import RuptureGenNewTaskConnection, CreateRuptureGenNewTask,\
+
+from .custom.rupture_gen_new import RuptureGenNewTaskConnection, CreateRuptureGenNewTask,\
     UpdateRuptureGenNewTask, RuptureGenNewTask
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
@@ -138,9 +139,9 @@ class MutationRoot(graphene.ObjectType):
     create_general_task = CreateGeneralTask.Field()
     create_task_relation = CreateTaskTaskRelation.Field()
     create_grand_inversion_task = CreateGrandInversionTask.Field()
-    create_rupture_gen_new_task = CreateRuptureGenNewTask.Field()
-    
 
+    create_rupture_gen_new_task = CreateRuptureGenNewTask.Field()
+    update_rupture_gen_new_task = UpdateRuptureGenNewTask.Field()
 
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
