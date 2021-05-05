@@ -50,6 +50,25 @@ class ThingData(BaseS3Data):
         Returns:
             File: the Thing object
         """
+        # TODO: validate the type of the object in case ID passed in by client is invalid
+        #
+        # e.g. query get_new_task {
+        # node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA=") {
+        #         __typename
+        #                 ... on StrongMotionStation {
+        #           id
+        #           site_code
+        #         }
+        #     ... on RuptureGenerationTask {
+        #             arguments {k v}
+        #         created
+        #         state
+        #         result
+        #         }
+        #     }
+        # }
+        # after smoketests the query will return an SMS, but object Type in ID is RuptureGenerationTask
+        #
         jsondata = self._read_object(thing_id)
         return self.from_json(jsondata)
 

@@ -41,10 +41,14 @@ class SmokeTest():
     if self.query_fragment:
         qry = self.query_fragment + '\n\n' + self.query
 
-    qql_query = gql(qry)
-    self._client.validate(qql_query)
-    response = self._client.execute(qql_query)
+    gql_query = gql(qry)
+    # print(gql_query)
+
+    self._client.validate(gql_query)
+
+    response = self._client.execute(gql_query)
     # print(response)
+
     if not response == self.expected:
         print("query", qry)
         print()
@@ -94,9 +98,12 @@ test_setup = [
     '''mutation new_rupt_file {
         create_file(file_name:"myfile2.txt"
         file_size: 2000
-        md5_digest: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=") {
+        md5_digest: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
+        meta: [{ k:"encoding" v:"utf8"}]
+        ) {
             file_result {
               id
+              meta {k v}
             }
         }
     }''',
@@ -211,17 +218,6 @@ test_setup = [
                 mfd_num: 40
               }
           }
-        git_refs: {
-          opensha_core: "A"
-          opensha_ucerf3:"B"
-          opensha_commons:"C"
-          nshm_nz_opensha:"D"
-        }
-        metrics: {
-          subsection_count: 3600
-          total_energy:3280.2333
-        }
-
       }) {
         task_result {
           id
@@ -233,7 +229,47 @@ test_setup = [
           }
         }
       }
-      }''']
+      }''',
+
+
+    '''
+    mutation new_ruptgen_new_task {
+        create_rupture_generation_task(input: {
+            state: UNDEFINED
+            result: UNDEFINED
+            created: "2020-10-10T23:00Z"
+            duration: 600
+            arguments: [
+                { k:"max_jump_distance" v: "55.5" }
+                { k:"max_sub_section_length" v: "2" }
+                { k:"max_cumulative_azimuth" v: "590" }
+                { k:"min_sub_sections_per_parent" v: "2" }
+                { k:"permutation_strategy" v: "DOWNDIP" }
+            ]
+          environment: [
+                { k:"gitref_opensha_ucerf3" v: "ABC"}
+                { k:"gitref_opensha_commons" v: "ABC"}
+                { k:"gitref_opensha_core" v: "ABC"}
+                { k:"nshm_nz_opensha" v: "ABC"}
+                { k:"host" v:"tryharder-ubuntu"}
+                { k:"JAVA" v:"-Xmx24G"  }
+            ]
+
+          metrics: [
+            { k:"subsection_count" v:"3600"}
+            { k:"total_energy" v:"3280.2333"}
+          ]
+          })
+          {
+              task_result {
+              id
+              created
+              duration
+              arguments {k v}
+          }
+        }
+    }
+    ''']
 
 search_fragments = '''
 fragment sr on SearchResult {
@@ -250,9 +286,7 @@ fragment sr on SearchResult {
               __typename
               ... on RuptureGenerationTask {
                 created
-                metrics {
-                   rupture_count
-                }
+
               }
             }
           }
@@ -285,6 +319,7 @@ fragment sr on SearchResult {
     id
     result
     state
+    args: arguments {k v}
     files {
      edges {
         node {
@@ -430,7 +465,8 @@ smoketests = [
       }
     }''',
     expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'RuptureGenerationTask',
-      'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'result': 'SUCCESS', 'state': 'DONE', 'files': {'edges': [
+      'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'result': 'SUCCESS', 'state': 'DONE', 'args': None,
+      'files': {'edges': [
       {'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'id': 'RmlsZTow', 'file_name': 'myfile2.txt', 'file_size': 2000}}}]}}}]}}},
     query_fragment = search_fragments),
 
@@ -490,9 +526,7 @@ smoketests = [
                     __typename
                     ... on RuptureGenerationTask {
                       created
-                      metrics {
-                         rupture_count
-                      }
+
                     }
                   }
                 }
@@ -504,7 +538,7 @@ smoketests = [
     }''',
     expected = {'node': {'file_name': 'myfile2.txt', 'file_size': 2000,
       'relations': {'edges': [
-        {'node': {'role': 'WRITE', 'thing': {'__typename': 'RuptureGenerationTask', 'created': '2020-10-10T23:00:00+00:00', 'metrics': None}}},
+        {'node': {'role': 'WRITE', 'thing': {'__typename': 'RuptureGenerationTask', 'created': '2020-10-10T23:00:00+00:00'}}},
         {'node': {'role': 'READ', 'thing': {'__typename': 'GeneralTask'}}}]}}}
 
     ),
@@ -518,9 +552,9 @@ smoketests = [
           duration
           state
           result
-          metrics {
-            rupture_count
-          }
+
+          #rupture_count
+
           parents {
             edges {
               node {
@@ -552,7 +586,7 @@ smoketests = [
       }
     }''',
     expected = {'node': {'__typename': 'RuptureGenerationTask', 'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'created': '2020-10-10T23:00:00+00:00',
-      'duration': None, 'state': 'DONE', 'result': 'SUCCESS', 'metrics': None,
+      'duration': None, 'state': 'DONE', 'result': 'SUCCESS',
         'parents': {'edges': [
           {'node': {'parent': {'title': 'My First Manual task', 'description': '##Some notes go here'}}}]},
         'files': {'edges': [{'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'file_name': 'myfile2.txt'}}}]}}}
@@ -608,7 +642,33 @@ smoketests = [
       }
     }},
     query_fragment = search_fragments),
- ]
+
+ SmokeTest(query = '''
+      query get_new_task {
+        node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=") {
+            __typename
+          ... on RuptureGenerationTask {
+            id
+            created
+            arguments {k v}
+          }
+        }
+      }''',
+    expected = { "node": {
+          "__typename": "RuptureGenerationTask",
+          "id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=",
+          "created": "2020-10-10T23:00:00+00:00",
+          "arguments": [
+            {"k": "max_jump_distance","v": "55.5"},
+            {"k": "max_sub_section_length","v": "2"},
+            {"k": "max_cumulative_azimuth","v": "590"},
+            {"k": "min_sub_sections_per_parent","v": "2"},
+            {"k": "permutation_strategy","v": "DOWNDIP"}
+          ]
+      }
+    }
+  ),
+]
 
 
 def setup(queries):
@@ -623,10 +683,20 @@ def setup(queries):
 
 if __name__ == "__main__":
 
+    #cleanup environment
+    os.system('curl -X DELETE "localhost:9200/toshi-index?pretty"')
+    os.system('rm -R /tmp/nzshm22-toshi-api-local/*')
+
+    #create some content with graphql mutations
     setup(test_setup)
     time.sleep(0.5)
     print("setup complete...")
+
+    #execute some graphql queries
     for test in smoketests:
         test.execute()
 
+    print()
+    print("########################")
     print("Smoke tests completed OK")
+    print("########################")
