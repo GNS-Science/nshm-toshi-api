@@ -21,7 +21,7 @@ from graphene import Enum
 from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
-from .common import GitReferencesInput, GitReferencesOutput, KeyValuePair
+from .common import GitReferencesInput, GitReferencesOutput, KeyValuePair, KeyValuePairInput
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +90,10 @@ class CreateRuptureGenNewTask(relay.ClientIDMutation):
         created = graphene.DateTime(required=True, description="The time the task was created", )
         duration = graphene.Float(description="The final duraton of the task in seconds")
 
-        arguments = graphene.List(KeyValuePair, description="input arguments for the Rupture generator")
+        arguments = graphene.List(KeyValuePairInput, description="input arguments for the Rupture generator")
         rupture_count = graphene.Int(description="Count of ruptures produced.")
 
-        metrics = RuptureGenerationMetricsInput(description="The metrics from rupture generation")
+        # metrics = RuptureGenerationMetricsInput(description="The metrics from rupture generation")
         git_refs = GitReferencesInput(description="The git references for the software")
 
     task_result = graphene.Field(RuptureGenNewTask)
@@ -112,10 +112,10 @@ class UpdateRuptureGenNewTask(relay.ClientIDMutation):
         state = EventState(required=False)
         created = graphene.DateTime(required=False, description="The time the task was created")
         duration = graphene.Float(required=False, description="The final duraton of the task in seconds")
-        
-        arguments = graphene.List(KeyValuePair, required=False, description="input arguments for the Rupture generator")
+
+        arguments = graphene.List(KeyValuePairInput, required=False, description="input arguments for the Rupture generator")
         rupture_count = graphene.Int(description="Count of ruptures produced.")
-        metrics = RuptureGenerationMetricsInput(required=False, description="The metrics from rupture generation")
+        # metrics = RuptureGenerationMetricsInput(required=False, description="The metrics from rupture generation")
         git_refs = GitReferencesInput(description="The git references for the software")
 
     task_result = graphene.Field(RuptureGenNewTask)
