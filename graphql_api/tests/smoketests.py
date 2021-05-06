@@ -41,10 +41,14 @@ class SmokeTest():
     if self.query_fragment:
         qry = self.query_fragment + '\n\n' + self.query
 
-    qql_query = gql(qry)
-    self._client.validate(qql_query)
-    response = self._client.execute(qql_query)
-    # print(response)
+    gql_query = gql(qry)
+    print(gql_query)
+
+    self._client.validate(gql_query)
+
+    response = self._client.execute(gql_query)
+    print(response)
+
     if not response == self.expected:
         print("query", qry)
         print()
@@ -233,7 +237,40 @@ test_setup = [
           }
         }
       }
-      }''']
+      }''',
+
+
+    '''
+    mutation new_ruptgen_new_task {
+        create_rupture_gen_new_task(input: {
+            state: UNDEFINED
+            result: UNDEFINED
+            created: "2020-10-10T23:00Z"
+            duration: 600
+            arguments: [
+                { k:"max_jump_distance" v: "55.5" }
+                { k:"max_sub_section_length" v: "2" }
+                { k:"max_cumulative_azimuth" v: "590" }
+                { k:"min_sub_sections_per_parent" v: "2" }
+                { k:"permutation_strategy" v: "DOWNDIP" }
+            ]
+            git_refs: {
+                opensha_ucerf3: "ABC"
+                opensha_commons: "ABC"
+                opensha_core: "ABC"
+                nshm_nz_opensha: "ABC"
+            }
+          })
+          {
+              task_result {
+              id
+              created
+              duration
+              arguments {k v}
+          }
+        }
+    }
+    ''']
 
 search_fragments = '''
 fragment sr on SearchResult {
@@ -285,6 +322,29 @@ fragment sr on SearchResult {
     id
     result
     state
+    files {
+     edges {
+        node {
+          __typename
+          ... on FileRelation {
+            role
+            file {
+              ... on File {
+                id
+                file_name
+                file_size
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ... on RuptureGenNewTask {
+    id
+    result
+    state
+    args: arguments {k v}
     files {
      edges {
         node {
@@ -608,7 +668,33 @@ smoketests = [
       }
     }},
     query_fragment = search_fragments),
- ]
+
+ SmokeTest(query = '''
+      query get_new_task {
+        node(id:"UnVwdHVyZUdlbk5ld1Rhc2s6NA==") {
+            __typename
+          ... on RuptureGenNewTask {
+            id
+            created
+            arguments {k v}
+          }
+        }
+      }''',
+    expected = { "node": {
+          "__typename": "RuptureGenNewTask",
+          "id": "UnVwdHVyZUdlbk5ld1Rhc2s6NA==",
+          "created": "2020-10-10T23:00:00+00:00",
+          "arguments": [
+            {"k": "max_jump_distance","v": "55.5"},
+            {"k": "max_sub_section_length","v": "2"},
+            {"k": "max_cumulative_azimuth","v": "590"},
+            {"k": "min_sub_sections_per_parent","v": "2"},
+            {"k": "permutation_strategy","v": "DOWNDIP"}
+          ]
+      }
+    }
+  ),
+]
 
 
 def setup(queries):
@@ -623,10 +709,20 @@ def setup(queries):
 
 if __name__ == "__main__":
 
+    #cleanup environment
+    os.system('curl -X DELETE "localhost:9200/toshi-index?pretty"')
+    os.system('rm -R /tmp/nzshm22-toshi-api-local/*')
+
+    #create some content with graphql mutations
     setup(test_setup)
     time.sleep(0.5)
     print("setup complete...")
+
+    #execute some graphql queries
     for test in smoketests:
         test.execute()
 
+    print()
+    print("########################")
     print("Smoke tests completed OK")
+    print("########################")
