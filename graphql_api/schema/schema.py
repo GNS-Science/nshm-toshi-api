@@ -57,7 +57,7 @@ db_root = DataManager(search_manager, client_args)
 
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask)
+        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask, RuptureGenNewTask)
 
 class SearchResultConnection(relay.Connection):
     class Meta:
