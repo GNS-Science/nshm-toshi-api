@@ -98,9 +98,12 @@ test_setup = [
     '''mutation new_rupt_file {
         create_file(file_name:"myfile2.txt"
         file_size: 2000
-        md5_digest: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=") {
+        md5_digest: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
+        meta: [{ k:"encoding" v:"utf8"}]
+        ) {
             file_result {
               id
+              meta {k v}
             }
         }
     }''',
@@ -215,17 +218,6 @@ test_setup = [
                 mfd_num: 40
               }
           }
-        git_refs: {
-          opensha_core: "A"
-          opensha_ucerf3:"B"
-          opensha_commons:"C"
-          nshm_nz_opensha:"D"
-        }
-        metrics: {
-          subsection_count: 3600
-          total_energy:3280.2333
-        }
-
       }) {
         task_result {
           id
@@ -254,12 +246,19 @@ test_setup = [
                 { k:"min_sub_sections_per_parent" v: "2" }
                 { k:"permutation_strategy" v: "DOWNDIP" }
             ]
-            git_refs: {
-                opensha_ucerf3: "ABC"
-                opensha_commons: "ABC"
-                opensha_core: "ABC"
-                nshm_nz_opensha: "ABC"
-            }
+          environment: [
+                { k:"gitref_opensha_ucerf3" v: "ABC"}
+                { k:"gitref_opensha_commons" v: "ABC"}
+                { k:"gitref_opensha_core" v: "ABC"}
+                { k:"nshm_nz_opensha" v: "ABC"}
+                { k:"host" v:"tryharder-ubuntu"}
+                { k:"JAVA" v:"-Xmx24G"  }
+            ]
+
+          metrics: [
+            { k:"subsection_count" v:"3600"}
+            { k:"total_energy" v:"3280.2333"}
+          ]
           })
           {
               task_result {
