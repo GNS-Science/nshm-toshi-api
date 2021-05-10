@@ -42,12 +42,12 @@ class SmokeTest():
         qry = self.query_fragment + '\n\n' + self.query
 
     gql_query = gql(qry)
-    print(gql_query)
+    # print(gql_query)
 
     self._client.validate(gql_query)
 
     response = self._client.execute(gql_query)
-    print(response)
+    # print(response)
 
     if not response == self.expected:
         print("query", qry)
@@ -242,7 +242,7 @@ test_setup = [
 
     '''
     mutation new_ruptgen_new_task {
-        create_rupture_gen_new_task(input: {
+        create_rupture_generation_task(input: {
             state: UNDEFINED
             result: UNDEFINED
             created: "2020-10-10T23:00Z"
@@ -287,9 +287,7 @@ fragment sr on SearchResult {
               __typename
               ... on RuptureGenerationTask {
                 created
-                metrics {
-                   rupture_count
-                }
+
               }
             }
           }
@@ -319,28 +317,6 @@ fragment sr on SearchResult {
     }
   }
   ... on RuptureGenerationTask {
-    id
-    result
-    state
-    files {
-     edges {
-        node {
-          __typename
-          ... on FileRelation {
-            role
-            file {
-              ... on File {
-                id
-                file_name
-                file_size
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  ... on RuptureGenNewTask {
     id
     result
     state
@@ -490,7 +466,8 @@ smoketests = [
       }
     }''',
     expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'RuptureGenerationTask',
-      'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'result': 'SUCCESS', 'state': 'DONE', 'files': {'edges': [
+      'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'result': 'SUCCESS', 'state': 'DONE', 'args': None,
+      'files': {'edges': [
       {'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'id': 'RmlsZTow', 'file_name': 'myfile2.txt', 'file_size': 2000}}}]}}}]}}},
     query_fragment = search_fragments),
 
@@ -550,9 +527,7 @@ smoketests = [
                     __typename
                     ... on RuptureGenerationTask {
                       created
-                      metrics {
-                         rupture_count
-                      }
+
                     }
                   }
                 }
@@ -564,7 +539,7 @@ smoketests = [
     }''',
     expected = {'node': {'file_name': 'myfile2.txt', 'file_size': 2000,
       'relations': {'edges': [
-        {'node': {'role': 'WRITE', 'thing': {'__typename': 'RuptureGenerationTask', 'created': '2020-10-10T23:00:00+00:00', 'metrics': None}}},
+        {'node': {'role': 'WRITE', 'thing': {'__typename': 'RuptureGenerationTask', 'created': '2020-10-10T23:00:00+00:00'}}},
         {'node': {'role': 'READ', 'thing': {'__typename': 'GeneralTask'}}}]}}}
 
     ),
@@ -578,9 +553,9 @@ smoketests = [
           duration
           state
           result
-          metrics {
-            rupture_count
-          }
+
+          #rupture_count
+
           parents {
             edges {
               node {
@@ -612,7 +587,7 @@ smoketests = [
       }
     }''',
     expected = {'node': {'__typename': 'RuptureGenerationTask', 'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'created': '2020-10-10T23:00:00+00:00',
-      'duration': None, 'state': 'DONE', 'result': 'SUCCESS', 'metrics': None,
+      'duration': None, 'state': 'DONE', 'result': 'SUCCESS',
         'parents': {'edges': [
           {'node': {'parent': {'title': 'My First Manual task', 'description': '##Some notes go here'}}}]},
         'files': {'edges': [{'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'file_name': 'myfile2.txt'}}}]}}}
@@ -671,9 +646,9 @@ smoketests = [
 
  SmokeTest(query = '''
       query get_new_task {
-        node(id:"UnVwdHVyZUdlbk5ld1Rhc2s6NA==") {
+        node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=") {
             __typename
-          ... on RuptureGenNewTask {
+          ... on RuptureGenerationTask {
             id
             created
             arguments {k v}
@@ -681,8 +656,8 @@ smoketests = [
         }
       }''',
     expected = { "node": {
-          "__typename": "RuptureGenNewTask",
-          "id": "UnVwdHVyZUdlbk5ld1Rhc2s6NA==",
+          "__typename": "RuptureGenerationTask",
+          "id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=",
           "created": "2020-10-10T23:00:00+00:00",
           "arguments": [
             {"k": "max_jump_distance","v": "55.5"},

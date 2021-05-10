@@ -28,8 +28,8 @@ from .custom.grand_inversion import GrandInversionTask, CreateGrandInversionTask
 from .custom.general_task import GeneralTask, CreateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
 
-from .custom.rupture_gen_new import RuptureGenNewTaskConnection, CreateRuptureGenNewTask,\
-    UpdateRuptureGenNewTask, RuptureGenNewTask
+# from .custom.rupture_gen_new import RuptureGenNewTaskConnection, CreateRuptureGenNewTask,\
+#     UpdateRuptureGenNewTask, RuptureGenNewTask
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
@@ -57,7 +57,7 @@ db_root = DataManager(search_manager, client_args)
 
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask, RuptureGenNewTask)
+        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask)
 
 class SearchResultConnection(relay.Connection):
     class Meta:
@@ -77,10 +77,10 @@ class QueryRoot(graphene.ObjectType):
         description="List Opensha Rupture Generation tasks."
     )
 
-    rupture_gen_new_tasks = relay.ConnectionField(
-        RuptureGenNewTaskConnection,
-        description="List Opensha Rupture Gen New tasks."
-    )
+    # rupture_gen_new_tasks = relay.ConnectionField(
+    #     RuptureGenNewTaskConnection,
+    #     description="List Opensha Rupture Gen New tasks."
+    # )
 
 
     files = relay.ConnectionField(
@@ -140,8 +140,8 @@ class MutationRoot(graphene.ObjectType):
     create_task_relation = CreateTaskTaskRelation.Field()
     create_grand_inversion_task = CreateGrandInversionTask.Field()
 
-    create_rupture_gen_new_task = CreateRuptureGenNewTask.Field()
-    update_rupture_gen_new_task = UpdateRuptureGenNewTask.Field()
+    # create_rupture_gen_new_task = CreateRuptureGenNewTask.Field()
+    # update_rupture_gen_new_task = UpdateRuptureGenNewTask.Field()
 
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)

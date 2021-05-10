@@ -50,6 +50,7 @@ class ThingData(BaseS3Data):
         Returns:
             File: the Thing object
         """
+        # TODO: get_one should validate the type of the object in case ID passed in by client is invalid
         jsondata = self._read_object(thing_id)
         return self.from_json(jsondata)
 

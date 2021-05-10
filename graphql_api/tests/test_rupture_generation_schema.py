@@ -29,13 +29,13 @@ CREATE = '''
             result: UNDEFINED
             created: $created
             duration: 600
-            arguments: {
-                max_jump_distance: 55.5
-                max_sub_section_length: 2
-                max_cumulative_azimuth: 590
-                min_sub_sections_per_parent: 2
-                permutation_strategy: DOWNDIP
-                }
+            arguments: [
+                { k:"max_jump_distance" v: "55.5" }
+                { k:"max_sub_section_length" v: "2" }
+                { k:"max_cumulative_azimuth" v: "590" }
+                { k:"min_sub_sections_per_parent" v: "2" }
+                { k:"permutation_strategy" v: "DOWNDIP" }
+            ]
             git_refs: {
                 opensha_ucerf3: "ABC"
                 opensha_commons: "ABC"
@@ -50,7 +50,7 @@ CREATE = '''
                 id
                 created
                 duration
-                arguments { max_jump_distance }
+                arguments {k v}
             }
         }
     }
@@ -103,9 +103,8 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
     @unittest.skip('deprecated behaviour')
     def test_create_with_metrics_needs_all_or_none(self):
         insert = '''
-            metrics: {
-             rupture_count: 20
-            }
+            rupture_count: 20
+
             '''
         qry = CREATE.replace('##EXTRA_INPUT##', insert)
 
@@ -118,11 +117,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
 
     def test_create_with_metrics(self):
         insert = '''
-            metrics: {
-             rupture_count: 20
-             subsection_count: 20
-             cluster_connection_count: 20
-            }
+            rupture_count: 20
             '''
         qry = CREATE.replace('##EXTRA_INPUT##', insert)
         print(qry)
@@ -137,7 +132,13 @@ TASKZERO = lambda _self, _id: {
     "clazz_name": "RuptureGenerationTask",
     "created": "2020-10-30T09:15:00+00:00",
     "duration": 600.0,
-    "arguments": {"max_jump_distance": 55.5, "max_sub_section_length": 2.0, "max_cumulative_azimuth": 590.0}
+    "arguments": [
+            { "k":"max_jump_distance", "v": "55.5" },
+            { "k":"max_sub_section_length", "v": "2" },
+            { "k":"max_cumulative_azimuth", "v": "590" },
+            { "k":"min_sub_sections_per_parent", "v": "2" },
+            { "k":"permutation_strategy", "v": "DOWNDIP" },
+        ]
     }
 
 @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
@@ -158,19 +159,13 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
                 update_rupture_generation_task(input: {
                     task_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA="
                     duration: 909,
-                    metrics: {
-                        rupture_count: 20
-                        subsection_count: 20
-                        cluster_connection_count: 20
-                    }
+                    rupture_count: 20
                 })
                 {
                     task_result {
                         id
                         duration
-                        metrics {
-                            rupture_count
-                        }
+                        rupture_count
                     }
                 }
             }
@@ -181,7 +176,7 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
         result = executed['data']['update_rupture_generation_task']['task_result']
         assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
         assert result['duration'] == 909
-        assert result['metrics']['rupture_count'] == 20
+        assert result['rupture_count'] == 20
 
 
     @unittest.skip("TODO")
