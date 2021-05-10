@@ -38,9 +38,12 @@ class RuptureGenerationTask(graphene.ObjectType):
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
         description="parent task(s) of this task")
 
-    arguments = graphene.List(KeyValuePair, required=False, description="input arguments for the rupture generation task, as alist of Key Value pairs.")
-    environment = graphene.List(KeyValuePair, required=False, description="execution environment details, as alist of Key Value pairs.")
-    metrics = graphene.List(KeyValuePair, required=False, description="result metrics from the task, as alist of Key Value pairs.")
+    arguments = graphene.List(KeyValuePair, required=False,
+        description="input arguments for the rupture generation task, as a list of Key Value pairs.")
+    environment = graphene.List(KeyValuePair, required=False,
+        description="execution environment details, as a list of Key Value pairs.")
+    metrics = graphene.List(KeyValuePair, required=False,
+        description="result metrics from the task, as a list of Key Value pairs.")
 
 
     def resolve_parents(self, info, **args):
@@ -72,9 +75,12 @@ class CreateRuptureGenerationTask(relay.ClientIDMutation):
         created = graphene.DateTime(required=True, description="The time the task was created", )
         duration = graphene.Float(description="The final duraton of the task in seconds")
 
-        arguments = graphene.List(KeyValuePairInput, required=False, description="input arguments for the rupture generation task, as alist of Key Value pairs.")
-        environment = graphene.List(KeyValuePairInput, required=False, description="execution environment details, as alist of Key Value pairs.")
-        metrics = graphene.List(KeyValuePairInput, required=False, description="result metrics from the task, as alist of Key Value pairs.")
+        arguments = graphene.List(KeyValuePairInput, required=False,
+            description="input arguments for the rupture generation task, as a list of Key Value pairs.")
+        environment = graphene.List(KeyValuePairInput, required=False,
+            description="execution environment details, as a list of Key Value pairs.")
+        metrics = graphene.List(KeyValuePairInput, required=False,
+            description="result metrics from the task, as a list of Key Value pairs.")
 
 
     task_result = graphene.Field(RuptureGenerationTask)
@@ -91,12 +97,17 @@ class UpdateRuptureGenerationTask(relay.ClientIDMutation):
         task_id = graphene.ID(required=True)
         result = EventResult(required=False)
         state = EventState(required=False)
-        created = graphene.DateTime(required=False, description="The time the task was created")
-        duration = graphene.Float(required=False, description="The final duraton of the task in seconds")
+        created = graphene.DateTime(required=False,
+            description="The time the task was created")
+        duration = graphene.Float(required=False,
+            description="The final duraton of the task in seconds")
 
-        arguments = graphene.List(KeyValuePairInput, required=False, description="input arguments for the rupture generation task, as alist of Key Value pairs.")
-        environment = graphene.List(KeyValuePairInput, required=False, description="execution environment details, as alist of Key Value pairs.")
-        metrics = graphene.List(KeyValuePairInput, required=False, description="result metrics from the task, as alist of Key Value pairs.")
+        arguments = graphene.List(KeyValuePairInput, required=False,
+            description="input arguments for the rupture generation task, as a list of Key Value pairs.")
+        environment = graphene.List(KeyValuePairInput, required=False,
+            description="execution environment details, as a list of Key Value pairs.")
+        metrics = graphene.List(KeyValuePairInput, required=False,
+            description="result metrics from the task, as a list of Key Value pairs.")
 
     task_result = graphene.Field(RuptureGenerationTask)
 
