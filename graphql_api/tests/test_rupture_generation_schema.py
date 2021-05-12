@@ -176,3 +176,55 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
         """need to show that the json being saved to S3 is correct"""
         assert 0
 
+
+
+TASK_OLD = lambda _self, _id: {
+    "id": "0",
+    "clazz_name": "RuptureGenerationTask",
+    "created": "2020-10-30T09:15:00+00:00",
+    "duration": 600.0,
+    "git_refs": {"opensha_ucerf3": "B", "opensha_commons": "C", "opensha_core": "A", "nshm_nz_opensha": "D"},
+    "arguments": None, "metrics": None
+    }
+
+@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+class TestUpdateRuptureGenerationTask(unittest.TestCase):
+    """
+    File "/home/chrisbc/DEV/GNS/nshm-toshi-api/graphql_api/data_s3/thing_data.py", line 145, in from_json
+        return clazz(**jsondata)
+      File "/home/chrisbc/DEV/GNS/nshm-toshi-api/lib/python3.8/site-packages/graphene/types/objecttype.py", line 169, in __init__
+        raise TypeError(
+    TypeError: 'git_refs' is an invalid keyword argument for RuptureGenerationTask
+    """
+    def setUp(self):
+        self.client = Client(root_schema)
+
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASK_OLD)
+    def test_transforms_old_fields(self):
+        qry = '''
+        query q1 {
+          node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA=") {
+                __typename
+            id
+            ... on RuptureGenerationTask {
+              id
+              created
+              duration
+              environment {
+                k
+                v
+              }
+            }
+          }
+        }
+        '''
+        print(qry)
+        executed = self.client.execute(qry)
+        print(executed)
+
+        result = executed['data']['node']
+        assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        assert result['duration'] == 600.0
+        assert result['environment'][0]['k'] == "gitref_opensha-core"
+        assert result['environment'][0]['v'] == "A"
