@@ -17,3 +17,14 @@ class GitReferencesInput(GitReferences, graphene.InputObjectType):
 class GitReferencesOutput(GitReferences, graphene.ObjectType):
     """Arguments passed into the opensha Rupture Generator"""
 
+class KeyValuePair(graphene.ObjectType):
+    """Simple container for string-based KV pair data"""
+    k = graphene.String(description="key")
+    v = graphene.String(description="value")
+
+
+class KeyValuePairInput(graphene.InputObjectType):
+    """Simple container for string-based KV pair data"""
+    k = graphene.String(description="key")
+    v = graphene.String(description="value")
+

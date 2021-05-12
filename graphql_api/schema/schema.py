@@ -17,16 +17,14 @@ from .file_relation import CreateFileRelation, FileRelationConnection
 from .search_manager import SearchManager
 
 from graphql_api.schema import file, event, thing
-#from .custom import strong_motion_station, strong_motion_station_file, sms_file_link, rupture_generation
-
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
 from graphql_api.data_s3 import get_data_manager
-# from .custom.sms_file_link import SmsFileLink, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 from .custom.grand_inversion import GrandInversionTask, CreateGrandInversionTask, GrandInversionTaskConnection
 from .custom.general_task import GeneralTask, CreateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
+
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
@@ -130,5 +128,6 @@ class MutationRoot(graphene.ObjectType):
     create_general_task = CreateGeneralTask.Field()
     create_task_relation = CreateTaskTaskRelation.Field()
     create_grand_inversion_task = CreateGrandInversionTask.Field()
+
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
