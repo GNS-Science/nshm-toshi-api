@@ -3,6 +3,7 @@ BaseS3Data is the base class for AWS_S3 data handlers
 """
 import os
 import json
+from importlib import import_module
 from io import BytesIO
 import boto3
 
@@ -44,16 +45,23 @@ class BaseS3Data():
         """
         raise NotImplementedError("method needs to be defined by sub-class")
 
-    def get_all(self):
+    def get_all(self, clazz_name=None):
         """
         Returns:
             list: a list containing all the objects materialised from the S3 bucket
         """
+        if clazz_name:
+            clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+        else:
+            clazz=None
+
         results = []
         for obj_summary in self._bucket.objects.filter(Prefix='%s/' % self._prefix):
             prefix, result_id, _ = obj_summary.key.split('/')
             assert prefix == self._prefix
-            results.append(self.get_one(result_id))
+            object = self.get_one(result_id)
+            if (clazz==None or isinstance(object, clazz)):
+                results.append(object)
         return results
 
     def _write_object(self, object_id, body):
