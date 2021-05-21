@@ -5,7 +5,7 @@ import json
 from importlib import import_module
 import logging
 
-from .base_s3_data import BaseS3Data
+from .base_s3_data import BaseS3Data, append_uniq
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,9 @@ class FileData(BaseS3Data):
         Returns:
             int: the next available id
         """
-        return int(super().get_next_id()/2)
+        size = sum(1 for _ in self._bucket.objects.filter(Prefix='%s/' % self._prefix))/2
+        return append_uniq(size)
+        # return int(super().get_next_id()/2)
 
     def get_all(self):
         """
