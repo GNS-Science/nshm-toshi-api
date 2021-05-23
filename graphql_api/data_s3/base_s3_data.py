@@ -6,7 +6,14 @@ import json
 from importlib import import_module
 from io import BytesIO
 import boto3
+import random
 
+_ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
+
+
+def append_uniq(size):
+    uniq = ''.join(random.choice(_ALPHABET) for _ in range(5))
+    return str(size)+uniq
 
 class BaseS3Data():
     """
@@ -32,7 +39,7 @@ class BaseS3Data():
             int: the next available id
         """
         size = sum(1 for _ in self._bucket.objects.filter(Prefix='%s/' % self._prefix))
-        return size
+        return append_uniq(size)
 
     def get_one(self, _id):
         """Summary
