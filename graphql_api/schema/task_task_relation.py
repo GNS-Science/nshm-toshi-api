@@ -25,6 +25,12 @@ class TaskTaskRelationConnection(relay.Connection):
     class Meta:
         node = TaskTaskRelation
 
+    total_count = graphene.Int()
+
+    @staticmethod
+    def resolve_total_count(root, info, *args, **kwargs):
+        return len(root.edges)
+
 class CreateTaskTaskRelation(graphene.Mutation):
     class Arguments:
         parent_id = graphene.ID(required=True)

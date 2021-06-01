@@ -57,7 +57,11 @@ class SearchResult(graphene.Union):
 class SearchResultConnection(relay.Connection):
     class Meta:
         node = SearchResult
-    total_count = graphene.Field(graphene.Int, default_value=11)
+    total_count = graphene.Field(graphene.Int)
+
+    @staticmethod
+    def resolve_total_count(root, info, *args, **kwargs):
+        return len(root.edges)
 
 class Search(graphene.ObjectType):
     ok = graphene.Boolean()

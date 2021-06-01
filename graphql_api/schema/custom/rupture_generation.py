@@ -68,6 +68,13 @@ class RuptureGenerationTaskConnection(relay.Connection):
     class Meta:
         node = RuptureGenerationTask
 
+    total_count = graphene.Int()
+
+    @staticmethod
+    def resolve_total_count(root, info, *args, **kwargs):
+        return len(root.edges)
+
+
 class CreateRuptureGenerationTask(relay.ClientIDMutation):
     class Input:
         result = EventResult(required=True)

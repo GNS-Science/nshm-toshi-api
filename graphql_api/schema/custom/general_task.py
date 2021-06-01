@@ -16,6 +16,7 @@ from graphene import relay
 from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
 
+
 class GeneralTask(graphene.ObjectType):
     """
     A General Task capture metadata and related inputs/outputs for arbitrary tasks
@@ -31,7 +32,8 @@ class GeneralTask(graphene.ObjectType):
     description = graphene.String(description='Some description of the task, potentially Markdown')
 
     children = relay.ConnectionField(
-        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="sub-tasks of this task")
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
+        description="sub-tasks of this task")
 
     parents = relay.ConnectionField(
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
@@ -55,6 +57,13 @@ class GeneralTaskConnection(relay.Connection):
     """A list of GeneralTask items"""
     class Meta:
         node = GeneralTask
+
+    total_count = graphene.Int()
+
+    @staticmethod
+    def resolve_total_count(root, info, *args, **kwargs):
+        return len(root.edges)
+
 
 class CreateGeneralTask(relay.ClientIDMutation):
     class Input:
