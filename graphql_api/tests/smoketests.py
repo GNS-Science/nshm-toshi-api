@@ -647,7 +647,6 @@ smoketests = [
 
  SmokeTest(query = '''
       query get_new_task {
-
         node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjRRZ0p1NA==") {
             __typename
           ... on RuptureGenerationTask {
