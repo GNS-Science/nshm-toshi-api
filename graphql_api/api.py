@@ -10,7 +10,9 @@ if os.getenv("IS_OFFLINE", False):
 	random.seed(42)
 
 app = Flask(__name__)
-CORS(app)
+CORS(app,
+	origins=[os.getenv("TOSHI_CLIENT_URI", ""),],
+	methods = ["GET", "HEAD", "OPTIONS", "POST"])
 
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
     'graphql',
