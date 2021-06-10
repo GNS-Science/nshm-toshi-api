@@ -23,6 +23,12 @@ class Thing(graphene.Interface):
         return [get_data_manager().file_relation.get_one(_id) for _id in self.files]
 
 class ThingConnection(relay.Connection):
-    """A Relay connection listing Files"""
+    """A Relay connection listing Things"""
     class Meta:
         node = Thing
+
+    total_count = graphene.Int()
+
+    @staticmethod
+    def resolve_total_count(root, info, *args, **kwargs):
+        return len(root.edges)

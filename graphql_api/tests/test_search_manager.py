@@ -91,4 +91,4 @@ class TestSchemaSearch(unittest.TestCase):
 
             executed = self.client.execute(SEARCH)
             print(executed)
-            assert executed['data']['search']['search_result']['total_count'] == 11
+            assert executed['data']['search']['search_result']['total_count'] == 0

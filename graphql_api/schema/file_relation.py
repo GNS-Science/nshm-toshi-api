@@ -36,6 +36,11 @@ class FileRelationConnection(relay.Connection):
     class Meta:
         node = FileRelation
 
+    total_count = graphene.Int()
+
+    @staticmethod
+    def resolve_total_count(root, info, *args, **kwargs):
+        return len(root.edges)
 
 class CreateFileRelation(graphene.Mutation):
     class Arguments:
