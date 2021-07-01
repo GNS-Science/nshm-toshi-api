@@ -43,43 +43,25 @@ response_01 = b'''{
                     "file_url": null,
                     "post_url": null,
                     "relations": [
-                        "1114"
+                        "1114",
+                        "999"
                     ]
                 }
             },
             {
                 "_index": "toshi_index",
                 "_type": "_doc",
-                "_id": "TaskData_560_object.json",
+                "_id": "ThingData_560_object.json",
                 "_score": 4.765019,
                 "_source": {
-                    "id": "560",
-                    "result": "success",
-                    "state": "done",
-                    "started": "2020-11-13T14:28:49.019800+00:00",
-                    "duration": 209.849867,
-                    "files": [
-                        "1119",
-                        "1120"
-                    ],
-                    "arguments": {
-                        "max_jump_distance": 4,
-                        "max_sub_section_length": 0.5,
-                        "min_sub_sections_per_parent": 2,
-                        "max_cumulative_azimuth": 600,
-                        "permutation_strategy": "downdip"
-                    },
-                    "metrics": {
-                        "rupture_count": 356219,
-                        "subsection_count": 2596,
-                        "cluster_connection_count": 1432
-                    },
-                    "git_refs": {
-                        "opensha_ucerf3": "ec9409f9fccc69ba7e7f11ce5628316eb13f716f",
-                        "opensha_commons": "499df975b11d4d5e204bc35be8bfd42d87b47359",
-                        "opensha_core": "8619e9d75cfae4d22e12aff4bdc9f161100986bb",
-                        "nshm_nz_opensha": "40d4138b02bc0b6af5b8e28f1b86996659278304"
-                    }
+                    "id": "7Jdy2m",
+                    "created": "2021-07-01T00:12:16.875291+00:00",
+                    "files": ["3pXc9S", "4hzyRe", "5GsL7x"],
+                    "result": "success", "state": "done", "duration": 11.615288,
+                    "parents": ["1Gag3d"],
+                    "arguments": [{"k": "max_sections", "v": "200"}, {"k": "down_dip_width", "v": "0.5"}, {"k": "connection_strategy", "v": "UCERF3"}, {"k": "fault_model", "v": "CFM_0_9_SANSTVZ_2010"}, {"k": "max_jump_distance", "v": "5.0"}, {"k": "max_cumulative_azimuth", "v": "560.0"}, {"k": "min_sub_sects_per_parent", "v": "2"}, {"k": "min_sub_sections", "v": "3"}, {"k": "thinning_factor", "v": "0.1"}, {"k": "scaling_relationship", "v": "TMG_CRU_2017"}],
+                    "environment": [{"k": "host", "v": "tryharder-ubuntu"}, {"k": "gitref_opensha", "v": "288c9c08286a17d2117f068d4dc8f4af9216efb0"}, {"k": "gitref_nshm-nz-opensha", "v": "1305f8de49b21de07fd29bfe0023483617d67733"}], "metrics": [{"k": "subsection_count", "v": "1194"}, {"k": "rupture_count", "v": "33449"}, {"k": "cluster_connections", "v": "446"}],
+                    "clazz_name": "RuptureGenerationTask"
                 }
             },
             {
@@ -91,7 +73,7 @@ response_01 = b'''{
                     "id": "280",
                     "result": "success",
                     "state": "done",
-                    "started": "2020-11-12T12:48:59.599283+00:00",
+                    "created": "2020-11-12T12:48:59.599283+00:00",
                     "duration": 259.644077,
                     "files": [
                         "559",

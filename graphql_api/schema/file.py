@@ -6,6 +6,7 @@ from graphene import relay
 from graphql_api.data_s3 import get_data_manager
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput
 
+
 class File(graphene.ObjectType):
     """A data file"""
     class Meta:
@@ -31,6 +32,10 @@ class File(graphene.ObjectType):
     def resolve_relations(self, info, **args):
         # Transform the instance thing_ids into real instances
         if not self.relations: return []
+        if len(info.field_asts[0].selection_set.selections)==1:
+            if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
+                from graphql_api.schema.file_relation import FileRelationConnection
+                return FileRelationConnection(edges= [None for x in range(len(self.relations))])
         return [get_data_manager().file_relation.get_one(_id) for _id in self.relations]
 
     @classmethod
@@ -50,7 +55,7 @@ class FileConnection(relay.Connection):
     def resolve_total_count(root, info, *args, **kwargs):
         return len(root.edges)
 
-      
+
 class CreateFile(graphene.Mutation):
     class Arguments:
         file_name = graphene.String()

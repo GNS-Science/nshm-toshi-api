@@ -20,6 +20,9 @@ class Thing(graphene.Interface):
     def resolve_files(self, info, **args):
         # Transform the instance ship_ids into real instances
         if not self.files: return []
+        if len(info.field_asts[0].selection_set.selections)==1:
+            if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
+                return FileRelationConnection(edges= [None for x in range(len(self.files))])
         return [get_data_manager().file_relation.get_one(_id) for _id in self.files]
 
 class ThingConnection(relay.Connection):

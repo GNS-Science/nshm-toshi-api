@@ -164,5 +164,4 @@ class ThingData(BaseS3Data):
 
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        # print('updated json', jsondata)
         return clazz(**jsondata)
