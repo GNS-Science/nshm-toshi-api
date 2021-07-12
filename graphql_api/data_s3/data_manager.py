@@ -2,6 +2,7 @@ from .file_data import FileData
 from .thing_data import ThingData
 from .file_relation_data import FileRelationData
 from .thing_relation_data import ThingRelationData
+from .table_data import TableData
 
 dm_instance = None
 
@@ -17,6 +18,7 @@ class DataManager():
         _args = client_args or {}
         self._file = FileData(_args, self)
         self._thing = ThingData(_args, self)
+        self._table = TableData(_args, self)
         self._file_relation = FileRelationData(_args, self)
         self._thing_relation = ThingRelationData(_args, self)
         self._search_manager = search_manager
@@ -39,6 +41,10 @@ class DataManager():
     @property
     def thing_relation(self):
         return self._thing_relation
+
+    @property
+    def table(self):
+        return self._table
 
     @property
     def search_manager(self):

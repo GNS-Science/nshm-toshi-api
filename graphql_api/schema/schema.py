@@ -25,6 +25,8 @@ from .custom.grand_inversion import GrandInversionTask, CreateGrandInversionTask
 from .custom.general_task import GeneralTask, CreateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
 
+from .table import CreateTable , Table
+
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
@@ -132,6 +134,8 @@ class MutationRoot(graphene.ObjectType):
     create_general_task = CreateGeneralTask.Field()
     create_task_relation = CreateTaskTaskRelation.Field()
     create_grand_inversion_task = CreateGrandInversionTask.Field()
+
+    create_table = CreateTable.Field()
 
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
