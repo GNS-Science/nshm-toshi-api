@@ -16,7 +16,7 @@ class FileData(BaseS3Data):
     """
     def create(self, clazz_name, **kwargs):
         """
-        create the S3 represtentation if the File in S3. This is two files:
+        create the S3 representation if the File in S3. This is two files:
 
         Args:
          - clazz_name (String): the class name of schema object

@@ -7,14 +7,13 @@ from graphql_api.data_s3 import get_data_manager
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput
 
 
-class File(graphene.ObjectType):
-    """A data file"""
+class FileInterface(graphene.Interface):
+    """A File in the NSHM saga"""
     class Meta:
-        """standard graphene meta class"""
         interfaces = (relay.Node, )
 
     file_name = graphene.String(description="The name of the file")
-    md5_digest = graphene.String(description="The base64-encoded md5 digest of the file")
+    md5_digest = graphene.String(description='The base64-encoded md5 digest of the file')
     file_size = graphene.Int(description="The size of the file in bytes")
     file_url = graphene.String(description="A pre-signed URL to download the file from s3")
     post_url = graphene.String(description="A pre-signed URL to post the data to s3")
@@ -27,7 +26,7 @@ class File(graphene.ObjectType):
 
 
     def resolve_file_url(self, info, **args):
-	    return get_data_manager().file.get_presigned_url(self.id)
+        return get_data_manager().file.get_presigned_url(self.id)
 
     def resolve_relations(self, info, **args):
         # Transform the instance thing_ids into real instances
@@ -38,11 +37,17 @@ class File(graphene.ObjectType):
                 return FileRelationConnection(edges= [None for x in range(len(self.relations))])
         return [get_data_manager().file_relation.get_one(_id) for _id in self.relations]
 
+
+class File(graphene.ObjectType):
+    """A data file"""
+    class Meta:
+        """standard graphene meta class"""
+        interfaces = (relay.Node, FileInterface)
+
     @classmethod
     def get_node(cls, info, _id):
         node = get_data_manager().file.get_one(_id)
         return node
-
 
 class FileConnection(relay.Connection):
     """A Relay connection for Files"""
