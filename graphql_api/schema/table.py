@@ -21,8 +21,9 @@ class RowItemType(Enum):
     Data type
     """
     integer = 'INT'
-    floating = 'FLOAT'
+    double = 'DBL'
     string = 'STR'
+    boolean = "BOO"
 
 class Table(graphene.ObjectType):
     """

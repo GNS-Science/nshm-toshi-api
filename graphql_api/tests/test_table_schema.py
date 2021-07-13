@@ -31,7 +31,7 @@ TABLEMOCK = lambda _self, _id: {
     "id": "0i93qK", "created": "2021-06-11T02:37:26.009506+00:00",
     "object_id": "R2VuZXJhbFRhc2s6MjE3Qk1YREw=",
     "column_headers": ["OK", "DOKEY"],
-    "column_types": ["INT", "FLOAT"],
+    "column_types": ["INT", "DBL"],
     "rows": [["1", "1.01"], ["2", "2.2"]], "clazz_name": "Table"
     }
 
@@ -53,7 +53,7 @@ class TestBasicTableOperations(unittest.TestCase):
                 object_id: "R2VuZXJhbFRhc2s6MjE3Qk1YREw="
                 created: "2021-06-11T02:37:26.009506+00:00"
                 column_headers: ["OK", "DOKEY"]
-                column_types:[ integer, floating]
+                column_types:[ integer, double]
                 rows:[["1","1.01"], ["2", "2.2"]]
               })
               {
@@ -99,7 +99,7 @@ class TestBasicTableOperations(unittest.TestCase):
                 object_id: "R2VuZXJhbFRhc2s6MjE3Qk1YREw="
                 created: "2021-06-11T02:37:26.009506+00:00"
                 column_headers: ["series", "series_name", "X", "Y"]
-                column_types:[integer, string, floating, floating]
+                column_types:[integer, string, double, double]
                 rows: [
                     ["4", "solutionMFD_rateWeighted", "6.05", "0.03334654109880432"],
                     ["4", "solutionMFD_rateWeighted", "6.15", "0.03002277966581522"],
@@ -135,7 +135,5 @@ class TestBasicTableOperations(unittest.TestCase):
         result = self.client.execute(CREATE_TABLE, variable_values={})
         print(result)
         assert result['data']['create_table']['table']['id'] == 'VGFibGU6MFJBTkRN'
-
-
 
 
