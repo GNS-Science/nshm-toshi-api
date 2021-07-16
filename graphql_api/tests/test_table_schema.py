@@ -96,6 +96,7 @@ class TestBasicTableOperations(unittest.TestCase):
         CREATE_TABLE = '''
             mutation create_Table {
               create_table(input: {
+
                 object_id: "R2VuZXJhbFRhc2s6MjE3Qk1YREw="
                 created: "2021-06-11T02:37:26.009506+00:00"
                 column_headers: ["series", "series_name", "X", "Y"]

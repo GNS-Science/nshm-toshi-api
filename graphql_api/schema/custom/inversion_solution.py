@@ -1,38 +1,39 @@
-#!python inversion_solution
+#!python3
 """
 This module contains the schema definition for an InversionSolution.
 
 """
 import graphene
 from graphene import relay
-from graphql_api.schema.file import FileInterface
-from graphql_api.schema.table import Table
-from .rupture_generation import RuptureGenerationTask
+from graphql_api.schema.file import FileInterface, CreateFile
 
 from graphql_api.data_s3 import get_data_manager
-from graphql_api.schema.custom.common import KeyValuePairInput
+
 
 class InversionSolution(graphene.ObjectType):
     """
-
+    Represents an Inversion Solution file
     """
     class Meta:
         interfaces = (relay.Node, FileInterface)
 
     produced_by = graphene.ID()
     mfd_table = graphene.ID()
-
+    hazard_table = graphene.ID()
 
 class CreateInversionSolution(relay.ClientIDMutation):
+    """
+    Create an Inversion Solution file
+    """
     class Input:
-        file_name = graphene.String()
-        md5_digest = graphene.String(description="The base64-encoded md5 digest of the file")
-        file_size = graphene.Int()
+        file_name = FileInterface.file_name
+        md5_digest = FileInterface.md5_digest
+        file_size = FileInterface.file_size
+        meta = CreateFile.Arguments.meta
+
         produced_by = graphene.ID(required=False,)
         mfd_table = graphene.ID(required=False,)
-
-        meta = graphene.List(KeyValuePairInput, required=False,
-            description="additional file meta data, as a list of Key Value pairs.")
+        hazard_table = graphene.ID(required=False,)
 
     inversion_solution = graphene.Field(InversionSolution)
     ok = graphene.Boolean()

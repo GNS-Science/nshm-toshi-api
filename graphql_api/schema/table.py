@@ -32,14 +32,12 @@ class Table(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node,)
 
+    name = graphene.String(description="a name for the table")
     object_id = graphene.ID(description="ID of the object this data relates to", )
     created = graphene.DateTime(description="When the task record was created", )
-
-    column_headers = graphene.List(graphene.String, )
-    column_types = graphene.List(RowItemType, )
-    rows = graphene.List(graphene.List(graphene.String))
-
-    # files = graphene.String(description="do not use")
+    column_headers = graphene.List(graphene.String, description="column headings")
+    column_types = graphene.List(RowItemType, description="column types" )
+    rows = graphene.List(graphene.List(graphene.String), description="The table rows. Each row is a list of strings that can be coerced according to column_types.")
 
     @classmethod
     def get_node(cls, info, _id):
@@ -48,11 +46,12 @@ class Table(graphene.ObjectType):
 
 class CreateTable(relay.ClientIDMutation):
     class Input:
-        object_id = graphene.ID(description="ID of the object this data relates to", )
-        created = graphene.DateTime(description="When the taskrecord was created", )
-        column_headers = graphene.List(graphene.String, )
-        column_types = graphene.List(RowItemType, )
-        rows = graphene.List(graphene.List(graphene.String))
+        name = Table.name
+        object_id = Table.object_id
+        created = Table.created
+        column_headers = Table.column_headers
+        column_types = Table.column_types
+        rows = Table.rows
 
     table = graphene.Field(Table)
 
