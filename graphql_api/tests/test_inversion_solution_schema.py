@@ -60,6 +60,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
                   produced_by_id: $produced_by
                   mfd_table_id: $mfd_table
                   metrics: {k: "some_metric", v: "20"}
+                  created: "2021-06-11T02:37:26.009506Z"
                   }
               ) {
               inversion_solution { id }
