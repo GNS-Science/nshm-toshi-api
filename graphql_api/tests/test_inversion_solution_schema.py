@@ -33,8 +33,11 @@ READ_MOCK = lambda _self, id: dict(
     md5_digest = "$digest",
     file_name = "$file_name",
     file_size = "$file_size",
-    produced_by = "$produced_by",
-    mfd_table = "$mfd_table",
+    produced_by_id = "VGFibGU6Tm9uZQ==",
+    mfd_table_id = "VGFibGU6Tm9uZQ==",
+    created = "2021-06-11T02:37:26.009506+00:00",
+    meta = [{ "k":"max_jump_distance", "v": "55.5" }],
+    metrics = [{ "k":"some_metric", "v": "20"}]
     )
 
 @mock.patch('graphql_api.data_s3.file_data.FileData.get_next_id', IncrId().get_next_id)
@@ -54,8 +57,9 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
                   md5_digest: $digest
                   file_name: $file_name
                   file_size: $file_size
-                  produced_by: $produced_by
-                  mfd_table: $mfd_table
+                  produced_by_id: $produced_by
+                  mfd_table_id: $mfd_table
+                  metrics: {k: "some_metric", v: "20"}
                   }
               ) {
               inversion_solution { id }
@@ -75,10 +79,13 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
           node(id:"VGFibGU6MA==") {
             __typename
             ... on InversionSolution {
-              #created
+              created
               id
               file_name
-              produced_by
+              mfd_table {
+                id
+              }
+              metrics {k v}
             }
           }
         }
@@ -87,4 +94,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         print(result)
         assert result['data']['node']['id'] == 'SW52ZXJzaW9uU29sdXRpb246MGk5M3FL'
         assert result['data']['node']['file_name'] == "$file_name"
-        assert result['data']['node']['produced_by'] == "$produced_by"
+        assert result['data']['node']['mfd_table']['id'] == "VGFibGU6Tm9uZQ=="
+        assert result['data']['node']['metrics'][0]['k'] == "some_metric"
+        assert result['data']['node']['metrics'][0]['v'] == "20"
+

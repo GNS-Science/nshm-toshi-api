@@ -26,6 +26,7 @@ from .custom.general_task import GeneralTask, CreateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
 
 from .table import CreateTable , Table
+from .custom.inversion_solution import InversionSolution
 from graphql_api.schema.custom.inversion_solution import CreateInversionSolution
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
@@ -54,7 +55,8 @@ db_root = DataManager(search_manager, client_args)
 
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask)
+        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask,
+            Table, InversionSolution)
 
 class SearchResultConnection(relay.Connection):
     class Meta:

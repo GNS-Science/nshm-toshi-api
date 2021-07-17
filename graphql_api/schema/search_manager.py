@@ -8,6 +8,7 @@ import requests
 
 from graphql_api.data_s3.thing_data import ThingData
 from graphql_api.data_s3.file_data import FileData
+from graphql_api.data_s3.table_data import TableData
 
 TYPE = '_doc'
 
@@ -51,6 +52,8 @@ class SearchManager():
                     # clazz_name = obj['_source'].pop('clazz_name')
                     # clazz = getattr(import_module('graphql_api.schema'), clazz_name)
                     result.append(ThingData.from_json(obj['_source']))
+                elif 'TableData' in obj['_id']:
+                    result.append(TableData.from_json(obj['_source']))
                 else:
                     raise ValueError("unable to resolve, object id", obj['_source'])
 
