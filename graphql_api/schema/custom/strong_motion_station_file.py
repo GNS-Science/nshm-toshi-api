@@ -4,7 +4,7 @@
 import graphene
 from graphene import relay
 from graphene import Enum
-from graphql_api.schema.file import File
+from graphql_api.schema.file import FileInterface
 from graphql_api.data_s3 import get_data_manager
 
 class SmsFileType(Enum):
@@ -14,11 +14,11 @@ class SmsFileType(Enum):
     HVSR = "hsvr"
     SW = "sw"
 
-class SmsFile(File):
+class SmsFile(graphene.ObjectType):
 
     class Meta:
         """standard graphene meta class"""
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node, FileInterface)
 
     file_type = SmsFileType(required=True)
 

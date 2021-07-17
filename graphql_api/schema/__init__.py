@@ -14,4 +14,6 @@ from graphql_api.schema.file import File, FileConnection, CreateFile
 from graphql_api.schema.custom import StrongMotionStation, SmsFile
 from graphql_api.schema.custom.general_task import GeneralTask
 from graphql_api.schema.custom.grand_inversion import GrandInversionTask
+from graphql_api.schema.table import Table
+from graphql_api.schema.custom.inversion_solution import CreateInversionSolution, InversionSolution
 
