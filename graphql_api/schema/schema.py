@@ -53,6 +53,10 @@ else:
 search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
 db_root = DataManager(search_manager, client_args)
 
+class FileUnion(graphene.Union):
+    class Meta:
+        types = (SmsFile, File, InversionSolution)
+
 class SearchResult(graphene.Union):
     class Meta:
         types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask,
