@@ -13,7 +13,6 @@ This module contains the schema definition for an FileDataTable
 import graphene
 from graphene import relay
 from graphene import Enum
-from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
 
 class RowItemType(Enum):
