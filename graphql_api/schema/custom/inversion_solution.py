@@ -14,14 +14,15 @@ from .common import KeyValuePair, KeyValuePairInput
 
 from graphql_api.data_s3 import get_data_manager
 
-def resolve_table_node(table_node_id, info):
-    if table_node_id:
-        type, tableid = from_global_id(table_node_id)
+def resolve_node(node_id, info, dm_type):
+    assert dm_type in ["table", "thing"]
+    if node_id:
+        type, nid = from_global_id(node_id)
         if len(info.field_asts[0].selection_set.selections)==1:
             if info.field_asts[0].selection_set.selections[0].name.value == 'id':
-                return tableid #no need to fecth if the only field needed is id
+                return nid #no need to fecth if the only field needed is id
         else:
-            return get_data_manager().table.get_one(tableid)
+            return getattr(get_data_manager(), dm_type).get_one(nid)
 
 class InversionSolution(graphene.ObjectType):
     """
@@ -29,7 +30,6 @@ class InversionSolution(graphene.ObjectType):
     """
     class Meta:
         interfaces = (relay.Node, FileInterface)
-
 
     created = graphene.DateTime(description="When the task record was created", )
     metrics = graphene.List(KeyValuePair, description="result metrics from the task, as a list of Key Value pairs.")
@@ -48,11 +48,13 @@ class InversionSolution(graphene.ObjectType):
         return node
 
     def resolve_hazard_table(root, info, **args):
-        return resolve_table_node(root.hazard_table_id, info)
-
+        return resolve_node(root.hazard_table_id, info, 'table')
 
     def resolve_mfd_table(root, info, **args):
-        return resolve_table_node(root.mfd_table_id, info)
+        return resolve_node(root.mfd_table_id, info, 'table')
+
+    def resolve_produced_by(root, info, **args):
+        return resolve_node(root.produced_by_id, info, 'thing')
 
     @staticmethod
     def from_json(jsondata):
