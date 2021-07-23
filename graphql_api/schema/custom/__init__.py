@@ -6,3 +6,4 @@ from .rupture_generation import RuptureGenerationTask
 # from .rupture_gen_new import RuptureGenNewTask
 from .general_task import GeneralTask
 from .grand_inversion import GrandInversionTask
+

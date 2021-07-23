@@ -1,8 +1,9 @@
 """
 The object manager for File (and subclassed) schema objects
 """
-import json
 from importlib import import_module
+import datetime as dt
+import json
 import logging
 
 from .base_s3_data import BaseS3Data, append_uniq
@@ -16,7 +17,7 @@ class FileData(BaseS3Data):
     """
     def create(self, clazz_name, **kwargs):
         """
-        create the S3 represtentation if the File in S3. This is two files:
+        create the S3 representation if the File in S3. This is two files:
 
         Args:
          - clazz_name (String): the class name of schema object
@@ -32,6 +33,8 @@ class FileData(BaseS3Data):
         new = clazz(next_id, **kwargs)
         body = new.__dict__.copy()
         body['clazz_name'] = clazz_name
+        if body.get('created'):
+            body['created'] = body['created'].isoformat()
 
         #TODO error handling
         self._write_object(next_id, body)

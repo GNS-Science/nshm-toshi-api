@@ -4,7 +4,8 @@ from graphene import Enum
 from graphql_relay import from_global_id
 
 from .file import File
-from .custom.strong_motion_station_file import SmsFile
+#from .custom.strong_motion_station_file import SmsFile
+#from .custom.inversion_solution import InversionSolution
 from graphql_api.data_s3 import get_data_manager
 
 class FileRole(Enum):
@@ -13,18 +14,13 @@ class FileRole(Enum):
     READ_WRITE = "read_write"
     UNDEFINED = "undefined"
 
-
-class FileUnion(graphene.Union):
-    class Meta:
-        types = (SmsFile, File)
-
 class FileRelation(graphene.ObjectType):
 
     class Meta:
         interfaces = (relay.Node, )
 
     thing = graphene.Field('graphql_api.schema.thing.Thing', required=True)
-    file = graphene.Field(FileUnion, required=True)
+    file = graphene.Field('graphql_api.schema.schema.FileUnion', required=True)
 
     role = graphene.Field(FileRole, required=True)
 
