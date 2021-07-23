@@ -11,18 +11,32 @@ from graphql_api.schema.file import FileInterface, CreateFile
 from graphql_api.schema.table import Table
 from graphql_api.schema.custom.rupture_generation import RuptureGenerationTask
 from .common import KeyValuePair, KeyValuePairInput
+from importlib import import_module
 
 from graphql_api.data_s3 import get_data_manager
 
-def resolve_node(node_id, info, dm_type):
+def resolve_node(root, info, id_field, dm_type):
+    """
+    Optimisation function, looks are the query and avoids a fetch if
+    we only want to resolve the id field.
+    """
     assert dm_type in ["table", "thing"]
-    if node_id:
-        type, nid = from_global_id(node_id)
-        if len(info.field_asts[0].selection_set.selections)==1:
-            if info.field_asts[0].selection_set.selections[0].name.value == 'id':
-                return nid #no need to fecth if the only field needed is id
-        else:
-            return getattr(get_data_manager(), dm_type).get_one(nid)
+
+    node_id = getattr(root, id_field)
+    if not node_id:
+        return
+
+    type, nid = from_global_id(node_id)
+
+    if len(info.field_asts[0].selection_set.selections)==1 and \
+        (info.field_asts[0].selection_set.selections[0].name.value == 'id'):
+
+        #create an instance with just it's id attribute set
+        clazz = getattr(import_module('graphql_api.schema'), type)
+        return clazz(id=nid)
+    else:
+        return getattr(get_data_manager(), dm_type).get_one(nid)
+
 
 class InversionSolution(graphene.ObjectType):
     """
@@ -48,13 +62,13 @@ class InversionSolution(graphene.ObjectType):
         return node
 
     def resolve_hazard_table(root, info, **args):
-        return resolve_node(root.hazard_table_id, info, 'table')
+        return resolve_node(root, info, 'hazard_table_id',  'table')
 
     def resolve_mfd_table(root, info, **args):
-        return resolve_node(root.mfd_table_id, info, 'table')
+        return resolve_node(root, info, 'mfd_table_id', 'table')
 
     def resolve_produced_by(root, info, **args):
-        return resolve_node(root.produced_by_id, info, 'thing')
+        return resolve_node(root, info, 'produced_by_id', 'thing')
 
     @staticmethod
     def from_json(jsondata):
@@ -74,9 +88,9 @@ class CreateInversionSolution(relay.ClientIDMutation):
         file_size = FileInterface.file_size
         meta = CreateFile.Arguments.meta
 
-        produced_by_id = InversionSolution.produced_by_id   #graphene.ID(required=False,)
-        mfd_table_id = InversionSolution.mfd_table_id       #graphene.ID(required=False,)
-        hazard_table_id = InversionSolution.hazard_table_id #graphene.ID(required=False,)
+        produced_by_id = InversionSolution.produced_by_id
+        mfd_table_id = InversionSolution.mfd_table_id
+        hazard_table_id = InversionSolution.hazard_table_id
         created = InversionSolution.created
         metrics = graphene.List(KeyValuePairInput, required=False,
             description="result metrics from the solution, as a list of Key Value pairs.")
@@ -86,6 +100,5 @@ class CreateInversionSolution(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        print("mutate_and_get_payload: ", kwargs)
         inversion_solution = get_data_manager().file.create('InversionSolution', **kwargs)
         return CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
