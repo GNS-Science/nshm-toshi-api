@@ -15,6 +15,14 @@ class FileData(BaseS3Data):
     """
     FileData provides the S3 interface forFile objects
     """
+
+    def update(self, id, updated_body):
+        #TODO error handling
+        #print('UPDATE', updated_body)
+        self._write_object(id, updated_body)
+        # jsondata = self._read_object(file_id)
+        return self.from_json(updated_body)
+
     def create(self, clazz_name, **kwargs):
         """
         create the S3 representation if the File in S3. This is two files:
@@ -59,6 +67,18 @@ class FileData(BaseS3Data):
             # print('fields: %s' % parts['fields'])
         new.post_url = json.dumps(parts['fields'])
         return new
+
+    def get_one_raw(self, file_id):
+        """
+        Args:
+            file_id (string): the object id
+
+        Returns:
+            File: the File object json
+        """
+        #print('get_one_raw(', file_id)
+        return self._read_object(file_id)
+
 
     def get_one(self, file_id):
         """

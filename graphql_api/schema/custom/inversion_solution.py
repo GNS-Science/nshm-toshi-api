@@ -4,6 +4,10 @@ This module contains the schema definition for an InversionSolution.
 
 """
 import graphene
+import copy
+import uuid
+import datetime as dt
+
 from graphene import relay
 from graphql_relay import from_global_id
 
@@ -38,6 +42,36 @@ def resolve_node(root, info, id_field, dm_type):
         return getattr(get_data_manager(), dm_type).get_one(nid)
 
 
+class LabelledTableRelation(graphene.ObjectType):
+    """
+    a unique, labelled table relationship.
+
+    This is intended to be used as an internal structure within an InversionSolution (or similar).
+    It must be stored internally in the parent object, so does not implement the node interface. New instances must be mutated via the
+    parent class.
+    """
+
+    identity = graphene.String(description="an internal unique UUID to support mutations.")
+    created = graphene.DateTime(description="When the task record was created.", )
+
+    produced_by_id = graphene.ID(description="the object responsible for creating this relationship.")
+    label = graphene.String(description="Label used to differentiate this relationsip for humans.")
+    table_id = graphene.ID(description="the ID of the table")
+
+    table = graphene.Field(Table)
+
+    def resolve_table(root, info, **args):
+        #print('resolve',  'LabelledTableRelation', args)
+        return resolve_node(root, info, 'table_id', 'table')
+
+
+class LabelledTableRelationInput(graphene.InputObjectType):
+
+    produced_by_id =  LabelledTableRelation.produced_by_id
+    label = LabelledTableRelation.label
+    table_id = LabelledTableRelation.table_id
+
+
 class InversionSolution(graphene.ObjectType):
     """
     Represents an Inversion Solution file
@@ -48,12 +82,14 @@ class InversionSolution(graphene.ObjectType):
     created = graphene.DateTime(description="When the task record was created", )
     metrics = graphene.List(KeyValuePair, description="result metrics from the task, as a list of Key Value pairs.")
 
-    produced_by_id = graphene.ID()
-    mfd_table_id = graphene.ID()
+    produced_by_id = graphene.ID(description='deprecated')
+    mfd_table_id = graphene.ID(description='deprecated')
     hazard_table_id = graphene.ID()
 
-    hazard_table = graphene.Field(Table)
-    mfd_table = graphene.Field(Table)
+    tables = graphene.List(LabelledTableRelation)
+
+    hazard_table = graphene.Field(Table, description='deprecated')
+    mfd_table = graphene.Field(Table, description='deprecated')
     produced_by = graphene.Field(RuptureGenerationTask)
 
     @classmethod
@@ -69,6 +105,12 @@ class InversionSolution(graphene.ObjectType):
 
     def resolve_produced_by(root, info, **args):
         return resolve_node(root, info, 'produced_by_id', 'thing')
+
+    def resolve_tables(root, info, **args):
+        for table in root.tables:
+            yield LabelledTableRelation(**table)
+        # return resolve_node(root, info, 'produced_by_id', 'thing')
+
 
     @staticmethod
     def from_json(jsondata):
@@ -91,7 +133,11 @@ class CreateInversionSolution(relay.ClientIDMutation):
         produced_by_id = InversionSolution.produced_by_id
         mfd_table_id = InversionSolution.mfd_table_id
         hazard_table_id = InversionSolution.hazard_table_id
+
+        tables = graphene.List(LabelledTableRelationInput, required=False)
+
         created = InversionSolution.created
+
         metrics = graphene.List(KeyValuePairInput, required=False,
             description="result metrics from the solution, as a list of Key Value pairs.")
 
@@ -102,3 +148,36 @@ class CreateInversionSolution(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, **kwargs):
         inversion_solution = get_data_manager().file.create('InversionSolution', **kwargs)
         return CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
+
+
+class AppendInversionSolutionTables(relay.ClientIDMutation):
+    """
+    Append LabelledTableRelationTable to an existing Inversion Solution
+    """
+    class Input:
+        id = graphene.ID()
+        tables = graphene.List(LabelledTableRelationInput, required=True)
+
+    inversion_solution = graphene.Field(InversionSolution)
+    ok = graphene.Boolean()
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, **kwargs):
+
+        type, nid = from_global_id(kwargs.get('id'))
+        inversion_solution = get_data_manager().file.get_one_raw(nid)
+
+        #TODO this is schema migration , need a cleaner way
+        if not inversion_solution.get('tables'):
+            inversion_solution['tables'] = []
+
+        ##do table updates...
+        for table in kwargs['tables']:
+            table_relation = copy.copy(table)
+            table_relation['identity'] = str(uuid.uuid4())
+            table_relation['created'] = dt.datetime.now(dt.timezone.utc).isoformat()
+            inversion_solution.get('tables').append(table_relation)
+
+        inversion_solution = get_data_manager().file.update(nid, inversion_solution)
+        print('inversion_solution', inversion_solution)
+        return AppendInversionSolutionTables(inversion_solution, ok=True)
