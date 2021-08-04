@@ -28,3 +28,14 @@ class KeyValuePairInput(graphene.InputObjectType):
     k = graphene.String(description="key")
     v = graphene.String(description="value")
 
+
+class KeyValueListPair(graphene.ObjectType):
+    """Simple container for KVL lists of strings"""
+    k = graphene.String(description="key")
+    v = graphene.List(graphene.String, description="list of values")
+
+
+class KeyValueListPairInput(graphene.InputObjectType):
+    """Simple container for KVL lists of strings"""
+    k = KeyValueListPair.k
+    v = KeyValueListPair.v

@@ -15,7 +15,7 @@ import graphene
 from graphene import relay
 from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
-
+from .common import KeyValueListPair, KeyValueListPairInput
 
 class GeneralTask(graphene.ObjectType):
     """
@@ -31,6 +31,11 @@ class GeneralTask(graphene.ObjectType):
     title = graphene.String(description='A title always helps')
     description = graphene.String(description='Some description of the task, potentially Markdown')
 
+    argument_lists = graphene.List(KeyValueListPair,
+        description="subtask arguments, as a list of Key Value List pairs.")
+
+    swept_arguments = graphene.List(graphene.String, description='list of keys for arguments having >1 value in argument_lists')
+
     children = relay.ConnectionField(
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
         description="sub-tasks of this task")
@@ -39,9 +44,12 @@ class GeneralTask(graphene.ObjectType):
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
         description="parent task(s) of this task")
 
-    parents = relay.ConnectionField(
-        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
-        description="parent task(s) of this task")
+    def resolve_swept_arguments(self, info, **args):
+        if self.argument_lists:
+            for itm in self.argument_lists:
+                if len(itm['v']) > 1:
+                    yield itm['k']
+
 
     def resolve_children(self, info, **args):
         # Transform the instance thing_ids into real instances
@@ -84,6 +92,9 @@ class CreateGeneralTask(relay.ClientIDMutation):
         agent_name = graphene.String(description='The name of the person or process responsible for the task')
         title = graphene.String(description='A title always helps')
         description = graphene.String(description='Some description of the task, potentially Markdown')
+
+        argument_lists = graphene.List(KeyValueListPairInput,
+            description="subtask arguments, as a list of Key Value List pairs.")
 
     general_task = graphene.Field(GeneralTask)
 
