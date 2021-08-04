@@ -166,7 +166,6 @@ ISMOCK = lambda _self, id: json.loads('''{
 "tables": [{"identity":"table0", "created": "2021-06-11T02:37:26.009506+00:00", "produced_by_id": "VGFibGU6Tm9uZQ==", "label":"MyMFDTable", "table_id": "VGFibGU6MA=="}],
 "clazz_name": "InversionSolution"}''')
 
-
 class TestCustomResolvers(unittest.TestCase):
 
     def setUp(self):

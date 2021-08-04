@@ -107,10 +107,9 @@ class InversionSolution(graphene.ObjectType):
         return resolve_node(root, info, 'produced_by_id', 'thing')
 
     def resolve_tables(root, info, **args):
-        for table in root.tables:
-            yield LabelledTableRelation(**table)
-        # return resolve_node(root, info, 'produced_by_id', 'thing')
-
+        if root.tables:
+            for table in root.tables:
+                yield LabelledTableRelation(**table)
 
     @staticmethod
     def from_json(jsondata):
