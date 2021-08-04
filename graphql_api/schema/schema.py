@@ -26,8 +26,8 @@ from .custom.general_task import GeneralTask, CreateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
 
 from .table import CreateTable , Table
-from .custom.inversion_solution import InversionSolution
-from graphql_api.schema.custom.inversion_solution import CreateInversionSolution
+#from .custom.inversion_solution import
+from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
@@ -143,6 +143,8 @@ class MutationRoot(graphene.ObjectType):
 
     create_table = CreateTable.Field()
     create_inversion_solution = CreateInversionSolution.Field()
+
+    append_inversion_solution_tables = AppendInversionSolutionTables.Field()
 
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)

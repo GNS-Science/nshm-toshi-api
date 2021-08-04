@@ -32,7 +32,8 @@ TABLEMOCK = lambda _self, _id: {
     "object_id": "R2VuZXJhbFRhc2s6MjE3Qk1YREw=",
     "column_headers": ["OK", "DOKEY"],
     "column_types": ["INT", "DBL"],
-    "rows": [["1", "1.01"], ["2", "2.2"]], "clazz_name": "Table"
+    "rows": [["1", "1.01"], ["2", "2.2"]], "clazz_name": "Table",
+    "meta": [{"k": "round", "v": "0"}, {"k": "config_type", "v": "crustal"}, {"k": "rupture_set_file_id", "v": "RmlsZToxMzY1LjBzZzRDeA=="}],
     }
 
 
@@ -55,10 +56,12 @@ class TestBasicTableOperations(unittest.TestCase):
                 column_headers: ["OK", "DOKEY"]
                 column_types:[ integer, double]
                 rows:[["1","1.01"], ["2", "2.2"]]
+                meta:[{k: "some_metric", v: "20"}],
               })
               {
                 table {
                   id
+                  meta {k v}
                 }
               }
             }
@@ -67,7 +70,7 @@ class TestBasicTableOperations(unittest.TestCase):
         result = self.client.execute(CREATE_TABLE, variable_values={})
         print(result)
         assert result['data']['create_table']['table']['id'] == 'VGFibGU6MFJBTkRN'
-
+        assert result['data']['create_table']['table']['meta'][0]['k'] == 'some_metric'
 
     @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TABLEMOCK)
     def test_get_table_by_node_id(self):
@@ -81,6 +84,7 @@ class TestBasicTableOperations(unittest.TestCase):
               id
               object_id
               rows
+              meta {k v}
             }
           }
         }
@@ -90,6 +94,7 @@ class TestBasicTableOperations(unittest.TestCase):
         assert result['data']['node']['id'] == 'VGFibGU6MGk5M3FL'
         assert result['data']['node']['object_id'] == "R2VuZXJhbFRhc2s6MjE3Qk1YREw="
         assert result['data']['node']['rows'] == [["1", "1.01"], ["2", "2.2"]]
+        assert result['data']['node']['meta'][0]['k'] == 'round'
 
     @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
     def test_create_bigger_table(self):
@@ -101,6 +106,7 @@ class TestBasicTableOperations(unittest.TestCase):
                 created: "2021-06-11T02:37:26.009506+00:00"
                 column_headers: ["series", "series_name", "X", "Y"]
                 column_types:[integer, string, double, double]
+                meta:[{k: "some_metric", v: "20"}],
                 rows: [
                     ["4", "solutionMFD_rateWeighted", "6.05", "0.03334654109880432"],
                     ["4", "solutionMFD_rateWeighted", "6.15", "0.03002277966581522"],
@@ -136,5 +142,4 @@ class TestBasicTableOperations(unittest.TestCase):
         result = self.client.execute(CREATE_TABLE, variable_values={})
         print(result)
         assert result['data']['create_table']['table']['id'] == 'VGFibGU6MFJBTkRN'
-
 
