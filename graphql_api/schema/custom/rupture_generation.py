@@ -32,7 +32,7 @@ class RuptureGenerationTask(graphene.ObjectType):
     state = EventState()
 
     created = graphene.DateTime(description="The time the event was created")
-    duration = graphene.Float(description="the final duraton of the event in seconds")
+    duration = graphene.Float(description="the final duration of the event in seconds")
 
     parents = relay.ConnectionField(
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',

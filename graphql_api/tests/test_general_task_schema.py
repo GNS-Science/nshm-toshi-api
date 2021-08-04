@@ -33,6 +33,12 @@ READ_MOCK = lambda _self, id: dict(
     clazz_name = "GeneralTask",
     agent_name = "DonDuck",
     argument_lists = [{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}],
+    meta = [{ "k":"some_metric", "v": "55.5" }],
+    notes="dum de dum",
+    subtask_count=4,
+    subtask_type="rupture_sets",
+    model_type="subduction",
+    subtask_result="partial"
     )
 
 @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
@@ -108,3 +114,95 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
         assert result['data']['node']['swept_arguments'] == ["bogus_metric"]
         assert result['data']['node']['argument_lists'][1]['k'] == "unswept_metric"
         assert result['data']['node']['argument_lists'][1]['v'] == [None]
+
+
+@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
+@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body:  {})
+class TestExtraGeneralTaskOperations(unittest.TestCase):
+
+    def setUp(self):
+        self.client = Client(root_schema)
+
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    def test_get_general_task_notes_and_meta(self):
+        # the first GT
+        qry = '''
+        query get_GT {
+          node(id:"R2VuZXJhbFRhc2s6MA==") {
+            __typename
+            ... on GeneralTask {
+              id
+              notes
+              meta{k v}
+            }
+          }
+        }
+        '''
+        result = self.client.execute(qry, variable_values={})
+        print(result)
+        assert result['data']['node']['id'] == 'R2VuZXJhbFRhc2s6MA=='
+
+        assert result['data']['node']['notes'] == "dum de dum"
+        assert result['data']['node']['meta'][0]['k'] == "some_metric"
+        assert result['data']['node']['meta'][0]['v'] == "55.5"
+
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    def test_get_general_task_others(self):
+        # the first GT
+        qry = '''
+        query get_GT {
+          node(id:"R2VuZXJhbFRhc2s6MA==") {
+            __typename
+            ... on GeneralTask {
+              id
+              subtask_count
+              subtask_type
+              model_type
+              subtask_result
+            }
+          }
+        }
+        '''
+        result = self.client.execute(qry, variable_values={})
+        print(result)
+        assert result['data']['node']['id'] == 'R2VuZXJhbFRhc2s6MA=='
+        assert result['data']['node']['subtask_count'] == 4
+        assert result['data']['node']['subtask_type'] == "RUPTURE_SETS"
+        assert result['data']['node']['model_type'] == "SUBDUCTION"
+        assert result['data']['node']['subtask_result'] == "PARTIAL"
+
+
+    def test_create_general_task(self):
+        CREATE_QRY = '''
+            mutation { #($file_name: String!, $file_size: Int!, $produced_by: ID!, $mfd_table: ID!)
+              create_general_task(input: {
+                  agent_name:"XO"
+                  title:"The title"
+                  description:"a description"
+                  created: "2021-08-03T01:38:21.933731+00:00"
+                  argument_lists: [{k: "some_metric", v: ["20", "25"]}]
+                  meta: [{k: "some_metric", v: "20"}]
+                  subtask_count: 16
+                  model_type: CRUSTAL
+                  subtask_result: SUCCESS
+              })
+              {
+                  general_task {
+                    id
+                    meta {k v}
+                    subtask_count
+                    model_type
+                    subtask_result
+                  }
+              }
+            }
+        '''
+        result = self.client.execute(CREATE_QRY,
+            variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, produced_by="PRODUCER_ID", mfd_table="TABLE_ID"))
+        print(result)
+        assert result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MA=='
+        assert result['data']['create_general_task']['general_task']['meta'][0]['k'] == "some_metric"
+        assert result['data']['create_general_task']['general_task']['meta'][0]['v'] == "20"
+        assert result['data']['create_general_task']['general_task']['subtask_count'] == 16
+        assert result['data']['create_general_task']['general_task']['model_type'] == "CRUSTAL"
+        assert result['data']['create_general_task']['general_task']['subtask_result'] == "SUCCESS"

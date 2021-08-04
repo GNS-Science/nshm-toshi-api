@@ -13,9 +13,26 @@ automatically by Graphene.
 """
 import graphene
 from graphene import relay
+from graphene import Enum
 from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
-from .common import KeyValueListPair, KeyValueListPairInput
+from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput
+from graphql_api.schema.event import EventResult
+
+class TaskSubType(Enum):
+    RUPTURE_SETS = "rupture_sets"
+    INVERSIONS = "inversions"
+    HAZARD = "HAZARD"
+
+class ModelType(Enum):
+    CRUSTAL = "crustal"
+    SUBDUCTION = "subduction"
+
+
+class ModelType(Enum):
+    CRUSTAL = "crustal"
+    SUBDUCTION = "subduction"
+
 
 class GeneralTask(graphene.ObjectType):
     """
@@ -30,11 +47,19 @@ class GeneralTask(graphene.ObjectType):
     agent_name = graphene.String(description='The name of the person or process responsible for the task')
     title = graphene.String(description='A title always helps')
     description = graphene.String(description='Some description of the task, potentially Markdown')
-
     argument_lists = graphene.List(KeyValueListPair,
         description="subtask arguments, as a list of Key Value List pairs.")
+    swept_arguments = graphene.List(graphene.String, description='list of keys for items having >1 value in argument_lists')
+    meta = graphene.List(KeyValuePair, description="arbitrary metadata for the task, as a list of Key Value pairs.")
+    notes = graphene.String(description='notes about the task, potentially Markdown')
 
-    swept_arguments = graphene.List(graphene.String, description='list of keys for arguments having >1 value in argument_lists')
+    #fields to replave the Job Control sheeet
+    subtask_count = graphene.Int(description='count of subtasks')
+    subtask_type = graphene.Field(TaskSubType, )
+    model_type = graphene.Field(ModelType, )
+    subtask_result = EventResult() #added PARTIAL option since some GT will have mixed subtask results
+
+    #duration = graphene.Float(description="the final duration of the event in seconds")
 
     children = relay.ConnectionField(
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection',
@@ -49,7 +74,6 @@ class GeneralTask(graphene.ObjectType):
             for itm in self.argument_lists:
                 if len(itm['v']) > 1:
                     yield itm['k']
-
 
     def resolve_children(self, info, **args):
         # Transform the instance thing_ids into real instances
@@ -92,9 +116,16 @@ class CreateGeneralTask(relay.ClientIDMutation):
         agent_name = graphene.String(description='The name of the person or process responsible for the task')
         title = graphene.String(description='A title always helps')
         description = graphene.String(description='Some description of the task, potentially Markdown')
-
         argument_lists = graphene.List(KeyValueListPairInput,
             description="subtask arguments, as a list of Key Value List pairs.")
+        meta = graphene.List(KeyValuePairInput,
+            description="arbitrary metadata for the task, as a list of Key Value pairs.")
+        notes =  GeneralTask.notes
+
+        subtask_count = GeneralTask.subtask_count
+        subtask_type = GeneralTask.subtask_type
+        model_type = GeneralTask.model_type
+        subtask_result = GeneralTask.subtask_result
 
     general_task = graphene.Field(GeneralTask)
 
