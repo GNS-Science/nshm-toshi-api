@@ -94,7 +94,7 @@ class InversionSolution(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
-        node = get_data_manager().file.get_one(_id)
+        node = get_data_manager().file.get_one(_id, "InversionSolution")
         return node
 
     def resolve_hazard_table(root, info, **args):
@@ -166,7 +166,11 @@ class AppendInversionSolutionTables(relay.ClientIDMutation):
         type, nid = from_global_id(kwargs.get('id'))
         inversion_solution = get_data_manager().file.get_one_raw(nid)
 
+        #inversion_solution = InversionSolution(inversion_solution)
         #TODO this is schema migration , need a cleaner way
+        if not inversion_solution.get('clazz_name') == 'InversionSolution':
+            print(f"Upgrading {inversion_solution.get('clazz_name')} to InversionSolution")
+            inversion_solution['clazz_name'] = 'InversionSolution'
         if not inversion_solution.get('tables'):
             inversion_solution['tables'] = []
 
@@ -175,7 +179,7 @@ class AppendInversionSolutionTables(relay.ClientIDMutation):
             table_relation = copy.copy(table)
             table_relation['identity'] = str(uuid.uuid4())
             table_relation['created'] = dt.datetime.now(dt.timezone.utc).isoformat()
-            inversion_solution.get('tables').append(table_relation)
+            inversion_solution['tables'].append(table_relation)
 
         inversion_solution = get_data_manager().file.update(nid, inversion_solution)
         print('inversion_solution', inversion_solution)
