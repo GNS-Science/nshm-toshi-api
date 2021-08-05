@@ -32,6 +32,7 @@ READ_MOCK = lambda _self, id: dict(
     id = "0",
     clazz_name = "GeneralTask",
     agent_name = "DonDuck",
+    created = "2021-06-11T02:37:26.009506+00:00",
     argument_lists = [{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}],
     meta = [{ "k":"some_metric", "v": "55.5" }],
     notes="dum de dum",
@@ -206,3 +207,43 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
         assert result['data']['create_general_task']['general_task']['subtask_count'] == 16
         assert result['data']['create_general_task']['general_task']['model_type'] == "CRUSTAL"
         assert result['data']['create_general_task']['general_task']['subtask_result'] == "SUCCESS"
+
+
+@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+class TestUpdateGeneralTask(unittest.TestCase):
+
+    def setUp(self):
+        self.client = Client(root_schema)
+
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    def test_update_with_typical_fields(self):
+        qry = '''
+            mutation {
+                update_general_task(input: {
+                    task_id: "R2VuZXJhbFRhc2s6MA=="
+                    #duration: 909,
+                    meta: [{k: "balderdash" v: "20"}]
+                })
+                {
+                    general_task {
+                        id
+                        #duration
+                        meta {k v}
+                        subtask_count
+                        swept_arguments
+                        argument_lists {k v}
+                    }
+                }
+            }
+        '''
+        executed = self.client.execute(qry)
+        print(executed)
+        result = executed['data']['update_general_task']['general_task']
+        assert result['id'] == 'R2VuZXJhbFRhc2s6MA=='
+        #assert result['duration'] == 909
+        assert result['meta'][0]['k'] == "balderdash"
+        assert result['meta'][0]['v'] == "20"
+        assert result['subtask_count'] == 4
+        assert result['argument_lists'] == [{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}]
+        assert result['swept_arguments'] == ["bogus_metric",]

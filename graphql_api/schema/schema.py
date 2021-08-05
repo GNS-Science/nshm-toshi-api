@@ -22,7 +22,7 @@ from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotio
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
 from graphql_api.data_s3 import get_data_manager
 from .custom.grand_inversion import GrandInversionTask, CreateGrandInversionTask, GrandInversionTaskConnection
-from .custom.general_task import GeneralTask, CreateGeneralTask
+from .custom.general_task import GeneralTask, CreateGeneralTask, UpdateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
 
 from .table import CreateTable , Table
@@ -138,6 +138,7 @@ class MutationRoot(graphene.ObjectType):
     create_strong_motion_station = CreateStrongMotionStation.Field()
     create_sms_file = CreateSmsFile.Field()
     create_general_task = CreateGeneralTask.Field()
+    update_general_task = UpdateGeneralTask.Field()
     create_task_relation = CreateTaskTaskRelation.Field()
     create_grand_inversion_task = CreateGrandInversionTask.Field()
 

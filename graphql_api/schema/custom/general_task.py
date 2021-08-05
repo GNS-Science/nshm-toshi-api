@@ -112,7 +112,6 @@ class GeneralTaskConnection(relay.Connection):
 class CreateGeneralTask(relay.ClientIDMutation):
     class Input:
         created = graphene.DateTime(description="When the taskrecord was created", )
-        updated = graphene.DateTime(description="When task was updated", )
         agent_name = graphene.String(description='The name of the person or process responsible for the task')
         title = graphene.String(description='A title always helps')
         description = graphene.String(description='Some description of the task, potentially Markdown')
@@ -134,3 +133,32 @@ class CreateGeneralTask(relay.ClientIDMutation):
         print("mutate_and_get_payload: ", kwargs)
         general_task = get_data_manager().thing.create('GeneralTask', **kwargs)
         return CreateGeneralTask(general_task=general_task)
+
+
+class UpdateGeneralTask(relay.ClientIDMutation):
+    class Input:
+        task_id = graphene.ID(required=True)
+        created = GeneralTask.created
+        updated = GeneralTask.updated
+        agent_name = GeneralTask.agent_name
+        title = GeneralTask.title
+        description = GeneralTask.description
+        argument_lists = graphene.List(KeyValueListPairInput,
+            description="subtask arguments, as a list of Key Value List pairs.")
+        meta = graphene.List(KeyValuePairInput,
+            description="arbitrary metadata for the task, as a list of Key Value pairs.")
+        notes =  GeneralTask.notes
+        subtask_count = GeneralTask.subtask_count
+        subtask_type = GeneralTask.subtask_type
+        model_type = GeneralTask.model_type
+        subtask_result = GeneralTask.subtask_result
+
+    general_task = graphene.Field(GeneralTask)
+    ok = graphene.Boolean()
+
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, **kwargs):
+        print("mutate_and_get_payload: ", kwargs)
+        thing_id = kwargs.pop('task_id')
+        general_task = get_data_manager().thing.update('GeneralTask', thing_id, **kwargs)
+        return UpdateGeneralTask(general_task=general_task, ok=True)
