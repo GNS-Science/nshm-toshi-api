@@ -41,6 +41,19 @@ class BaseS3Data():
         size = sum(1 for _ in self._bucket.objects.filter(Prefix='%s/' % self._prefix))
         return append_uniq(size)
 
+
+    def get_one_raw(self, _id):
+        """
+        Args:
+            file_id (string): the object id
+
+        Returns:
+            File: the File object json
+        """
+        #print('get_one_raw(', file_id)
+        return self._read_object(_id)
+
+
     def get_one(self, _id):
         """Summary
 

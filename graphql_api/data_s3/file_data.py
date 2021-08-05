@@ -68,18 +68,6 @@ class FileData(BaseS3Data):
         new.post_url = json.dumps(parts['fields'])
         return new
 
-    def get_one_raw(self, file_id):
-        """
-        Args:
-            file_id (string): the object id
-
-        Returns:
-            File: the File object json
-        """
-        #print('get_one_raw(', file_id)
-        return self._read_object(file_id)
-
-
     def get_one(self, file_id):
         """
         Args:
@@ -88,7 +76,7 @@ class FileData(BaseS3Data):
         Returns:
             File: the File object
         """
-        jsondata = self._read_object(file_id)
+        jsondata = self.get_one_raw(file_id)
         return self.from_json(jsondata)
         # return File(**jsondata)
 
