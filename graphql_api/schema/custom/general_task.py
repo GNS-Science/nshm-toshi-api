@@ -161,4 +161,5 @@ class UpdateGeneralTask(relay.ClientIDMutation):
         print("mutate_and_get_payload: ", kwargs)
         thing_id = kwargs.pop('task_id')
         general_task = get_data_manager().thing.update('GeneralTask', thing_id, **kwargs)
+        print("general_task", general_task.created)
         return UpdateGeneralTask(general_task=general_task, ok=True)

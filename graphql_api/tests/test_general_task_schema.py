@@ -61,7 +61,10 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
                   argument_lists: {k: "some_metric", v: ["20", "25"]}
               })
               {
-                  general_task { id }
+                  general_task {
+                    id
+                    created
+                  }
               }
             }
         '''
@@ -224,10 +227,13 @@ class TestUpdateGeneralTask(unittest.TestCase):
                     task_id: "R2VuZXJhbFRhc2s6MA=="
                     #duration: 909,
                     meta: [{k: "balderdash" v: "20"}]
+                    updated: "2021-08-03T01:38:21.933731+00:00"
                 })
                 {
                     general_task {
                         id
+                        created
+                        updated
                         #duration
                         meta {k v}
                         subtask_count
@@ -242,8 +248,10 @@ class TestUpdateGeneralTask(unittest.TestCase):
         result = executed['data']['update_general_task']['general_task']
         assert result['id'] == 'R2VuZXJhbFRhc2s6MA=='
         #assert result['duration'] == 909
+        assert result['updated'] == "2021-08-03T01:38:21.933731+00:00"
         assert result['meta'][0]['k'] == "balderdash"
         assert result['meta'][0]['v'] == "20"
         assert result['subtask_count'] == 4
         assert result['argument_lists'] == [{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}]
         assert result['swept_arguments'] == ["bogus_metric",]
+        assert not result.get('errors')

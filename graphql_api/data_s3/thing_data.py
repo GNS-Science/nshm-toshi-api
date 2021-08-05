@@ -63,8 +63,9 @@ class ThingData(BaseS3Data):
             envnew = thing.get('environment') or []
             envnew.extend(env_as_kvs)
             thing['environment'] = envnew
-        return thing
 
+        print('Migrated ', thing)
+        return thing
 
     def get_one(self, thing_id):
         """
@@ -105,19 +106,22 @@ class ThingData(BaseS3Data):
         Returns:
             TYPE: the Thing object
         """
-        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-
         _type, this_id = from_global_id(thing_id)
+        assert _type == clazz_name
 
-        body = benedict(self.get_one(this_id).__dict__.copy())
+        if kwargs.get('created'):
+            kwargs['created'] = kwargs['created'].isoformat()
+
+        if kwargs.get('updated'):
+            kwargs['updated'] = kwargs['updated'].isoformat()
+
+        jsondata = self.migrate_old_thing_object(self.get_one_raw(this_id))
+        body = benedict(jsondata)
         body.merge(kwargs)
-        body['created'] = body['created'].isoformat()
-        body['clazz_name'] = clazz_name
-        self._write_object(this_id, body)
-        body.pop('clazz_name')
-        # print(body)
-        return clazz(**body)
+        #body['clazz_name'] = clazz_name
 
+        self._write_object(this_id, body)
+        return self.from_json(body)
 
     def add_file_relation(self, thing_id, relation_id):
         obj = self._read_object(thing_id)
@@ -157,11 +161,15 @@ class ThingData(BaseS3Data):
     def from_json(jsondata):
         logger.info("from_json: %s" % str(jsondata))
 
-        #datetime comversions
         created = jsondata.get('created')
-        if created:
+        if created and not isinstance(created, dt.datetime):
             jsondata['created'] = dt.datetime.fromisoformat(created)
+
+        updated = jsondata.get('updated')
+        if updated and not isinstance(updated, dt.datetime):
+            jsondata['updated'] = dt.datetime.fromisoformat(updated)
 
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+
         return clazz(**jsondata)
