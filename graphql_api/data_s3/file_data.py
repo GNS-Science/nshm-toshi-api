@@ -68,17 +68,23 @@ class FileData(BaseS3Data):
         new.post_url = json.dumps(parts['fields'])
         return new
 
-    def get_one(self, file_id):
+    def get_one(self, file_id, expected_class="File"):
         """
         Args:
             file_id (string): the object id
 
         Returns:
-            File: the File object
+            File: the File/* object
         """
         jsondata = self.get_one_raw(file_id)
+
+        #more migration hacks
+        if not jsondata['clazz_name'] == expected_class:
+            if expected_class == "InversionSolution":
+                print(f"Upgrading {jsondata.get('clazz_name')} to InversionSolution")
+                jsondata['clazz_name'] = expected_class
+
         return self.from_json(jsondata)
-        # return File(**jsondata)
 
     def get_presigned_url(self, _id):
         """
