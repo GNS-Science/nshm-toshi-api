@@ -19,8 +19,8 @@ class FileData(BaseS3Data):
     def update(self, id, updated_body):
         #TODO error handling
         #print('UPDATE', updated_body)
+        logger.info("FiledData.update: %s : %s" % (id, str(updated_body)))
         self._write_object(id, updated_body)
-        # jsondata = self._read_object(file_id)
         return self.from_json(updated_body)
 
     def create(self, clazz_name, **kwargs):
@@ -144,7 +144,7 @@ class FileData(BaseS3Data):
 
     @staticmethod
     def from_json(jsondata):
-        logger.info("get_one: %s" % str(jsondata))
+        logger.info("from_json: %s" % str(jsondata))
 
         #datetime comversions
         created = jsondata.get('created')
@@ -153,5 +153,12 @@ class FileData(BaseS3Data):
 
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+
+        #Rule based migration
+        if (clazz_name == "File" and (jsondata.get('tables') or jsondata.get('metrics'))):
+            #this is actually an InversionSolution
+            logger.info("from_json migration to InversionSolution of: %s" % str(jsondata))
+            clazz = getattr(import_module('graphql_api.schema'), 'InversionSolution')
+
         # print('updated json', jsondata)
         return clazz(**jsondata)
