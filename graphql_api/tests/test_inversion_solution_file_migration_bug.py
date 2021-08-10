@@ -16,12 +16,15 @@ from dateutil.tz import tzutc
 from graphene.test import Client
 from graphql_api import data_s3
 
+import itertools
+import copy
+
 from graphql_api.schema import root_schema
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution
 
 import graphql_api.data_s3 # for mocking
 
-READ_MOCK = lambda _self, id: {
+FILE = {
   "id": "1233.0nAmGD",
   "file_name": "SOLUTION_FILE_25333.zip",
   "md5_digest": "lEeGRoOtEQcmzLey4ifDJg==",
@@ -33,20 +36,35 @@ READ_MOCK = lambda _self, id: {
   "tables": [{"label": "Gridded Hazard 0.25", "table_id": "VGFibGU6OGYyZE5Q", "identity": "0abf8516-fe56-4df5-abf6-d90dcda71365", "created": "2021-08-05T04:54:17.635764+00:00"}]
   }
 
+RUPTGEN = {
+  "id": "0zHJ450",
+  "clazz_name": "RuptureGenerationTask",
+  "files" :["0"]
+}
+
+FILEREL = {
+  "id": "2",
+  "clazz_name": "FileRelation",
+  "file_id" : "1233.0nAmGD",
+  "thing_id" : "0zHJ450"
+}
+
+ANON = {"clazz_name": "Anon",}
+
 class TestBugReproduction(unittest.TestCase):
     """
     This occurs in test when trying to use an old (pre InversionSolution)
-     as Hasard Report Input from runzi script: inversion_hazard_report_task.py
+     as Hazard Report Input from runzi script: inversion_hazard_report_task.py
 
     raises gql.error.located_error.GraphQLLocatedError: 'tables' is an invalid keyword argument for File
     """
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
-    def test_get_rgt_files(self):
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=itertools.repeat(copy.copy(FILE)))
+    def test_get_inversion_solution(self, mock):
         QRY = '''
-          query one_IS ($_id:ID!) {
+          query one_inversion_solution ($_id:ID!) {
             node(id: $_id) {
               __typename
               id
@@ -56,3 +74,36 @@ class TestBugReproduction(unittest.TestCase):
         result = self.client.execute(QRY, variable_values=dict(_id="SW52ZXJzaW9uU29sdXRpb246MTIzMy4wbkFtR0Q="))
         print(result)
         assert result['data']['node']['id'] == "SW52ZXJzaW9uU29sdXRpb246MTIzMy4wbkFtR0Q="
+
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=itertools.chain([copy.copy(RUPTGEN), FILEREL, FILE, RUPTGEN], itertools.repeat(copy.copy(ANON)))) #, itertools.repeat(copy.copy(FILE)))
+    def test_get_ruptgen_files(self, mock):
+        QRY = '''
+          query one_rgt ($rgt_id:ID!) {
+            node(id: $rgt_id) {
+              __typename
+              ... on RuptureGenerationTask {
+                id
+                files {
+                  total_count
+                    edges {
+                      node {
+                        id
+                        file {
+                          ... on InversionSolution {
+                            tables {
+                              label
+                            }
+                          }
+                        }
+                      }
+                    }
+                }
+              }
+            }
+          }
+        '''
+        result = self.client.execute(QRY, variable_values=dict(rgt_id="UnVwdHVyZUdlbmVyYXRpb25UYXNrOjB6SEo0NTA="))
+        print(result)
+        assert result['data']['node']['id'] == "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjB6SEo0NTA="
+        assert result['data']['node']['files']['total_count'] == 1
+        assert result['data']['node']['files']['edges'][0]['node']['file']['tables'][0]['label'] == "Gridded Hazard 0.25"
