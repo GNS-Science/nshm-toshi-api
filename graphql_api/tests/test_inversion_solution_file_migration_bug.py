@@ -24,7 +24,7 @@ from graphql_api.schema.custom.inversion_solution import InversionSolution, Crea
 
 import graphql_api.data_s3 # for mocking
 
-FILE = {
+FILE = lambda: {
   "id": "1233.0nAmGD",
   "file_name": "SOLUTION_FILE_25333.zip",
   "md5_digest": "lEeGRoOtEQcmzLey4ifDJg==",
@@ -36,20 +36,23 @@ FILE = {
   "tables": [{"label": "Gridded Hazard 0.25", "table_id": "VGFibGU6OGYyZE5Q", "identity": "0abf8516-fe56-4df5-abf6-d90dcda71365", "created": "2021-08-05T04:54:17.635764+00:00"}]
   }
 
-RUPTGEN = {
+RUPTGEN = lambda: {
   "id": "0zHJ450",
   "clazz_name": "RuptureGenerationTask",
   "files" :["0"]
 }
 
-FILEREL = {
+FILEREL = lambda: {
   "id": "2",
   "clazz_name": "FileRelation",
   "file_id" : "1233.0nAmGD",
   "thing_id" : "0zHJ450"
 }
 
-ANON = {"clazz_name": "Anon",}
+ANON = lambda: {"clazz_name": "Anon",}
+
+
+
 
 class TestBugReproduction(unittest.TestCase):
     """
@@ -61,7 +64,7 @@ class TestBugReproduction(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=itertools.repeat(copy.copy(FILE)))
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=[FILE()])
     def test_get_inversion_solution(self, mock):
         QRY = '''
           query one_inversion_solution ($_id:ID!) {
@@ -75,7 +78,7 @@ class TestBugReproduction(unittest.TestCase):
         print(result)
         assert result['data']['node']['id'] == "SW52ZXJzaW9uU29sdXRpb246MTIzMy4wbkFtR0Q="
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=itertools.chain([copy.copy(RUPTGEN), FILEREL, FILE, RUPTGEN], itertools.repeat(copy.copy(ANON)))) #, itertools.repeat(copy.copy(FILE)))
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=itertools.chain([RUPTGEN(), FILEREL(), FILE(), RUPTGEN()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
     def test_get_ruptgen_files(self, mock):
         QRY = '''
           query one_rgt ($rgt_id:ID!) {
@@ -92,6 +95,7 @@ class TestBugReproduction(unittest.TestCase):
                           ... on InversionSolution {
                             tables {
                               label
+                              created
                             }
                           }
                         }
@@ -107,3 +111,24 @@ class TestBugReproduction(unittest.TestCase):
         assert result['data']['node']['id'] == "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjB6SEo0NTA="
         assert result['data']['node']['files']['total_count'] == 1
         assert result['data']['node']['files']['edges'][0]['node']['file']['tables'][0]['label'] == "Gridded Hazard 0.25"
+
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=itertools.chain([FILE()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
+    def test_get_ruptgen_files_with_created_datetime(self, mock):
+        QRY = '''
+          query inversion_solution_tables {
+            node(id:"SW52ZXJzaW9uU29sdXRpb246MTIzMy4wbkFtR0Q=") {
+              ... on InversionSolution {
+                file_name
+                metrics {k v}
+                tables {
+                  table_id
+                  created
+                  label
+                }
+              }
+            }
+          }
+        '''
+        result = self.client.execute(QRY)
+        print(result)
+        assert result['data']['node']['tables'][0]['created'] == "2021-08-05T04:54:17.635764+00:00"
