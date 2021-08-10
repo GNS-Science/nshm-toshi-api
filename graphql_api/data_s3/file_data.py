@@ -160,5 +160,10 @@ class FileData(BaseS3Data):
             logger.info("from_json migration to InversionSolution of: %s" % str(jsondata))
             clazz = getattr(import_module('graphql_api.schema'), 'InversionSolution')
 
+        #table datetime conversions
+        if jsondata.get('tables'):
+            for tbl in jsondata.get('tables'):
+                tbl['created'] = dt.datetime.fromisoformat(tbl['created'])
+
         # print('updated json', jsondata)
         return clazz(**jsondata)
