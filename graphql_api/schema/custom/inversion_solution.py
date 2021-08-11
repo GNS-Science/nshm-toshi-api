@@ -12,9 +12,10 @@ from graphene import relay
 from graphql_relay import from_global_id
 
 from graphql_api.schema.file import FileInterface, CreateFile
-from graphql_api.schema.table import Table
+from graphql_api.schema.table import Table, TableType
 from graphql_api.schema.custom.rupture_generation import RuptureGenerationTask
-from .common import KeyValuePair, KeyValuePairInput
+from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, KeyValueListPair, KeyValueListPairInput
+
 from importlib import import_module
 
 from graphql_api.data_s3 import get_data_manager
@@ -60,6 +61,9 @@ class LabelledTableRelation(graphene.ObjectType):
 
     table = graphene.Field(Table)
 
+    table_type = graphene.Field(TableType, description="table type")
+    dimensions = graphene.List(KeyValueListPair, required=False, description="table dimensions, as a list of Key Value List pairs.")
+
     def resolve_table(root, info, **args):
         #print('resolve',  'LabelledTableRelation', args)
         return resolve_node(root, info, 'table_id', 'table')
@@ -70,7 +74,8 @@ class LabelledTableRelationInput(graphene.InputObjectType):
     produced_by_id =  LabelledTableRelation.produced_by_id
     label = LabelledTableRelation.label
     table_id = LabelledTableRelation.table_id
-
+    table_type = LabelledTableRelation.table_type
+    dimensions = graphene.List(KeyValueListPairInput, required=False, description="table dimensions, as a list of Key Value List pairs.")
 
 class InversionSolution(graphene.ObjectType):
     """

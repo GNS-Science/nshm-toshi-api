@@ -39,8 +39,15 @@ READ_MOCK = lambda _self, id: dict(
     created = "2021-06-11T02:37:26.009506+00:00",
     meta = [{ "k":"max_jump_distance", "v": "55.5" }],
     metrics = [{ "k":"some_metric", "v": "20"}],
-    tables = [{'identity':'table0', "created": "2021-06-11T02:37:26.009506+00:00", "produced_by_id": "VGFibGU6Tm9uZQ==", "label":"MyMFDTable",
-      "table_id": "VGFibGU6MA=="}]
+    tables = [{'identity':'table0',
+      "created": "2021-06-11T02:37:26.009506+00:00",
+      "produced_by_id": "VGFibGU6Tm9uZQ==",
+      "label":"MyMFDTable",
+      "table_id": "VGFibGU6MA==",
+      "dimensions": [{"k": "grid_spacings", "v": ["0.1"]}, {"k": "IML_periods", "v": ["0, 0.1, etc"]},
+                 {"k": "tags", "v": ["opensha", "testing"]}, {"k": "gmpes", "v": ["ASK_2014"]}],
+      "table_type": "hazard_gridded",
+      }]
     )
 
 @mock.patch('graphql_api.data_s3.file_data.FileData.get_next_id', IncrId().get_next_id)
@@ -121,6 +128,8 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
               tables {
                 identity
                 table_id
+                table_type
+                dimensions {k v}
                 table {
                  id
                 }
@@ -135,14 +144,19 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
             tables = [{
               "produced_by_id":"PRODUCER_ID",
               "label": "MyLabelledTable",
-              "table_id": "VGFibGU6MA=="
+              "table_id": "VGFibGU6MA==",
+              "table_type" : "HAZARD_GRIDDED",
+              "dimensions": [{"k": "grid_spacings", "v": ["0.1"]}, {"k": "IML_periods", "v": ["0", "0.1"]},
+                {"k": "tags", "v": ["opensha", 'testing']}, {"k": "gmpes", "v": ["ASK_2014"]}]
             }])
 
         result = self.client.execute(qry, variable_values=dict(input=input))
-        #print(result)
+        print(result)
         assert result['data']['append_inversion_solution_tables']['inversion_solution']['id'] == 'SW52ZXJzaW9uU29sdXRpb246MGk5M3FL'
         assert len(result['data']['append_inversion_solution_tables']['inversion_solution']['tables']) == 2
         assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table_id'] == "VGFibGU6MA=="
+        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table_type'] == "HAZARD_GRIDDED"
+        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['dimensions'][0]['k'] == 'grid_spacings'
         assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table']['id'] == "VGFibGU6MA=="
 
 
