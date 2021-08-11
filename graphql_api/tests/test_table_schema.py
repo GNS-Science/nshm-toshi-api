@@ -34,6 +34,9 @@ TABLEMOCK = lambda _self, _id: {
     "column_types": ["INT", "DBL"],
     "rows": [["1", "1.01"], ["2", "2.2"]], "clazz_name": "Table",
     "meta": [{"k": "round", "v": "0"}, {"k": "config_type", "v": "crustal"}, {"k": "rupture_set_file_id", "v": "RmlsZToxMzY1LjBzZzRDeA=="}],
+    "dimensions": [{"k": "grid_spacings", "v": ["0.1"]}, {"k": "IML_periods", "v": ["0, 0.1, etc"]},
+                 {"k": "tags", "v": ["opensha", "testing"]}, {"k": "gmpes", "v": ["ASK_2014"]}],
+    "table_type": "hazard_gridded",
     }
 
 
@@ -56,7 +59,10 @@ class TestBasicTableOperations(unittest.TestCase):
                 column_headers: ["OK", "DOKEY"]
                 column_types:[ integer, double]
                 rows:[["1","1.01"], ["2", "2.2"]]
-                meta:[{k: "some_metric", v: "20"}],
+                meta:[{k: "some_metric", v: "20"}]
+                table_type: HAZARD_GRIDDED
+                dimensions: [{k: "grid_spacings", v: ["0.1"]}, {k: "IML_periods", v: ["0", "0.1"]},
+                 {k: "tags", v: ["opensha", "testing"]}, {k: "gmpes", v: ["ASK_2014"]}]
               })
               {
                 table {
@@ -85,6 +91,8 @@ class TestBasicTableOperations(unittest.TestCase):
               object_id
               rows
               meta {k v}
+              dimensions {k v}
+              table_type
             }
           }
         }
@@ -95,6 +103,8 @@ class TestBasicTableOperations(unittest.TestCase):
         assert result['data']['node']['object_id'] == "R2VuZXJhbFRhc2s6MjE3Qk1YREw="
         assert result['data']['node']['rows'] == [["1", "1.01"], ["2", "2.2"]]
         assert result['data']['node']['meta'][0]['k'] == 'round'
+        assert result['data']['node']['dimensions'][0]['k'] == 'grid_spacings'
+        assert result['data']['node']['table_type'] == "HAZARD_GRIDDED"
 
     @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
     def test_create_bigger_table(self):
@@ -130,6 +140,9 @@ class TestBasicTableOperations(unittest.TestCase):
                     ["4", "solutionMFD_rateWeighted", "7.95", "6.591487929707425E-4"],
                     ["4", "solutionMFD_rateWeighted", "8.05", "3.453383255900045E-5"]
                 ]
+                dimensions: [{k: "grid_spacings", v: ["0.1"]}, {k: "IML_periods", v: ["0", "0.1"]},
+                 {k: "tags", v: ["opensha", "testing"]}, {k: "gmpes", v: ["ASK_2014"]}]
+                table_type: HAZARD_GRIDDED,
               })
               {
                 table {
