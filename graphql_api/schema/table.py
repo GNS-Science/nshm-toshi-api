@@ -34,8 +34,8 @@ class TableType(Enum):
     """
     HAZARD_GRIDDED = 'hazard_gridded'
     HAZARD_SITES = 'hazard_sites'
+    MFD_CURVES = 'mfd_curves'
     GENERAL = 'general'
-
 
 class Table(graphene.ObjectType):
     """
