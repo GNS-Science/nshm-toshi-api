@@ -4,11 +4,11 @@ from graphene import Enum
 from graphql_relay import from_global_id
 
 from graphql_api.data_s3 import get_data_manager
-from graphql_api.schema.custom import (GeneralTask, RuptureGenerationTask)
+from graphql_api.schema.custom import (GeneralTask, RuptureGenerationTask, AutomationTask)
 
 class ChildTaskUnion(graphene.Union):
     class Meta:
-        types = (GeneralTask, RuptureGenerationTask)
+        types = (GeneralTask, RuptureGenerationTask, AutomationTask)
 
 class TaskTaskRelation(graphene.ObjectType):
 

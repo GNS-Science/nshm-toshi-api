@@ -4,9 +4,8 @@ from flask_graphql import GraphQLView
 from graphql_api.schema import root_schema
 from flask_cors import CORS
 
-## the following doesn't seem to work/be used anywhere ?? Smoketests??
 if os.getenv("TOSHI_FIX_RANDOM_SEED", None):
-	print("Offline, setting random seed for tests")
+	print("Offline, setting random seed for smoketests")
 	import random
 	random.seed(42)
 
