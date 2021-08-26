@@ -37,7 +37,7 @@ READ_MOCK = lambda _self, id: dict(
     meta = [{ "k":"some_metric", "v": "55.5" }],
     notes="dum de dum",
     subtask_count=4,
-    subtask_type="rupture_sets",
+    subtask_type="rupture_set",
     model_type="subduction",
     subtask_result="partial"
     )
@@ -171,7 +171,7 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
         print(result)
         assert result['data']['node']['id'] == 'R2VuZXJhbFRhc2s6MA=='
         assert result['data']['node']['subtask_count'] == 4
-        assert result['data']['node']['subtask_type'] == "RUPTURE_SETS"
+        assert result['data']['node']['subtask_type'] == "RUPTURE_SET"
         assert result['data']['node']['model_type'] == "SUBDUCTION"
         assert result['data']['node']['subtask_result'] == "PARTIAL"
 

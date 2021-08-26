@@ -13,25 +13,11 @@ automatically by Graphene.
 """
 import graphene
 from graphene import relay
-from graphene import Enum
+
 from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
-from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput
+from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 from graphql_api.schema.event import EventResult
-
-class TaskSubType(Enum):
-    RUPTURE_SETS = "rupture_sets"
-    INVERSIONS = "inversions"
-    HAZARD = "HAZARD"
-
-class ModelType(Enum):
-    CRUSTAL = "crustal"
-    SUBDUCTION = "subduction"
-
-
-class ModelType(Enum):
-    CRUSTAL = "crustal"
-    SUBDUCTION = "subduction"
 
 
 class GeneralTask(graphene.ObjectType):

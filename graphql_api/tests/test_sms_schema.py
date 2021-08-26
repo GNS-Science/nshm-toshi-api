@@ -92,7 +92,7 @@ class TestCreateSMS(unittest.TestCase):
         print(qry)
         executed = self.client.execute(qry, variable_values=dict(started=dt.datetime.now(tzutc())))
         print(executed)
-        assert executed['data']['create_rupture_generation_task']\
+        assert executed['data']['create.rupture_generation_task_task']\
                         ['task_result']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
 
 
@@ -119,7 +119,7 @@ class TestUpdateSMS(unittest.TestCase):
     def test_update_with_metrics(self):
         qry = '''
             mutation {
-                update_rupture_generation_task(input: {
+                update.rupture_generation_task_task(input: {
                     task_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA="
                     duration: 909,
                     metrics: {
@@ -142,7 +142,7 @@ class TestUpdateSMS(unittest.TestCase):
         print(qry)
         executed = self.client.execute(qry)
         print(executed)
-        result = executed['data']['update_rupture_generation_task']['task_result']
+        result = executed['data']['update.rupture_generation_task_task']['task_result']
         assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
         assert result['duration'] == 909
         assert result['metrics']['rupture_count'] == 20

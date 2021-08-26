@@ -7,7 +7,7 @@ Setup:
  - docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
  - rm -R /tmp/nshm-toshi-api-local/*
  - sls s3 start &
- - sls wsgi serve
+ - TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
 
 now python3 smoketests.py
 """
@@ -195,45 +195,28 @@ test_setup = [
       }
     }''',
     '''mutation new_inversion {
-      create_grand_inversion_task (input:{
+      create_automation_task (input:{
+          task_type:INVERSION
           result:UNDEFINED
           state:UNDEFINED
           created:"2020-10-10T23:00Z"
-          arguments: {
-              constraints: [
-                {constraint_type:MFD_Inequality constraint_weight: 1000}
-                {constraint_type:MFD_Equality constraint_weight:10}
-                {constraint_type:Slip_Rate constraint_weight: 100} ]
-              energy_completion_criteria: {
-                energy_delta:0
-                energy_percent_delta:10
-                look_back_mins:15
-              }
-              time_completion_criteria:{ minutes:60 }
-              sync_interval: 1000
-              gutenberg_richter_mfd: {
-                total_rate_m5: 5.1
-                b_value: 1.0
-                mfd_min: 5.0
-                mfd_max: 8.5
-                mfd_transition_mag: 8.75
-                mfd_num: 40
-              }
-          }
-      }) {
+          arguments: [
+              { k:"max_jump_distance" v: "55.5" }
+          ]
+
+          environment: [
+              { k:"gitref_opensha_ucerf3" v: "ABC"}
+              { k:"JAVA" v:"-Xmx24G"  }
+          ]
+
+        }) {
         task_result {
           id
           created
-          arguments {
-            energy_completion_criteria {
-              energy_delta
-            }
+          arguments {k v}
           }
         }
-      }
       }''',
-
-
     '''
     mutation new_ruptgen_new_task {
         create_rupture_generation_task(input: {
@@ -417,16 +400,11 @@ fragment sr on SearchResult {
     }
   }
 
-  ... on GrandInversionTask {
+  ... on AutomationTask {
     id
     created
-    arguments {
-      energy_completion_criteria {
-          energy_delta
-          energy_percent_delta
-          look_back_mins
-      }
-    }
+    task_type
+    args_at: arguments {k v}
   }
 }
 '''
@@ -610,9 +588,9 @@ smoketests = [
     expected = {'node': {'__typename': 'RuptureGenerationTask', 'state': 'DONE', 'created': '2020-10-10T23:00:00+00:00', 'result': 'SUCCESS'}}
     ),
 
-  SmokeTest(query = '''query search_grand_inversion_task {
+  SmokeTest(query = '''query search_automation_task {
       search(
-        search_term: "arguments.energy_completion_criteria.energy_percent_delta:10"
+        search_term: "task_type:inversion"
       ) {
         search_result {
           edges {
@@ -628,16 +606,13 @@ smoketests = [
         "edges": [
           {
             "node": {
-              "__typename": "GrandInversionTask",
-              "id": "R3JhbmRJbnZlcnNpb25UYXNrOjM3UzhReA==",
+              "__typename": "AutomationTask",
+              "id": "QXV0b21hdGlvblRhc2s6MzdTOFF4",
               "created": "2020-10-10T23:00:00+00:00",
-              "arguments": {
-                "energy_completion_criteria": {
-                  "energy_delta": 0.0,
-                  "energy_percent_delta": 10.0,
-                  "look_back_mins": 15.0
-                }
-              }
+              "task_type": "INVERSION",
+              "args_at": [
+                { "k":"max_jump_distance", "v": "55.5" }
+              ]
             }
           }
         ]
@@ -679,15 +654,19 @@ def setup(queries):
     client = Client(transport=transport,
             fetch_schema_from_transport=True)
     for q in queries:
-        #print('setup_query: ', q)
-        #print()
-        client.execute(gql(q))
+        print('setup_query: ', q)
+        print()
+        print( client.execute(gql(q)) )
+        print()
+
 
 if __name__ == "__main__":
 
     #cleanup environment
     os.system('curl -X DELETE "localhost:9200/toshi-index?pretty"')
     os.system('rm -R /tmp/nzshm22-toshi-api-local/*')
+    os.system('touch ./graphql_api/api.py') #force restart of the local WSGI service
+    time.sleep(1)
 
     #create some content with graphql mutations
     setup(test_setup)
