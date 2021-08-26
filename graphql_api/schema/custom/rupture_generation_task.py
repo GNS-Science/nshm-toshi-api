@@ -19,14 +19,14 @@ from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
 from .common import KeyValuePair, KeyValuePairInput
-from .automation_task import AutomationTask, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
+from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
 
 logger = logging.getLogger(__name__)
 
 class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
     """An RuptureGenerationTask in the NSHM process"""
     class Meta:
-        interfaces = (relay.Node, Thing, AutomationTask)
+        interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
     @staticmethod
     def from_json(jsondata):

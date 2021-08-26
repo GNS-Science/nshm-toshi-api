@@ -13,7 +13,7 @@ from graphql_relay import from_global_id
 
 from graphql_api.schema.file import FileInterface, CreateFile
 from graphql_api.schema.table import Table, TableType
-from graphql_api.schema.custom.rupture_generation import RuptureGenerationTask
+from graphql_api.schema.custom.rupture_generation_task import RuptureGenerationTask
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, KeyValueListPair, KeyValueListPairInput
 
 from importlib import import_module

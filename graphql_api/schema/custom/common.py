@@ -41,9 +41,10 @@ class KeyValueListPairInput(graphene.InputObjectType):
     v = KeyValueListPair.v
 
 class TaskSubType(graphene.Enum):
-    RUPTURE_SETS = "rupture_sets"
-    INVERSIONS = "inversions"
-    HAZARD = "HAZARD"
+    RUPTURE_SET = "rupture_set"
+    INVERSION = "inversion"
+    HAZARD = "hazard"
+    REPORT = "report"
 
 class ModelType(graphene.Enum):
     CRUSTAL = "crustal"

@@ -3,7 +3,7 @@ Search Manager
 """
 #from importlib import import_module
 import requests
-#from .custom.rupture_generation import RuptureGenerationTask
+#from .custom.rupture_generation_task import RuptureGenerationTask
 #from .file import File
 
 from graphql_api.data_s3.thing_data import ThingData
