@@ -15,6 +15,14 @@ class FileData(BaseS3Data):
     """
     FileData provides the S3 interface forFile objects
     """
+
+    def update(self, id, updated_body):
+        #TODO error handling
+        #print('UPDATE', updated_body)
+        logger.info("FiledData.update: %s : %s" % (id, str(updated_body)))
+        self._write_object(id, updated_body)
+        return self.from_json(updated_body)
+
     def create(self, clazz_name, **kwargs):
         """
         create the S3 representation if the File in S3. This is two files:
@@ -60,17 +68,23 @@ class FileData(BaseS3Data):
         new.post_url = json.dumps(parts['fields'])
         return new
 
-    def get_one(self, file_id):
+    def get_one(self, file_id, expected_class="File"):
         """
         Args:
             file_id (string): the object id
 
         Returns:
-            File: the File object
+            File: the File/* object
         """
-        jsondata = self._read_object(file_id)
+        jsondata = self.get_one_raw(file_id)
+
+        #more migration hacks
+        if not jsondata['clazz_name'] == expected_class:
+            if expected_class == "InversionSolution":
+                print(f"Upgrading {jsondata.get('clazz_name')} to InversionSolution")
+                jsondata['clazz_name'] = expected_class
+
         return self.from_json(jsondata)
-        # return File(**jsondata)
 
     def get_presigned_url(self, _id):
         """
@@ -130,7 +144,7 @@ class FileData(BaseS3Data):
 
     @staticmethod
     def from_json(jsondata):
-        logger.info("get_one: %s" % str(jsondata))
+        logger.info("from_json: %s" % str(jsondata))
 
         #datetime comversions
         created = jsondata.get('created')
@@ -139,5 +153,17 @@ class FileData(BaseS3Data):
 
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+
+        #Rule based migration
+        if (clazz_name == "File" and (jsondata.get('tables') or jsondata.get('metrics'))):
+            #this is actually an InversionSolution
+            logger.info("from_json migration to InversionSolution of: %s" % str(jsondata))
+            clazz = getattr(import_module('graphql_api.schema'), 'InversionSolution')
+
+        #table datetime conversions
+        if jsondata.get('tables'):
+            for tbl in jsondata.get('tables'):
+                tbl['created'] = dt.datetime.fromisoformat(tbl['created'])
+
         # print('updated json', jsondata)
         return clazz(**jsondata)

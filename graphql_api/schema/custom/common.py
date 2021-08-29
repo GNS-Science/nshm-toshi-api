@@ -28,3 +28,25 @@ class KeyValuePairInput(graphene.InputObjectType):
     k = graphene.String(description="key")
     v = graphene.String(description="value")
 
+
+class KeyValueListPair(graphene.ObjectType):
+    """Simple container for KVL lists of strings"""
+    k = graphene.String(description="key")
+    v = graphene.List(graphene.String, description="list of values")
+
+
+class KeyValueListPairInput(graphene.InputObjectType):
+    """Simple container for KVL lists of strings"""
+    k = KeyValueListPair.k
+    v = KeyValueListPair.v
+
+class TaskSubType(graphene.Enum):
+    RUPTURE_SET = "rupture_set"
+    INVERSION = "inversion"
+    HAZARD = "hazard"
+    REPORT = "report"
+
+class ModelType(graphene.Enum):
+    CRUSTAL = "crustal"
+    SUBDUCTION = "subduction"
+

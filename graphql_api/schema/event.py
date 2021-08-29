@@ -7,6 +7,7 @@ global db_root
 
 class EventResult(Enum):
     FAILURE = "fail"
+    PARTIAL = "partial"
     SUCCESS = "success"
     UNDEFINED = "undefined"
 

@@ -38,11 +38,22 @@ READ_MOCK = lambda _self, id: dict(
     mfd_table_id = "VGFibGU6MA==",
     created = "2021-06-11T02:37:26.009506+00:00",
     meta = [{ "k":"max_jump_distance", "v": "55.5" }],
-    metrics = [{ "k":"some_metric", "v": "20"}]
+    metrics = [{ "k":"some_metric", "v": "20"}],
+    tables = [{'identity':'table0',
+      "created": "2021-06-11T02:37:26.009506+00:00",
+      "produced_by_id": "VGFibGU6Tm9uZQ==",
+      "label":"MyMFDTable",
+      "table_id": "VGFibGU6MA==",
+      "dimensions": [{"k": "grid_spacings", "v": ["0.1"]}, {"k": "IML_periods", "v": ["0, 0.1, etc"]},
+                 {"k": "tags", "v": ["opensha", "testing"]}, {"k": "gmpes", "v": ["ASK_2014"]}],
+      "table_type": "hazard_gridded",
+      }]
     )
 
 @mock.patch('graphql_api.data_s3.file_data.FileData.get_next_id', IncrId().get_next_id)
 @mock.patch('graphql_api.data_s3.file_data.FileData.create', lambda self, clazz_name, **kwargs: {})
+#TODO: replace above with this deeper test ....
+# @mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, id, updated_body, **kwargs: {})
 class TestBasicInversionSolutionOperations(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -60,7 +71,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
                   file_size: $file_size
                   produced_by_id: $produced_by
                   mfd_table_id: $mfd_table
-                  metrics: {k: "some_metric", v: "20"}
+                  metrics: [{k: "some_metric", v: "20"}]
                   created: "2021-06-11T02:37:26.009506Z"
                   }
               ) {
@@ -88,6 +99,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
                 id
               }
               metrics {k v}
+              tables { identity, table_id}
             }
           }
         }
@@ -99,6 +111,53 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         assert result['data']['node']['mfd_table']['id'] == "VGFibGU6MA=="
         assert result['data']['node']['metrics'][0]['k'] == "some_metric"
         assert result['data']['node']['metrics'][0]['v'] == "20"
+        assert result['data']['node']['tables'][0]['identity'] == "table0"
+
+
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, id, updated_body, **kwargs: {})
+    def test_append_inversion_solution_tables(self):
+        # the first GT
+        qry = '''
+        mutation ($input: AppendInversionSolutionTablesInput!) {
+          append_inversion_solution_tables(input: $input)
+           {
+           ok
+           inversion_solution {
+              id,
+              tables {
+                identity
+                table_id
+                table_type
+                dimensions {k v}
+                table {
+                 id
+                }
+              }
+            }
+          }
+        }
+        '''
+
+        input = dict(
+            id = "SW52ZXJzaW9uU29sdXRpb246MGk5M3FL",
+            tables = [{
+              "produced_by_id":"PRODUCER_ID",
+              "label": "MyLabelledTable",
+              "table_id": "VGFibGU6MA==",
+              "table_type" : "HAZARD_GRIDDED",
+              "dimensions": [{"k": "grid_spacings", "v": ["0.1"]}, {"k": "IML_periods", "v": ["0", "0.1"]},
+                {"k": "tags", "v": ["opensha", 'testing']}, {"k": "gmpes", "v": ["ASK_2014"]}]
+            }])
+
+        result = self.client.execute(qry, variable_values=dict(input=input))
+        print(result)
+        assert result['data']['append_inversion_solution_tables']['inversion_solution']['id'] == 'SW52ZXJzaW9uU29sdXRpb246MGk5M3FL'
+        assert len(result['data']['append_inversion_solution_tables']['inversion_solution']['tables']) == 2
+        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table_id'] == "VGFibGU6MA=="
+        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table_type'] == "HAZARD_GRIDDED"
+        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['dimensions'][0]['k'] == 'grid_spacings'
+        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table']['id'] == "VGFibGU6MA=="
 
 
 ISMOCK = lambda _self, id: json.loads('''{
@@ -118,8 +177,8 @@ ISMOCK = lambda _self, id: json.loads('''{
 "hazard_table": null,
 "mfd_table": null,
 "produced_by": null,
+"tables": [{"identity":"table0", "created": "2021-06-11T02:37:26.009506+00:00", "produced_by_id": "VGFibGU6Tm9uZQ==", "label":"MyMFDTable", "table_id": "VGFibGU6MA=="}],
 "clazz_name": "InversionSolution"}''')
-
 
 class TestCustomResolvers(unittest.TestCase):
 
@@ -147,6 +206,11 @@ class TestCustomResolvers(unittest.TestCase):
               hazard_table {
                 id
               }
+              tables {
+                table {
+                 id
+                }
+              }
             }
           }
         }
@@ -160,3 +224,4 @@ class TestCustomResolvers(unittest.TestCase):
         assert result['data']['node']['mfd_table']['id'] == 'VGFibGU6MG8zZmtm'
         assert result['data']['node']['hazard_table_id'] == None
         assert result['data']['node']['hazard_table'] == None
+        assert result['data']['node']['tables'][0]['table']['id'] == "VGFibGU6MA=="

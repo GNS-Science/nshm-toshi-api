@@ -7,9 +7,11 @@ from importlib import import_module
 from io import BytesIO
 import boto3
 import random
+import logging
+
+logger = logging.getLogger(__name__)
 
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
-
 
 def append_uniq(size):
     uniq = ''.join(random.choice(_ALPHABET) for _ in range(5))
@@ -40,6 +42,19 @@ class BaseS3Data():
         """
         size = sum(1 for _ in self._bucket.objects.filter(Prefix='%s/' % self._prefix))
         return append_uniq(size)
+
+
+    def get_one_raw(self, _id):
+        """
+        Args:
+            file_id (string): the object id
+
+        Returns:
+            File: the File object json
+        """
+        logger.info("BaseS3Data.get_one_raw: %s" % _id)
+        return self._read_object(_id)
+
 
     def get_one(self, _id):
         """Summary

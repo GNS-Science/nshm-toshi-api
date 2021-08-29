@@ -8,7 +8,7 @@ from graphene import relay
 from graphql_relay import from_global_id, to_global_id
 
 from graphql_api.data_s3.data_manager import DataManager
-from .custom.rupture_generation import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
+from .custom.rupture_generation_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask, RuptureGenerationTask
 from requests_aws4auth import AWS4Auth
 
@@ -21,13 +21,15 @@ from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotio
     StrongMotionStationConnection
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
 from graphql_api.data_s3 import get_data_manager
-from .custom.grand_inversion import GrandInversionTask, CreateGrandInversionTask, GrandInversionTaskConnection
-from .custom.general_task import GeneralTask, CreateGeneralTask
+
+from .custom.general_task import GeneralTask, CreateGeneralTask, UpdateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
 
 from .table import CreateTable , Table
-from .custom.inversion_solution import InversionSolution
-from graphql_api.schema.custom.inversion_solution import CreateInversionSolution
+from .custom.automation_task import AutomationTask, CreateAutomationTask, UpdateAutomationTask
+
+#from .custom.inversion_solution import
+from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
 
 if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
     #S3 local credentials
@@ -59,8 +61,7 @@ class FileUnion(graphene.Union):
 
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, GrandInversionTask,
-            Table, InversionSolution)
+        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, Table, InversionSolution, AutomationTask)
 
 class SearchResultConnection(relay.Connection):
     class Meta:
@@ -131,18 +132,19 @@ class QueryRoot(graphene.ObjectType):
         return Search(ok=True, search_result=search_result)
 
 class MutationRoot(graphene.ObjectType):
-    create_rupture_generation_task = CreateRuptureGenerationTask.Field()
-    update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
+    append_inversion_solution_tables = AppendInversionSolutionTables.Field()
+    create_automation_task = CreateAutomationTask.Field()
     create_file = CreateFile.Field()
     create_file_relation = CreateFileRelation.Field()
-    create_strong_motion_station = CreateStrongMotionStation.Field()
-    create_sms_file = CreateSmsFile.Field()
     create_general_task = CreateGeneralTask.Field()
-    create_task_relation = CreateTaskTaskRelation.Field()
-    create_grand_inversion_task = CreateGrandInversionTask.Field()
-
-    create_table = CreateTable.Field()
     create_inversion_solution = CreateInversionSolution.Field()
-
+    create_rupture_generation_task = CreateRuptureGenerationTask.Field()
+    create_sms_file = CreateSmsFile.Field()
+    create_strong_motion_station = CreateStrongMotionStation.Field()
+    create_table = CreateTable.Field()
+    create_task_relation = CreateTaskTaskRelation.Field()
+    update_automation_task = UpdateAutomationTask.Field()
+    update_general_task = UpdateGeneralTask.Field()
+    update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
