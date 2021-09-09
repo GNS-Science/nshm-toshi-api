@@ -77,6 +77,10 @@ class Search(graphene.ObjectType):
     search_result = relay.ConnectionField(SearchResultConnection)
 
 
+class NodeFilter(graphene.ObjectType):
+    ok = graphene.Boolean()
+    result = relay.ConnectionField(SearchResultConnection)
+
 class QueryRoot(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
 
@@ -91,6 +95,8 @@ class QueryRoot(graphene.ObjectType):
     )
 
     node = relay.Node.Field()
+
+    nodes = graphene.Field(NodeFilter, id_in=graphene.List(graphene.ID))
 
     search = graphene.Field(Search, search_term=graphene.String())
     file = relay.Node.Field(File, id=graphene.ID(required=True))
@@ -130,6 +136,26 @@ class QueryRoot(graphene.ObjectType):
     def resolve_search(root, info, **kwargs):
         search_result = db_root.search_manager.search(kwargs.get('search_term'))
         return Search(ok=True, search_result=search_result)
+
+    @staticmethod
+    def resolve_nodes(root, info, id_in,**kwargs):
+        print(id_in, kwargs)
+        result = []
+        for gid in id_in:
+            _type, _id = from_global_id(gid)
+            if _type in ['RuptureGenerationTask', 'StrongMotionStation', 'GeneralTask', 'AutomationTask']:
+                result.append(db_root.thing.get_one(_id))
+            elif _type in ['File', 'SmsFile', 'InversionSolution']:
+                result.append(db_root.file.get_one(_id))
+            elif _type in ['Table']:
+                result.append(db_root.table.get_one(_id))
+            else:
+                raise ValueError("unable to resolve, object id", obj['_source'])
+
+        #result =  = db_root.search_manager.search(kwargs.get('search_term'))
+        return NodeFilter(ok=True, result =result)
+
+
 
 class MutationRoot(graphene.ObjectType):
     append_inversion_solution_tables = AppendInversionSolutionTables.Field()
