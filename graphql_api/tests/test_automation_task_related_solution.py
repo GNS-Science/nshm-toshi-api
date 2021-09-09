@@ -6,12 +6,15 @@ Mocking our data layer
 
 """
 import unittest
+import json
 from copy import copy
 
 from unittest import mock
 from graphene.test import Client
 from graphql_api.schema import root_schema
 from graphql_relay import from_global_id, to_global_id
+
+from .fixtures import automation_task_example as ate
 
 AUTO_TASK = {
     "id": "0zHJ450",
@@ -97,7 +100,6 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
 
     @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
         side_effect = [copy(AUTO_TASK), copy(FILE_REL0), copy(FILE0), copy(AUTO_TASK), None])
-        # side_effect = [copy(AUTO_TASK), copy(FILE_REL), copy(FILE), copy(AUTO_TASK), None])
     def test_task_product_query(self, mocked_api):
         qry = '''
         query q0 {
@@ -135,3 +137,44 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
         assert node['files']['total_count'] == 1
         assert node['inversion_solution']['id'] == "SW52ZXJzaW9uU29sdXRpb246MC4wbXFjN2Y="
         assert node['inversion_solution']['file_name'] == "solution.zip"
+
+
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+        side_effect = [json.loads(ate.automation_task), json.loads(ate.file_rel), json.loads(ate.file), json.loads(ate.automation_task), None])
+    def test_example_failing_product_query(self, mocked_api):
+        qry = '''
+        query q0 {
+          nodes(id_in: ["UnVwdHVyZUdlbmVyYXRpb25UYXNrOjB6SEo0NTA="]) {
+            ok
+            result {
+              edges {
+                node {
+                  __typename
+                  ... on AutomationTask {
+                    id
+                    created
+                    inversion_solution {
+                        id
+                        file_name
+                    }
+                    files {
+                      total_count
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }'''
+
+        print(qry)
+        executed = self.client.execute(qry)
+        print(executed)
+
+        assert mocked_api.call_count == 4# this may break if caching or other optimisitions are introduced
+
+        node = executed['data']['nodes']['result']['edges'][0]['node']
+        assert node['id'] == 'QXV0b21hdGlvblRhc2s6ODQ5N0tOTEI='
+        assert node['files']['total_count'] == 4
+        assert node['inversion_solution']['id'] == "SW52ZXJzaW9uU29sdXRpb246MTczMC4wa3BjS0s="
+        assert node['inversion_solution']['file_name'] == "NZSHM22_InversionSolution-QXV0b21hdGlvblRhc2s6ODQ5N0tOTEI=.zip"

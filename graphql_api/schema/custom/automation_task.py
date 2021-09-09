@@ -39,9 +39,9 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
         return AutomationTask(**AutomationTaskBase.from_json(jsondata))
 
     def resolve_inversion_solution(self, info, **args):
-        if not self.files:
+        if not len(self.files):
             return
-        if not self.task_type == TaskSubType.INVERSION:
+        if not self.task_type == TaskSubType.INVERSION.value:
             return
         for _id in self.files:
             fr = get_data_manager().file_relation.get_one(_id)
