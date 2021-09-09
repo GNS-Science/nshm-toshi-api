@@ -14,7 +14,6 @@ from graphene.test import Client
 from graphql_api.schema import root_schema
 from graphql_relay import from_global_id, to_global_id
 
-
 from .fixtures import automation_task_example as ate
 
 AUTO_TASK = {
@@ -101,7 +100,6 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
 
     @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
         side_effect = [copy(AUTO_TASK), copy(FILE_REL0), copy(FILE0), copy(AUTO_TASK), None])
-        # side_effect = [copy(AUTO_TASK), copy(FILE_REL), copy(FILE), copy(AUTO_TASK), None])
     def test_task_product_query(self, mocked_api):
         qry = '''
         query q0 {
@@ -143,7 +141,6 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
 
     @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
         side_effect = [json.loads(ate.automation_task), json.loads(ate.file_rel), json.loads(ate.file), json.loads(ate.automation_task), None])
-        # side_effect = [copy(AUTO_TASK), copy(FILE_REL), copy(FILE), copy(AUTO_TASK), None])
     def test_example_failing_product_query(self, mocked_api):
         qry = '''
         query q0 {
