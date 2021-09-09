@@ -20,7 +20,7 @@ from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
 
 from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
-from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
+from .inversion_solution import InversionSolution
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +31,21 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
 
     model_type = ModelType()
     task_type = TaskSubType()
+    inversion_solution = graphene.Field(InversionSolution, description="the primary result of this task (only for task_type == INVERSION.")
 
     @staticmethod
     def from_json(jsondata):
         return AutomationTask(**AutomationTaskBase.from_json(jsondata))
+
+    def resolve_inversion_solution(self, info, **args):
+        if not self.files:
+            return
+        if not self.task_type == TaskSubType.INVERSION:
+            return
+        for _id in self.files:
+            fr = get_data_manager().file_relation.get_one(_id)
+            if fr.file.__class__ == InversionSolution:
+                return fr.file # it was already fetched from by file_relation
 
 class AutomationTaskConnection(relay.Connection):
     """A list of AutomationTask items"""
