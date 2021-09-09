@@ -20,6 +20,7 @@ from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
 
 from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
+from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
 from .inversion_solution import InversionSolution
 
 logger = logging.getLogger(__name__)
