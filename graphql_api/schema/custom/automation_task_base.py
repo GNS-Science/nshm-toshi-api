@@ -11,7 +11,7 @@ import datetime as dt
 import logging
 
 from graphene import relay
-# from graphene import Enum
+
 
 from graphql_api.schema.event import EventResult, EventState
 # from graphql_api.schema.thing import Thing
@@ -42,7 +42,6 @@ class AutomationTaskBase():
         if created:
             jsondata['created'] = dt.datetime.fromisoformat(started)
         return jsondata
-
 
 class AutomationTaskInterface(graphene.Interface):
     """An AutomationTask in the NSHM process"""
