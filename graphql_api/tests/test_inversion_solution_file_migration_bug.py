@@ -43,7 +43,6 @@ RUPTGEN = lambda: {
 }
 
 FILEREL = lambda: {
-  "id": "2",
   "clazz_name": "FileRelation",
   "file_id" : "1233.0nAmGD",
   "thing_id" : "0zHJ450"
@@ -90,7 +89,7 @@ class TestBugReproduction(unittest.TestCase):
                   total_count
                     edges {
                       node {
-                        id
+                       # id
                         file {
                           ... on InversionSolution {
                             tables {

@@ -16,8 +16,9 @@ class FileRole(Enum):
 
 class FileRelation(graphene.ObjectType):
 
-    class Meta:
-        interfaces = (relay.Node, )
+    # class Meta:
+    #     interfaces = (relay.Node, )
+
 
     thing = graphene.Field('graphql_api.schema.thing.Thing', required=True)
     file = graphene.Field('graphql_api.schema.schema.FileUnion', required=True)

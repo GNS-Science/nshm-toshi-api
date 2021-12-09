@@ -22,7 +22,7 @@ GENTASK = {
     }
 
 FILE_REL = {
-    "id": "0V437F", "thing": None, "file": None,
+    "thing": None, "file": None,
     "role": "write", "thing_id": "0zHJ450", "file_id": "0.0mqc7f", "clazz_name": "FileRelation"}
 
 FILE = {

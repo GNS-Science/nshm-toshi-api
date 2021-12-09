@@ -143,8 +143,9 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
             assert executed['data']['search']['search_result']['edges'][0]['node']['relations']['total_count'] == 1
 
 
-    def test_traversing_into_s3_api_call(self):
+    def test_traversing_into_s3_api_call(self): 
         qry = '''
+
             query m1 {
               search(search_term:"560") {
                 search_result {
@@ -157,7 +158,7 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
                           total_count
                           edges {
                             node {
-                              id
+                              file_id
                             }
                           }
                         }
@@ -177,7 +178,7 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
             executed = self.client.execute(qry,
                 variable_values={})
 
-            print(executed)
+            print('EXECUTED:', executed)
             assert executed['data']['search']['search_result']['total_count'] == 3
             assert "query fired an (expensive) S3 API operation" in executed['errors'][0]['message']
 
