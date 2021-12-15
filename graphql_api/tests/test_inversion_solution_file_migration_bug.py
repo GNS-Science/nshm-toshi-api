@@ -31,7 +31,8 @@ FILE = lambda: {
   "file_size": 9624411,
   "file_url": None,
   "post_url": None,
-  "meta": [{"k": "rupture_set", "v": "/home/chrisch/NSHM/opensha-new/work/save/RupSet_Az_FM(CFM_0_9_SANSTVZ_D90)_mxSbScLn(0.5)_mxAzCh(60.0)_mxCmAzCh(560.0)_mxJpDs(5.0)_mxTtAzCh(60.0)_thFc(0.0).zip"}, {"k": "completion_energy", "v": "0.1"}, {"k": "max_inversion_time", "v": "0.5"}, {"k": "scaling_relationship", "v": "TMG_CRU_2017"}], "relations": ["1390pTnrz"],
+  "meta": [{"k": "rupture_set", "v": "/home/chrisch/NSHM/opensha-new/work/save/RupSet_Az_FM(CFM_0_9_SANSTVZ_D90)_mxSbScLn(0.5)_mxAzCh(60.0)_mxCmAzCh(560.0)_mxJpDs(5.0)_mxTtAzCh(60.0)_thFc(0.0).zip"}, {"k": "completion_energy", "v": "0.1"}, {"k": "max_inversion_time", "v": "0.5"}, {"k": "scaling_relationship", "v": "TMG_CRU_2017"}], 
+  "relations": ["1390pTnrz"],
   "clazz_name": "File",
   "tables": [{"label": "Gridded Hazard 0.25", "table_id": "VGFibGU6OGYyZE5Q", "identity": "0abf8516-fe56-4df5-abf6-d90dcda71365", "created": "2021-08-05T04:54:17.635764+00:00"}]
   }

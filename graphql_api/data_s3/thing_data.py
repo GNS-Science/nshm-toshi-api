@@ -123,14 +123,14 @@ class ThingData(BaseS3Data):
         self._write_object(this_id, body)
         return self.from_json(body)
 
-    def add_file_relation(self, thing_id, relation_id):
+    def add_file_relation(self, thing_id, file_id, file_role):
         obj = self._read_object(thing_id)
-        logger.info("add_file_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
+        logger.info("add_file_relation: thing_id: %s, file_id %s, " % (thing_id, file_id))
         print("####add_file_relation", thing_id, obj)
         try:
-            obj['files'].append(relation_id)
+            obj['files'].append({'file_id': file_id, 'file_role': file_role})
         except (KeyError, AttributeError):
-            obj['files'] = [relation_id]
+            obj['files'] = [{'file_id': file_id, 'file_role': file_role}]
         self._write_object(thing_id, obj)
         return self.from_json(obj)
 

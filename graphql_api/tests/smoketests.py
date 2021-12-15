@@ -6,8 +6,7 @@ Some duplication in existing tests, but not everything.
 Setup:
  - docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
  - rm -R /tmp/nshm-toshi-api-local/*
- - sls s3 start &
- - TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
+ - sls s3 start & TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
 
 now python3 smoketests.py
 """
@@ -42,12 +41,15 @@ class SmokeTest():
     if self.query_fragment:
         qry = self.query_fragment + '\n\n' + self.query
 
-    gql_query = gql(qry)
-    #print(gql_query)
+    response = 'Didnt run'
+    
+    try:
+      gql_query = gql(qry)
+      self._client.validate(gql_query)
+      response = self._client.execute(gql_query)
+    except Exception as e:
+      print(e)
 
-    self._client.validate(gql_query)
-
-    response = self._client.execute(gql_query)
     # print(response)
 
     if not response == self.expected:
@@ -116,9 +118,6 @@ test_setup = [
           role: WRITE
         ) {
           ok
-          file_relation{
-            id
-          }
         }
     }''',
     '''mutation new_sms_file {
@@ -134,14 +133,11 @@ test_setup = [
     }''',
     '''mutation new_sms_file_relation {
       create_file_relation(
-        file_id: "U21zRmlsZToxLjBHYWczZA=="
+        file_id: "U21zRmlsZToxLjBWNDM3Rg=="
         thing_id:"U3Ryb25nTW90aW9uU3RhdGlvbjowaTkzcUs="
         role: UNDEFINED
       ) {
         ok
-        file_relation{
-          id
-        }
       }
     }''',
     '''mutation new_general_task {
@@ -159,31 +155,25 @@ test_setup = [
     '''mutation new_gt_file_relation {
       create_file_relation(
         file_id: "RmlsZTowLjBtcWM3Zg=="
-        thing_id:"R2VuZXJhbFRhc2s6MlVHV2ZL"
+        thing_id: "R2VuZXJhbFRhc2s6MkdhZzNk"
         role:READ
       ) {
         ok
-        file_relation{
-          id
-        }
       }
     }''',
     '''mutation new_gt_smsfile_relation {
       create_file_relation(
-        file_id: "U21zRmlsZToxLjBHYWczZA=="
-        thing_id:"R2VuZXJhbFRhc2s6MlVHV2ZL"
+        file_id: "U21zRmlsZToxLjBWNDM3Rg=="
+        thing_id: "R2VuZXJhbFRhc2s6MkdhZzNk"
         role:UNDEFINED
       ) {
         ok
-        file_relation{
-          id
-        }
       }
     }''',
     '''mutation new_task_subtask_relation {
       create_task_relation(
         child_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjFIR0FxOA=="
-        parent_id:"R2VuZXJhbFRhc2s6MlVHV2ZL")
+        parent_id: "R2VuZXJhbFRhc2s6MkdhZzNk")
       {thing_relation {
           parent {
             ... on GeneralTask {id}
@@ -464,7 +454,7 @@ smoketests = [
       }
     }''',
     expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'SmsFile',
-      'id': 'U21zRmlsZToxLjBHYWczZA==', 'file_name': 'my_sms_File2.txt', 'file_type': 'CPT', 'relations': {'edges': [
+      'id': 'U21zRmlsZToxLjBWNDM3Rg==', 'file_name': 'my_sms_File2.txt', 'file_type': 'CPT', 'relations': {'edges': [
       {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'thing': {'__typename': 'StrongMotionStation', 'site_code': 'ABCD'}}},
       {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'thing': {'__typename': 'GeneralTask'}}}]}}}]}}},
     query_fragment = search_fragments),
@@ -483,13 +473,13 @@ smoketests = [
       }
     }''',
     expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'GeneralTask',
-    'id': 'R2VuZXJhbFRhc2s6MlVHV2ZL', 'created': '2020-10-10T23:00:00+00:00', 'updated': None, 'title': 'My First Manual task',
+    'id': "R2VuZXJhbFRhc2s6MkdhZzNk", 'created': '2020-10-10T23:00:00+00:00', 'updated': None, 'title': 'My First Manual task',
     'description': '##Some notes go here', 'agent_name': 'chrisbc',
     'children': {'edges': [
       {'node': {'child': {'__typename': 'RuptureGenerationTask', 'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjFIR0FxOA==', 'state': 'DONE', 'result': 'SUCCESS', 'created': '2020-10-10T23:00:00+00:00'}}}]},
     'files': {'edges': [
       {'node': {'__typename': 'FileRelation', 'role': 'READ', 'file': {'__typename': 'File', 'id': 'RmlsZTowLjBtcWM3Zg==', 'file_name': 'myfile2.txt', 'file_size': 2000}}},
-      {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'file': {'__typename': 'SmsFile', 'id': 'U21zRmlsZToxLjBHYWczZA==', 'file_name': 'my_sms_File2.txt', 'file_size': 2000, 'file_type': 'CPT'}}}]}}}]}}},
+      {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'file': {'__typename': 'SmsFile', 'id': 'U21zRmlsZToxLjBWNDM3Rg==', 'file_name': 'my_sms_File2.txt', 'file_size': 2000, 'file_type': 'CPT'}}}]}}}]}}},
     query_fragment = search_fragments),
 
  SmokeTest(query = '''query get_file {
@@ -607,7 +597,7 @@ smoketests = [
           {
             "node": {
               "__typename": "AutomationTask",
-              "id": "QXV0b21hdGlvblRhc2s6MzdTOFF4",
+              "id": "QXV0b21hdGlvblRhc2s6M1VHV2ZL",
               "created": "2020-10-10T23:00:00+00:00",
               "task_type": "INVERSION",
               "args_at": [
@@ -622,7 +612,7 @@ smoketests = [
 
  SmokeTest(query = '''
       query get_new_task {
-        node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjRRZ0p1NA==") {
+        node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjR1eTJydQ==") {
             __typename
           ... on RuptureGenerationTask {
             id
@@ -633,7 +623,7 @@ smoketests = [
       }''',
     expected = { "node": {
           "__typename": "RuptureGenerationTask",
-          "id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjRRZ0p1NA==",
+          "id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjR1eTJydQ==",
           "created": "2020-10-10T23:00:00+00:00",
           "arguments": [
             {"k": "max_jump_distance","v": "55.5"},

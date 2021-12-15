@@ -17,13 +17,20 @@ class Thing(graphene.Interface):
          FileRelationConnection, description="Files associated with this object."
     )
 
-    def resolve_files(self, info, **args):
+    def resolve_files(root, info, **args):
         # Transform the instance ship_ids into real instances
-        if not self.files: return []
+        # print(root.files)
+        # print(root.__dict__)
+        if not root.files: return []
         if len(info.field_asts[0].selection_set.selections)==1:
             if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
-                return FileRelationConnection(edges= [None for x in range(len(self.files))])
-        return [get_data_manager().file_relation.get_one(_id) for _id in self.files]
+                return FileRelationConnection(edges= [None for x in range(len(root.files))])
+
+        try:
+           return [get_data_manager().file_relation.get_one(_id) for _id in root.files]
+        except:
+           return [get_data_manager().file_relation.build_one(file['file_id'], root.id, file['file_role']) for file in root.files]
+            
 
 class ThingConnection(relay.Connection):
     """A Relay connection listing Things"""

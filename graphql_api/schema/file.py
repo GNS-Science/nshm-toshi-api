@@ -28,14 +28,21 @@ class FileInterface(graphene.Interface):
     def resolve_file_url(self, info, **args):
         return get_data_manager().file.get_presigned_url(self.id)
 
-    def resolve_relations(self, info, **args):
+    def resolve_relations(root, info, **args):
         # Transform the instance thing_ids into real instances
-        if not self.relations: return []
+        # print(root.__dict__)
+        # print(root.relations)
+        if not root.relations: return []
         if len(info.field_asts[0].selection_set.selections)==1:
             if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
                 from graphql_api.schema.file_relation import FileRelationConnection
-                return FileRelationConnection(edges= [None for x in range(len(self.relations))])
-        return [get_data_manager().file_relation.get_one(_id) for _id in self.relations]
+                return FileRelationConnection(edges= [None for x in range(len(root.relations))])
+        # return [get_data_manager().file_relation.get_one(_id) for _id in root.relations]
+
+        try:
+           return [get_data_manager().file_relation.get_one(_id) for _id in root.relations]
+        except:
+           return [get_data_manager().file_relation.build_one(root.id, relation['id'], relation['role']) for relation in root.relations]
 
 
 class File(graphene.ObjectType):
