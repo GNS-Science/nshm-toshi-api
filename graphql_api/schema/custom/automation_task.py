@@ -50,8 +50,6 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
         #  - It gets the inversion solution by traversing the file_relations until it finds an InversionSolution.
         #  - Instead this attribute needs to be a first-class one-to-one relationship
         for file_id in root.files:
-
-            print("file_id", file_id)
             if isinstance(file_id, dict): #new form, files is list of objects
                 if not file_id['file_role'] == FileRole.WRITE.value:
                     continue
