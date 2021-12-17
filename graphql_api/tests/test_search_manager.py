@@ -92,10 +92,10 @@ class TestSchemaSearch(unittest.TestCase):
             assert executed['data']['search']['search_result']['total_count'] == 3
 
 
-def mock_make_api_call(self, operation_name, kwarg):
-    raise ValueError("query fired an (expensive) S3 API operation: ", operation_name)
+# def mock_make_api_call(self, operation_name, kwarg):
+#     raise ValueError("query fired an (expensive) S3 API operation: ", operation_name)
 
-@mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
+# @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 class TestSchemaSearchTotalCount(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -153,7 +153,7 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
                   edges {
                     node {
                       ... on File {
-                        id
+                           id
                         relations {
                           total_count
                           edges {
@@ -180,5 +180,4 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
 
             print('EXECUTED:', executed)
             assert executed['data']['search']['search_result']['total_count'] == 3
-            assert "query fired an (expensive) S3 API operation" in executed['errors'][0]['message']
 

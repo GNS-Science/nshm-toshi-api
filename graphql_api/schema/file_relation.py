@@ -30,10 +30,12 @@ class FileRelation(graphene.ObjectType):
 
     @staticmethod
     def resolve_file(root, info, *args, **kwargs):
+        # print("FILE", root.file_id)
         return get_data_manager().file.get_one(root.file_id)
         
     @staticmethod
     def resolve_thing(root, info, *args, **kwargs):
+        # print("THING", root.thing_id)
         return get_data_manager().thing.get_one(root.thing_id)
 
 

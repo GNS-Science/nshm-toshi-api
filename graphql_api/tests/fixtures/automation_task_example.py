@@ -22,5 +22,7 @@ file = b'''{"id": "1730.0kpcKK",
 	"hazard_table": null, "mfd_table": null, "produced_by": null,
 	"clazz_name": "InversionSolution"}'''
 
-file_rel = b'''{"thing": null, "file": null, "role": "write", "thing_id": "8497KNLB",
-	"file_id": "1730.0kpcKK", "clazz_name": "FileRelation"}'''
+# file_rel = b'''{"thing": null, "file": null, "role": "write", "thing_id": "8497KNLB",
+# 	"file_id": "1730.0kpcKK", "clazz_name": "FileRelation"}'''
+
+file_rel = b'''{"id": "1987tiZUR", "thing": null, "file": null, "role": "write", "thing_id": "8497KNLB",	"file_id": "1730.0kpcKK", "clazz_name": "FileRelation"}'''

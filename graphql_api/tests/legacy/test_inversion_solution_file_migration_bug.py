@@ -44,6 +44,7 @@ RUPTGEN = lambda: {
 }
 
 FILEREL = lambda: {
+  "id": "2",
   "clazz_name": "FileRelation",
   "file_id" : "1233.0nAmGD",
   "thing_id" : "0zHJ450"

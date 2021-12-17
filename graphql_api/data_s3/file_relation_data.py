@@ -4,6 +4,7 @@ Object manager for FileRelation (and subclassed) schema objects
 import logging
 from importlib import import_module
 from .base_s3_data import BaseS3Data
+import datetime as dt
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +49,8 @@ class FileRelationData(BaseS3Data):
         jsondata = self._read_object(_id)
         logger.info("get_one: %s" % str(jsondata))
         relation =  self.from_json(jsondata)
-        relation.file = self._db_manager.file.get_one(jsondata['file_id'])
-        relation.thing = self._db_manager.thing.get_one(jsondata['thing_id'])
+        # relation.file = self._db_manager.file.get_one(jsondata['file_id'])
+        # relation.thing = self._db_manager.thing.get_one(jsondata['thing_id'])
         return relation
 
     def build_one(self, file_id, thing_id, thing_role):
@@ -78,4 +79,9 @@ class FileRelationData(BaseS3Data):
 
         # clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), "FileRelation")
+        
+        #id is no longer a class attribute
+        del jsondata['id']
+        del jsondata['clazz_name']
+
         return clazz(**jsondata)

@@ -22,7 +22,7 @@ GENTASK = {
     }
 
 FILE_REL = {
-    "thing": None, "file": None,
+    "id": "1", "thing": None, "file": None,
     "role": "write", "thing_id": "0zHJ450", "file_id": "0.0mqc7f", "clazz_name": "FileRelation"}
 
 FILE = {
@@ -42,7 +42,7 @@ class TestGetGenerationTaskFiles(unittest.TestCase):
     # Note order of calls must match those made to S3 , and copy is used since the object may be mutated
     # (TODO should this ne forbiddien??)
     @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
-        side_effect = [copy(GENTASK), copy(FILE_REL), copy(FILE), copy(GENTASK), None])
+        side_effect = [copy(GENTASK), copy(FILE_REL), copy(FILE)])
     def test_query_with_files(self, mocked_api):
 
         qry = '''
@@ -82,10 +82,11 @@ class TestGetGenerationTaskFiles(unittest.TestCase):
         executed = self.client.execute(qry)
         print(executed)
 
-        assert mocked_api.call_count == 4 # this may break id caching or other optimisitions are introduced
 
         result = executed['data']['node']
         assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjB6SEo0NTA='
         assert result['files']['total_count'] == 1
         assert result['files']['edges'][0]['node']['file']['file_name'] == 'myfile2.txt'
 
+        assert mocked_api.call_count == 3
+        # this may break id caching or other optimisitions are introduced

@@ -1,4 +1,4 @@
-response_01 = b'''{
+response_01 = b"""{
     "took": 29,
     "timed_out": false,
     "_shards": {
@@ -25,7 +25,7 @@ response_01 = b'''{
                     "file_url": null,
                     "post_url": null,
                     "relations": [
-                        "560"
+                        {"id": "1HGAq8", "role": "write"}
                     ]
                 }
             },
@@ -43,8 +43,8 @@ response_01 = b'''{
                     "file_url": null,
                     "post_url": null,
                     "relations": [
-                        "1114",
-                        "999"
+                        {"id": "1HGAq8", "role": "write"}, 
+                        {"id": "2Gag3d", "role": "read"}
                     ]
                 }
             },
@@ -311,4 +311,4 @@ response_01 = b'''{
             }
         ]
     }
-}'''
+}"""
