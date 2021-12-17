@@ -21,7 +21,7 @@ from graphql_api.schema.search_manager import SearchManager
 from .fixtures import es_query_response as eqr
 from graphql_api.schema import File
 
-from unittest import mock
+from unittest import mock, skip
 import requests_mock
 
 FAKE_ENDPOINT = 'http://localhost:9200' #matches default local setup
@@ -92,10 +92,11 @@ class TestSchemaSearch(unittest.TestCase):
             assert executed['data']['search']['search_result']['total_count'] == 3
 
 
-# def mock_make_api_call(self, operation_name, kwarg):
-#     raise ValueError("query fired an (expensive) S3 API operation: ", operation_name)
+def mock_make_api_call(self, operation_name, kwarg):
+    raise ValueError("query fired an (expensive) S3 API operation: ", operation_name)
 
-# @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
+# @skip("slow")
+@mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 class TestSchemaSearchTotalCount(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.

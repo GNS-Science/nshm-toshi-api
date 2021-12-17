@@ -22,6 +22,7 @@ from graphql_api.data_s3 import get_data_manager
 from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
 from .inversion_solution import InversionSolution
+from graphql_api.schema.file_relation import FileRole
 
 logger = logging.getLogger(__name__)
 
@@ -38,21 +39,34 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
     def from_json(jsondata):
         return AutomationTask(**AutomationTaskBase.from_json(jsondata))
 
-    def resolve_inversion_solution(self, info, **args):
-        if not len(self.files):
+    @staticmethod
+    def resolve_inversion_solution(root, info, **args):
+        if not len(root.files):
             return
-        if not self.task_type == TaskSubType.INVERSION.value:
+        if not root.task_type == TaskSubType.INVERSION.value:
             return
-        for _id in self.files:
-            fr = get_data_manager().file_relation.get_one(_id)
-            if fr.file.__class__ == InversionSolution:
-                return fr.file # it was already fetched from by file_relation
+
+        # TODO this is an ugly hack....
+        #  - It gets the inversion solution by traversing the file_relations until it finds an InversionSolution.
+        #  - Instead this attribute needs to be a first-class one-to-one relationship
+        for file_id in root.files:
+
+            print("file_id", file_id)
+            if isinstance(file_id, dict): #new form, files is list of objects
+                if not file_id['file_role'] == FileRole.WRITE.value:
+                    continue
+                file_relation = get_data_manager().file_relation.build_one(file_id['file_id'], root.id, file_id['file_role'])
+            else: #old form, files is list of strings
+                file_relation = get_data_manager().file_relation.get_one(file_id)
+
+            file = get_data_manager().file.get_one(file_relation.file_id)
+            if file.__class__ == InversionSolution:
+                return file
 
 class AutomationTaskConnection(relay.Connection):
     """A list of AutomationTask items"""
     class Meta:
         node = AutomationTask
-
 
     total_count = graphene.Int()
 

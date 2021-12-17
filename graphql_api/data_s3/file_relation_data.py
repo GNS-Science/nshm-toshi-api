@@ -44,7 +44,7 @@ class FileRelationData(BaseS3Data):
         Args:
             _id (string): the object id
         Returns:
-            File: the Thing object
+            the FileRelation object
         """
         jsondata = self._read_object(_id)
         logger.info("get_one: %s" % str(jsondata))
@@ -77,11 +77,10 @@ class FileRelationData(BaseS3Data):
         if created:
             jsondata['created'] = dt.datetime.fromisoformat(created)
 
-        # clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), "FileRelation")
         
-        #id is no longer a class attribute
-        del jsondata['id']
-        del jsondata['clazz_name']
+        #id is no longer a class attribute, but some old objects may still exist
+        jsondata.pop('id', None)
+        jsondata.pop('clazz_name', None),
 
         return clazz(**jsondata)
