@@ -127,18 +127,19 @@ class FileData(BaseS3Data):
                 task_results.append(self.get_one(task_result_id))
         return task_results
 
-    def add_thing_relation(self, file_id, relation_id):
+    def add_thing_relation(self, file_id, thing_id, thing_role):
         """
         Args:
             file_id (string): the file object id
-            relation_id (string): the thing object id
+            thing_id (string): the thing object id
+            thing_role: the thing's role
         """
         obj = self._read_object(file_id)
-        logger.info("add_thing_relation: file_id %s, thing_id: %s" % (file_id, relation_id))
+        logger.info("add_thing_relation: file_id %s, thing_id: %s" % (file_id, thing_id))
         try:
-            obj['relations'].append(relation_id)
+            obj['relations'].append({'id': thing_id, 'role': thing_role})
         except (KeyError, AttributeError):
-            obj['relations'] = [relation_id]
+            obj['relations'] = [{'id': thing_id, 'role': thing_role}]
         self._write_object(file_id, obj)
         return self.from_json(obj)
 

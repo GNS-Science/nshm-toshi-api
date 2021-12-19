@@ -16,16 +16,27 @@ class FileRole(Enum):
 
 class FileRelation(graphene.ObjectType):
 
-    class Meta:
-        interfaces = (relay.Node, )
+    # class Meta:
+    #     interfaces = (relay.Node, )
 
-    thing = graphene.Field('graphql_api.schema.thing.Thing', required=True)
-    file = graphene.Field('graphql_api.schema.schema.FileUnion', required=True)
+
+    thing = graphene.Field('graphql_api.schema.thing.Thing', required=False)
+    file = graphene.Field('graphql_api.schema.schema.FileUnion', required=False)
 
     role = graphene.Field(FileRole, required=True)
 
     thing_id = graphene.String()
     file_id = graphene.String()
+
+    @staticmethod
+    def resolve_file(root, info, *args, **kwargs):
+        # print("FILE", root.file_id)
+        return get_data_manager().file.get_one(root.file_id)
+        
+    @staticmethod
+    def resolve_thing(root, info, *args, **kwargs):
+        # print("THING", root.thing_id)
+        return get_data_manager().thing.get_one(root.thing_id)
 
 
 class FileRelationConnection(relay.Connection):

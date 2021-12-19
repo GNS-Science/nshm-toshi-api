@@ -21,7 +21,7 @@ from graphql_api.schema.search_manager import SearchManager
 from .fixtures import es_query_response as eqr
 from graphql_api.schema import File
 
-from unittest import mock
+from unittest import mock, skip
 import requests_mock
 
 FAKE_ENDPOINT = 'http://localhost:9200' #matches default local setup
@@ -95,6 +95,7 @@ class TestSchemaSearch(unittest.TestCase):
 def mock_make_api_call(self, operation_name, kwarg):
     raise ValueError("query fired an (expensive) S3 API operation: ", operation_name)
 
+# @skip("slow")
 @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 class TestSchemaSearchTotalCount(unittest.TestCase):
     """
@@ -143,8 +144,9 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
             assert executed['data']['search']['search_result']['edges'][0]['node']['relations']['total_count'] == 1
 
 
-    def test_traversing_into_s3_api_call(self):
+    def test_traversing_into_s3_api_call(self): 
         qry = '''
+
             query m1 {
               search(search_term:"560") {
                 search_result {
@@ -152,12 +154,12 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
                   edges {
                     node {
                       ... on File {
-                        id
+                           id
                         relations {
                           total_count
                           edges {
                             node {
-                              id
+                              file_id
                             }
                           }
                         }
@@ -177,7 +179,6 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
             executed = self.client.execute(qry,
                 variable_values={})
 
-            print(executed)
+            print('EXECUTED:', executed)
             assert executed['data']['search']['search_result']['total_count'] == 3
-            assert "query fired an (expensive) S3 API operation" in executed['errors'][0]['message']
 
