@@ -24,16 +24,6 @@ class FileRelationData(BaseS3Data):
             Thing: a new instance of the clazz_name
 
         """
-        # clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        # next_id  = str(self.get_next_id())
-        # # if not  kwargs['created'].tzname(): #must have a timezone set
-        # #     raise ValueError("'created' DateTime() field must have a timezone set.")
-
-        # file_relation = clazz(next_id, thing_id=related_id, file_id=file_id, **kwargs)
-        # body = file_relation.__dict__.copy()
-        # body['clazz_name'] = clazz_name
-        # # body['created'] = body['created'].isoformat()
-        # self._write_object(next_id, body)
 
         #update backref to new FileRelation
         self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
@@ -49,8 +39,6 @@ class FileRelationData(BaseS3Data):
         jsondata = self._read_object(_id)
         logger.info("get_one: %s" % str(jsondata))
         relation =  self.from_json(jsondata)
-        # relation.file = self._db_manager.file.get_one(jsondata['file_id'])
-        # relation.thing = self._db_manager.thing.get_one(jsondata['thing_id'])
         return relation
 
     def build_one(self, file_id, thing_id, thing_role):
@@ -60,9 +48,6 @@ class FileRelationData(BaseS3Data):
         Returns:
             File: the Thing object
         """
-        
-        # relation.file = self._db_manager.file.get_one(jsondata['file_id'])
-        # relation.thing = self._db_manager.thing.get_one(jsondata['thing_id'])
 
         jsondata = {'file_id': file_id, 'thing_id': thing_id, 'role': thing_role}
         logger.info("get_one: %s" % str(jsondata))

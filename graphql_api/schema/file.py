@@ -30,14 +30,11 @@ class FileInterface(graphene.Interface):
 
     def resolve_relations(root, info, **args):
         # Transform the instance thing_ids into real instances
-        # print(root.__dict__)
-        # print(root.relations)
         if not root.relations: return []
         if len(info.field_asts[0].selection_set.selections)==1:
             if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
                 from graphql_api.schema.file_relation import FileRelationConnection
                 return FileRelationConnection(edges= [None for x in range(len(root.relations))])
-        # return [get_data_manager().file_relation.get_one(_id) for _id in root.relations]
 
         try:
            return [get_data_manager().file_relation.get_one(_id) for _id in root.relations]
@@ -80,7 +77,6 @@ class CreateFile(graphene.Mutation):
     file_result = graphene.Field(File)
 
     def mutate(self, info, **kwargs):
-        # print("CreateFile.mutate: ", file_in, kwargs)
         file_result = get_data_manager().file.create('File', **kwargs)
         return CreateFile(ok=True, file_result=file_result)
 
