@@ -56,7 +56,8 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
                 file_relation = get_data_manager().file_relation.build_one(file_id['file_id'], root.id, file_id['file_role'])
             else: #old form, files is list of strings
                 file_relation = get_data_manager().file_relation.get_one(file_id)
-
+                if not file_relation.role == FileRole.WRITE.value:
+                    continue
             file = get_data_manager().file.get_one(file_relation.file_id)
             if file.__class__ == InversionSolution:
                 return file
