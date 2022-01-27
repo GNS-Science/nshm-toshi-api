@@ -57,7 +57,8 @@ this is the quickest way to try out new features etc as there's no packing/deplo
  - start the API running on http://127.0.0.1:5000/graphql
    
 ```
-sls s3 start&
+sls dynamodb start --migrate --stage local &
+sls s3 start &
 sls wsgi serve
 ```
 and (perhaps in another shell):
