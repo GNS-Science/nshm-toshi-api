@@ -16,6 +16,7 @@ from gql.transport.requests import RequestsHTTPTransport
 import time
 import random
 
+
 import os
 
 api_url = os.getenv('TOSHI_API_URL', "http://127.0.0.1:5000/graphql")

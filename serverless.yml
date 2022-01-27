@@ -4,8 +4,7 @@ plugins:
   - serverless-python-requirements
   - serverless-wsgi
   - serverless-s3-local
-  - serverless-plugin-warmup
-
+  - serverless-dynamodb-local
 package:
   individually: false
   exclude:
@@ -33,6 +32,7 @@ custom:
   s3:
     host: localhost
     directory: /tmp
+<<<<<<< HEAD
   #Lambda warmer see https://www.serverless.com/plugins/serverless-plugin-warmup
   warmup:
     lowConcurrencyWarmer:
@@ -40,6 +40,20 @@ custom:
       events:
         - schedule: rate(5 minutes)
       concurrency: 1
+||||||| merged common ancestors
+=======
+  #dynamodb-local settings
+  dynamodb:
+  # If you only want to use DynamoDB Local in some stages, declare them here
+    stages:
+      - local
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      sharedDb: true
+>>>>>>> FileData and ThingData converted to using dynamodb
 
 # DRY constants: define all compound/generated names in one place
 # Override args are: .. defaults:
@@ -71,12 +85,14 @@ custom:
 provider:
   name: aws
   runtime: python3.8
-  # stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
   environment:
     REGION: ${self:custom.region}
     S3_BUCKET_NAME: ${self:custom.s3_bucket}
     URL_DEFAULT_TTL: ${self:custom.url_default_ttl}
+    DYNAMODB_THING_TABLE: ${self:service}-${self:provider.stage}-thing
+    DYNAMODB_FILE_TABLE: ${self:service}-${self:provider.stage}-file
   iamRoleStatements:
     # S3 access policy
     - Effect: Allow
@@ -102,6 +118,14 @@ provider:
        Resource: "*"
 
 
+    - Effect: Allow
+      Action:
+         - "dynamodb:Scan"
+         - "dynamodb:DescribeTable"
+         - "dynamodb:CreateTable"
+         - "dynamodb:GetItem"
+         - "dynamodb:PutItem"
+      Resource: '*'
 
   apiKeys:
     - name: TempApiKey-${self:custom.stage}

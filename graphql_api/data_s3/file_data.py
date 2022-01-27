@@ -5,6 +5,7 @@ from importlib import import_module
 from datetime import datetime as dt
 import json
 import logging
+from graphql_api.dynamodb.models import ToshiObject
 
 from .base_s3_data import BaseS3Data, append_uniq
 
@@ -119,10 +120,9 @@ class FileData(BaseS3Data):
             int: the next available id
         """
         t0 = dt.utcnow()
-        size = sum(1 for _ in self._bucket.objects.filter(Prefix='%s/' % self._prefix))/2
         db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
-        return append_uniq(size)
-        # return int(super().get_next_id()/2)
+        size = sum(1 for _ in ToshiObject.scan(ToshiObject.object_id.startswith(self._prefix)))
+        return append_uniq(float(size))
 
     def get_all(self):
         """

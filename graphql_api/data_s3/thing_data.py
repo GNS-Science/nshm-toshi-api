@@ -29,7 +29,7 @@ class ThingData(BaseS3Data):
             ValueError: invalid data exception
         """
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        next_id  = str(self.get_next_id())
+        next_id  = str(self.get_next_dynamo_id())
         if not  kwargs['created'].tzname(): #must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
 

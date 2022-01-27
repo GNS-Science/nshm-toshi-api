@@ -3,6 +3,7 @@ from flask import Flask
 from flask_graphql import GraphQLView
 from graphql_api.schema import root_schema
 from flask_cors import CORS
+from graphql_api.dynamodb.models import ToshiObject, migrate
 
 if os.getenv("TOSHI_FIX_RANDOM_SEED", None):
 	print("Offline, setting random seed for smoketests")
@@ -11,6 +12,8 @@ if os.getenv("TOSHI_FIX_RANDOM_SEED", None):
 
 app = Flask(__name__)
 CORS(app)
+
+app.before_first_request(migrate)
 
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
     'graphql',
