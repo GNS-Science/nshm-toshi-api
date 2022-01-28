@@ -26,9 +26,9 @@ def append_uniq(size):
     return str(size)+uniq
 
 
-class BaseS3Data():
+class BaseData():
     """
-    BaseS3Data is the base class for AWS_S3 data handlers
+    BaseData is the base class for data handlers
     """
 
     def __init__(self, client_args, db_manager):
@@ -55,13 +55,6 @@ class BaseS3Data():
         db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
         return append_uniq(size)
 
-    def get_next_dynamo_id(self) -> int:
-        """
-        Returns:
-            int: the next available id
-        """
-        size = sum(1 for _ in ToshiObject.scan(ToshiObject.object_id.startswith(self._prefix)))
-        return append_uniq(size)
 
     def get_one_raw(self, _id):
         """
@@ -114,14 +107,14 @@ class BaseS3Data():
             body (dict): dict to be serialised to JSON
         """
         t0 = dt.utcnow()
-        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         # TODO: add some error handling here
         print(f'WRITE: {key}')
         if self._prefix in ['ThingData', 'FileData']:
             response = ToshiObject(object_id=key,
-                                object_type=self._prefix,
-                                object_content=body)
+                                   object_type=self._prefix,
+                                   object_content=body)
             response.save()
         else:
             response = self._bucket.put_object(Key=key, Body=json.dumps(body))
@@ -146,9 +139,103 @@ class BaseS3Data():
             return obj.object_content
         else:
             obj = self._s3.Object(bucket_name=self._bucket_name,
-                            key=key,
-                            client=self._client)
+                                  key=key,
+                                  client=self._client)
             file_object = BytesIO()
             obj.download_fileobj(file_object)
             file_object.seek(0)
             return json.load(file_object)
+
+class BaseS3Data(BaseData):
+    def get_next_id(self):
+        """
+        Returns:
+            int: the next available id
+        """
+        size = sum(1 for _ in self._bucket.objects.filter(
+            Prefix='%s/' % self._prefix))
+        return append_uniq(size)
+    
+    def _write_object(self, object_id, body):
+        """write object contents to the S3 bucket.
+
+        Args:
+            object_id (int): unique iD of the obect
+            body (dict): dict to be serialised to JSON
+        """
+        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
+        # TODO: add some error handling here
+        response = self._bucket.put_object(Key=key, Body=json.dumps(body))
+        es_key = key.replace("/", "_")
+        self._db_manager.search_manager.index_document(es_key, body)
+   
+    def _read_object(self, object_id):
+        """read object contents from the S3 bucket.
+
+        Args:
+            object_id int): unique iD of the obect
+
+        Returns:
+            dict: object data deserialised from the json object
+        """
+        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
+        obj = self._s3.Object(bucket_name=self._bucket_name,
+                                key=key,
+                                client=self._client)
+        file_object = BytesIO()
+        obj.download_fileobj(file_object)
+        file_object.seek(0)
+        return json.load(file_object)
+
+class BaseDynamoDBData(BaseData):
+    def get_next_id(self) -> int:
+        """
+        Returns:
+                int: the next available id
+        """
+        size = sum(1 for _ in ToshiObject.scan(
+            ToshiObject.object_id.startswith(self._prefix)))
+        return append_uniq(size)
+    
+    def _write_object(self, object_id, body):
+        """write object contents to the S3 bucket.
+
+        Args:
+            object_id (int): unique iD of the obect
+            body (dict): dict to be serialised to JSON
+        """
+        t0 = dt.utcnow()
+        db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
+        # TODO: add some error handling here
+        response = ToshiObject(object_id=key,
+                                object_type=self._prefix,
+                                object_content=body)
+        response.save()
+        es_key = key.replace("/", "_")
+        self._db_manager.search_manager.index_document(es_key, body) 
+
+    def _read_object(self, object_id):
+        """read object contents from the S3 bucket.
+
+        Args:
+            object_id int): unique iD of the obect
+
+        Returns:
+            dict: object data deserialised from the json object
+        """
+        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
+        try:
+            obj = ToshiObject.get(key, self._prefix)
+            return obj.object_content
+        except:
+            obj = self._s3.Object(bucket_name=self._bucket_name,
+                        key=key,
+                        client=self._client)
+            file_object = BytesIO()
+            obj.download_fileobj(file_object)
+            file_object.seek(0)
+            return json.load(file_object)
+
+
+

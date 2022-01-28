@@ -6,13 +6,14 @@ import logging
 from importlib import import_module
 from benedict import benedict
 
-from .base_s3_data import BaseS3Data
+from .base_s3_data import BaseDynamoDBData
 # from .helpers import get_objectid_from_global
 from graphql_relay import from_global_id, to_global_id
 
 logger = logging.getLogger(__name__)
 
-class ThingData(BaseS3Data):
+
+class ThingData(BaseDynamoDBData):
     """
     ThingData provides the data storage for Thing objects
     """
@@ -29,7 +30,7 @@ class ThingData(BaseS3Data):
             ValueError: invalid data exception
         """
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        next_id  = str(self.get_next_dynamo_id())
+        next_id  = str(self.get_next_id())
         if not  kwargs['created'].tzname(): #must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
 

@@ -63,8 +63,8 @@ CREATE = '''
 '''
 
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 class TestCreateRuptureGenerationTask(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -132,8 +132,8 @@ TASKZERO = lambda _self, _id: {
         ]
     }
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 class TestUpdateRuptureGenerationTask(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -143,7 +143,7 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASKZERO)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', TASKZERO)
     def test_update_with_metrics(self):
         qry = '''
             mutation {
@@ -186,8 +186,8 @@ TASK_OLD = lambda _self, _id: {
     "arguments": None, "metrics": None
     }
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 class TestMigrateRuptureGenerationTask(unittest.TestCase):
     """
     File "/home/chrisbc/DEV/GNS/nshm-toshi-api/graphql_api/data_s3/thing_data.py", line 145, in from_json
@@ -199,7 +199,7 @@ class TestMigrateRuptureGenerationTask(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASK_OLD)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', TASK_OLD)
     def test_transforms_old_fields(self):
         qry = '''
         query q1 {

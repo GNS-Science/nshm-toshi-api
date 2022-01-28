@@ -6,7 +6,7 @@ import logging
 from importlib import import_module
 from benedict import benedict
 
-from .base_s3_data import BaseS3Data
+from .base_s3_data import BaseDynamoDBData
 # from .helpers import get_objectid_from_global
 from graphql_relay import from_global_id, to_global_id
 # import graphql_api.schema
@@ -14,7 +14,7 @@ from graphql_relay import from_global_id, to_global_id
 logger = logging.getLogger(__name__)
 
 
-class TableData(BaseS3Data):
+class TableData(BaseDynamoDBData):
     """
     TableData provides the data storage for Table objects
     """

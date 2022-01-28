@@ -7,7 +7,7 @@ import json
 import logging
 from graphql_api.dynamodb.models import ToshiObject
 
-from .base_s3_data import BaseS3Data, append_uniq
+from .base_s3_data import BaseDynamoDBData, append_uniq
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
-class FileData(BaseS3Data):
+class FileData(BaseDynamoDBData):
     """
     FileData provides the S3 interface forFile objects
     """
