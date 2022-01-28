@@ -73,8 +73,8 @@ CREATE = '''
 '''
 
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 class TestCreateAutomationTask(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -142,8 +142,8 @@ TASKZERO = lambda _self, _id: {
         ]
     }
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 class TestUpdateRuptureGenerationTask(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -153,7 +153,7 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASKZERO)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', TASKZERO)
     def test_update_with_metrics(self):
         qry = '''
             mutation {

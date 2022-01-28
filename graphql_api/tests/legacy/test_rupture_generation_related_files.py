@@ -41,7 +41,7 @@ class TestGetGenerationTaskFiles(unittest.TestCase):
 
     # Note order of calls must match those made to S3 , and copy is used since the object may be mutated
     # (TODO should this ne forbiddien??)
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object',
         side_effect = [copy(GENTASK), copy(FILE_REL), copy(FILE)])
     def test_query_with_files(self, mocked_api):
 

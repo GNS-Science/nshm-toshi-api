@@ -56,7 +56,7 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
 
     # Note order of calls must match those made to S3 , and copy is used since the object may be mutated
     # (TODO should this ne forbiddien??)
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object',
         side_effect = [copy(AUTO_TASK), copy(FILE_REL0), copy(FILE0)]) #opy(FILE1),
     def test_query_with_files(self, mocked_api):
 
@@ -141,7 +141,7 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
         assert mocked_api.call_count == 3# this may break if caching or other optimisitions are introduced
 
     #@skip('as above')
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object',
         side_effect = [json.loads(ate.automation_task), json.loads(ate.file_rel), json.loads(ate.file)])
     def test_example_failing_product_query(self, mocked_api):
         qry = '''

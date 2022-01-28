@@ -114,8 +114,8 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         assert result['data']['node']['tables'][0]['identity'] == "table0"
 
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
-    @mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, id, updated_body, **kwargs: {})
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, id, updated_body, **kwargs: {})
     def test_append_inversion_solution_tables(self):
         # the first GT
         qry = '''
@@ -185,7 +185,7 @@ class TestCustomResolvers(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', ISMOCK)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', ISMOCK)
     def test_get_inversion_solution_resolved_by_id_fields(self):
         # the first GT
         qry = '''

@@ -113,7 +113,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
                 print(res)
                 raise ValueError("got unmocked operation: ", operation_name)
 
-        with mock.patch('graphql_api.data_s3.BaseS3Data.get_all', new=self.mock_all):
+        with mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_all', new=self.mock_all):
         #with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
             executed = self.client.execute(qry)
             print(executed)
@@ -158,7 +158,7 @@ class TestCreateDataFile(unittest.TestCase):
             raise ValueError("got unmocked operation: ", operation_name)
 
         #TODO mock out the presigned URL calls
-        with mock.patch('graphql_api.data_s3.BaseS3Data.get_all', new=self.mock_all):
+        with mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_all', new=self.mock_all):
             with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
                 #with mock.patch('graphql_api.data_s3.DataFileData.create', new=self.mock_create):
                 executed = self.client.execute(qry, variable_values=variables)

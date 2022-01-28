@@ -64,8 +64,8 @@ TASKMOCK = lambda _self, _id: {
     "title": "max_jump_distance"
     }
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 class TestGeneralTaskBug29(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -74,7 +74,7 @@ class TestGeneralTaskBug29(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASKMOCK)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', TASKMOCK)
     def test_create_two_gts_and_link_them(self):
         # the first GT
         gt1_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))

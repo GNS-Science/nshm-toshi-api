@@ -3,12 +3,12 @@ Object manager for FileRelation (and subclassed) schema objects
 """
 import logging
 from importlib import import_module
-from .base_s3_data import BaseS3Data
+from .base_s3_data import BaseDynamoDBData
 import datetime as dt
 
 logger = logging.getLogger(__name__)
 
-class FileRelationData(BaseS3Data):
+class FileRelationData(BaseDynamoDBData):
     """
     FileRelationData provides the S3 interface for FileRelation objects
     """
