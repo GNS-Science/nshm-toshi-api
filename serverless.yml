@@ -93,6 +93,7 @@ provider:
     URL_DEFAULT_TTL: ${self:custom.url_default_ttl}
     DYNAMODB_THING_TABLE: ${self:service}-${self:provider.stage}-thing
     DYNAMODB_FILE_TABLE: ${self:service}-${self:provider.stage}-file
+    DEPLOYMENT_STAGE: ${self:custom.stage}
   iamRoleStatements:
     # S3 access policy
     - Effect: Allow

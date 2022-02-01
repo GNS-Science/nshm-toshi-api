@@ -40,7 +40,7 @@ TABLEMOCK = lambda _self, _id: {
     }
 
 
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 class TestBasicTableOperations(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -49,7 +49,7 @@ class TestBasicTableOperations(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
     def test_create_minimal_table(self):
         CREATE_TABLE = '''
             mutation create_Table {
@@ -78,7 +78,7 @@ class TestBasicTableOperations(unittest.TestCase):
         assert result['data']['create_table']['table']['id'] == 'VGFibGU6MFJBTkRN'
         assert result['data']['create_table']['table']['meta'][0]['k'] == 'some_metric'
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TABLEMOCK)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', TABLEMOCK)
     def test_get_table_by_node_id(self):
         # the first GT
         qry = '''
@@ -106,7 +106,7 @@ class TestBasicTableOperations(unittest.TestCase):
         assert result['data']['node']['dimensions'][0]['k'] == 'grid_spacings'
         assert result['data']['node']['table_type'] == "HAZARD_GRIDDED"
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
     def test_create_bigger_table(self):
         CREATE_TABLE = '''
             mutation create_Table {

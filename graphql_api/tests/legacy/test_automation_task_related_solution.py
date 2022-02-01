@@ -100,7 +100,7 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
 
         assert mocked_api.call_count == 3 # this may break if caching or other optimisitions are introduced
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object',
         side_effect = [copy(AUTO_TASK), copy(FILE_REL0), copy(FILE0), copy(AUTO_TASK), None])
     def test_task_product_query(self, mocked_api):
         qry = '''

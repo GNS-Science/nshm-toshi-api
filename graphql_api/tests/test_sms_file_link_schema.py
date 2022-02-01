@@ -57,8 +57,8 @@ def mock_make_api_call(self, operation_name, kwarg):
     raise ValueError("got unmocked operation: ", operation_name)
 
 @mock.patch('graphql_api.data_s3.file_data.FileData.get_next_id', lambda self: "10abcdefgh")
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
-@mock.patch('graphql_api.data_s3.BaseS3Data._read_object', lambda self, object_id: mock_file_data)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', lambda self, object_id: mock_file_data)
 @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 class TestCreateSMSFile(unittest.TestCase):
     """

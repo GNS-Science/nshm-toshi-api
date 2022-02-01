@@ -16,6 +16,7 @@ from botocore.exceptions import ClientError
 from graphene.test import Client
 from graphql_api import data_s3
 from graphql_api.schema import root_schema, RuptureGenerationTask
+from graphql_api.dynamodb.models import migrate
 
 
 
@@ -126,6 +127,7 @@ class TestCreateDataFile(unittest.TestCase):
 
     def setUp(self):
         #data.setup()
+        migrate()
         self.client = Client(root_schema)
         self.mock_all = lambda x : []
         self.mock_create = lambda x, y, **z : None
@@ -158,7 +160,7 @@ class TestCreateDataFile(unittest.TestCase):
             raise ValueError("got unmocked operation: ", operation_name)
 
         #TODO mock out the presigned URL calls
-        with mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_all', new=self.mock_all):
+        with mock.patch('graphql_api.data_s3.BaseData.get_all', new=self.mock_all):
             with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
                 #with mock.patch('graphql_api.data_s3.DataFileData.create', new=self.mock_create):
                 executed = self.client.execute(qry, variable_values=variables)
