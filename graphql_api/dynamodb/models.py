@@ -1,13 +1,14 @@
 from pynamodb.attributes import UnicodeAttribute, JSONAttribute
 from pynamodb.models import Model
+from graphql_api.local_config import DEPLOYMENT_STAGE
 
 class ToshiObject(Model):
     class Meta:
-        read_capacity_units = 10
-        write_capacity_units = 20
-        table_name = "ToshiObject"
+        billing_mode = 'PAY_PER_REQUEST'
+        table_name = f"SolutionRupture-{DEPLOYMENT_STAGE}"
         region = 'ap-southeast-2'
-        host = "http://localhost:8000"
+        if DEPLOYMENT_STAGE == 'LOCAL':
+            host = "http://localhost:8000"
 
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute(range_key=True) #eg WLG-10000

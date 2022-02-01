@@ -84,7 +84,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         print(result)
         assert result['data']['create_inversion_solution']['inversion_solution']['id'] == 'SW52ZXJzaW9uU29sdXRpb246Tm9uZQ=='
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', READ_MOCK)
     def test_get_inversion_solution_by_node_id(self):
         # the first GT
         qry = '''
