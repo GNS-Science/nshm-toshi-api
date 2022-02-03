@@ -31,29 +31,19 @@ from .custom.automation_task import AutomationTask, CreateAutomationTask, Update
 #from .custom.inversion_solution import
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
 
-if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
-    #S3 local credentials
-    client_args = dict(aws_access_key_id='S3RVER',
+from graphql_api.config import IS_OFFLINE, ES_REGION, ES_ENDPOINT, ES_INDEX
+
+credentials = boto3.Session().get_credentials() if not IS_OFFLINE else None
+awsauth = AWS4Auth(
+            credentials.access_key, credentials.secret_key,
+            ES_REGION, 'es', session_token=credentials.token) if not IS_OFFLINE else None
+
+s3_client_args = dict(aws_access_key_id='S3RVER',
         aws_secret_access_key='S3RVER',
-        endpoint_url='http://localhost:4569')
-    awsauth = None
-    ES_ENDPOINT = "http://localhost:9200"
-    ES_INDEX = "toshi-index"
-else:
-    #AWS S3 creds set up by sls
-    client_args = {}
-    credentials = boto3.Session().get_credentials()
-    # region = '' # e.g. us-west-1
-    SERVICE = 'es'
-    ES_ENDPOINT = os.getenv("ES_ENDPOINT")
-    ES_INDEX = os.getenv("ES_INDEX")
-    ES_REGION = os.getenv("ES_REGION")
-    ES_DOMAIN_NAME = os.getenv("ES_DOMAIN_NAME")
-    awsauth = AWS4Auth(credentials.access_key, credentials.secret_key,
-            ES_REGION, SERVICE, session_token=credentials.token)
+        endpoint_url='http://localhost:4569') if IS_OFFLINE else {}
 
 search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
-db_root = DataManager(search_manager, client_args)
+db_root = DataManager(search_manager, s3_client_args)
 
 class FileUnion(graphene.Union):
     class Meta:
