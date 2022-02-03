@@ -56,9 +56,11 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
 
     # Note order of calls must match those made to S3 , and copy is used since the object may be mutated
     # (TODO should this ne forbiddien??)
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+        side_effect = [copy(FILE_REL0)]) 
     @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object',
-        side_effect = [copy(AUTO_TASK), copy(FILE_REL0), copy(FILE0)]) #opy(FILE1),
-    def test_query_with_files(self, mocked_api):
+        side_effect = [copy(AUTO_TASK), copy(FILE0)]) 
+    def test_query_with_files(self, mocked_api_DB, mocked_api_S3):
 
         qry = '''
         query q1 {
@@ -98,11 +100,14 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
         assert result['files']['total_count'] == 1
         assert result['files']['edges'][0]['node']['file']['id'] == 'SW52ZXJzaW9uU29sdXRpb246MC4wbXFjN2Y='
 
-        assert mocked_api.call_count == 3 # this may break if caching or other optimisitions are introduced
+        assert mocked_api_DB.call_count == 2 # this may break if caching or other optimisitions are introduced
+        assert mocked_api_S3.call_count == 1# this may break if caching or other optimisitions are introduced
 
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+        side_effect = [copy(FILE_REL0)])
     @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object',
-        side_effect = [copy(AUTO_TASK), copy(FILE_REL0), copy(FILE0), copy(AUTO_TASK), None])
-    def test_task_product_query(self, mocked_api):
+        side_effect = [copy(AUTO_TASK), copy(FILE0), copy(AUTO_TASK), None])
+    def test_task_product_query(self, mocked_api_DB, mocked_api_S3):
         qry = '''
         query q0 {
           nodes(id_in: ["UnVwdHVyZUdlbmVyYXRpb25UYXNrOjB6SEo0NTA="]) {
@@ -138,12 +143,15 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
         assert node['inversion_solution']['id'] == "SW52ZXJzaW9uU29sdXRpb246MC4wbXFjN2Y="
         assert node['inversion_solution']['file_name'] == "solution.zip"
 
-        assert mocked_api.call_count == 3# this may break if caching or other optimisitions are introduced
+        assert mocked_api_DB.call_count == 2# this may break if caching or other optimisitions are introduced
+        assert mocked_api_S3.call_count == 1# this may break if caching or other optimisitions are introduced
 
     #@skip('as above')
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+        side_effect = [json.loads(ate.file_rel)])
     @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object',
-        side_effect = [json.loads(ate.automation_task), json.loads(ate.file_rel), json.loads(ate.file)])
-    def test_example_failing_product_query(self, mocked_api):
+        side_effect = [json.loads(ate.automation_task), json.loads(ate.file)])
+    def test_example_failing_product_query(self, mocked_api_DB, mocked_api_S3):
         qry = '''
         query q0 {
           nodes(id_in: ["UnVwdHVyZUdlbmVyYXRpb25UYXNrOjB6SEo0NTA="]) {
@@ -179,4 +187,5 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
         assert node['files']['total_count'] == 4
         assert node['inversion_solution']['id'] == "SW52ZXJzaW9uU29sdXRpb246MTczMC4wa3BjS0s="
         assert node['inversion_solution']['file_name'] == "NZSHM22_InversionSolution-QXV0b21hdGlvblRhc2s6ODQ5N0tOTEI=.zip"
-        assert mocked_api.call_count == 3 # this may break if caching or other optimisitions are introduced
+        assert mocked_api_DB.call_count == 2 # this may break if caching or other optimisitions are introduced
+        assert mocked_api_S3.call_count == 1
