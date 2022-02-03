@@ -3,11 +3,11 @@ Object manager for ThingRelation (and subclassed) schema objects
 """
 import logging
 from importlib import import_module
-from .base_s3_data import BaseDynamoDBData
+from .base_s3_data import BaseS3Data
 
 logger = logging.getLogger(__name__)
 
-class ThingRelationData(BaseDynamoDBData):
+class ThingRelationData(BaseS3Data):
     """
     ThingRelationData provides the S3 interface for ThingRelation objects
     """

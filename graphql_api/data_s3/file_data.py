@@ -5,7 +5,7 @@ from importlib import import_module
 from datetime import datetime as dt
 import json
 import logging
-from graphql_api.dynamodb.models import ToshiObject
+from graphql_api.dynamodb.models import ToshiIdentity, ToshiFileObject
 
 from .base_s3_data import BaseDynamoDBData, append_uniq
 
@@ -121,7 +121,7 @@ class FileData(BaseDynamoDBData):
         """
         t0 = dt.utcnow()
         db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
-        size = sum(1 for _ in ToshiObject.scan(ToshiObject.object_id.startswith(self._prefix)))
+        size = sum(1 for _ in ToshiFileObject.scan(ToshiFileObject.object_id.startswith(self._prefix)))
         return append_uniq(float(size))
 
     def get_all(self):

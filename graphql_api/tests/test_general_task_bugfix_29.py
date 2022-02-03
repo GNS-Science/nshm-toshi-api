@@ -18,6 +18,7 @@ from graphql_api import data_s3
 
 from graphql_api.schema import root_schema
 from graphql_api.schema.custom import StrongMotionStation
+from graphql_api.dynamodb.models import migrate
 
 import graphql_api.data_s3 # for mocking
 
@@ -64,8 +65,10 @@ TASKMOCK = lambda _self, _id: {
     "title": "max_jump_distance"
     }
 
+@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
 class TestGeneralTaskBug29(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.
@@ -73,8 +76,10 @@ class TestGeneralTaskBug29(unittest.TestCase):
 
     def setUp(self):
         self.client = Client(root_schema)
+        migrate()
 
     @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', TASKMOCK)
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASKMOCK)
     def test_create_two_gts_and_link_them(self):
         # the first GT
         gt1_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))
@@ -96,6 +101,6 @@ class TestGeneralTaskBug29(unittest.TestCase):
 
         print(gt_link_result)
         assert gt_link_result['data']['create_task_relation']\
-                        ['thing_relation']['id'] == 'VGFza1Rhc2tSZWxhdGlvbjoy'
+                        ['thing_relation']['id'] == 'VGFza1Rhc2tSZWxhdGlvbjow'
 
 

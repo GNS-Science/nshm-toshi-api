@@ -79,8 +79,9 @@ class TestBugReproduction(unittest.TestCase):
         print(result)
         assert result['data']['node']['id'] == "SW52ZXJzaW9uU29sdXRpb246MTIzMy4wbkFtR0Q="
 
-    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', side_effect=itertools.chain([RUPTGEN(), FILEREL(), FILE(), RUPTGEN()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
-    def test_get_ruptgen_files(self, mock):
+    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=itertools.chain([FILEREL()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', side_effect=itertools.chain([RUPTGEN(), FILE(), RUPTGEN()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
+    def test_get_ruptgen_files(self, mockDB, mockS3):
         QRY = '''
           query one_rgt ($rgt_id:ID!) {
             node(id: $rgt_id) {

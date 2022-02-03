@@ -9,7 +9,7 @@ from io import BytesIO
 import boto3
 import random
 import logging
-from graphql_api.dynamodb.models import ToshiObject
+from graphql_api.dynamodb.models import ToshiIdentity
 
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
@@ -98,53 +98,10 @@ class BaseData():
                 results.append(object)
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return results
-
-    def _write_object(self, object_id, body):
-        """write object contents to the S3 bucket.
-
-        Args:
-            object_id (int): unique iD of the obect
-            body (dict): dict to be serialised to JSON
-        """
-        t0 = dt.utcnow()
-        db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
-        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
-        # TODO: add some error handling here
-        print(f'WRITE: {key}')
-        if self._prefix in ['ThingData', 'FileData']:
-            response = ToshiObject(object_id=key,
-                                   object_type=self._prefix,
-                                   object_content=body)
-            response.save()
-        else:
-            response = self._bucket.put_object(Key=key, Body=json.dumps(body))
-        es_key = key.replace("/", "_")
-        self._db_manager.search_manager.index_document(es_key, body)
-
-    def _read_object(self, object_id):
-        """read object contents from the S3 bucket.
-
-        Args:
-            object_id int): unique iD of the obect
-
-        Returns:
-            dict: object data deserialised from the json object
-        """
-        #t0 = dt.utcnow()
-        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
-        print(f'READ:{key}')
-        print(self.__dict__)
-        if self._prefix in ['ThingData', 'FileData']:
-            obj = ToshiObject.get(key, self._prefix)
-            return obj.object_content
-        else:
-            obj = self._s3.Object(bucket_name=self._bucket_name,
-                                  key=key,
-                                  client=self._client)
-            file_object = BytesIO()
-            obj.download_fileobj(file_object)
-            file_object.seek(0)
-            return json.load(file_object)
+    
+    def get_all_in(self, _id_list):
+        pass
+    #TODO
 
 class BaseS3Data(BaseData):
     def get_next_id(self):
@@ -188,17 +145,30 @@ class BaseS3Data(BaseData):
         return json.load(file_object)
 
 class BaseDynamoDBData(BaseData):
+    def __init__(self, client_args, db_manager, model):
+        super().__init__(client_args, db_manager)
+        self._model = model
+    
     def get_next_id(self) -> int:
         """
         Returns:
                 int: the next available id
         """
-        size = sum(1 for _ in ToshiObject.scan(
-            ToshiObject.object_id.startswith(self._prefix)))
+        """
+        1: Read objectID for the table type
+        2: Increment the object ID to +1
+        3: create new object with new ID
+        4: save object to DB
+        note: this should complete the transaction and should fail if there was a clash on the object ID,
+              the result of this transaction should be both the Identity.object_ID and File.object_id should be equal and both succeed
+        """
+        
+        size = sum(1 for _ in self._model.scan(
+            self._model.object_id.startswith(self._prefix)))
         return append_uniq(size)
     
     def _write_object(self, object_id, body):
-        """write object contents to the S3 bucket.
+        """write object contents to the DynamoDB table.
 
         Args:
             object_id (int): unique iD of the obect
@@ -208,7 +178,7 @@ class BaseDynamoDBData(BaseData):
         db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         # TODO: add some error handling here
-        response = ToshiObject(object_id=key,
+        response = self._model(object_id=key,
                                 object_type=self._prefix,
                                 object_content=body)
         response.save()
@@ -226,7 +196,7 @@ class BaseDynamoDBData(BaseData):
         """
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         try:
-            obj = ToshiObject.get(key, self._prefix)
+            obj = self._model.get(key, self._prefix)
             return obj.object_content
         except:
             obj = self._s3.Object(bucket_name=self._bucket_name,
@@ -236,6 +206,3 @@ class BaseDynamoDBData(BaseData):
             obj.download_fileobj(file_object)
             file_object.seek(0)
             return json.load(file_object)
-
-
-
