@@ -6,6 +6,11 @@ from graphene import relay
 from graphql_api.data_s3 import get_data_manager
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput
 
+from datetime import datetime as dt
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
+from graphql_api.cloudwatch import ServerlessMetricWriter
+
+db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 class FileInterface(graphene.Interface):
     """A File in the NSHM saga"""
@@ -30,17 +35,27 @@ class FileInterface(graphene.Interface):
 
     def resolve_relations(root, info, **args):
         # Transform the instance thing_ids into real instances
-        if not root.relations: return []
-        if len(info.field_asts[0].selection_set.selections)==1:
-            if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
-                from graphql_api.schema.file_relation import FileRelationConnection
-                return FileRelationConnection(edges= [None for x in range(len(root.relations))])
+        t0 = dt.utcnow()
+        if not root.relations:
+            res = []
 
-        try:
-           return [get_data_manager().file_relation.get_one(_id) for _id in root.relations]
-        except:
-           return [get_data_manager().file_relation.build_one(root.id, relation['id'], relation['role']) for relation in root.relations]
+        elif (len(info.field_asts[0].selection_set.selections)==1 and
+            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
+            from graphql_api.schema.file_relation import FileRelationConnection
+            res = FileRelationConnection(edges= [None for x in range(len(root.relations))])
+            db_metrics.put_duration(__name__, 'resolve_files[total_count]' , dt.utcnow()-t0)
 
+        elif isinstance(root.relations[0], dict):
+            #new form, files is list of objects
+            res = [get_data_manager().file_relation.build_one(root.id, relation['id'], relation['role']) for relation in root.relations]
+            db_metrics.put_duration(__name__, 'resolve_relations[optimised]' , dt.utcnow()-t0)
+
+        else:
+            #old form, files is list of strings
+            res = [get_data_manager().file_relation.get_one(_id) for _id in root.relations]
+            db_metrics.put_duration(__name__, 'resolve_relations[legacy]' , dt.utcnow()-t0)
+
+        return res
 
 class File(graphene.ObjectType):
     """A data file"""
