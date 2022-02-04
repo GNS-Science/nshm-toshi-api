@@ -65,7 +65,9 @@ class File(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
+        #t0 = dt.utcnow()
         node = get_data_manager().file.get_one(_id)
+        #db_metrics.put_duration(__name__, 'CreateFile.mutate' , dt.utcnow()-t0)
         return node
 
 class FileConnection(relay.Connection):
@@ -92,6 +94,8 @@ class CreateFile(graphene.Mutation):
     file_result = graphene.Field(File)
 
     def mutate(self, info, **kwargs):
+        t0 = dt.utcnow()
         file_result = get_data_manager().file.create('File', **kwargs)
+        db_metrics.put_duration(__name__, 'CreateFile.mutate' , dt.utcnow()-t0)
         return CreateFile(ok=True, file_result=file_result)
 
