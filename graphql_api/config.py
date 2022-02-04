@@ -3,7 +3,7 @@ This module exports comfiguration for the current system
 """
 import os
 
-def boolean_env(environ_name, default='FALSE'):
+def boolean_env(environ_name, default='TRUE'):
     return bool(os.getenv(environ_name, default).upper() in ["1", "Y", "YES", "TRUE"])
 
 IS_OFFLINE = boolean_env('SLS_OFFLINE') #set by serverless-wsgi plugin

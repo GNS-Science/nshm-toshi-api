@@ -122,7 +122,7 @@ class BaseS3Data():
         Returns:
             dict: object data deserialised from the json object
         """
-        #t0 = dt.utcnow()
+        t0 = dt.utcnow()
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         obj = self._s3.Object(bucket_name=self._bucket_name,
                         key=key,
@@ -130,5 +130,5 @@ class BaseS3Data():
         file_object = BytesIO()
         obj.download_fileobj(file_object)
         file_object.seek(0)
-        #db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
         return json.load(file_object)
