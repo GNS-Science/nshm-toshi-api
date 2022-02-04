@@ -4,6 +4,8 @@
 import os
 import boto3
 import graphene
+from datetime import datetime as dt
+from flask import request
 from graphene import relay
 from graphql_relay import from_global_id, to_global_id
 
@@ -31,29 +33,22 @@ from .custom.automation_task import AutomationTask, CreateAutomationTask, Update
 #from .custom.inversion_solution import
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
 
-if ("-local" in os.environ.get('S3_BUCKET_NAME', "-local")):
-    #S3 local credentials
-    client_args = dict(aws_access_key_id='S3RVER',
+from graphql_api.cloudwatch import ServerlessMetricWriter
+from graphql_api.config import IS_OFFLINE, ES_REGION, ES_ENDPOINT, ES_INDEX, STACK_NAME
+
+db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=1)
+
+credentials = boto3.Session().get_credentials() if not IS_OFFLINE else None
+awsauth = AWS4Auth(
+            credentials.access_key, credentials.secret_key,
+            ES_REGION, 'es', session_token=credentials.token) if not IS_OFFLINE else None
+
+s3_client_args = dict(aws_access_key_id='S3RVER',
         aws_secret_access_key='S3RVER',
-        endpoint_url='http://localhost:4569')
-    awsauth = None
-    ES_ENDPOINT = "http://localhost:9200"
-    ES_INDEX = "toshi-index"
-else:
-    #AWS S3 creds set up by sls
-    client_args = {}
-    credentials = boto3.Session().get_credentials()
-    # region = '' # e.g. us-west-1
-    SERVICE = 'es'
-    ES_ENDPOINT = os.getenv("ES_ENDPOINT")
-    ES_INDEX = os.getenv("ES_INDEX")
-    ES_REGION = os.getenv("ES_REGION")
-    ES_DOMAIN_NAME = os.getenv("ES_DOMAIN_NAME")
-    awsauth = AWS4Auth(credentials.access_key, credentials.secret_key,
-            ES_REGION, SERVICE, session_token=credentials.token)
+        endpoint_url='http://localhost:4569') if IS_OFFLINE else {}
 
 search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
-db_root = DataManager(search_manager, client_args)
+db_root = DataManager(search_manager, s3_client_args)
 
 class FileUnion(graphene.Union):
     class Meta:
@@ -108,13 +103,17 @@ class QueryRoot(graphene.ObjectType):
     )
 
     def resolve_strong_motion_stations(root, info):
-        return db_root.thing.get_all('StrongMotionStation')
-
+        t0 = dt.utcnow()
+        sms = db_root.thing.get_all('StrongMotionStation')
+        db_metrics.put_duration(__name__, 'resolve_strong_motion_stations' , dt.utcnow()-t0)
+        return sms
 
     def resolve_strong_motion_station(root, info, id):
+        t0 = dt.utcnow()
         _type, _id = from_global_id(id)
-        return db_root.thing.get_one(_id)
-
+        sms = db_root.thing.get_one(_id)
+        db_metrics.put_duration(__name__, 'resolve_strong_motion_station' , dt.utcnow()-t0)
+        return sms
 
     @staticmethod
     def resolve_rupture_generation_tasks(root, info):
@@ -122,7 +121,10 @@ class QueryRoot(graphene.ObjectType):
         Returns:
             list: rupture generation task list
         """
-        return db_root.thing.get_all('RuptureGenerationTask')
+        t0 = dt.utcnow()
+        tasks = db_root.thing.get_all('RuptureGenerationTask')
+        db_metrics.put_duration(__name__, 'resolve_rupture_generation_tasks' , dt.utcnow()-t0)
+        return tasks
 
     @staticmethod
     def resolve_files(root, info):
@@ -130,16 +132,22 @@ class QueryRoot(graphene.ObjectType):
         Returns:
             list: file list
         """
-        return db_root.file.get_all()
+        t0 = dt.utcnow()
+        files = db_root.file.get_all()
+        db_metrics.put_duration(__name__, 'resolve_files' , dt.utcnow()-t0)
+        return files
 
     @staticmethod
     def resolve_search(root, info, **kwargs):
+        t0 = dt.utcnow()
         search_result = db_root.search_manager.search(kwargs.get('search_term'))
+        db_metrics.put_duration(__name__, 'resolve_search' , dt.utcnow()-t0)
         return Search(ok=True, search_result=search_result)
 
     @staticmethod
     def resolve_nodes(root, info, id_in,**kwargs):
-        print(id_in, kwargs)
+        #    print(id_in, kwargs)
+        t0 = dt.utcnow()
         result = []
         for gid in id_in:
             _type, _id = from_global_id(gid)
@@ -151,7 +159,7 @@ class QueryRoot(graphene.ObjectType):
                 result.append(db_root.table.get_one(_id))
             else:
                 raise ValueError("unable to resolve, object id", obj['_source'])
-
+        db_metrics.put_duration(__name__, 'resolve_nodes' , dt.utcnow()-t0)
         #result =  = db_root.search_manager.search(kwargs.get('search_term'))
         return NodeFilter(ok=True, result =result)
 

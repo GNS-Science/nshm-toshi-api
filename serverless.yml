@@ -87,6 +87,12 @@ provider:
       Resource:
         - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
         - { "Fn::Join": ["", ["Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"], "/*"]] }
+    -  Effect: Allow
+       Action:
+         - "cloudwatch:PutMetricData"
+       Resource: "*"
+
+
 
   apiKeys:
     - name: TempApiKey-${self:custom.stage}
@@ -116,6 +122,7 @@ functions:
       ES_INDEX: ${self:custom.esIndex}
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
+      STACK_NAME: ${self:custom.stack_name}
 
 resources:
   Resources:
