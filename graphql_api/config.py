@@ -3,7 +3,6 @@ This module exports comfiguration for the current system
 """
 import os
 
-
 def boolean_env(environ_name, default='FALSE'):
     return bool(os.getenv(environ_name, default).upper() in ["1", "Y", "YES", "TRUE"])
 
