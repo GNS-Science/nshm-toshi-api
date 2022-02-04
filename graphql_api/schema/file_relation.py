@@ -4,9 +4,13 @@ from graphene import Enum
 from graphql_relay import from_global_id
 
 from .file import File
-#from .custom.strong_motion_station_file import SmsFile
-#from .custom.inversion_solution import InversionSolution
 from graphql_api.data_s3 import get_data_manager
+
+from datetime import datetime as dt
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
+from graphql_api.cloudwatch import ServerlessMetricWriter
+
+db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 class FileRole(Enum):
     READ = "read"
@@ -59,6 +63,7 @@ class CreateFileRelation(graphene.Mutation):
     file_relation = graphene.Field(FileRelation)
 
     def mutate(self, info, **kwargs):
+        t0 = dt.utcnow()
         print("CreateFileRelation.mutate: ", kwargs)
         ftype, file_id = from_global_id(kwargs.pop('file_id'))
         #file = db_root.file.get_one(file_id)
@@ -66,4 +71,5 @@ class CreateFileRelation(graphene.Mutation):
         #thing = db_root.thing.get_one(kwargs.pop('strong_motion_station_id'))
 
         file_relation = get_data_manager().file_relation.create('FileRelation', thing_id, file_id, **kwargs)
+        db_metrics.put_duration(__name__, 'CreateFileRelation.mutate' , dt.utcnow()-t0)
         return CreateFileRelation(ok=True, file_relation= file_relation)
