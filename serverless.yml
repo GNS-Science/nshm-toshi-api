@@ -116,6 +116,7 @@ functions:
       ES_INDEX: ${self:custom.esIndex}
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
+      STACK_NAME: ${self:custom.stack_name}
 
 resources:
   Resources:

@@ -4,10 +4,16 @@ BaseS3Data is the base class for AWS_S3 data handlers
 import os
 import json
 from importlib import import_module
+from datetime import datetime as dt
 from io import BytesIO
 import boto3
 import random
 import logging
+
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
+from graphql_api.cloudwatch import ServerlessMetricWriter
+
+db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +46,9 @@ class BaseS3Data():
         Returns:
             int: the next available id
         """
+        t0 = dt.utcnow()
         size = sum(1 for _ in self._bucket.objects.filter(Prefix='%s/' % self._prefix))
+        db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
         return append_uniq(size)
 
 
@@ -52,8 +60,8 @@ class BaseS3Data():
         Returns:
             File: the File object json
         """
-        logger.info("BaseS3Data.get_one_raw: %s" % _id)
-        return self._read_object(_id)
+        obj = self._read_object(_id)
+        return obj
 
 
     def get_one(self, _id):
@@ -72,6 +80,7 @@ class BaseS3Data():
         Returns:
             list: a list containing all the objects materialised from the S3 bucket
         """
+        t0 = dt.utcnow()
         if clazz_name:
             clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         else:
@@ -84,6 +93,7 @@ class BaseS3Data():
             object = self.get_one(result_id)
             if (clazz==None or isinstance(object, clazz)):
                 results.append(object)
+        db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return results
 
     def _write_object(self, object_id, body):
@@ -93,9 +103,12 @@ class BaseS3Data():
             object_id (int): unique iD of the obect
             body (dict): dict to be serialised to JSON
         """
+        t0 = dt.utcnow()
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         #TODO: add some error handling here
         response = self._bucket.put_object(Key=key, Body=json.dumps(body))
+        db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
 
@@ -109,6 +122,7 @@ class BaseS3Data():
         Returns:
             dict: object data deserialised from the json object
         """
+        t0 = dt.utcnow()
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         obj = self._s3.Object(bucket_name=self._bucket_name,
                         key=key,
@@ -116,4 +130,5 @@ class BaseS3Data():
         file_object = BytesIO()
         obj.download_fileobj(file_object)
         file_object.seek(0)
+        db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
         return json.load(file_object)

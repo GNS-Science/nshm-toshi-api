@@ -2,7 +2,7 @@
 
 import datetime
 import boto3
-from api.config import REGION, IS_OFFLINE
+from graphql_api.config import REGION, IS_OFFLINE
 
 # initialize our Cloudwatch client
 client = boto3.client('cloudwatch', region_name=REGION)
@@ -14,13 +14,13 @@ class ServerlessMetricWriter():
         self._metric_name = metric_name
         self._resolution = resolution # 1=high, or 60
 
-    def put_duration(self, package, operation, duration):
+    def put_duration(self, package, operation, duration, lambda_name=None):
 
         if isinstance(duration, datetime.timedelta):
             duration = float(duration.seconds/1e6 + (duration.microseconds/1e3))
 
         rec = dict(
-            Namespace=f'AWS/Lambda/{self._lambda_name}',
+            Namespace=f'AWS/Lambda/{lambda_name or self._lambda_name}',
             MetricData=[
                 {
                     'MetricName':  self._metric_name,
