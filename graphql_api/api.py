@@ -11,14 +11,6 @@ if os.getenv("TOSHI_FIX_RANDOM_SEED", None):
 	random.seed(42)
 
 app = Flask(__name__)
-CORS(app)
-
-app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
-    'graphql',
-    schema=root_schema,
-    graphiql=True,
-))
-
 
 for logger in (
     app.logger,
@@ -27,6 +19,14 @@ for logger in (
 ):
     #logger.setLevel(logging.INFO)
     logging.basicConfig(level=logging.INFO)
+
+CORS(app)
+
+app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
+    'graphql',
+    schema=root_schema,
+    graphiql=True,
+))
 
 if __name__ == '__main__':
     app.run()
