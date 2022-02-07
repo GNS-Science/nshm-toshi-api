@@ -6,6 +6,12 @@ from graphql_relay import from_global_id
 from graphql_api.data_s3 import get_data_manager
 from graphql_api.schema.custom import (GeneralTask, RuptureGenerationTask, AutomationTask)
 
+from datetime import datetime as dt
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
+from graphql_api.cloudwatch import ServerlessMetricWriter
+
+db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
+
 class ChildTaskUnion(graphene.Union):
     class Meta:
         types = (GeneralTask, RuptureGenerationTask, AutomationTask)
@@ -40,9 +46,11 @@ class CreateTaskTaskRelation(graphene.Mutation):
     thing_relation = graphene.Field(TaskTaskRelation)
 
     def mutate(self, info, **kwargs):
+        t0 = dt.utcnow()
         print("CreateTaskTaskRelation.mutate: ", kwargs)
         ftype, parent_id = from_global_id(kwargs.pop('parent_id'))
         ttype, child_id = from_global_id(kwargs.pop('child_id'))
 
         thing_relation = get_data_manager().thing_relation.create('TaskTaskRelation', parent_id, child_id, **kwargs)
+        db_metrics.put_duration(__name__, 'CreateTaskTaskRelation.mutate' , dt.utcnow()-t0)
         return CreateTaskTaskRelation(ok=True, thing_relation=thing_relation)

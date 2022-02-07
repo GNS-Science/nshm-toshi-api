@@ -7,29 +7,36 @@ automatically by Graphene.
 """
 
 import graphene
-import datetime as dt
+import datetime
 import logging
-
 from graphene import relay
 
-
 from graphql_api.schema.event import EventResult, EventState
-# from graphql_api.schema.thing import Thing
 from graphql_api.data_s3 import get_data_manager
 from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
+
+from datetime import datetime as dt
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
+from graphql_api.cloudwatch import ServerlessMetricWriter
+
+db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 logger = logging.getLogger(__name__)
 
 class AutomationTaskBase():
 
     def resolve_parents(self, info, **args):
-        # Transform the instance thing_ids into real instances
-        if not self.parents: return []
-        if len(info.field_asts[0].selection_set.selections)==1:
-            if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
-                from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
-                return TaskTaskRelationConnection(edges=[None for x in range(len(self.parents))])
-        return [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
+        t0 = dt.utcnow()
+        if not self.parents:
+            res = []
+        elif (len(info.field_asts[0].selection_set.selections)==1 and
+            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
+            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
+            res =  TaskTaskRelationConnection(edges=[None for x in range(len(self.parents))])
+        else:
+            res = [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
+        db_metrics.put_duration(__name__, 'AutomationTaskBase.resolve_node' , dt.utcnow()-t0)
+        return res
 
     @classmethod
     def get_node(cls, info, _id):

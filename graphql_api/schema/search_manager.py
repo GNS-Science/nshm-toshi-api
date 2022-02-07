@@ -1,14 +1,16 @@
 """
 Search Manager
 """
-#from importlib import import_module
 import requests
-#from .custom.rupture_generation_task import RuptureGenerationTask
-#from .file import File
-
 from graphql_api.data_s3.thing_data import ThingData
 from graphql_api.data_s3.file_data import FileData
 from graphql_api.data_s3.table_data import TableData
+
+from datetime import datetime as dt
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
+from graphql_api.cloudwatch import ServerlessMetricWriter
+
+db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 TYPE = '_doc'
 
@@ -22,6 +24,7 @@ class SearchManager():
 
     def index_document(self, key, document):
         # Index the document
+        t0 = dt.utcnow()
         headers = { "Content-Type": "application/json" }
         try:
             print("SearchManager.index_document", self._url + key)
@@ -29,8 +32,11 @@ class SearchManager():
             print(response.content)
         except (Exception) as err:
             print("ERR SearchManager.index_document ", err)
+        db_metrics.put_duration(__name__, 'index_document' , dt.utcnow()-t0)
 
     def search(self, term):
+        t0 = dt.utcnow()
+
         headers = {} # "Content-Type": "application/json" }
         result = []
         try:
@@ -60,4 +66,5 @@ class SearchManager():
         except (Exception) as err:
             print("ERR SearchManager.search() ", err)
 
+        db_metrics.put_duration(__name__, 'index_document' , dt.utcnow()-t0)
         return result
