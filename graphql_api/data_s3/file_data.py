@@ -34,7 +34,7 @@ class FileData(BaseS3Data):
         Returns:
             File: the File object
         """
-        logger.info("FiledData.create: %s : %s" % (clazz_name, kwargs))
+        print("FiledData.create: %s : %s" % (clazz_name, kwargs))
 
         from graphql_api.schema import File
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
@@ -53,7 +53,7 @@ class FileData(BaseS3Data):
 
         response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
 
-        logger.info("FiledData.create: put placeholder response : %s" % (response2))
+        print("FiledData.create: put placeholder response : %s" % (response2))
 
         parts = self._client.generate_presigned_post(Bucket=self._bucket_name,
                                           Key=data_key,
@@ -69,8 +69,8 @@ class FileData(BaseS3Data):
                                           ]
                                           )
 
-        logger.info("FiledData.create: S3 URL: %s" % parts.get('url'))
-        logger.info("FiledData.create: fields: %s" % parts.get('fields'))
+        print("FiledData.create: S3 URL: %s" % parts.get('url'))
+        print("FiledData.create: fields: %s" % parts.get('fields'))
 
         new.post_url = json.dumps(parts['fields'])
         return new
