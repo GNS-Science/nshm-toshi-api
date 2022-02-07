@@ -102,7 +102,7 @@ functions:
   app:
     description: The graphql API of ${self:service}
     handler: wsgi_handler.handler
-    memorySize: 384 # optional, in MB, default is 1024
+    memorySize: 4096 # optional, in MB, default is 1024
     timeout: 30 # optional, in seconds, default is 6
     events:
       - http:
