@@ -7,6 +7,7 @@ automatically by Graphene.
 The core class AutomationTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
+
 import graphene
 import datetime as dt
 import logging
@@ -22,12 +23,6 @@ from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
 from .inversion_solution import InversionSolution
 from graphql_api.schema.file_relation import FileRole
-
-from datetime import datetime as dt
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
-from graphql_api.cloudwatch import ServerlessMetricWriter
-
-db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 logger = logging.getLogger(__name__)
 
@@ -46,14 +41,10 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
 
     @staticmethod
     def resolve_inversion_solution(root, info, **args):
-
         if not len(root.files):
             return
         if not root.task_type == TaskSubType.INVERSION.value:
             return
-
-        t0 = dt.utcnow()
-        res = None
 
         # TODO this is an ugly hack....
         #  - It gets the inversion solution by traversing the file_relations until it finds an InversionSolution.
@@ -65,14 +56,10 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
                 file_relation = get_data_manager().file_relation.build_one(file_id['file_id'], root.id, file_id['file_role'])
             else: #old form, files is list of strings
                 file_relation = get_data_manager().file_relation.get_one(file_id)
-                if not file_relation.role == FileRole.WRITE.value:
-                    continue
+
             file = get_data_manager().file.get_one(file_relation.file_id)
             if file.__class__ == InversionSolution:
-                res = file
-                break
-        return res
-        db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution' , dt.utcnow()-t0)
+                return file
 
 class AutomationTaskConnection(relay.Connection):
     """A list of AutomationTask items"""
@@ -90,7 +77,6 @@ class NewAutomationTaskInput(AutomationTaskInput):
     model_type = ModelType(required=False)
     task_type = TaskSubType(required=True)
 
-
 class CreateAutomationTask(graphene.Mutation):
     class Arguments:
         input = NewAutomationTaskInput(required=True)
@@ -99,10 +85,8 @@ class CreateAutomationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.utcnow()
         print("payload: ", input)
         task_result = get_data_manager().thing.create('AutomationTask', **input)
-        db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate' , dt.utcnow()-t0)
         return CreateAutomationTask(task_result=task_result)
 
 class UpdateAutomationTask(graphene.Mutation):
@@ -113,9 +97,8 @@ class UpdateAutomationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.utcnow()
         print("mutate: ", input)
         thing_id = input.pop('task_id')
         task_result = get_data_manager().thing.update('AutomationTask', thing_id, **input)
-        db_metrics.put_duration(__name__, 'UpdateAutomationTask.mutate' , dt.utcnow()-t0)
+
         return UpdateAutomationTask(task_result=task_result)

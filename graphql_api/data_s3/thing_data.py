@@ -9,8 +9,10 @@ from benedict import benedict
 from .base_s3_data import BaseS3Data
 # from .helpers import get_objectid_from_global
 from graphql_relay import from_global_id, to_global_id
+# import graphql_api.schema
 
 logger = logging.getLogger(__name__)
+
 
 class ThingData(BaseS3Data):
     """

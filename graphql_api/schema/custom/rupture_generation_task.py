@@ -21,12 +21,6 @@ from graphql_api.data_s3 import get_data_manager
 from .common import KeyValuePair, KeyValuePairInput
 from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
 
-from datetime import datetime as dt
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
-from graphql_api.cloudwatch import ServerlessMetricWriter
-
-db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
-
 logger = logging.getLogger(__name__)
 
 class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
@@ -57,10 +51,8 @@ class CreateRuptureGenerationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.utcnow()
         print("payload: ", input)
         task_result = get_data_manager().thing.create('RuptureGenerationTask', **input)
-        db_metrics.put_duration(__name__, 'CreateRuptureGenerationTask.mutate_and_get_payload' , dt.utcnow()-t0)
         return CreateRuptureGenerationTask(task_result=task_result)
 
 class UpdateRuptureGenerationTask(graphene.Mutation):
@@ -71,9 +63,8 @@ class UpdateRuptureGenerationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.utcnow()
         print("mutate: ", input)
         thing_id = input.pop('task_id')
         task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **input)
-        db_metrics.put_duration(__name__, 'UpdateRuptureGenerationTask.mutate_and_get_payload' , dt.utcnow()-t0)
+
         return UpdateRuptureGenerationTask(task_result=task_result)

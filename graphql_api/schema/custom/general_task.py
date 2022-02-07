@@ -19,11 +19,6 @@ from graphql_api.data_s3 import get_data_manager
 from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 from graphql_api.schema.event import EventResult
 
-from datetime import datetime as dt
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
-from graphql_api.cloudwatch import ServerlessMetricWriter
-
-db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 class GeneralTask(graphene.ObjectType):
     """
@@ -67,30 +62,22 @@ class GeneralTask(graphene.ObjectType):
                     yield itm['k']
 
     def resolve_children(self, info, **args):
-        t0 = dt.utcnow()
-        if not self.children:
-            res = []
-        elif (len(info.field_asts[0].selection_set.selections)==1 and
-            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
-            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
-            res =  TaskTaskRelationConnection(edges= [None for x in range(len(self.children))])
-        else:
-            res = [get_data_manager().thing_relation.get_one(_id) for _id in self.children]
-        db_metrics.put_duration(__name__, 'GeneralTask.resolve_children' , dt.utcnow()-t0)
-        return res
+        # Transform the instance thing_ids into real instances
+        if not self.children: return []
+        if len(info.field_asts[0].selection_set.selections)==1:
+            if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
+                from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
+                return TaskTaskRelationConnection(edges= [None for x in range(len(self.children))])
+        return [get_data_manager().thing_relation.get_one(_id) for _id in self.children]
 
     def resolve_parents(self, info, **args):
-        t0 = dt.utcnow()
-        if not self.parents:
-            res = []
-        elif (len(info.field_asts[0].selection_set.selections)==1 and
-            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
-            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
-            res = TaskTaskRelationConnection(edges= [None for x in range(len(self.parents))])
-        else:
-            res =  [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
-        db_metrics.put_duration(__name__, 'GeneralTask.resolve_parents' , dt.utcnow()-t0)
-        return res
+        # Transform the instance thing_ids into real instances
+        if not self.parents: return []
+        if len(info.field_asts[0].selection_set.selections)==1:
+            if info.field_asts[0].selection_set.selections[0].name.value == 'total_count':
+                from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
+                return TaskTaskRelationConnection(edges= [None for x in range(len(self.parents))])
+        return [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
 
     @classmethod
     def get_node(cls, info, id):
@@ -157,10 +144,8 @@ class UpdateGeneralTask(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.utcnow()
-        #print("mutate_and_get_payload: ", kwargs)
+        print("mutate_and_get_payload: ", kwargs)
         thing_id = kwargs.pop('task_id')
         general_task = get_data_manager().thing.update('GeneralTask', thing_id, **kwargs)
-        #print("general_task", general_task.created)
-        db_metrics.put_duration(__name__, 'UpdateGeneralTask.mutate_and_get_payload' , dt.utcnow()-t0)
+        print("general_task", general_task.created)
         return UpdateGeneralTask(general_task=general_task, ok=True)

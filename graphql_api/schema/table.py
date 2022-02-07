@@ -12,17 +12,12 @@ This module contains the schema definition for an Table
   - table_type - let's constrain this
   - dimensions - list of the main table dimensions
 """
+
 import graphene
 from graphene import relay
 from graphene import Enum
 from graphql_api.data_s3 import get_data_manager
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, KeyValueListPair, KeyValueListPairInput
-
-from datetime import datetime as dt
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
-from graphql_api.cloudwatch import ServerlessMetricWriter
-
-db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 class RowItemType(Enum):
     """
@@ -62,10 +57,8 @@ class Table(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
-        t0 = dt.utcnow()
-        res = get_data_manager().table.get_one(_id)
-        db_metrics.put_duration(__name__, 'Table.get_node' , dt.utcnow()-t0)
-        return res
+        return  get_data_manager().table.get_one(_id)
+
 
 class CreateTable(relay.ClientIDMutation):
     class Input:
@@ -84,8 +77,6 @@ class CreateTable(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.utcnow()
         print("mutate_and_get_payload: ", kwargs)
         table = get_data_manager().table.create('Table', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateFile.mutate' , dt.utcnow()-t0)
         return CreateTable(table=table)
