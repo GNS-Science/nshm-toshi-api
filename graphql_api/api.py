@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask
 from flask_graphql import GraphQLView
 from graphql_api.schema import root_schema
@@ -17,6 +18,15 @@ app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
     schema=root_schema,
     graphiql=True,
 ))
+
+
+for logger in (
+    app.logger,
+    #logging.getLogger('pynamodb'),
+    #logging.getLogger('other_package'),
+):
+    #logger.setLevel(logging.INFO)
+    logging.basicConfig(level=logging.INFO)
 
 if __name__ == '__main__':
     app.run()
