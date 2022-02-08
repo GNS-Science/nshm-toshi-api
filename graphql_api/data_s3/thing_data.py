@@ -117,6 +117,8 @@ class ThingData(BaseDynamoDBData):
         jsondata = self.migrate_old_thing_object(self.get_one_raw(this_id))
         body = benedict(jsondata)
         body.merge(kwargs)
+        logger.info("ThingData.update: %s : %s" % (id, str(body)))
+        print("ThingData.update: %s : %s" % (id, str(body)))
         #body['clazz_name'] = clazz_name
 
         self._write_object(this_id, body)

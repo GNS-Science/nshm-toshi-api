@@ -9,6 +9,8 @@ from io import BytesIO
 import boto3
 import random
 import logging
+from pynamodb.exceptions import PutError, VerboseClientError
+from botocore.exceptions import ClientError
 from graphql_api.dynamodb.models import ToshiIdentity
 
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
@@ -175,13 +177,19 @@ class BaseDynamoDBData(BaseData):
             body (dict): dict to be serialised to JSON
         """
         t0 = dt.utcnow()
-        db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         # TODO: add some error handling here
         response = self._model(object_id=key,
                                 object_type=self._prefix,
                                 object_content=body)
-        response.save()
+        try:
+            response.save()
+        except PutError as e:
+            if isinstance(e.cause, ClientError):
+                code = e.cause.response['Error'].get('Code')
+                print(code)
+    
+        db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body) 
 
