@@ -13,7 +13,7 @@ class ToshiTableObject(Model):
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute(range_key=True) #eg WLG-10000
     object_content = JSONAttribute() # the json string
-    version = VersionAttribute()
+    # version = VersionAttribute()
     
 class ToshiFileObject(Model):
     class Meta:
@@ -26,7 +26,7 @@ class ToshiFileObject(Model):
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute(range_key=True) #eg WLG-10000
     object_content = JSONAttribute() # the json string
-    version = VersionAttribute()
+    # version = VersionAttribute()
     
     
 class ToshiThingObject(Model):
@@ -40,7 +40,7 @@ class ToshiThingObject(Model):
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute(range_key=True) #eg WLG-10000
     object_content = JSONAttribute() # the json string
-    version = VersionAttribute()
+    # version = VersionAttribute()
     
     
 class ToshiIdentity(Model):
@@ -63,5 +63,11 @@ def migrate():
         if not table.exists():
             table.create_table(wait=True)
             print(f"Migrate created table: {table}")
+
+def drop_tables():
+    for table in tables:
+        if table.exists():
+            table.delete_table()
+            print(f'deleted table: {table}')
         
         
