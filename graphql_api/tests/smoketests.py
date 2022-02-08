@@ -6,7 +6,7 @@ Some duplication in existing tests, but not everything.
 Setup:
  - docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
  - rm -R /tmp/nshm-toshi-api-local/*
- - sls s3 start & TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
+ - sls dynamodb start --stage local & sls s3 start & TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
 
 now python3 smoketests.py
 """
@@ -15,7 +15,7 @@ from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 import time
 import random
-
+# from graphql_api.dynamodb.models import drop_tables
 
 import os
 
@@ -652,16 +652,16 @@ def setup(queries):
 
 
 if __name__ == "__main__":
-
     #cleanup environment
     os.system('curl -X DELETE "localhost:9200/toshi-index?pretty"')
+    # assert 0
     os.system('rm -R /tmp/nzshm22-toshi-api-local/*')
     os.system('touch ./graphql_api/api.py') #force restart of the local WSGI service
     time.sleep(1)
 
     #create some content with graphql mutations
     setup(test_setup)
-    time.sleep(0.5)
+    time.sleep(2)
     print("setup complete...")
 
     #execute some graphql queries

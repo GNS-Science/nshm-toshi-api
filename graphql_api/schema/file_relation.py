@@ -22,6 +22,7 @@ class FileRelation(graphene.ObjectType):
 
     # class Meta:
     #     interfaces = (relay.Node, )
+    #'RuptureGenerationTask', '1HGAq8'
 
 
     thing = graphene.Field('graphql_api.schema.thing.Thing', required=False)
