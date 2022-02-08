@@ -141,7 +141,7 @@ class TestInversionSolutionRelationBugFix(unittest.TestCase):
                 side_effect = [FileRelationData.from_json(copy(FILE_REL0)),
                                FileRelationData.from_json(copy(FILE_REL1)), 
                                FileRelationData.from_json(copy(FILE_REL2))])
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object',
         side_effect = [copy(AUTO_TASK), copy(FILE1), copy(FILE2)])
     def test_query_with_files(self, mocked_read_object, mocked_get_one):
         qry = """ 
