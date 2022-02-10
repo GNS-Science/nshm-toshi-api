@@ -40,7 +40,7 @@ TABLEMOCK = lambda _self, _id: {
     }
 
 
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
 class TestBasicTableOperations(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.

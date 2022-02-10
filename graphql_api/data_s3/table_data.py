@@ -39,7 +39,7 @@ class TableData(BaseDynamoDBData):
         body = new.__dict__.copy()
         body['clazz_name'] = clazz_name
         body['created'] = body['created'].isoformat()
-        self._write_object(next_id, body)
+        self._write_object(next_id, self._prefix, body)
         return new
 
 
@@ -72,7 +72,7 @@ class TableData(BaseDynamoDBData):
         body.merge(kwargs)
         body['created'] = body['created'].isoformat()
         body['clazz_name'] = clazz_name
-        self._write_object(this_id, body)
+        self.transact_update(this_id, body)
         body.pop('clazz_name')
         # print(body)
         return clazz(**body)

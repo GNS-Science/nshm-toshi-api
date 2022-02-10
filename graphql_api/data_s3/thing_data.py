@@ -30,7 +30,7 @@ class ThingData(BaseDynamoDBData):
             ValueError: invalid data exception
         """
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        next_id  = str(self.get_next_id())
+        next_id  = self.get_next_id()
         if not  kwargs['created'].tzname(): #must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
 
@@ -38,7 +38,7 @@ class ThingData(BaseDynamoDBData):
         body = new.__dict__.copy()
         body['clazz_name'] = clazz_name
         body['created'] = body['created'].isoformat()
-        self._write_object(next_id, body)
+        self._write_object(next_id, self._prefix, body)
         return new
 
 
@@ -117,22 +117,20 @@ class ThingData(BaseDynamoDBData):
         jsondata = self.migrate_old_thing_object(self.get_one_raw(this_id))
         body = benedict(jsondata)
         body.merge(kwargs)
-        logger.info("ThingData.update: %s : %s" % (id, str(body)))
-        print("ThingData.update: %s : %s" % (id, str(body)))
-        #body['clazz_name'] = clazz_name
-
-        self._write_object(this_id, body)
+        # body['clazz_name'] = clazz_name
+        logger.info("ThingData.update: %s : %s" % (this_id, str(body)))
+        print("ThingData.update: %s : %s" % (this_id, str(body)))
+        self.transact_update(this_id, self._prefix, body)
         return self.from_json(body)
 
     def add_file_relation(self, thing_id, file_id, file_role):
         obj = self._read_object(thing_id)
         logger.info("add_file_relation: thing_id: %s, file_id %s, " % (thing_id, file_id))
-        print("####add_file_relation", thing_id, obj)
         try:
             obj['files'].append({'file_id': file_id, 'file_role': file_role})
         except (KeyError, AttributeError):
             obj['files'] = [{'file_id': file_id, 'file_role': file_role}]
-        self._write_object(thing_id, obj)
+        self.transact_update(thing_id, self._prefix, obj)
         return self.from_json(obj)
 
 
@@ -144,7 +142,7 @@ class ThingData(BaseDynamoDBData):
             obj['children'].append(relation_id)
         except (KeyError, AttributeError):
             obj['children'] = [relation_id]
-        self._write_object(thing_id, obj)
+        self.transact_update(thing_id, self._prefix, obj)
         return self.from_json(obj)
 
     def add_parent_relation(self, thing_id, relation_id):
@@ -154,7 +152,7 @@ class ThingData(BaseDynamoDBData):
             obj['parents'].append(relation_id)
         except (KeyError, AttributeError):
             obj['parents'] = [relation_id]
-        self._write_object(thing_id, obj)
+        self.transact_update(thing_id, self._prefix, obj)
         return self.from_json(obj)
 
 
@@ -169,7 +167,7 @@ class ThingData(BaseDynamoDBData):
         updated = jsondata.get('updated')
         if updated and not isinstance(updated, dt.datetime):
             jsondata['updated'] = dt.datetime.fromisoformat(updated)
-
+            
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 

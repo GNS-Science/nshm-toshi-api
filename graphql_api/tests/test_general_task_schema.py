@@ -43,7 +43,7 @@ READ_MOCK = lambda _self, id: dict(
     )
 
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body:  {})
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body:  {})
 class TestBasicGeneralTaskOperations(unittest.TestCase):
 
     def setUp(self):
@@ -121,7 +121,7 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
 
 
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body:  {})
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body:  {})
 class TestExtraGeneralTaskOperations(unittest.TestCase):
 
     def setUp(self):
