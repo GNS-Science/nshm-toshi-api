@@ -10,6 +10,7 @@ IS_OFFLINE = boolean_env('SLS_OFFLINE') #set by serverless-wsgi plugin
 
 if IS_OFFLINE:
     ES_ENDPOINT = "http://localhost:9200"
+    DB_ENDPOINT = "http://localhost:8000"
 else:
     ES_ENDPOINT = os.getenv("ES_ENDPOINT", '')
 

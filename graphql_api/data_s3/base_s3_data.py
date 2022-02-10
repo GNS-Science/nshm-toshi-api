@@ -9,11 +9,14 @@ from io import BytesIO
 import boto3
 import random
 import logging
-from pynamodb.exceptions import PutError, VerboseClientError
+from graphene.relay import connection
+from pynamodb.connection.base import Connection
+from pynamodb.exceptions import PutError, VerboseClientError, DoesNotExist
+from pynamodb.transactions import TransactWrite
 from botocore.exceptions import ClientError
 from graphql_api.dynamodb.models import ToshiIdentity
 
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
@@ -46,6 +49,7 @@ class BaseData():
         self._s3 = boto3.resource('s3')
         self._bucket = self._s3.Bucket(self._bucket_name, client=self._client)
         self._prefix = self.__class__.__name__
+        self._connection = Connection()
 
     def get_next_id(self):
         """
@@ -100,10 +104,11 @@ class BaseData():
                 results.append(object)
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return results
-    
+
     def get_all_in(self, _id_list):
         pass
-    #TODO
+        #TODO
+
 
 class BaseS3Data(BaseData):
     def get_next_id(self):
@@ -114,7 +119,7 @@ class BaseS3Data(BaseData):
         size = sum(1 for _ in self._bucket.objects.filter(
             Prefix='%s/' % self._prefix))
         return append_uniq(size)
-    
+
     def _write_object(self, object_id, body):
         """write object contents to the S3 bucket.
 
@@ -127,7 +132,7 @@ class BaseS3Data(BaseData):
         response = self._bucket.put_object(Key=key, Body=json.dumps(body))
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
-   
+
     def _read_object(self, object_id):
         """read object contents from the S3 bucket.
 
@@ -139,62 +144,68 @@ class BaseS3Data(BaseData):
         """
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         obj = self._s3.Object(bucket_name=self._bucket_name,
-                                key=key,
-                                client=self._client)
+                              key=key,
+                              client=self._client)
         file_object = BytesIO()
         obj.download_fileobj(file_object)
         file_object.seek(0)
         return json.load(file_object)
 
+
 class BaseDynamoDBData(BaseData):
     def __init__(self, client_args, db_manager, model):
         super().__init__(client_args, db_manager)
         self._model = model
-    
-    def get_next_id(self) -> int:
+        if IS_OFFLINE:
+            self._connection = Connection(host=DB_ENDPOINT)
+        else:
+            self._connection = Connection()
+        print(self._connection.host)
+            
+    def get_next_id(self) -> str:
         """
         Returns:
                 int: the next available id
         """
-        """
-        1: Read objectID for the table type
-        2: Increment the object ID to +1
-        3: create new object with new ID
-        4: save object to DB
-        note: this should complete the transaction and should fail if there was a clash on the object ID,
-              the result of this transaction should be both the Identity.object_ID and File.object_id should be equal and both succeed
-        """
+
+        try:
+            identity = ToshiIdentity.get(self._prefix)
+        except DoesNotExist as e:
+            identity = ToshiIdentity(table_name=self._prefix, object_id=0)
+            identity.save()
         
-        size = sum(1 for _ in self._model.scan(
-            self._model.object_id.startswith(self._prefix)))
-        return append_uniq(size)
-    
-    def _write_object(self, object_id, body):
+        return append_uniq(identity.object_id)    
+
+    def _write_object(self, object_id, object_type, body):
         """write object contents to the DynamoDB table.
 
         Args:
             object_id (int): unique iD of the obect
             body (dict): dict to be serialised to JSON
         """
+        
         t0 = dt.utcnow()
-        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
-        # TODO: add some error handling here
-        response = self._model(object_id=key,
-                                object_type=self._prefix,
-                                object_content=body)
+        key = "%s/%s" % (self._prefix, object_id)
+        
         try:
-            response.save()
-        except PutError as e:
-            if isinstance(e.cause, ClientError):
-                code = e.cause.response['Error'].get('Code')
-                print(code)
+            identity = ToshiIdentity.get(self._prefix)
+        except DoesNotExist as e:
+            identity = ToshiIdentity(table_name=self._prefix, object_id=0)
+            identity.save()
+            
+        toshi_object = self._model(object_id=key, object_type=object_type, object_content=body)
+       
+        with TransactWrite(connection=self._connection) as transaction:
+            transaction.update(identity, 
+                            actions=[ToshiIdentity.object_id.add(1)])
+            transaction.save(toshi_object)
     
         db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
         es_key = key.replace("/", "_")
-        self._db_manager.search_manager.index_document(es_key, body) 
+        self._db_manager.search_manager.index_document(es_key, body)
 
     def _read_object(self, object_id):
-        """read object contents from the S3 bucket.
+        """read object contents from the DynamoDB or S3 bucket.
 
         Args:
             object_id int): unique iD of the obect
@@ -202,15 +213,37 @@ class BaseDynamoDBData(BaseData):
         Returns:
             dict: object data deserialised from the json object
         """
-        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
+        # TODO NEEDS TEST COVERAGE for fail to S3
+        key = "%s/%s" % (self._prefix, object_id)
+        print('key: ', key, 'prefix', self._prefix)
         try:
             obj = self._model.get(key, self._prefix)
             return obj.object_content
         except:
+            S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
             obj = self._s3.Object(bucket_name=self._bucket_name,
-                        key=key,
-                        client=self._client)
+                                  key=S3_key,
+                                  client=self._client)
             file_object = BytesIO()
             obj.download_fileobj(file_object)
             file_object.seek(0)
             return json.load(file_object)
+
+    def transact_update(self, object_id, object_type, body):
+        logger.info("%s.update: %s : %s" % (object_type, object_id, str(body)))
+        key = "%s/%s" % (self._prefix, object_id)
+        try:
+            model = self._model.get(key, object_type)
+            with TransactWrite(connection=self._connection) as transaction:
+                transaction.update(
+                    model,
+                    actions=[self._model.object_content.set(body)]
+                )
+        except DoesNotExist as e:
+                logger.info(f'Saving new object: {object_id}')
+                new_object = self._model(object_id=key, object_type=object_type, object_content=body)
+                new_object.save()
+            
+        es_key = key.replace("/", "_")
+        self._db_manager.search_manager.index_document(es_key, body)
+        print('#####updated:', object_id, self._model.get(key, object_type).object_content)

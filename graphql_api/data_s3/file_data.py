@@ -5,7 +5,12 @@ from importlib import import_module
 from datetime import datetime as dt
 import json
 import logging
-from graphql_api.dynamodb.models import ToshiIdentity, ToshiFileObject
+import re
+from boto3.resources.model import Identifier
+from graphene.relay import connection
+from graphql_api.dynamodb.models import ToshiIdentity, ToshiFileObject, ToshiThingObject
+from pynamodb.exceptions import DoesNotExist
+from pynamodb.transactions import TransactWrite, TransactGet, Connection
 
 from .base_s3_data import BaseDynamoDBData, append_uniq
 
@@ -22,10 +27,8 @@ class FileData(BaseDynamoDBData):
     """
 
     def update(self, id, updated_body):
-        #TODO error handling
-        #print('UPDATE', updated_body)
-        logger.info("FiledData.update: %s : %s" % (id, str(updated_body)))
-        self._write_object(id, updated_body)
+        print('UPDATE', updated_body)
+        self.transact_update(id, self._prefix, updated_body)
         return self.from_json(updated_body)
 
     def create(self, clazz_name, **kwargs):
@@ -39,18 +42,29 @@ class FileData(BaseDynamoDBData):
         Returns:
             File: the File object
         """
-        from graphql_api.schema import File
-        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        next_id  = str(self.get_next_id())
+        
+        """
+        1: Read objectID for the table type
+        2: Increment the object ID to +1
+        3: create new object with new ID
+        4: save object to DB
+        note: this should complete the transaction and should fail if there was a clash on the object ID,
+              the result of this transaction should be both the Identity.object_ID and File.object_id should be equal and both succeed
+        """
+        
+        
 
+        # TODO remove append_uniq
+
+        next_id = self.get_next_id()
+        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         new = clazz(next_id, **kwargs)
         body = new.__dict__.copy()
         body['clazz_name'] = clazz_name
         if body.get('created'):
             body['created'] = body['created'].isoformat()
-
-        #TODO error handling
-        self._write_object(next_id, body)
+        
+        self._write_object(next_id, self._prefix, body)
 
         data_key = "%s/%s/%s" % (self._prefix, next_id, body["file_name"])
 
@@ -113,17 +127,6 @@ class FileData(BaseDynamoDBData):
         db_metrics.put_duration(__name__, 'get_presigned_url' , dt.utcnow()-t0)
         return url
 
-    def get_next_id(self):
-        """FIle used  2 S3 objects, so we divide the S3 object count by 2
-
-        Returns:
-            int: the next available id
-        """
-        t0 = dt.utcnow()
-        db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
-        size = sum(1 for _ in ToshiFileObject.scan(ToshiFileObject.object_id.startswith(self._prefix)))
-        return append_uniq(float(size))
-
     def get_all(self):
         """
         Returns:
@@ -146,13 +149,13 @@ class FileData(BaseDynamoDBData):
             thing_id (string): the thing object id
             thing_role: the thing's role
         """
-        obj = self._read_object(file_id)
         logger.info("add_thing_relation: file_id %s, thing_id: %s" % (file_id, thing_id))
+        obj = self._read_object(file_id)
         try:
             obj['relations'].append({'id': thing_id, 'role': thing_role})
         except (KeyError, AttributeError):
             obj['relations'] = [{'id': thing_id, 'role': thing_role}]
-        self._write_object(file_id, obj)
+        self.transact_update(file_id, self._prefix, obj)
         return self.from_json(obj)
 
     @staticmethod

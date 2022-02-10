@@ -114,7 +114,7 @@ test_setup = [
     '''mutation new_rupt_file_relation {
         create_file_relation(
           #file_id: "RmlsZTow"
-          file_id: "RmlsZTowLjBtcWM3Zg=="
+          file_id: "RmlsZTowbXFjN2Y="
           thing_id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjFIR0FxOA=="
           role: WRITE
         ) {
@@ -134,7 +134,7 @@ test_setup = [
     }''',
     '''mutation new_sms_file_relation {
       create_file_relation(
-        file_id: "U21zRmlsZToxLjBWNDM3Rg=="
+        file_id: "U21zRmlsZToxVjQzN0Y="
         thing_id:"U3Ryb25nTW90aW9uU3RhdGlvbjowaTkzcUs="
         role: UNDEFINED
       ) {
@@ -155,7 +155,7 @@ test_setup = [
     }''',
     '''mutation new_gt_file_relation {
       create_file_relation(
-        file_id: "RmlsZTowLjBtcWM3Zg=="
+        file_id: "RmlsZTowbXFjN2Y="
         thing_id: "R2VuZXJhbFRhc2s6MkdhZzNk"
         role:READ
       ) {
@@ -164,7 +164,7 @@ test_setup = [
     }''',
     '''mutation new_gt_smsfile_relation {
       create_file_relation(
-        file_id: "U21zRmlsZToxLjBWNDM3Rg=="
+        file_id: "U21zRmlsZToxVjQzN0Y="
         thing_id: "R2VuZXJhbFRhc2s6MkdhZzNk"
         role:UNDEFINED
       ) {
@@ -438,7 +438,7 @@ smoketests = [
     expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'RuptureGenerationTask',
       'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjFIR0FxOA==', 'result': 'SUCCESS', 'state': 'DONE', 'args': None,
       'files': {'edges': [
-      {'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'id': 'RmlsZTowLjBtcWM3Zg==', 'file_name': 'myfile2.txt', 'file_size': 2000}}}]}}}]}}},
+      {'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'id': 'RmlsZTowbXFjN2Y=', 'file_name': 'myfile2.txt', 'file_size': 2000}}}]}}}]}}},
     query_fragment = search_fragments),
 
   SmokeTest(query = '''query search_file {
@@ -455,7 +455,7 @@ smoketests = [
       }
     }''',
     expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'SmsFile',
-      'id': 'U21zRmlsZToxLjBWNDM3Rg==', 'file_name': 'my_sms_File2.txt', 'file_type': 'CPT', 'relations': {'edges': [
+      'id': 'U21zRmlsZToxVjQzN0Y=', 'file_name': 'my_sms_File2.txt', 'file_type': 'CPT', 'relations': {'edges': [
       {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'thing': {'__typename': 'StrongMotionStation', 'site_code': 'ABCD'}}},
       {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'thing': {'__typename': 'GeneralTask'}}}]}}}]}}},
     query_fragment = search_fragments),
@@ -479,12 +479,12 @@ smoketests = [
     'children': {'edges': [
       {'node': {'child': {'__typename': 'RuptureGenerationTask', 'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjFIR0FxOA==', 'state': 'DONE', 'result': 'SUCCESS', 'created': '2020-10-10T23:00:00+00:00'}}}]},
     'files': {'edges': [
-      {'node': {'__typename': 'FileRelation', 'role': 'READ', 'file': {'__typename': 'File', 'id': 'RmlsZTowLjBtcWM3Zg==', 'file_name': 'myfile2.txt', 'file_size': 2000}}},
-      {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'file': {'__typename': 'SmsFile', 'id': 'U21zRmlsZToxLjBWNDM3Rg==', 'file_name': 'my_sms_File2.txt', 'file_size': 2000, 'file_type': 'CPT'}}}]}}}]}}},
+      {'node': {'__typename': 'FileRelation', 'role': 'READ', 'file': {'__typename': 'File', 'id': 'RmlsZTowbXFjN2Y=', 'file_name': 'myfile2.txt', 'file_size': 2000}}},
+      {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'file': {'__typename': 'SmsFile', 'id': 'U21zRmlsZToxVjQzN0Y=', 'file_name': 'my_sms_File2.txt', 'file_size': 2000, 'file_type': 'CPT'}}}]}}}]}}},
     query_fragment = search_fragments),
 
  SmokeTest(query = '''query get_file {
-      node(id: "RmlsZTowLjBtcWM3Zg==") {
+      node(id: "RmlsZTowbXFjN2Y=") {
         ... on File {
           file_name
           file_size

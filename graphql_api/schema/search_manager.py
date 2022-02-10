@@ -27,8 +27,8 @@ class SearchManager():
         t0 = dt.utcnow()
         headers = { "Content-Type": "application/json" }
         try:
-            print("SearchManager.index_document", self._url + key)
-            print('DOCUMENT:', document)
+            # print("SearchManager.index_document", self._url + key)
+            # print('DOCUMENT:', document)
             response = requests.put(self._url + key, auth=self._awsauth, json=document, headers=headers)
             print(response.content)
         except (Exception) as err:
@@ -45,7 +45,7 @@ class SearchManager():
             qurl = self._endpoint + '/' + self._es_index  + '/_search?q=' + term
             print("Query URL: ", qurl)
             response = requests.get(qurl, auth=self._awsauth, headers=headers).json()
-            print(response)
+            # print(response)
             #count = response['hits']['total']
             #print ("count",  count)
             for obj in response['hits']['hits']:

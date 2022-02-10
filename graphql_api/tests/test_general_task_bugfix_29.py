@@ -67,7 +67,7 @@ TASKMOCK = lambda _self, _id: {
 
 @mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
 @mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
 class TestGeneralTaskBug29(unittest.TestCase):
     """
