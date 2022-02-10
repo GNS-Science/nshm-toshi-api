@@ -134,6 +134,7 @@ TASKZERO = lambda _self, _id: {
 
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
 class TestUpdateRuptureGenerationTask(unittest.TestCase):
     """
     All datastore (data_s3) methods are mocked.

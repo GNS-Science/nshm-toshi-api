@@ -116,6 +116,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
 
     @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', READ_MOCK)
     @mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, id, updated_body, **kwargs: {})
+    @mock.patch('graphql_api.data_s3.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
     def test_append_inversion_solution_tables(self):
         # the first GT
         qry = '''
