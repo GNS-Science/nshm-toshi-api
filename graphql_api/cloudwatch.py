@@ -2,11 +2,14 @@
 
 import datetime
 import boto3
+
 import logging
+
 from graphql_api.config import REGION, IS_OFFLINE
 
 # initialize our Cloudwatch client
 client = boto3.client('cloudwatch', region_name=REGION)
+
 
 logger = logging.getLogger(__name__)
 

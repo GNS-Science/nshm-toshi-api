@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class ThingData(BaseDynamoDBData):
+
     """
     ThingData provides the data storage for Thing objects
     """

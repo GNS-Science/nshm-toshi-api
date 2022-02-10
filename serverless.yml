@@ -108,6 +108,7 @@ provider:
        Resource: "*"
 
 
+
     - Effect: Allow
       Action:
          - "dynamodb:Scan"
@@ -117,6 +118,7 @@ provider:
          - "dynamodb:PutItem"
       Resource: '*'
 
+
   apiKeys:
     - name: TempApiKey-${self:custom.stage}
       description: Api key until we have an auth function # Optional
@@ -125,7 +127,7 @@ functions:
   app:
     description: The graphql API of ${self:service}
     handler: wsgi_handler.handler
-    memorySize: 384 # optional, in MB, default is 1024
+    memorySize: 8192 # optional, in MB, default is 1024
     timeout: 30 # optional, in seconds, default is 6
     events:
       - http:

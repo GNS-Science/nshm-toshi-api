@@ -21,6 +21,11 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
+from graphql_api.cloudwatch import ServerlessMetricWriter
+
+db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
+
 logger = logging.getLogger(__name__)
 
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
@@ -72,6 +77,7 @@ class BaseData():
         """
         obj = self._read_object(_id)
         return obj
+
 
     def get_one(self, _id):
         """Summary
@@ -127,9 +133,12 @@ class BaseS3Data(BaseData):
             object_id (int): unique iD of the obect
             body (dict): dict to be serialised to JSON
         """
+        t0 = dt.utcnow()
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         # TODO: add some error handling here
         response = self._bucket.put_object(Key=key, Body=json.dumps(body))
+        db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
 
@@ -142,6 +151,7 @@ class BaseS3Data(BaseData):
         Returns:
             dict: object data deserialised from the json object
         """
+        #t0 = dt.utcnow()
         key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
         obj = self._s3.Object(bucket_name=self._bucket_name,
                               key=key,
@@ -149,6 +159,7 @@ class BaseS3Data(BaseData):
         file_object = BytesIO()
         obj.download_fileobj(file_object)
         file_object.seek(0)
+        #db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
         return json.load(file_object)
 
 
