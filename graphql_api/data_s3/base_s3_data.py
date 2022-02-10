@@ -174,7 +174,7 @@ class BaseDynamoDBData(BaseData):
             identity = ToshiIdentity(table_name=self._prefix, object_id=0)
             identity.save()
         
-        return append_uniq(identity.object_id)    
+        return identity.object_id    
 
     def _write_object(self, object_id, object_type, body):
         """write object contents to the DynamoDB table.
