@@ -214,6 +214,7 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
 
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
 @mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data_s3.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
 class TestUpdateGeneralTask(unittest.TestCase):
 
     def setUp(self):
