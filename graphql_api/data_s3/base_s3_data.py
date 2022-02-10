@@ -167,13 +167,13 @@ class BaseDynamoDBData(BaseData):
         Returns:
                 int: the next available id
         """
-
+        t0 = dt.utcnow()
         try:
             identity = ToshiIdentity.get(self._prefix)
         except DoesNotExist as e:
             identity = ToshiIdentity(table_name=self._prefix, object_id=0)
             identity.save()
-        
+        db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return identity.object_id    
 
     def _write_object(self, object_id, object_type, body):
@@ -214,11 +214,14 @@ class BaseDynamoDBData(BaseData):
             dict: object data deserialised from the json object
         """
         # TODO NEEDS TEST COVERAGE for fail to S3
+        t0 = dt.utcnow()
         key = "%s/%s" % (self._prefix, object_id)
         print('key: ', key, 'prefix', self._prefix)
         try:
             obj = self._model.get(key, self._prefix)
+            db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
             return obj.object_content
+        
         except:
             S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
             obj = self._s3.Object(bucket_name=self._bucket_name,
@@ -227,9 +230,11 @@ class BaseDynamoDBData(BaseData):
             file_object = BytesIO()
             obj.download_fileobj(file_object)
             file_object.seek(0)
+            db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
             return json.load(file_object)
 
     def transact_update(self, object_id, object_type, body):
+        t0 = dt.utcnow()
         logger.info("%s.update: %s : %s" % (object_type, object_id, str(body)))
         key = "%s/%s" % (self._prefix, object_id)
         try:
@@ -246,4 +251,5 @@ class BaseDynamoDBData(BaseData):
             
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
+        db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
         print('#####updated:', object_id, self._model.get(key, object_type).object_content)
