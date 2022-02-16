@@ -68,10 +68,6 @@ custom:
   esDomainName: ${self:custom.app_acronym}-es-${self:custom.stage}
   esIndex: toshi_index
 
-  apiKeys:
-    - name: TempApiKey-${self:custom.stage}
-      description: Api key until we have an auth function # Optional
-
 provider:
   name: aws
   runtime: python3.8
