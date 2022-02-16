@@ -126,7 +126,7 @@ functions:
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
       STACK_NAME: ${self:custom.stack_name}
     warmup:
-      default:
+      lowConcurrencyWarmer:
         enabled:
           - test
           - prod
