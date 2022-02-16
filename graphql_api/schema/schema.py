@@ -90,11 +90,9 @@ class QueryRoot(graphene.ObjectType):
     )
 
     node = relay.Node.Field()
-
     nodes = graphene.Field(NodeFilter, id_in=graphene.List(graphene.ID))
 
     search = graphene.Field(Search, search_term=graphene.String())
-    file = relay.Node.Field(File, id=graphene.ID(required=True))
 
     strong_motion_station = graphene.Field(StrongMotionStation, id=graphene.ID(required=True))
     strong_motion_stations = relay.ConnectionField(
