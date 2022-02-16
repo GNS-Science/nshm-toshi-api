@@ -4,6 +4,8 @@ plugins:
   - serverless-python-requirements
   - serverless-wsgi
   - serverless-s3-local
+  - serverless-plugin-warmup
+
 package:
   individually: false
   exclude:
@@ -31,6 +33,13 @@ custom:
   s3:
     host: localhost
     directory: /tmp
+  #Lambda warmer see https://www.serverless.com/plugins/serverless-plugin-warmup
+  warmup:
+    lowConcurrencyWarmer:
+      enabled: true
+      events:
+        - schedule: rate(5 minutes)
+      concurrency: 1
 
 # DRY constants: define all compound/generated names in one place
 # Override args are: .. defaults:
@@ -92,12 +101,6 @@ provider:
          - "cloudwatch:PutMetricData"
        Resource: "*"
 
-
-
-  apiKeys:
-    - name: TempApiKey-${self:custom.stage}
-      description: Api key until we have an auth function # Optional
-
 functions:
   app:
     description: The graphql API of ${self:service}
@@ -117,12 +120,16 @@ functions:
           method: GET
           private: true
     environment:
-      #ES_ENDPOINT: https://search-toshi-search-dev-bjuebpcraamxtlwuhktnyuu2ve.ap-southeast-2.es.amazonaws.com
       ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
       ES_INDEX: ${self:custom.esIndex}
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
       STACK_NAME: ${self:custom.stack_name}
+    warmup:
+      default:
+        enabled:
+          - test
+          - prod
 
 resources:
   Resources:
