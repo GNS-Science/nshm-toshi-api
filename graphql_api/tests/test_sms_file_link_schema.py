@@ -14,14 +14,14 @@ import unittest
 from dateutil.tz import tzutc
 
 from graphene.test import Client
-from graphql_api import data_s3
+from graphql_api import data
 from graphql_relay import from_global_id, to_global_id
 
 from graphql_api.schema import root_schema
 from graphql_api.schema.custom import StrongMotionStation
 # from graphql_api.schema.custom.sms_file_link import SmsFileLink #, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 
-import graphql_api.data_s3 # for mocking
+import graphql_api.data # for mocking
 
 
 # CREATE = '''
@@ -56,13 +56,13 @@ def mock_make_api_call(self, operation_name, kwarg):
         return {}
     raise ValueError("got unmocked operation: ", operation_name)
 
-@mock.patch('graphql_api.data_s3.file_data.FileData.get_next_id', lambda self: "10abcdefgh")
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', lambda self, object_id: mock_file_data)
+@mock.patch('graphql_api.data.file_data.FileData.get_next_id', lambda self: "10abcdefgh")
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
+@mock.patch('graphql_api.data.BaseData._read_object', lambda self, object_id: mock_file_data)
 @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 class TestCreateSMSFile(unittest.TestCase):
     """
-    All datastore (data_s3) methods are mocked.
+    All datastore (data) methods are mocked.
     """
 
     def setUp(self):
@@ -104,13 +104,13 @@ class TestCreateSMSFile(unittest.TestCase):
         assert executed['data']['create_sms_file']['file_result']['file_type'] == 'DH'
 
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 10)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
-@mock.patch('graphql_api.data_s3.BaseS3Data._read_object', lambda self, object_id: mock_file_data)
-@mock.patch('graphql_api.data_s3.thing_data.ThingData._read_object', lambda self, object_id: mock_thing_data)
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 10)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data.BaseData._read_object', lambda self, object_id: mock_file_data)
+@mock.patch('graphql_api.data.thing_data.ThingData._read_object', lambda self, object_id: mock_thing_data)
 class TestCreateSMSFileLink(unittest.TestCase):
     """
-    All datastore (data_s3) methods are mocked.
+    All datastore (data) methods are mocked.
     """
 
     def setUp(self):

@@ -14,7 +14,7 @@ import json
 from dateutil.tz import tzutc
 
 from graphene.test import Client
-from graphql_api import data_s3
+from graphql_api import data
 
 import itertools
 import copy
@@ -22,7 +22,7 @@ import copy
 from graphql_api.schema import root_schema
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution
 
-import graphql_api.data_s3 # for mocking
+import graphql_api.data # for mocking
 
 FILE = lambda: {
   "id": "1233.0nAmGD",
@@ -65,7 +65,7 @@ class TestBugReproduction(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', side_effect=[FILE()])
+    @mock.patch('graphql_api.data.BaseData._read_object', side_effect=[FILE()])
     def test_get_inversion_solution(self, mock):
         QRY = '''
           query one_inversion_solution ($_id:ID!) {
@@ -79,9 +79,8 @@ class TestBugReproduction(unittest.TestCase):
         print(result)
         assert result['data']['node']['id'] == "SW52ZXJzaW9uU29sdXRpb246MTIzMy4wbkFtR0Q="
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', side_effect=itertools.chain([FILEREL()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
-    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', side_effect=itertools.chain([RUPTGEN(), FILE(), RUPTGEN()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
-    def test_get_ruptgen_files(self, mockDB, mockS3):
+    @mock.patch('graphql_api.data.BaseData._read_object', side_effect=itertools.chain([RUPTGEN(), FILEREL(), FILE(), RUPTGEN()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
+    def test_get_ruptgen_files(self, mockDB):
         QRY = '''
           query one_rgt ($rgt_id:ID!) {
             node(id: $rgt_id) {
@@ -114,7 +113,7 @@ class TestBugReproduction(unittest.TestCase):
         assert result['data']['node']['files']['total_count'] == 1
         assert result['data']['node']['files']['edges'][0]['node']['file']['tables'][0]['label'] == "Gridded Hazard 0.25"
 
-    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', side_effect=itertools.chain([FILE()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
+    @mock.patch('graphql_api.data.BaseData._read_object', side_effect=itertools.chain([FILE()], itertools.repeat(ANON()))) #, itertools.repeat(copy.copy(FILE)))
     def test_get_ruptgen_files_with_created_datetime(self, mock):
         QRY = '''
           query inversion_solution_tables {

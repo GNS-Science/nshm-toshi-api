@@ -2,11 +2,12 @@
 Object manager for Thing schema objects
 """
 import datetime as dt
+import json
 import logging
 from importlib import import_module
 from benedict import benedict
 
-from .base_s3_data import BaseDynamoDBData
+from .base_data import BaseDynamoDBData
 # from .helpers import get_objectid_from_global
 from graphql_relay import from_global_id, to_global_id
 
@@ -62,8 +63,8 @@ class ThingData(BaseDynamoDBData):
             envnew = thing.get('environment') or []
             envnew.extend(env_as_kvs)
             thing['environment'] = envnew
-
-        print('Migrated ', thing)
+        
+        # print('Migrated ', thing)
         return thing
 
     def get_one(self, thing_id):
@@ -92,7 +93,9 @@ class ThingData(BaseDynamoDBData):
         # }
         # after smoketests the query will return an SMS, but object Type in ID is RuptureGenerationTask
         #
+        print('GETTING', thing_id)
         jsondata = self.migrate_old_thing_object(self._read_object(thing_id))
+        # print('JSONDATA', jsondata)
         return self.from_json(jsondata)
 
 
@@ -106,6 +109,7 @@ class ThingData(BaseDynamoDBData):
             TYPE: the Thing object
         """
         _type, this_id = from_global_id(thing_id)
+        print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
         assert _type == clazz_name
 
         if kwargs.get('created'):
@@ -134,24 +138,26 @@ class ThingData(BaseDynamoDBData):
         return self.from_json(obj)
 
 
-    def add_child_relation(self, thing_id, relation_id):
+    def add_child_relation(self, thing_id, relation_id, relation_clazz):
         obj = self._read_object(thing_id)
+        print('child obj', obj)
         logger.info("add_child_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
         # print("####add_file_relation", thing_id, obj)
         try:
-            obj['children'].append(relation_id)
+            obj['children'].append({'child_id': relation_id, 'child_clazz': relation_clazz})
         except (KeyError, AttributeError):
-            obj['children'] = [relation_id]
+            obj['children'] = [{'child_id': relation_id, 'child_clazz': relation_clazz}]
         self.transact_update(thing_id, self._prefix, obj)
         return self.from_json(obj)
 
-    def add_parent_relation(self, thing_id, relation_id):
+    def add_parent_relation(self, thing_id, relation_id, relation_clazz):
         obj = self._read_object(thing_id)
+        print('parent obj', obj)
         logger.info("add_parent_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
         try:
-            obj['parents'].append(relation_id)
+            obj['parents'].append({'parent_id': relation_id, 'parent_clazz': relation_clazz})
         except (KeyError, AttributeError):
-            obj['parents'] = [relation_id]
+            obj['parents'] = [{'parent_id': relation_id, 'parent_clazz': relation_clazz}]
         self.transact_update(thing_id, self._prefix, obj)
         return self.from_json(obj)
 
@@ -171,4 +177,5 @@ class ThingData(BaseDynamoDBData):
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 
+        print('CLAZZ', clazz(**jsondata))
         return clazz(**jsondata)

@@ -14,12 +14,12 @@ import unittest
 from dateutil.tz import tzutc
 
 from graphene.test import Client
-from graphql_api import data_s3
+from graphql_api import data
 
 from graphql_api.schema import root_schema, RuptureGenerationTask
 # from graphql_api.schema.file_relation import FileRelation
 
-import graphql_api.data_s3 # for mocking
+import graphql_api.data # for mocking
 
 
 CREATE = '''
@@ -63,11 +63,11 @@ CREATE = '''
 '''
 
 
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
 class TestCreateRuptureGenerationTask(unittest.TestCase):
     """
-    All datastore (data_s3) methods are mocked.
+    All datastore (data) methods are mocked.
     """
 
     def setUp(self):
@@ -132,19 +132,19 @@ TASKZERO = lambda _self, _id: {
         ]
     }
 
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
+@mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
 class TestUpdateRuptureGenerationTask(unittest.TestCase):
     """
-    All datastore (data_s3) methods are mocked.
+    All datastore (data) methods are mocked.
 
     TODO: more coverage please
     """
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', TASKZERO)
+    @mock.patch('graphql_api.data.BaseData._read_object', TASKZERO)
     def test_update_with_metrics(self):
         qry = '''
             mutation {
@@ -187,11 +187,11 @@ TASK_OLD = lambda _self, _id: {
     "arguments": None, "metrics": None
     }
 
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 class TestMigrateRuptureGenerationTask(unittest.TestCase):
     """
-    File "/home/chrisbc/DEV/GNS/nshm-toshi-api/graphql_api/data_s3/thing_data.py", line 145, in from_json
+    File "/home/chrisbc/DEV/GNS/nshm-toshi-api/graphql_api/data/thing_data.py", line 145, in from_json
         return clazz(**jsondata)
       File "/home/chrisbc/DEV/GNS/nshm-toshi-api/lib/python3.8/site-packages/graphene/types/objecttype.py", line 169, in __init__
         raise TypeError(
@@ -200,7 +200,7 @@ class TestMigrateRuptureGenerationTask(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', TASK_OLD)
+    @mock.patch('graphql_api.data.BaseData._read_object', TASK_OLD)
     def test_transforms_old_fields(self):
         qry = '''
         query q1 {

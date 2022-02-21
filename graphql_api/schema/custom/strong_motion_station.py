@@ -12,7 +12,7 @@ import logging
 from graphene import relay
 from graphene import Enum
 from graphql_api.schema.thing import Thing
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 
 logger = logging.getLogger(__name__)
 

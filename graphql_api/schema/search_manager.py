@@ -2,9 +2,9 @@
 Search Manager
 """
 import requests
-from graphql_api.data_s3.thing_data import ThingData
-from graphql_api.data_s3.file_data import FileData
-from graphql_api.data_s3.table_data import TableData
+from graphql_api.data.thing_data import ThingData
+from graphql_api.data.file_data import FileData
+from graphql_api.data.table_data import TableData
 
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION

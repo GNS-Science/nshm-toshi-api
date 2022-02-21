@@ -4,7 +4,7 @@ from graphene import Enum
 from graphql_relay import from_global_id
 
 from .file import File
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
@@ -19,11 +19,6 @@ class FileRole(Enum):
     UNDEFINED = "undefined"
 
 class FileRelation(graphene.ObjectType):
-
-    # class Meta:
-    #     interfaces = (relay.Node, )
-    #'RuptureGenerationTask', '1HGAq8'
-
 
     thing = graphene.Field('graphql_api.schema.thing.Thing', required=False)
     file = graphene.Field('graphql_api.schema.schema.FileUnion', required=False)

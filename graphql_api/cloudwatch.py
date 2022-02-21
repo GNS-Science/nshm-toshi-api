@@ -39,6 +39,6 @@ class ServerlessMetricWriter():
             ]
         )
         if IS_OFFLINE:
-            logger.info("CW: ", rec)
+            logger.info(f"CW: {rec}")
         else:
             client.put_metric_data(**rec)

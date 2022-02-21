@@ -12,7 +12,7 @@ from graphql_api.dynamodb.models import ToshiIdentity, ToshiFileObject, ToshiThi
 from pynamodb.exceptions import DoesNotExist
 from pynamodb.transactions import TransactWrite, TransactGet, Connection
 
-from .base_s3_data import BaseDynamoDBData, append_uniq
+from .base_data import BaseDynamoDBData, append_uniq
 
 logger = logging.getLogger(__name__)
 

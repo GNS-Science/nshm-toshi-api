@@ -14,12 +14,12 @@ import unittest
 from dateutil.tz import tzutc
 
 from graphene.test import Client
-from graphql_api import data_s3
+from graphql_api import data
 
 from graphql_api.schema import root_schema
 from graphql_api.schema.custom import StrongMotionStation
 
-import graphql_api.data_s3 # for mocking
+import graphql_api.data # for mocking
 
 
 CREATE = '''
@@ -38,11 +38,11 @@ CREATE = '''
         }
     }
 '''
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
 class TestCreateSMS(unittest.TestCase):
     """
-    All datastore (data_s3) methods are mocked.
+    All datastore (data) methods are mocked.
     """
 
     def setUp(self):
@@ -103,11 +103,11 @@ TASKZERO = lambda _self, _id: {
     "arguments": {"max_jump_distance": 55.5, "max_sub_section_length": 2.0, "max_cumulative_azimuth": 590.0}
     }
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, object_type, body: None)
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
 class TestUpdateSMS(unittest.TestCase):
     """
-    All datastore (data_s3) methods are mocked.
+    All datastore (data) methods are mocked.
 
     TODO: more coverage please
     """
@@ -115,7 +115,7 @@ class TestUpdateSMS(unittest.TestCase):
         self.client = Client(root_schema)
 
     @unittest.skip("not there yet")
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', TASKZERO)
+    @mock.patch('graphql_api.data.BaseData._read_object', TASKZERO)
     def test_update_with_metrics(self):
         qry = '''
             mutation {

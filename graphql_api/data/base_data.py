@@ -1,5 +1,5 @@
 """
-BaseS3Data is the base class for AWS_S3 data handlers
+BaseData is the base class for AWS_S3 data handlers
 """
 import os
 import json
@@ -10,13 +10,14 @@ import boto3
 import random
 import logging
 from graphene.relay import connection
+from graphql_relay.node.node import from_global_id
 from pynamodb.connection.base import Connection
 from pynamodb.exceptions import PutError, VerboseClientError, DoesNotExist
 from pynamodb.transactions import TransactWrite
 from botocore.exceptions import ClientError
-from graphql_api.dynamodb.models import ToshiIdentity
+from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
@@ -50,17 +51,6 @@ class BaseData():
         self._bucket = self._s3.Bucket(self._bucket_name, client=self._client)
         self._prefix = self.__class__.__name__
         self._connection = Connection()
-
-    def get_next_id(self):
-        """
-        Returns:
-            int: the next available id
-        """
-        t0 = dt.utcnow()
-        size = sum(1 for _ in self._bucket.objects.filter(Prefix='%s/' % self._prefix))
-        db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
-        return append_uniq(size)
-
 
     def get_one_raw(self, _id):
         """
@@ -104,37 +94,9 @@ class BaseData():
                 results.append(object)
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return results
-
-    def get_all_in(self, _id_list):
-        pass
-        #TODO
-
-
-class BaseS3Data(BaseData):
-    def get_next_id(self):
-        """
-        Returns:
-            int: the next available id
-        """
-        size = sum(1 for _ in self._bucket.objects.filter(
-            Prefix='%s/' % self._prefix))
-        return append_uniq(size)
-
-    def _write_object(self, object_id, body):
-        """write object contents to the S3 bucket.
-
-        Args:
-            object_id (int): unique iD of the obect
-            body (dict): dict to be serialised to JSON
-        """
-        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
-        # TODO: add some error handling here
-        response = self._bucket.put_object(Key=key, Body=json.dumps(body))
-        es_key = key.replace("/", "_")
-        self._db_manager.search_manager.index_document(es_key, body)
-
+    
     def _read_object(self, object_id):
-        """read object contents from the S3 bucket.
+        """read object contents from the DynamoDB or S3 bucket.
 
         Args:
             object_id int): unique iD of the obect
@@ -142,25 +104,37 @@ class BaseS3Data(BaseData):
         Returns:
             dict: object data deserialised from the json object
         """
-        key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
-        obj = self._s3.Object(bucket_name=self._bucket_name,
-                              key=key,
-                              client=self._client)
-        file_object = BytesIO()
-        obj.download_fileobj(file_object)
-        file_object.seek(0)
-        return json.load(file_object)
+        # TODO NEEDS TEST COVERAGE for fail to S3
+        t0 = dt.utcnow()
+        key = "%s/%s" % (self._prefix, object_id)
+        print('key: ', key, 'prefix', self._prefix)
+        
+        try:
+            obj = self._model.get(key, self._prefix)
+            db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+            return obj.object_content
+        except:
+            S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
+            obj = self._s3.Object(bucket_name=self._bucket_name,
+                                  key=S3_key,
+                                  client=self._client)
+            file_object = BytesIO()
+            obj.download_fileobj(file_object)
+            file_object.seek(0)
+            db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+            return json.load(file_object)
 
+    def get_all_in(self, _id_list):
+        pass
+        #TODO
 
 class BaseDynamoDBData(BaseData):
-    def __init__(self, client_args, db_manager, model):
+    def __init__(self, client_args, db_manager, model, connection=Connection()):
         super().__init__(client_args, db_manager)
         self._model = model
-        if IS_OFFLINE:
+        self._connection = connection
+        if not TESTING and IS_OFFLINE:
             self._connection = Connection(host=DB_ENDPOINT)
-        else:
-            self._connection = Connection()
-        print(self._connection.host)
             
     def get_next_id(self) -> str:
         """
@@ -193,7 +167,7 @@ class BaseDynamoDBData(BaseData):
             identity = ToshiIdentity(table_name=self._prefix, object_id=0)
             identity.save()
             
-        toshi_object = self._model(object_id=key, object_type=object_type, object_content=body)
+        toshi_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
        
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(identity, 
@@ -203,35 +177,6 @@ class BaseDynamoDBData(BaseData):
         db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
-
-    def _read_object(self, object_id):
-        """read object contents from the DynamoDB or S3 bucket.
-
-        Args:
-            object_id int): unique iD of the obect
-
-        Returns:
-            dict: object data deserialised from the json object
-        """
-        # TODO NEEDS TEST COVERAGE for fail to S3
-        t0 = dt.utcnow()
-        key = "%s/%s" % (self._prefix, object_id)
-        print('key: ', key, 'prefix', self._prefix)
-        try:
-            obj = self._model.get(key, self._prefix)
-            db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
-            return obj.object_content
-        
-        except:
-            S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
-            obj = self._s3.Object(bucket_name=self._bucket_name,
-                                  key=S3_key,
-                                  client=self._client)
-            file_object = BytesIO()
-            obj.download_fileobj(file_object)
-            file_object.seek(0)
-            db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
-            return json.load(file_object)
 
     def transact_update(self, object_id, object_type, body):
         t0 = dt.utcnow()
@@ -246,7 +191,7 @@ class BaseDynamoDBData(BaseData):
                 )
         except DoesNotExist as e:
                 logger.info(f'Saving new object: {object_id}')
-                new_object = self._model(object_id=key, object_type=object_type, object_content=body)
+                new_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
                 new_object.save()
             
         es_key = key.replace("/", "_")

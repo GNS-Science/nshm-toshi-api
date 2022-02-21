@@ -17,7 +17,7 @@ from graphene import Enum
 
 from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 from .common import KeyValuePair, KeyValuePairInput
 from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
 
@@ -37,6 +37,20 @@ class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
     @staticmethod
     def from_json(jsondata):
         return RuptureGenerationTask(**AutomationTaskBase.from_json(jsondata))
+    
+    @staticmethod                            
+    def resolve_parents(root, info, *args, **kwargs):
+        print(root.parents)
+        print('RuptureGenterationParentResolver')
+        if not root.parents:
+            res = []
+        elif isinstance(root.parents[0], dict):
+            #new form, files is list of objects 
+            res = [get_data_manager().thing.get_one(parent['parent_id']) for parent in root.parents]
+        else:
+            res = [get_data_manager().thing.get_one(_id) for _id in root.parents]
+        print(res[0].title)
+        return res
 
 class RuptureGenerationTaskConnection(relay.Connection):
     """A list of RuptureGenerationTask items"""
@@ -48,6 +62,7 @@ class RuptureGenerationTaskConnection(relay.Connection):
     @staticmethod
     def resolve_total_count(root, info, *args, **kwargs):
         return len(root.edges)
+
 
 class CreateRuptureGenerationTask(graphene.Mutation):
     class Arguments:

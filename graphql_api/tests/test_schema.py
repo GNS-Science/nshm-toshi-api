@@ -14,7 +14,7 @@ import boto3
 import botocore
 from botocore.exceptions import ClientError
 from graphene.test import Client
-from graphql_api import data_s3
+from graphql_api import data
 from graphql_api.schema import root_schema, RuptureGenerationTask
 from graphql_api.dynamodb.models import migrate
 from moto import mock_dynamodb2
@@ -114,7 +114,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
                 print(res)
                 raise ValueError("got unmocked operation: ", operation_name)
 
-        with mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_all', new=self.mock_all):
+        with mock.patch('graphql_api.data.BaseDynamoDBData.get_all', new=self.mock_all):
         #with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
             executed = self.client.execute(qry)
             print(executed)
@@ -132,10 +132,10 @@ class TestCreateDataFile(unittest.TestCase):
         self.mock_all = lambda x : []
         self.mock_create = lambda x, y, **z : None
     
-    @mock.patch('graphql_api.data_s3.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
-    @mock.patch('graphql_api.data_s3.BaseDynamoDBData.get_next_id', lambda self: 0)
-    # @mock.patch('graphql_api.data_s3.BaseDynamoDBData._read_object', lambda self, object_id: None)
-    # @mock.patch('graphql_api.data_s3.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
+    @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
+    # @mock.patch('graphql_api.data.BaseData._read_object', lambda self, object_id: None)
+    # @mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
     def test_upload(self):
         qry = '''
             mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
@@ -164,9 +164,9 @@ class TestCreateDataFile(unittest.TestCase):
             raise ValueError("got unmocked operation: ", operation_name)
 
         #TODO mock out the presigned URL calls
-        with mock.patch('graphql_api.data_s3.BaseData.get_all', new=self.mock_all):
+        with mock.patch('graphql_api.data.BaseData.get_all', new=self.mock_all):
             with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
-                #with mock.patch('graphql_api.data_s3.DataFileData.create', new=self.mock_create):
+                #with mock.patch('graphql_api.data.DataFileData.create', new=self.mock_create):
                 executed = self.client.execute(qry, variable_values=variables)
                 print(executed)
                 assert executed['data']['create_file']['ok'] == True

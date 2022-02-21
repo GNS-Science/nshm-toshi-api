@@ -3,7 +3,7 @@ from graphene import relay
 from graphene import Enum
 from graphql_relay import from_global_id
 from graphql_api.schema.file_relation import FileRelationConnection
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
