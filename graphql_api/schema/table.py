@@ -40,6 +40,7 @@ class TableType(Enum):
     HAZARD_GRIDDED = 'hazard_gridded'
     HAZARD_SITES = 'hazard_sites'
     MFD_CURVES = 'mfd_curves'
+    MFD_CURVES_V2 = 'mfd_curves_v2'
     GENERAL = 'general'
 
 class Table(graphene.ObjectType):
