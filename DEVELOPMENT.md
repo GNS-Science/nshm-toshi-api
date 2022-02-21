@@ -38,7 +38,7 @@ pip install -r test_requirements.txt
 
 and validate our tests are passing:
 ```
-pytest
+SLS_OFFLINE=1 pytest
 ```
 
 ## 4. setup docker for elasticsearch

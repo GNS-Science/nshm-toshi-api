@@ -1,0 +1,10 @@
+name: Run Tests On PullRequest
+
+on:
+  pull_request:
+    branches: [ deploy-test, main ]
+
+jobs:
+  call-test-workflow:
+    #https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow
+    uses: ./.github/workflows/run-tests.yaml
