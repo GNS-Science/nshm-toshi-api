@@ -17,7 +17,7 @@ from pynamodb.transactions import TransactWrite
 from botocore.exceptions import ClientError
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING, DEPLOYMENT_STAGE, S3_BUCKET_NAME
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
@@ -45,8 +45,7 @@ class BaseData():
         args = client_args or {}
         self._db_manager = db_manager
         self._client = boto3.client('s3', **args)
-        self._bucket_name = os.environ.get(
-            'S3_BUCKET_NAME', "nshm-tosh-api-test")
+        self._bucket_name = S3_BUCKET_NAME
         self._s3 = boto3.resource('s3')
         self._bucket = self._s3.Bucket(self._bucket_name, client=self._client)
         self._prefix = self.__class__.__name__

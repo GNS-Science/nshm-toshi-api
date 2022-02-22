@@ -2,7 +2,7 @@ from graphql_api.schema.search_manager import SearchManager
 from re import S
 from graphql_api.data import data_manager
 from unittest.case import skip
-from graphql_api.local_config import REGION
+from graphql_api.config import REGION, S3_BUCKET_NAME
 from io import BytesIO
 from unittest import mock
 import json
@@ -39,10 +39,10 @@ class TestS3FallBackRead(unittest.TestCase):
         ToshiIdentity.create_table()
         self._s3 = boto3.resource('s3')
         self._client = boto3.client('s3')
-        self._bucket_name = 'test-local'
+        self._bucket_name = S3_BUCKET_NAME
         self._model = ToshiThingObject()
         self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake':'auth'}))
-        self._connection = Connection(region='ap-southeast-2')
+        self._connection = Connection(region=REGION)
         
 
     def test_thing_read_dynamodb(self):
@@ -56,8 +56,8 @@ class TestS3FallBackRead(unittest.TestCase):
     def test_thing_read_s3(self):
         with mock_s3():
             conn = boto3.resource('s3', region_name='us-east-1')
-            conn.create_bucket(Bucket='test-local')
-            bucket = conn.Bucket('test-local')
+            conn.create_bucket(Bucket=S3_BUCKET_NAME)
+            bucket = conn.Bucket(S3_BUCKET_NAME)
             thing = ThingData(thing_args, self._data_manager, ToshiThingObject, self._connection)
             thing.create(clazz_name='RuptureGenerationTask', created=dt.datetime.now(tzutc()))
             ToshiThingObject.delete_table() 
