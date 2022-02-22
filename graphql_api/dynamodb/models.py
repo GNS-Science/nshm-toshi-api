@@ -1,13 +1,13 @@
 from pynamodb.attributes import UnicodeAttribute, JSONAttribute, VersionAttribute, NumberAttribute
 from pynamodb.models import Model
-from graphql_api.local_config import DEPLOYMENT_STAGE, REGION
+from graphql_api.config import DEPLOYMENT_STAGE, REGION, TESTING
 
 class ToshiTableObject(Model):
     class Meta:
         billing_mode = 'PAY_PER_REQUEST'
         table_name = f"ToshiTableObject-{DEPLOYMENT_STAGE}"
         region = REGION
-        if DEPLOYMENT_STAGE == 'LOCAL':
+        if not TESTING and DEPLOYMENT_STAGE == 'LOCAL':
             host = "http://localhost:8000"
 
     object_id = UnicodeAttribute(hash_key=True)
@@ -20,7 +20,7 @@ class ToshiFileObject(Model):
         billing_mode = 'PAY_PER_REQUEST'
         table_name = f"ToshiFileObject-{DEPLOYMENT_STAGE}"
         region = REGION
-        if DEPLOYMENT_STAGE == 'LOCAL':
+        if not TESTING and DEPLOYMENT_STAGE == 'LOCAL':
             host = "http://localhost:8000"
 
     object_id = UnicodeAttribute(hash_key=True)
@@ -34,7 +34,7 @@ class ToshiThingObject(Model):
         billing_mode = 'PAY_PER_REQUEST'
         table_name = f"ToshiThingObject-{DEPLOYMENT_STAGE}"
         region = REGION
-        if DEPLOYMENT_STAGE == 'LOCAL':
+        if not TESTING and DEPLOYMENT_STAGE == 'LOCAL':
             host = "http://localhost:8000"
 
     object_id = UnicodeAttribute(hash_key=True)

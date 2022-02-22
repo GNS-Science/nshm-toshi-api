@@ -60,6 +60,7 @@ class AutomationTaskInterface(graphene.Interface):
     
     def resolve_parents(self, info, **args):
         print('AutomationTaskBaseParentResolver')
+        print(self.parents)
         t0 = dt.utcnow()
         if not self.parents:
             res = []

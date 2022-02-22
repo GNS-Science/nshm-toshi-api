@@ -38,7 +38,7 @@ class ThingRelationData(BaseData):
         relation =  self.from_json(jsondata)
         return relation
 
-    def build_one(self, parent_id, child_id):
+    def build_parent(self, parent_id, clazz_name):
         """
         Args:
             parent_id (string): the parent id
@@ -47,7 +47,21 @@ class ThingRelationData(BaseData):
             File: the Thing object
         """
 
-        jsondata = {'parent_id': parent_id, 'child_id': child_id}
+        jsondata = {'id': parent_id, 'clazz_name': clazz_name}
+        logger.info("build_one: %s" % str(jsondata))
+        relation =  self.from_json(jsondata)
+        return relation
+    
+    def build_child(self, child_id, clazz_name):
+        """
+        Args:
+            parent_id (string): the parent id
+            child_id (string): the child id
+        Returns:
+            File: the Thing object
+        """
+
+        jsondata = {'id': child_id, 'clazz_name': clazz_name}
         logger.info("build_one: %s" % str(jsondata))
         relation =  self.from_json(jsondata)
         return relation

@@ -29,9 +29,7 @@ class TaskTaskRelation(graphene.ObjectType):
     
     @staticmethod
     def resolve_parent(root, info, *args, **kwargs):
-        if not root.parents:
-            return []
-        return [get_data_manager().thing.get_one(parent.parent_id) for parent in root.parents]
+        return get_data_manager().thing.get_one(root.id)
 
     @staticmethod
     def resolve_child(root, info, *args, **kwargs):
