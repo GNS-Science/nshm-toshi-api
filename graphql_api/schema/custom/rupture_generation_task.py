@@ -40,8 +40,6 @@ class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
     
     @staticmethod                            
     def resolve_parents(root, info, *args, **kwargs):
-        print(root.parents)
-        print('RuptureGenterationParentResolver')
         if not root.parents:
             res = []
         elif isinstance(root.parents[0], dict):
@@ -49,7 +47,6 @@ class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
             res = [get_data_manager().thing.get_one(parent['parent_id']) for parent in root.parents]
         else:
             res = [get_data_manager().thing.get_one(_id) for _id in root.parents]
-        print(res[0].title)
         return res
 
 class RuptureGenerationTaskConnection(relay.Connection):

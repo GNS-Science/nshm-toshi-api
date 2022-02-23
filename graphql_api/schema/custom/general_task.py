@@ -68,8 +68,6 @@ class GeneralTask(graphene.ObjectType):
 
     def resolve_children(self, info, **args):
         t0 = dt.utcnow()
-        print(self.children)
-        print('GeneralTaskParentResolver')
         if not self.children:
             res = []
         elif (len(info.field_asts[0].selection_set.selections)==1 and
@@ -87,7 +85,6 @@ class GeneralTask(graphene.ObjectType):
 
     def resolve_parents(self, info, **args):
         t0 = dt.utcnow()
-        print('gentask parents!!!!!!!!!!, ', self.parents)
         if not self.parents:
             res = []
         elif (len(info.field_asts[0].selection_set.selections)==1 and

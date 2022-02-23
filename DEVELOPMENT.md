@@ -38,7 +38,7 @@ pip install -r test_requirements.txt
 
 and validate our tests are passing:
 ```
-SLS_OFFLINE=1 pytest
+SLS_OFFLINE=1 TESTING=1 DEPLOYMENT_STAGE=TEST pytest
 ```
 
 ## 4. setup docker for elasticsearch
@@ -51,7 +51,7 @@ docker pull docker.elastic.co/elasticsearch/elasticsearch:6.8.0
 
 # Running tests:
 Tests require a few env variables, use command:
-  SLS_OFFLINE=1 TESTING=1 DEPLOYMENT_STAGE=TEST pytest
+  
   
 # Running the service locally
 

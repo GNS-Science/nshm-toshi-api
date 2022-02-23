@@ -92,8 +92,7 @@ class ThingData(BaseDynamoDBData):
         #     }
         # }
         # after smoketests the query will return an SMS, but object Type in ID is RuptureGenerationTask
-        #
-        print('GETTING', thing_id)
+
         jsondata = self.migrate_old_thing_object(self._read_object(thing_id))
         # print('JSONDATA', jsondata)
         return self.from_json(jsondata)
