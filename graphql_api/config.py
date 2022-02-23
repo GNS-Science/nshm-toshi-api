@@ -14,6 +14,7 @@ if IS_OFFLINE:
     DB_ENDPOINT = "http://localhost:8000"
 else:
     ES_ENDPOINT = os.getenv("ES_ENDPOINT", '')
+    DB_ENDPOINT = os.getenv("DB_ENDPOINT", '')
 
 ES_INDEX = os.getenv("ES_INDEX", "toshi-index")
 ES_REGION = os.getenv("ES_REGION", 'us-east-1')
