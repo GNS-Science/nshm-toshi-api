@@ -14,11 +14,11 @@ import unittest
 from dateutil.tz import tzutc
 
 from graphene.test import Client
-from graphql_api import data_s3
+from graphql_api import data
 
 from graphql_api.schema import root_schema
 
-import graphql_api.data_s3 # for mocking
+import graphql_api.data # for mocking
 
 
 class IncrId():
@@ -42,14 +42,14 @@ READ_MOCK = lambda _self, id: dict(
     subtask_result="partial"
     )
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body:  {})
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body:  {})
 class TestBasicGeneralTaskOperations(unittest.TestCase):
 
     def setUp(self):
         self.client = Client(root_schema)
 
-    # @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
     def test_create_general_task(self):
         CREATE_QRY = '''
             mutation { #($file_name: String!, $file_size: Int!, $produced_by: ID!, $mfd_table: ID!)
@@ -74,7 +74,7 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
         assert result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MA=='
 
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
     def test_get_general_task_by_node_id(self):
         # the first GT
         qry = '''
@@ -94,7 +94,7 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
         assert result['data']['node']['id'] == 'R2VuZXJhbFRhc2s6MA=='
         assert result['data']['node']['agent_name'] == "DonDuck"
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
     def test_get_general_task_swept_args(self):
         # the first GT
         qry = '''
@@ -120,14 +120,14 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
         assert result['data']['node']['argument_lists'][1]['v'] == [None]
 
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body:  {})
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body:  {})
 class TestExtraGeneralTaskOperations(unittest.TestCase):
 
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
     def test_get_general_task_notes_and_meta(self):
         # the first GT
         qry = '''
@@ -150,7 +150,7 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
         assert result['data']['node']['meta'][0]['k'] == "some_metric"
         assert result['data']['node']['meta'][0]['v'] == "55.5"
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
     def test_get_general_task_others(self):
         # the first GT
         qry = '''
@@ -212,14 +212,15 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
         assert result['data']['create_general_task']['general_task']['subtask_result'] == "SUCCESS"
 
 
-@mock.patch('graphql_api.data_s3.BaseS3Data.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data_s3.BaseS3Data._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
+@mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
 class TestUpdateGeneralTask(unittest.TestCase):
 
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
     def test_update_with_typical_fields(self):
         qry = '''
             mutation {

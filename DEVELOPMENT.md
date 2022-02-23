@@ -38,7 +38,7 @@ pip install -r test_requirements.txt
 
 and validate our tests are passing:
 ```
-SLS_OFFLINE=1 pytest
+SLS_OFFLINE=1 TESTING=1 DEPLOYMENT_STAGE=TEST pytest
 ```
 
 ## 4. setup docker for elasticsearch
@@ -49,6 +49,10 @@ Version 6.8 is ther latest available in AWS.
 docker pull docker.elastic.co/elasticsearch/elasticsearch:6.8.0
 ```
 
+# Running tests:
+Tests require a few env variables, use command:
+  
+  
 # Running the service locally
 
 this is the quickest way to try out new features etc as there's no packing/deployment overhead.
@@ -57,7 +61,8 @@ this is the quickest way to try out new features etc as there's no packing/deplo
  - start the API running on http://127.0.0.1:5000/graphql
    
 ```
-sls s3 start&
+sls dynamodb start --stage local &
+sls s3 start &
 sls wsgi serve
 ```
 and (perhaps in another shell):
@@ -65,6 +70,7 @@ and (perhaps in another shell):
 ```
 docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
 ```
+
 
 Now start interacting with the service with your web browser.
 

@@ -5,7 +5,7 @@ import graphene
 from graphene import relay
 from graphene import Enum
 from graphql_api.schema.file import FileInterface
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 
 class SmsFileType(Enum):
     BH = "bh"

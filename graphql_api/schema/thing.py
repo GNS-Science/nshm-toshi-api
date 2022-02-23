@@ -3,7 +3,7 @@ from graphene import relay
 from graphene import Enum
 from graphql_relay import from_global_id
 from graphql_api.schema.file_relation import FileRelationConnection
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
@@ -21,6 +21,11 @@ class Thing(graphene.Interface):
     files = relay.ConnectionField(
          FileRelationConnection, description="Files associated with this object."
     )
+    parents = relay.ConnectionField(
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="Parents of this thing")
+    
+    children = relay.ConnectionField(
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="Children of this thing")
 
     def resolve_files(root, info, **args):
         t0 = dt.utcnow()
@@ -41,6 +46,38 @@ class Thing(graphene.Interface):
         else:
             #old form, files is list of strings
             res = [get_data_manager().file_relation.get_one(_id) for _id in root.files]
+            db_metrics.put_duration(__name__, 'resolve_files[legacy]' , dt.utcnow()-t0)
+
+        return res
+    
+    def resolve_parents(root, info, **args):
+        t0 = dt.utcnow()
+        if not root.parents:
+            res = []
+        elif isinstance(root.parents[0], dict):
+            #new form, parents is list of objects
+            res = [get_data_manager().thing.get_one(parent['parent_id']) for parent in root.parents]
+            db_metrics.put_duration(__name__, 'resolve_files[optimised]' , dt.utcnow()-t0)
+
+        else:
+            #old form, files is list of strings
+            res = [get_data_manager().thing_relation.get_one(_id) for _id in root.parents]
+            db_metrics.put_duration(__name__, 'resolve_files[legacy]' , dt.utcnow()-t0)
+
+        return res
+    
+    def resolve_children(root, info, **args):
+        t0 = dt.utcnow()
+        if not root.children:
+            res = []
+        elif isinstance(root.children[0], dict):
+            #new form, children is list of objects
+            res = [get_data_manager().thing.get_one(child['child_id']) for child in root.children]
+            db_metrics.put_duration(__name__, 'resolve_files[optimised]' , dt.utcnow()-t0)
+
+        else:
+            #old form, files is list of strings
+            res = [get_data_manager().thing_relation.get_one(_id) for _id in root.parents]
             db_metrics.put_duration(__name__, 'resolve_files[legacy]' , dt.utcnow()-t0)
 
         return res

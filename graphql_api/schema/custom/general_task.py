@@ -15,7 +15,7 @@ import graphene
 from graphene import relay
 
 from graphql_api.schema.thing import Thing
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 from graphql_api.schema.event import EventResult
 
@@ -73,10 +73,14 @@ class GeneralTask(graphene.ObjectType):
         elif (len(info.field_asts[0].selection_set.selections)==1 and
             info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
             from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
-            res =  TaskTaskRelationConnection(edges= [None for x in range(len(self.children))])
+            res = TaskTaskRelationConnection(edges= [None for x in range(len(self.children))])
+        elif isinstance(self.children[0], dict):
+            #new form, files is list of objects 
+            res = [get_data_manager().thing_relation.get_one(child['child_id'], child['child_clazz']) for child in self.children]
         else:
             res = [get_data_manager().thing_relation.get_one(_id) for _id in self.children]
         db_metrics.put_duration(__name__, 'GeneralTask.resolve_children' , dt.utcnow()-t0)
+        print('GTCHILD', res)
         return res
 
     def resolve_parents(self, info, **args):
@@ -87,9 +91,13 @@ class GeneralTask(graphene.ObjectType):
             info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
             from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
             res = TaskTaskRelationConnection(edges= [None for x in range(len(self.parents))])
+        elif isinstance(self.parents[0], dict):
+            #new form, files is list of objects
+            res = [get_data_manager().thing.get_one(parent['parent_id']) for parent in self.parents]
         else:
-            res =  [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
+            res = [get_data_manager().thing.get_one(_id) for _id in self.parents]
         db_metrics.put_duration(__name__, 'GeneralTask.resolve_parents' , dt.utcnow()-t0)
+        print("GTPARENT", res)
         return res
 
     @classmethod
