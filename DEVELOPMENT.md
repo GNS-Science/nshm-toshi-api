@@ -48,10 +48,6 @@ Version 6.8 is ther latest available in AWS.
 ```
 docker pull docker.elastic.co/elasticsearch/elasticsearch:6.8.0
 ```
-
-# Running tests:
-Tests require a few env variables, use command:
-  
   
 # Running the service locally
 
