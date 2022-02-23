@@ -72,7 +72,7 @@ class TableData(BaseDynamoDBData):
         body.merge(kwargs)
         body['created'] = body['created'].isoformat()
         body['clazz_name'] = clazz_name
-        self.transact_update(this_id, body)
+        self.transact_update(this_id, clazz_name, body)
         body.pop('clazz_name')
         # print(body)
         return clazz(**body)
