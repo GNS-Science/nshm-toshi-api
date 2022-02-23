@@ -32,16 +32,6 @@ custom:
   s3:
     host: localhost
     directory: /tmp
-<<<<<<< HEAD
-  #Lambda warmer see https://www.serverless.com/plugins/serverless-plugin-warmup
-  warmup:
-    lowConcurrencyWarmer:
-      enabled: true
-      events:
-        - schedule: rate(5 minutes)
-      concurrency: 1
-||||||| merged common ancestors
-=======
   #dynamodb-local settings
   dynamodb:
   # If you only want to use DynamoDB Local in some stages, declare them here
@@ -53,7 +43,6 @@ custom:
       heapInitial: 200m
       heapMax: 1g
       sharedDb: true
->>>>>>> FileData and ThingData converted to using dynamodb
 
 # DRY constants: define all compound/generated names in one place
 # Override args are: .. defaults:
@@ -155,17 +144,7 @@ functions:
       ES_INDEX: ${self:custom.esIndex}
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
-<<<<<<< HEAD
       STACK_NAME: ${self:custom.stack_name}
-    warmup:
-      lowConcurrencyWarmer:
-        enabled:
-          - test
-          - prod
-||||||| merged common ancestors
-=======
-      STACK_NAME: ${self:custom.stack_name}
->>>>>>> Feature/96 cloudwatch instrumentation (#97)
 
 resources:
   Resources:

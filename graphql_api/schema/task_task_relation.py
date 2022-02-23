@@ -29,11 +29,11 @@ class TaskTaskRelation(graphene.ObjectType):
     
     @staticmethod
     def resolve_parent(root, info, *args, **kwargs):
-        return get_data_manager().thing.get_one(root.parent_id)
+        return get_data_manager().thing.get_one(root.id)
 
     @staticmethod
     def resolve_child(root, info, *args, **kwargs):
-        return get_data_manager().thing.get_one(root.child_id)
+        return get_data_manager().thing.get_one(root.id)
 
 class TaskTaskRelationConnection(relay.Connection):
     class Meta:
