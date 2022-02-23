@@ -54,6 +54,10 @@ class Thing(graphene.Interface):
         t0 = dt.utcnow()
         if not root.parents:
             res = []
+        elif (len(info.field_asts[0].selection_set.selections)==1 and
+            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
+            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
+            res = TaskTaskRelationConnection(edges= [None for x in range(len(root.parents))])
         elif isinstance(root.parents[0], dict):
             #new form, parents is list of objects
             res = [get_data_manager().thing.get_one(parent['parent_id']) for parent in root.parents]
@@ -70,6 +74,10 @@ class Thing(graphene.Interface):
         t0 = dt.utcnow()
         if not root.children:
             res = []
+        elif (len(info.field_asts[0].selection_set.selections)==1 and
+            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
+            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
+            res = TaskTaskRelationConnection(edges= [None for x in range(len(root.children))])
         elif isinstance(root.children[0], dict):
             #new form, children is list of objects
             res = [get_data_manager().thing.get_one(child['child_id']) for child in root.children]

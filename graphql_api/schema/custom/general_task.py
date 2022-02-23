@@ -66,40 +66,6 @@ class GeneralTask(graphene.ObjectType):
                 if len(itm['v']) > 1:
                     yield itm['k']
 
-    def resolve_children(self, info, **args):
-        t0 = dt.utcnow()
-        if not self.children:
-            res = []
-        elif (len(info.field_asts[0].selection_set.selections)==1 and
-            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
-            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
-            res = TaskTaskRelationConnection(edges= [None for x in range(len(self.children))])
-        elif isinstance(self.children[0], dict):
-            #new form, files is list of objects 
-            res = [get_data_manager().thing_relation.get_one(child['child_id'], child['child_clazz']) for child in self.children]
-        else:
-            res = [get_data_manager().thing_relation.get_one(_id) for _id in self.children]
-        db_metrics.put_duration(__name__, 'GeneralTask.resolve_children' , dt.utcnow()-t0)
-        print('GTCHILD', res)
-        return res
-
-    def resolve_parents(self, info, **args):
-        t0 = dt.utcnow()
-        if not self.parents:
-            res = []
-        elif (len(info.field_asts[0].selection_set.selections)==1 and
-            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
-            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
-            res = TaskTaskRelationConnection(edges= [None for x in range(len(self.parents))])
-        elif isinstance(self.parents[0], dict):
-            #new form, files is list of objects
-            res = [get_data_manager().thing.get_one(parent['parent_id']) for parent in self.parents]
-        else:
-            res = [get_data_manager().thing.get_one(_id) for _id in self.parents]
-        db_metrics.put_duration(__name__, 'GeneralTask.resolve_parents' , dt.utcnow()-t0)
-        print("GTPARENT", res)
-        return res
-
     @classmethod
     def get_node(cls, info, id):
         return get_data_manager().thing.get_one(id)

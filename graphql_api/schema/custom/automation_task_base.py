@@ -58,20 +58,6 @@ class AutomationTaskInterface(graphene.Interface):
     metrics = graphene.List(KeyValuePair, required=False,
         description="result metrics from the task, as a list of Key Value pairs.")
     
-    def resolve_parents(self, info, **args):
-        print('AutomationTaskBaseParentResolver')
-        print(self.parents)
-        t0 = dt.utcnow()
-        if not self.parents:
-            res = []
-        elif (len(info.field_asts[0].selection_set.selections)==1 and
-            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
-            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
-            return TaskTaskRelationConnection(edges=[None for x in range(len(self.parents))])
-        else:
-            return  [get_data_manager().thing.get_one(parent['parent_id']) for parent in self.parents]
-        db_metrics.put_duration(__name__, 'AutomationTaskBase.resolve_node' , dt.utcnow()-t0)
-        return res
 
 class AutomationTaskInput(graphene.InputObjectType):
     result = EventResult(required=True)

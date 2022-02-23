@@ -37,17 +37,6 @@ class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
     @staticmethod
     def from_json(jsondata):
         return RuptureGenerationTask(**AutomationTaskBase.from_json(jsondata))
-    
-    @staticmethod                            
-    def resolve_parents(root, info, *args, **kwargs):
-        if not root.parents:
-            res = []
-        elif isinstance(root.parents[0], dict):
-            #new form, files is list of objects 
-            res = [get_data_manager().thing.get_one(parent['parent_id']) for parent in root.parents]
-        else:
-            res = [get_data_manager().thing.get_one(_id) for _id in root.parents]
-        return res
 
 class RuptureGenerationTaskConnection(relay.Connection):
     """A list of RuptureGenerationTask items"""
