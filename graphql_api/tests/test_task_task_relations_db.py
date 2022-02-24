@@ -30,6 +30,7 @@ thing_args = {}
 rupt_body = {'id': 0, 'files': None, 'result': None, 'state': None, 'duration': None, 'parents': None, 'arguments': None, 'environment': None, 'metrics': None, 'clazz_name': 'RuptureGenerationTask'}
 gen_task_body = { "id": 1, "updated": None, "title": "My First Manual task", "description": "##Some notes go here", "agent_name": "chrisbc" }
 
+START_ID = 100000
 
 @mock_dynamodb2
 class TestTaskTaskRelations(unittest.TestCase):
@@ -44,28 +45,28 @@ class TestTaskTaskRelations(unittest.TestCase):
         self._model = ToshiThingObject()
         self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake':'auth'}))
         self._connection = Connection(region=REGION)
-        
 
     def test_create_task_task_relations(self):
-        rupt_gen_task= ThingData(thing_args, self._data_manager, ToshiThingObject, self._connection)
-        rupt_gen_task.create(clazz_name='RuptureGenerationTask', created=dt.datetime.now(tzutc()))
         general_task= ThingData(thing_args, self._data_manager, ToshiThingObject, self._connection)
         general_task.create(clazz_name='GeneralTask', created=dt.datetime.now(tzutc()))
+
+        rupt_gen_task= ThingData(thing_args, self._data_manager, ToshiThingObject, self._connection)
+        rupt_gen_task.create(clazz_name='RuptureGenerationTask', created=dt.datetime.now(tzutc()))
+
+        general_task.add_child_relation(START_ID, START_ID+1, 'RuptureGenerationTask')
+        rupt_gen_task.add_parent_relation(START_ID+1, START_ID, 'GeneralTask')
         
-        rupt_gen_task.add_parent_relation(0, 1, 'GeneralTask')
-        general_task.add_child_relation(1, 0, 'RuptureGenerationTask')
+        print(rupt_gen_task._read_object(str(START_ID+1)))
+        assert rupt_gen_task._read_object(str(START_ID+1))['id'] == START_ID+1
+        assert rupt_gen_task._read_object(str(START_ID+1))['clazz_name'] == 'RuptureGenerationTask'
+        assert rupt_gen_task._read_object(str(START_ID+1))['parents'][0]['parent_id'] == START_ID
+        assert rupt_gen_task._read_object(str(START_ID+1))['parents'][0]['parent_clazz'] == 'GeneralTask'
         
-        print(rupt_gen_task._read_object('0'))
-        assert rupt_gen_task._read_object('0')['id'] == 0
-        assert rupt_gen_task._read_object('0')['clazz_name'] == 'RuptureGenerationTask'
-        assert rupt_gen_task._read_object('0')['parents'][0]['parent_id'] == 1
-        assert rupt_gen_task._read_object('0')['parents'][0]['parent_clazz'] == 'GeneralTask'
-        
-        print(general_task._read_object('1'))
-        assert general_task._read_object('1')['id'] == 1
-        assert general_task._read_object('1')['clazz_name'] == 'GeneralTask'
-        assert general_task._read_object('1')['children'][0]['child_id'] == 0
-        assert general_task._read_object('1')['children'][0]['child_clazz'] == 'RuptureGenerationTask'
+        print(general_task._read_object(str(START_ID)))
+        assert general_task._read_object(str(START_ID))['id'] == START_ID
+        assert general_task._read_object(str(START_ID))['clazz_name'] == 'GeneralTask'
+        assert general_task._read_object(str(START_ID))['children'][0]['child_id'] == START_ID+1
+        assert general_task._read_object(str(START_ID))['children'][0]['child_clazz'] == 'RuptureGenerationTask'
 
         
         

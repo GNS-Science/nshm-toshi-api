@@ -28,7 +28,7 @@ thing_args = {}
 
 body = {'id': 0, 'created': '2022-02-18T00:53:43.934035+00:00', 'files': None, 'result': None, 'state': None, 'duration': None, 'parents': None, 'arguments': None, 'environment': None, 'metrics': None, 'clazz_name': 'RuptureGenerationTask'}
 
-
+START_ID = 100000
 
 @mock_dynamodb2
 class TestS3FallBackRead(unittest.TestCase):
@@ -48,9 +48,9 @@ class TestS3FallBackRead(unittest.TestCase):
     def test_thing_read_dynamodb(self):
         thing = ThingData(thing_args, self._data_manager, ToshiThingObject, self._connection)
         thing.create(clazz_name='RuptureGenerationTask', created=dt.datetime.now(tzutc()))
-        print(thing._read_object('0'))
-        assert thing._read_object('0')['id'] == 0
-        assert thing._read_object('0')['clazz_name'] == 'RuptureGenerationTask'
+        print(thing._read_object(str(START_ID)))
+        assert thing._read_object(str(START_ID))['id'] == START_ID
+        assert thing._read_object(str(START_ID))['clazz_name'] == 'RuptureGenerationTask'
        
       
     def test_thing_read_s3(self):
