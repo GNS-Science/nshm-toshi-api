@@ -3,7 +3,7 @@ The NSHM data file graphql schema.
 """
 import graphene
 from graphene import relay
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput
 
 from datetime import datetime as dt

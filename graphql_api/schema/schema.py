@@ -9,20 +9,20 @@ from flask import request
 from graphene import relay
 from graphql_relay import from_global_id, to_global_id
 
-from graphql_api.data_s3.data_manager import DataManager
+from graphql_api.data.data_manager import DataManager
 from .custom.rupture_generation_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask, RuptureGenerationTask
 from requests_aws4auth import AWS4Auth
 
 from .file import CreateFile, File, FileConnection
-from .file_relation import CreateFileRelation, FileRelationConnection
+from .file_relation import CreateFileRelation, FileRelation, FileRelationConnection
 from .search_manager import SearchManager
 
 from graphql_api.schema import file, event, thing
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 
 from .custom.general_task import GeneralTask, CreateGeneralTask, UpdateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
@@ -156,7 +156,7 @@ class QueryRoot(graphene.ObjectType):
             elif _type in ['Table']:
                 result.append(db_root.table.get_one(_id))
             else:
-                raise ValueError("unable to resolve, object id", obj['_source'])
+                raise ValueError("unable to resolve, object id")
         db_metrics.put_duration(__name__, 'resolve_nodes' , dt.utcnow()-t0)
         #result =  = db_root.search_manager.search(kwargs.get('search_term'))
         return NodeFilter(ok=True, result =result)

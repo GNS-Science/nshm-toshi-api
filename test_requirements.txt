@@ -1,3 +1,4 @@
 pytest
 requests-mock
 gql<3
+moto==3.0.3

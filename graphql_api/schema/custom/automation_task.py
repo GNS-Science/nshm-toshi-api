@@ -16,7 +16,7 @@ from graphene import Enum
 
 from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 
 from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
@@ -71,8 +71,8 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
             if file.__class__ == InversionSolution:
                 res = file
                 break
-        return res
         db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution' , dt.utcnow()-t0)
+        return res
 
 class AutomationTaskConnection(relay.Connection):
     """A list of AutomationTask items"""

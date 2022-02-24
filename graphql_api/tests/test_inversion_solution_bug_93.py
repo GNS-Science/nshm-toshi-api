@@ -11,15 +11,15 @@ import unittest
 from dateutil.tz import tzutc
 
 from graphene.test import Client
-from graphql_api import data_s3
+from graphql_api import data
 from copy import copy
 
 from graphql_api.schema import root_schema
 from graphql_relay import from_global_id, to_global_id
-from graphql_api.data_s3.file_relation_data import FileRelationData
+from graphql_api.data.file_relation_data import FileRelationData
 
 
-import graphql_api.data_s3  # for mocking
+import graphql_api.data  # for mocking
 
 
 AUTO_TASK = {
@@ -137,11 +137,11 @@ class TestInversionSolutionRelationBugFix(unittest.TestCase):
     def setUp(self) -> None:
         self.client = Client(root_schema)
         
-    @mock.patch('graphql_api.data_s3.file_relation_data.FileRelationData.get_one',
+    @mock.patch('graphql_api.data.file_relation_data.FileRelationData.get_one',
                 side_effect = [FileRelationData.from_json(copy(FILE_REL0)),
                                FileRelationData.from_json(copy(FILE_REL1)), 
                                FileRelationData.from_json(copy(FILE_REL2))])
-    @mock.patch('graphql_api.data_s3.BaseS3Data._read_object',
+    @mock.patch('graphql_api.data.BaseData._read_object',
         side_effect = [copy(AUTO_TASK), copy(FILE1), copy(FILE2)])
     def test_query_with_files(self, mocked_read_object, mocked_get_one):
         qry = """ 
