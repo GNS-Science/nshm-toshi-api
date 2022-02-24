@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/GNS-Science/nshm-toshi-api#readme",
   "devDependencies": {
-    "serverless": "^3",
+    "serverless": "^3.0.0",
     "serverless-dynamodb-local": "^0.2.40",
     "serverless-plugin-warmup": "^7.0.2",
     "serverless-python-requirements": "^5.3.1",
