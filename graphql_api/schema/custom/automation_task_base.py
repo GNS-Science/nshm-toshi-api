@@ -30,14 +30,14 @@ class AutomationTaskBase():
     def get_node(cls, info, _id):
         return  get_data_manager().thing.get_one(_id)
 
-    @staticmethod
-    def from_json(jsondata):
-        #Field type transforms...
-        started = dt.now()
-        created = jsondata.get('created')
-        if created:
-            jsondata['created'] = dt.datetime.fromisoformat(started)
-        return jsondata
+    # @staticmethod
+    # def from_json(jsondata):
+    #     #Field type transforms...
+    #     started = dt.now()
+    #     created = jsondata.get('created')
+    #     if created:
+    #         jsondata['created'] = dt.datetime.fromisoformat(started)
+    #     return jsondata
 
 class AutomationTaskInterface(graphene.Interface):
     """An AutomationTask in the NSHM process"""

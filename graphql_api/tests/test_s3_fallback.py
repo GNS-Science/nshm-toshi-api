@@ -59,8 +59,6 @@ class TestS3FallBackRead(unittest.TestCase):
             conn.create_bucket(Bucket=S3_BUCKET_NAME)
             bucket = conn.Bucket(S3_BUCKET_NAME)
             thing = ThingData(thing_args, self._data_manager, ToshiThingObject, self._connection)
-            thing.create(clazz_name='RuptureGenerationTask', created=dt.datetime.now(tzutc()))
-            ToshiThingObject.delete_table() 
             
             self._prefix = 'ThingData'
             object_id = 0
