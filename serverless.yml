@@ -26,9 +26,17 @@ custom:
   wsgi:
     app: graphql_api.api.app
     packRequirements: false
+    pythonBin: python3
+
   #serverless-python-requirements settings
   pythonRequirements:
     dockerizePip: non-linux
+    slim: true
+    slimPatterns:
+      - '**/*.egg-info*'
+    noDeploy:
+      - botocore
+
   #serverless-s3-local settings
   s3:
     host: localhost
