@@ -17,7 +17,9 @@ sls dynamodb install
 ## Smoketest
 ```
 
-sls dynamodb start --stage local & sls s3 start & SLS_OFFLINE=1 TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
+sls dynamodb start --stage local &\
+sls s3 start &\
+SLS_OFFLINE=1 TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
 ```
 Then in another shell,
 ```

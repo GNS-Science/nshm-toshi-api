@@ -5,6 +5,7 @@ plugins:
   - serverless-wsgi
   - serverless-s3-local
   - serverless-dynamodb-local
+  - serverless-plugin-warmup
 package:
   individually: false
   exclude:
@@ -44,6 +45,14 @@ custom:
       heapMax: 1g
       sharedDb: true
 
+  #Lambda warmer see https://www.serverless.com/plugins/serverless-plugin-warmup
+  warmup:
+    lowConcurrencyWarmer:
+      enabled: true
+      events:
+        - schedule: rate(5 minutes)
+      concurrency: 1
+
 # DRY constants: define all compound/generated names in one place
 # Override args are: .. defaults:
 # --app_acroym          signed-uploader
@@ -80,8 +89,6 @@ provider:
     REGION: ${self:custom.region}
     S3_BUCKET_NAME: ${self:custom.s3_bucket}
     URL_DEFAULT_TTL: ${self:custom.url_default_ttl}
-    DYNAMODB_THING_TABLE: ${self:service}-${self:provider.stage}-thing
-    DYNAMODB_FILE_TABLE: ${self:service}-${self:provider.stage}-file
     DEPLOYMENT_STAGE: ${self:custom.stage}
   iamRoleStatements:
     # S3 access policy
@@ -107,7 +114,6 @@ provider:
          - "cloudwatch:PutMetricData"
        Resource: "*"
 
-
     - Effect: Allow
       Action:
          - "dynamodb:Scan"
@@ -117,9 +123,10 @@ provider:
          - "dynamodb:PutItem"
       Resource: '*'
 
-  apiKeys:
-    - name: TempApiKey-${self:custom.stage}
-      description: Api key until we have an auth function # Optional
+  apiGateway:
+    apiKeys:
+      - name: TempApiKey-${self:custom.stage}
+        description: Api key until we have an auth function # Optional
 
 functions:
   app:
@@ -145,6 +152,11 @@ functions:
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
       STACK_NAME: ${self:custom.stack_name}
+    warmup:
+      lowConcurrencyWarmer:
+        enabled:
+          - test
+          - prod
 
 resources:
   Resources:

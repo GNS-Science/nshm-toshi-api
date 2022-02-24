@@ -144,6 +144,7 @@ class BaseDynamoDBData(BaseData):
         try:
             identity = ToshiIdentity.get(self._prefix)
         except DoesNotExist as e:
+            # very first use of the identity
             identity = ToshiIdentity(table_name=self._prefix, object_id=0)
             identity.save()
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
@@ -160,12 +161,12 @@ class BaseDynamoDBData(BaseData):
         t0 = dt.utcnow()
         key = "%s/%s" % (self._prefix, object_id)
         
-        try:
-            identity = ToshiIdentity.get(self._prefix)
-        except DoesNotExist as e:
-            identity = ToshiIdentity(table_name=self._prefix, object_id=0)
-            identity.save()
-            
+        identity = ToshiIdentity.get(self._prefix) #first time round is handled in get_next_id()
+
+        #TODO: make a transacion conditional check (maybe)
+        if not identity.object_id == object_id:
+            raise RuntimeError(F"object ids are not consistent!) {(identity.object_id, object_id)}")
+
         toshi_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
        
         with TransactWrite(connection=self._connection) as transaction:
