@@ -31,4 +31,4 @@ jobs:
 
       - name: Run test suite
         run: |
-          SLS_OFFLINE=1 pytest
+          SLS_OFFLINE=1 TESTING=1 DEPLOYMENT_STAGE=TEST pytest
