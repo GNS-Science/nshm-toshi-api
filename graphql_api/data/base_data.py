@@ -110,7 +110,7 @@ class BaseData():
         
         try:
             obj = self._model.get(key, self._prefix)
-            db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+            db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
             return obj.object_content
         except:
             S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
@@ -120,12 +120,14 @@ class BaseData():
             file_object = BytesIO()
             obj.download_fileobj(file_object)
             file_object.seek(0)
-            db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+            db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
             return json.load(file_object)
 
     def get_all_in(self, _id_list):
         pass
         #TODO
+
+FIRST_ID = 100000 #start new ids at some large number to make sure of no clashes
 
 class BaseDynamoDBData(BaseData):
     def __init__(self, client_args, db_manager, model, connection=Connection()):
@@ -145,7 +147,7 @@ class BaseDynamoDBData(BaseData):
             identity = ToshiIdentity.get(self._prefix)
         except DoesNotExist as e:
             # very first use of the identity
-            identity = ToshiIdentity(table_name=self._prefix, object_id=0)
+            identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_ID)
             identity.save()
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return identity.object_id    
@@ -196,5 +198,5 @@ class BaseDynamoDBData(BaseData):
             
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
-        db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, 'transact_update' , dt.utcnow()-t0)
         print('#####updated:', object_id, self._model.get(key, object_type).object_content)
