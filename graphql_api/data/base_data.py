@@ -127,7 +127,10 @@ class BaseData():
         pass
         #TODO
 
-FIRST_ID = 100000 #start new ids at some large number to make sure of no clashes
+if IS_OFFLINE: 
+    FIRST_ID = 0 #start new ids at some large number to make sure of no clashes, unless running locally (then breaks smoketests)
+else:
+    FIRST_ID = 10000
 
 class BaseDynamoDBData(BaseData):
     def __init__(self, client_args, db_manager, model, connection=Connection()):
@@ -177,6 +180,7 @@ class BaseDynamoDBData(BaseData):
             transaction.save(toshi_object)
     
         db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
+        # print('BODY', body)
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
 
