@@ -29,7 +29,7 @@ class TaskTaskRelation(graphene.ObjectType):
 
     @staticmethod
     def resolve_id(root, info, *args, **kwargs):
-        return 'fakeid' #needed until clients are able to validate not used
+        return root.child_id #needed until clients are able to validate not used
 
     @staticmethod
     def resolve_parent(root, info, *args, **kwargs):
