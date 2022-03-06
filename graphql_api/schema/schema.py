@@ -34,7 +34,7 @@ from .custom.automation_task import AutomationTask, CreateAutomationTask, Update
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import IS_OFFLINE, ES_REGION, ES_ENDPOINT, ES_INDEX, STACK_NAME
+from graphql_api.config import IS_OFFLINE, ES_REGION, ES_ENDPOINT, ES_INDEX, STACK_NAME, TESTING
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=1)
 
@@ -45,7 +45,7 @@ awsauth = AWS4Auth(
 
 s3_client_args = dict(aws_access_key_id='S3RVER',
         aws_secret_access_key='S3RVER',
-        endpoint_url='http://localhost:4569') if IS_OFFLINE else {}
+        endpoint_url='http://localhost:4569') if not TESTING and IS_OFFLINE else {}
 
 search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
 db_root = DataManager(search_manager, s3_client_args)
