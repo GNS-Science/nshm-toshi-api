@@ -36,5 +36,22 @@ python3 graphql_api/tests/smoketests.py
 
 ## Unit test
 ```
-TESTING=1 pytest
+SLS_OFFLINE=1 TESTING=1 pytest
 ```
+
+## Test locally with Toshi UI
+```
+sls dynamodb start --stage local &\
+sls s3 start &\
+SLS_OFFLINE=1 sls wsgi serve
+```
+then in another shell,
+```
+SLS_OFFLINE=1 S3_BUCKET_NAME=nzshm22-toshi-api-local S3_TEST_DATA_PATH=s3_extract python3 graphql_api/tests/upload_test_s3_extract.py 
+```
+then in the simple-toshi-ui repo,
+set REACT_APP_GRAPH_ENDPOINT=http://localhost:5000/graphql,
+and run yarn start
+
+now if you navigate to http://localhost:3000/Find and find R2VuZXJhbFRhc2s6MjQ4ODdRTkhH
+you will get to your test data

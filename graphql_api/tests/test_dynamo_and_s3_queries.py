@@ -70,7 +70,7 @@ GET_GT_CHILDREN = """query GeneralTaskChildrenTabQuery(
                 id
               }
             }
-            id
+            # id
           }
         }
       }
@@ -79,41 +79,96 @@ GET_GT_CHILDREN = """query GeneralTaskChildrenTabQuery(
   }
 }"""
 
-GET_INVERSION_CHILDREN_IDS = '''query InversionSolutionDiagnosticContainerQuery(
-  $id: [ID!]
+GET_GT = '''query GeneralTaskQuery(
+  $id: ID!
 ) {
-  nodes(id_in: $id) {
-    result {
-      edges {
-        node {
-          __typename
-          ... on AutomationTask {
-            created
-            task_type
-            id
-            inversion_solution {
-              id
-              file_name
-              mfd_table_id
-              meta {
-                k
-                v
+  node(id: $id) {
+    __typename
+    ... on GeneralTask {
+      id
+      title
+      description
+      notes
+      created
+      updated
+      agent_name
+      model_type
+      subtask_type
+      subtask_count
+      subtask_result
+      argument_lists {
+        k
+        v
+      }
+      swept_arguments
+      children {
+        total_count
+      }
+    }
+    id
+  }
+}'''
+
+GET_AT = '''
+query AutomationTaskQuery(
+  $id: ID!
+) {
+  node(id: $id) {
+    __typename
+    id
+    ... on AutomationTask {
+      id
+      duration
+      created
+      result
+      state
+      task_type
+      model_type
+      files {
+        edges {
+          node {
+            role
+            file {
+              __typename
+              ... on Node {
+                __isNode: __typename
+                id
               }
-              tables {
-                table_id
-                table_type
+              ... on FileInterface {
+                __isFileInterface: __typename
+                file_name
+                file_url
               }
             }
           }
-          ... on Node {
-            __isNode: __typename
-            id
+        }
+      }
+      arguments {
+        k
+        v
+      }
+      environment {
+        k
+        v
+      }
+      metrics {
+        k
+        v
+      }
+      parents {
+        edges {
+          node {
+            parent {
+              id
+            }
           }
         }
       }
     }
   }
-}'''
+}
+'''
+
 FIND_BY_ID_QUERY = '''
 query FindQuery(
   $id: ID!
@@ -123,9 +178,8 @@ query FindQuery(
     id
   }
 }'''
+
 START_ID = 100000
-
-
 
 @mock_dynamodb2
 class TestGeneralTaskQueriesDB(unittest.TestCase):
@@ -147,45 +201,55 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
         self._auto_task_2 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         self._auto_task_1.create(clazz_name='AutomationTask', created=dt.datetime.now(tzutc()))
         self._auto_task_2.create(clazz_name='AutomationTask', created=dt.datetime.now(tzutc()))
+        self._inversion = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
+        self._inversion.create(clazz_name='InversionSolution', created=dt.datetime.now(tzutc()))
         self._general_task.add_child_relation(str(START_ID), str(START_ID+1), 'AutomationTask')
         self._general_task.add_child_relation(str(START_ID), str(START_ID+2), 'AutomationTask')
         self._auto_task_1.add_parent_relation(str(START_ID+1), str(START_ID), 'GeneralTask')
         self._auto_task_2.add_parent_relation(str(START_ID+2), str(START_ID), 'GeneralTask')
     
+    
+    def test_get_gt(self):
+        result = self.client.execute(GET_GT, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})['data']['node']
+        print(result)
+        assert result['id'] == "R2VuZXJhbFRhc2s6MTAwMDAw"
+        assert result['__typename'] == 'GeneralTask'
+        assert result['children']['total_count'] == 2
+        
     def test_general_task_children_query(self):
          
-        result = self.client.execute(GET_GT_CHILDREN, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})['data']['node']
-        print(result)
+        data = self.client.execute(GET_GT_CHILDREN, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})
+        result = data['data']['node']
         child_1 = result['children']['edges'][0]['node']['child']
         child_2 = result['children']['edges'][1]['node']['child']
-
+        print(result)
         assert result['id'] == "R2VuZXJhbFRhc2s6MTAwMDAw"
         assert result['__typename'] == 'GeneralTask'
         assert child_1['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
         assert child_2['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAy'
-
-    
-    def test_inversion_solution_diagnostics_query(self):
-        result = self.client.execute(GET_INVERSION_CHILDREN_IDS, variable_values={'id': ['QXV0b21hdGlvblRhc2s6MTAwMDAx', 'QXV0b21hdGlvblRhc2s6MTAwMDAy']})
-        data = result['data']['nodes']['result']['edges']
-        print(data)
-        assert data[0]['node']['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
-        assert data[1]['node']['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAy'
       
-    def test_get_general_task_by_id_query(self):
+    def test_get_by_id_query(self):
         gt_result = self.client.execute(FIND_BY_ID_QUERY, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})
         assert gt_result['data']['node']['__typename'] == 'GeneralTask'
+        print(f'GT: {gt_result}')
         at_result = self.client.execute(FIND_BY_ID_QUERY, variable_values={'id': 'QXV0b21hdGlvblRhc2s6MTAwMDAx'})
-        print(at_result)
+        print(f'AT: {at_result}')
         assert at_result['data']['node']['__typename'] == 'AutomationTask'
-        
-        
+    
+    def test_get_automation_task(self):
+        result = self.client.execute(GET_AT, variable_values={'id': 'QXV0b21hdGlvblRhc2s6MTAwMDAx'})
+        print(f"Result: {result}")
+        data = result['data']['node']
+        assert data['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
+        assert data['parents']['edges'][0]['node']['parent']['id'] == 'R2VuZXJhbFRhc2s6MTAwMDAw'
+        assert data['__typename'] == 'AutomationTask'
+      
     def tearDown(self) -> None:
         ToshiThingObject.delete_table()
         ToshiIdentity.delete_table()
 
-@mock_dynamodb2
 @mock_s3
+@mock_dynamodb2
 class TestGeneralTaskQueriesS3(unittest.TestCase):
       
     def setUp(self):
@@ -213,9 +277,24 @@ class TestGeneralTaskQueriesS3(unittest.TestCase):
         assert child_1['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
         assert child_2['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAy'
       
-    def test_get_general_task_by_id_query(self):
+    def test_get_by_id_query(self):
         gt_result = self.client.execute(FIND_BY_ID_QUERY, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})
+        print(gt_result)
         assert gt_result['data']['node']['__typename'] == 'GeneralTask'
         at_result = self.client.execute(FIND_BY_ID_QUERY, variable_values={'id': 'QXV0b21hdGlvblRhc2s6MTAwMDAx'})
         print(at_result)
         assert at_result['data']['node']['__typename'] == 'AutomationTask'
+        
+    def test_get_gt(self):
+        result = self.client.execute(GET_GT, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})['data']['node']
+        print(result)
+        assert result['id'] == "R2VuZXJhbFRhc2s6MTAwMDAw"
+        assert result['__typename'] == 'GeneralTask'
+        assert result['children']['total_count'] == 2
+
+    def test_get_automation_task(self):
+        result = self.client.execute(GET_AT, variable_values={'id': 'QXV0b21hdGlvblRhc2s6MTAwMDAx'})['data']['node']
+        print(result)
+        assert result['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
+        assert result['parents']['edges'][0]['node']['parent']['id'] == 'R2VuZXJhbFRhc2s6MTAwMDAw'
+        assert result['__typename'] == 'AutomationTask'

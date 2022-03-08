@@ -1,0 +1,1193 @@
+NZSHM22_PythonGateway tagged version: 165-filter-rupset-alpha1
+opensha git ref: aecbe4d2b63be0c6e4c876ac75384fd32b8efac3
+NZSHM22 Java gateway listening on port; 26533
+total in BEST2FLTOLDNC1246.txt = 1.0000018700000017
+total in BEST2FLTOLDNC1246r.txt = 0.9999929359999982
+total in BESTFLTOLDNC1456.txt = 0.9999942830000016
+total in BESTFLTOLDNC1456r.txt = 0.9999941260000015
+total in Gruenthalmod1346ConfDSMsss.txt = 0.9999991628000019
+------------ LOADING ARCHIVE ------------
+Archive: /WORKING/downloads/RmlsZToxNTg3LjBuVm9GdA==/RupSet_Cl_FM(CFM_0_9_SANSTVZ_D90)_mnSbS(2)_mnSSPP(2)_mxSSL(0.5)_mxFS(2000)_noInP(T)_slRtP(0.05)_slInL(F)_cfFr(0.75)_cfRN(2)_cfRTh(0.5)_cfRP(0.01)_fvJm(T)_jmPTh(0.001)_cmRkTh(360)_mxJmD(15)_plCn(T)_adMnD(6)_adScFr(0.2)_bi(F)_stGrSp(2)_coFr(0.5).zip
+Modules index not found in zip file, skipping loading sub-modules: modules.json
+---------- END LOADING ARCHIVE ----------
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates'
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates$Precomputed' to: Section Slip Rates
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates' to: Section Slip Rates
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas'
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas$Precomputed' to: Section Areas
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas' to: Section Areas
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.InfoModule' to: Info
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.ruptures.plausibility.PlausibilityConfiguration' to: Plausibility Configuration
+Loading ClusterRupture list (lazily) from /WORKING/downloads/RmlsZToxNTg3LjBuVm9GdA==/RupSet_Cl_FM(CFM_0_9_SANSTVZ_D90)_mnSbS(2)_mnSSPP(2)_mxSSL(0.5)_mxFS(2000)_noInP(T)_slRtP(0.05)_slInL(F)_cfFr(0.75)_cfRN(2)_cfRTh(0.5)_cfRP(0.01)_fvJm(T)_jmPTh(0.001)_cmRkTh(360)_mxJmD(15)_plCn(T)_adMnD(6)_adScFr(0.2)_bi(F)_stGrSp(2)_coFr(0.5).zip
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures$SingleStranded' to: Single-Strand Cluster Ruptures
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures' to: Single-Strand Cluster Ruptures
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load Default (Uniform) Slip Along Rupture
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel$Default' to: Default (Uniform) Slip Along Rupture
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel' to: Default (Uniform) Slip Along Rupture
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.BuildInfoModule' to: OpenSHA Build Information
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates'
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates$Precomputed
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas'
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas$Precomputed
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.InfoModule
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.ruptures.plausibility.PlausibilityConfiguration
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures$SingleStranded
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel'
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel$Default
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel$Uniform' to: Uniform Slip Along Rupture
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel$NamedSlipAlongRuptureModel' to: Uniform Slip Along Rupture
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel' to: Uniform Slip Along Rupture
+Rupture Set:	Mapped module type 'scratch.UCERF3.logicTree.U3LogicTreeBranch' to: Logic Tree Branch
+Rupture Set:	Mapped module type 'org.opensha.commons.logicTree.LogicTreeBranch' to: Logic Tree Branch
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.PolygonFaultGridAssociations
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.FaultGridAssociations
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.ModSectMinMags
+Rupture Set:	Mapped available module with type: scratch.UCERF3.inversion.U3InversionTargetMFDs
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.InversionTargetMFDs
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load Section Slip Rates
+Rupture Set:	Getting copy of sub-module 'Section Slip Rates' with updated parent
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates$Precomputed' to: Section Slip Rates
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates' to: Section Slip Rates
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load Section Areas
+Rupture Set:	Getting copy of sub-module 'Section Areas' with updated parent
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas$Precomputed' to: Section Areas
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas' to: Section Areas
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load Info
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.InfoModule' to: Info
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load Plausibility Configuration
+Rupture Set:	Getting copy of sub-module 'Plausibility Configuration' with updated parent
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.ruptures.plausibility.PlausibilityConfiguration' to: Plausibility Configuration
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load Single-Strand Cluster Ruptures
+Rupture Set:	Getting copy of sub-module 'Single-Strand Cluster Ruptures' with updated parent
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures$SingleStranded' to: Single-Strand Cluster Ruptures
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures' to: Single-Strand Cluster Ruptures
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load Default (Uniform) Slip Along Rupture
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel$Default' to: Default (Uniform) Slip Along Rupture
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel' to: Default (Uniform) Slip Along Rupture
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load NZSHM22_ScalingRelationship Average Slips
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule$ModelBased' to: NZSHM22_ScalingRelationship Average Slips
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule' to: NZSHM22_ScalingRelationship Average Slips
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.BuildInfoModule' to: OpenSHA Build Information
+Rupture Set:	Getting copy of sub-module 'Section Slip Rates' with updated parent
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates'
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates$Precomputed' to: Section Slip Rates
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectSlipRates' to: Section Slip Rates
+Rupture Set:	Getting copy of sub-module 'Section Areas' with updated parent
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas'
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas$Precomputed' to: Section Areas
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SectAreas' to: Section Areas
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.InfoModule' to: Info
+Rupture Set:	Getting copy of sub-module 'Plausibility Configuration' with updated parent
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.ruptures.plausibility.PlausibilityConfiguration' to: Plausibility Configuration
+Rupture Set:	Getting copy of sub-module 'Single-Strand Cluster Ruptures' with updated parent
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures$SingleStranded' to: Single-Strand Cluster Ruptures
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures' to: Single-Strand Cluster Ruptures
+Rupture Set:	Removing module 'Uniform Slip Along Rupture' with type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel$Uniform' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel'
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel$Default' to: Default (Uniform) Slip Along Rupture
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SlipAlongRuptureModel' to: Default (Uniform) Slip Along Rupture
+Rupture Set:	Getting copy of sub-module 'NZSHM22_ScalingRelationship Average Slips' with updated parent
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule$ModelBased' to: NZSHM22_ScalingRelationship Average Slips
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule' to: NZSHM22_ScalingRelationship Average Slips
+Rupture Set:	Getting copy of sub-module 'Single-Strand Cluster Ruptures' with updated parent
+Rupture Set:	Removing module 'Single-Strand Cluster Ruptures' with type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures$SingleStranded' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures$SingleStranded'
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures$SingleStranded' to: Single-Strand Cluster Ruptures
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ClusterRuptures' to: Single-Strand Cluster Ruptures
+Rupture Set:	Removing module 'Logic Tree Branch' with type 'scratch.UCERF3.logicTree.U3LogicTreeBranch' as it is assignable from 'org.opensha.commons.logicTree.LogicTreeBranch'
+Rupture Set:	Mapped module type 'nz.cri.gns.NZSHM22.opensha.enumTreeBranches.NZSHM22_LogicTreeBranch' to: Logic Tree Branch
+Rupture Set:	Mapped module type 'org.opensha.commons.logicTree.LogicTreeBranch' to: Logic Tree Branch
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.PolygonFaultGridAssociations' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.FaultGridAssociations'
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.FaultGridAssociations' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.FaultGridAssociations'
+Rupture Set:	Removing module 'NZSHM22_ScalingRelationship Average Slips' with type 'org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule$ModelBased' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule$ModelBased'
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule$ModelBased' to: NZSHM22_ScalingRelationship Average Slips
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.AveSlipModule' to: NZSHM22_ScalingRelationship Average Slips
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.PolygonFaultGridAssociations
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.FaultGridAssociations
+Rupture Set:	Lazily loading available module...
+694       non-singular
+List size: 4
+Locations: -44.54180, 170.45380, 0.00000
+           -44.53334, 170.45970, 0.00000
+           -44.53430, 170.45960, 0.00000
+           -44.54180, 170.45380, 0.00000
+           
+List size: 8
+Locations: -44.53334, 170.45970, 0.00000
+           -44.50700, 170.46245, 0.00000
+           -44.45179, 170.44034, 0.00000
+           -44.28269, 170.55798, 0.00000
+           -44.33790, 170.58020, 0.00000
+           -44.36520, 170.57740, 0.00000
+           -44.37270, 170.57162, 0.00000
+           -44.53334, 170.45970, 0.00000
+           
+1437      non-singular
+List size: 4
+Locations: -44.68560, 170.36811, 0.00000
+           -44.66889, 170.37579, 0.00000
+           -44.68107, 170.37159, 0.00000
+           -44.68560, 170.36811, 0.00000
+           
+List size: 10
+Locations: -44.66889, 170.37579, 0.00000
+           -44.64207, 170.38504, 0.00000
+           -44.61667, 170.36868, 0.00000
+           -44.59478, 170.35354, 0.00000
+           -44.42641, 170.43084, 0.00000
+           -44.44830, 170.44600, 0.00000
+           -44.47370, 170.46240, 0.00000
+           -44.51270, 170.44900, 0.00000
+           -44.51723, 170.44552, 0.00000
+           -44.66889, 170.37579, 0.00000
+           
+1648      non-singular
+List size: 4
+Locations: -44.65990, 169.83056, 0.00000
+           -44.65970, 169.83070, 0.00000
+           -44.65928, 169.83111, 0.00000
+           -44.65990, 169.83056, 0.00000
+           
+List size: 4
+Locations: -44.65928, 169.83111, 0.00000
+           -44.61419, 169.87127, 0.00000
+           -44.62080, 169.86950, 0.00000
+           -44.65928, 169.83111, 0.00000
+           
+List size: 10
+Locations: -44.63656, 169.85107, 0.00000
+           -44.61228, 169.85759, 0.00000
+           -44.58950, 169.87790, 0.00000
+           -44.50004, 169.95747, 0.00000
+           -44.53134, 169.94912, 0.00000
+           -44.57024, 169.91037, 0.00000
+           -44.57044, 169.91023, 0.00000
+           -44.61419, 169.87127, 0.00000
+           -44.61328, 169.87152, 0.00000
+           -44.63656, 169.85107, 0.00000
+           
+2089      non-singular
+List size: 4
+Locations: -38.19010, 179.25870, 0.00000
+           -38.11306, 179.19572, 0.00000
+           -38.18650, 179.25810, 0.00000
+           -38.19010, 179.25870, 0.00000
+           
+List size: 6
+Locations: -38.11306, 179.19572, 0.00000
+           -38.09584, 179.18109, 0.00000
+           -37.91244, 179.03136, 0.00000
+           -38.00310, 179.10818, 0.00000
+           -38.00670, 179.10877, 0.00000
+           -38.11306, 179.19572, 0.00000
+           
+2090      non-singular
+List size: 4
+Locations: -38.09584, 179.18109, 0.00000
+           -38.09160, 179.17750, 0.00000
+           -38.09147, 179.17753, 0.00000
+           -38.09584, 179.18109, 0.00000
+           
+List size: 12
+Locations: -38.09147, 179.17753, 0.00000
+           -37.91244, 179.03136, 0.00000
+           -37.90820, 179.02778, 0.00000
+           -37.87810, 179.03444, 0.00000
+           -37.84740, 179.00340, 0.00000
+           -37.82480, 179.01544, 0.00000
+           -37.81686, 179.02892, 0.00000
+           -38.00026, 179.17846, 0.00000
+           -38.00820, 179.16500, 0.00000
+           -38.03080, 179.15300, 0.00000
+           -38.06150, 179.18410, 0.00000
+           -38.09147, 179.17753, 0.00000
+           
+Rupture Set:	Took 2.91 s to load Polygon Fault Association Manager
+Rupture Set:	Mapped module type 'scratch.UCERF3.griddedSeismicity.FaultPolyMgr' to: Polygon Fault Association Manager
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.PolygonFaultGridAssociations' to: Polygon Fault Association Manager
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.FaultGridAssociations' to: Polygon Fault Association Manager
+665       non-singular
+List size: 4
+Locations: -44.54180, 170.45380, 0.00000
+           -44.53334, 170.45970, 0.00000
+           -44.53430, 170.45960, 0.00000
+           -44.54180, 170.45380, 0.00000
+           
+List size: 8
+Locations: -44.53334, 170.45970, 0.00000
+           -44.50700, 170.46245, 0.00000
+           -44.45179, 170.44034, 0.00000
+           -44.28269, 170.55798, 0.00000
+           -44.33790, 170.58020, 0.00000
+           -44.36520, 170.57740, 0.00000
+           -44.37270, 170.57162, 0.00000
+           -44.53334, 170.45970, 0.00000
+           
+1388      non-singular
+List size: 4
+Locations: -44.68560, 170.36811, 0.00000
+           -44.66889, 170.37579, 0.00000
+           -44.68107, 170.37159, 0.00000
+           -44.68560, 170.36811, 0.00000
+           
+List size: 10
+Locations: -44.66889, 170.37579, 0.00000
+           -44.64207, 170.38504, 0.00000
+           -44.61667, 170.36868, 0.00000
+           -44.59478, 170.35354, 0.00000
+           -44.42641, 170.43084, 0.00000
+           -44.44830, 170.44600, 0.00000
+           -44.47370, 170.46240, 0.00000
+           -44.51270, 170.44900, 0.00000
+           -44.51723, 170.44552, 0.00000
+           -44.66889, 170.37579, 0.00000
+           
+1570      non-singular
+List size: 4
+Locations: -44.65990, 169.83056, 0.00000
+           -44.65970, 169.83070, 0.00000
+           -44.65928, 169.83111, 0.00000
+           -44.65990, 169.83056, 0.00000
+           
+List size: 4
+Locations: -44.65928, 169.83111, 0.00000
+           -44.61419, 169.87127, 0.00000
+           -44.62080, 169.86950, 0.00000
+           -44.65928, 169.83111, 0.00000
+           
+List size: 10
+Locations: -44.63656, 169.85107, 0.00000
+           -44.61228, 169.85759, 0.00000
+           -44.58950, 169.87790, 0.00000
+           -44.50004, 169.95747, 0.00000
+           -44.53134, 169.94912, 0.00000
+           -44.57024, 169.91037, 0.00000
+           -44.57044, 169.91023, 0.00000
+           -44.61419, 169.87127, 0.00000
+           -44.61328, 169.87152, 0.00000
+           -44.63656, 169.85107, 0.00000
+           
+1970      non-singular
+List size: 4
+Locations: -38.19010, 179.25870, 0.00000
+           -38.11306, 179.19572, 0.00000
+           -38.18650, 179.25810, 0.00000
+           -38.19010, 179.25870, 0.00000
+           
+List size: 6
+Locations: -38.11306, 179.19572, 0.00000
+           -38.09584, 179.18109, 0.00000
+           -37.91244, 179.03136, 0.00000
+           -38.00310, 179.10818, 0.00000
+           -38.00670, 179.10877, 0.00000
+           -38.11306, 179.19572, 0.00000
+           
+1971      non-singular
+List size: 4
+Locations: -38.09584, 179.18109, 0.00000
+           -38.09160, 179.17750, 0.00000
+           -38.09147, 179.17753, 0.00000
+           -38.09584, 179.18109, 0.00000
+           
+List size: 12
+Locations: -38.09147, 179.17753, 0.00000
+           -37.91244, 179.03136, 0.00000
+           -37.90820, 179.02778, 0.00000
+           -37.87810, 179.03444, 0.00000
+           -37.84740, 179.00340, 0.00000
+           -37.82480, 179.01544, 0.00000
+           -37.81686, 179.02892, 0.00000
+           -38.00026, 179.17846, 0.00000
+           -38.00820, 179.16500, 0.00000
+           -38.03080, 179.15300, 0.00000
+           -38.06150, 179.18410, 0.00000
+           -38.09147, 179.17753, 0.00000
+           
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.ModSectMinMags' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.ModSectMinMags'
+Rupture Set:	Mapped available module with type: org.opensha.sha.earthquake.faultSysSolution.modules.ModSectMinMags
+faultSectionData.size() 177
+fractionSeisOnFault 0.3872949224458804
+totalTargetGR_TVZ after setAllButTotMoRate
+     Name: Gutenberg Richter Dist
+   Points: 40
+     Info: minMag=5.05; maxMag=8.95; numMag=40; bValue=1.2; magLower=5.05; magUpper=7.55; totMoRate=5.0115204E17; totCumRate=0.7
+
+Data[x,y]:
+5.05	  0.16912399
+5.15	  0.12829366
+5.25	  0.0973207
+5.35	  0.0738253
+5.45	  0.05600222
+5.55	  0.042482026
+5.65	  0.03222591
+5.75	  0.024445854
+5.85	  0.018544076
+5.95	  0.014067121
+6.05	  0.010671003
+6.15	  0.008094783
+6.25	  0.006140521
+6.35	  0.0046580615
+6.45	  0.003533501
+6.55	  0.0026804346
+6.65	  0.0020333177
+6.75	  0.0015424291
+6.85	  0.0011700521
+6.95	  8.875753E-4
+7.05	  6.732947E-4
+7.15	  5.1074626E-4
+7.25	  3.8744067E-4
+7.35	  2.939038E-4
+7.45	  2.2294885E-4
+7.55	  1.6912399E-4
+7.65	  0.0
+7.75	  0.0
+7.85	  0.0
+7.95	  0.0
+8.05	  0.0
+8.15	  0.0
+8.25	  0.0
+8.35	  0.0
+8.45	  0.0
+8.55	  0.0
+8.65	  0.0
+8.75	  0.0
+8.85	  0.0
+8.95	  0.0
+
+
+
+trulyOffFaultMFD_TVZ (TriLinearCharOffFaultTargetMFD)
+     Name: offFaultMFD
+   Points: 40
+     Info: (rate(M>=5)=0.43288067; totMoRate=2.76422622484116128E17)
+
+Data[x,y]:
+5.05	  0.104659356
+5.15	  0.07939224
+5.25	  0.060225174
+5.35	  0.045685466
+5.45	  0.03465597
+5.55	  0.026289243
+5.65	  0.019942429
+5.75	  0.0151278805
+5.85	  0.01147567
+5.95	  0.008705187
+6.05	  0.006603559
+6.15	  0.0050093117
+6.25	  0.0037999516
+6.35	  0.0028825582
+6.45	  0.002186644
+6.55	  0.001658739
+6.65	  0.0012582822
+6.75	  9.545047E-4
+6.85	  7.2596E-4
+6.95	  5.2463345E-4
+7.05	  3.7667426E-4
+7.15	  2.6832815E-4
+7.25	  1.8932032E-4
+7.35	  1.3198656E-4
+7.45	  9.061919E-5
+7.55	  6.0975326E-5
+7.65	  0.0
+7.75	  0.0
+7.85	  0.0
+7.95	  0.0
+8.05	  0.0
+8.15	  0.0
+8.25	  0.0
+8.35	  0.0
+8.45	  0.0
+8.55	  0.0
+8.65	  0.0
+8.75	  0.0
+8.85	  0.0
+8.95	  0.0
+
+
+
+totalSubSeismoOnFaultMFD_TVZ (SummedMagFreqDist)
+     Name: Summed Dist
+   Points: 40
+     Info: Sum of these Incremental Mag-Freq Dists
+
+Data[x,y]:
+5.05	  0.06631298
+5.15	  0.05030354
+5.25	  0.03815914
+5.35	  0.028946666
+5.45	  0.021958292
+5.55	  0.016657067
+5.65	  0.012635678
+5.75	  0.009585142
+5.85	  0.0072710738
+5.95	  0.0055156737
+6.05	  0.0041840663
+6.15	  0.0031416733
+6.25	  0.002174256
+6.35	  0.0016322609
+6.45	  0.0011495498
+6.55	  6.896732E-4
+6.65	  4.718895E-4
+6.75	  2.39559E-4
+6.85	  3.532042E-5
+6.95	  2.5994717E-5
+7.05	  1.6943593E-5
+7.15	  0.0
+7.25	  0.0
+7.35	  0.0
+7.45	  0.0
+7.55	  0.0
+7.65	  0.0
+7.75	  0.0
+7.85	  0.0
+7.95	  0.0
+8.05	  0.0
+8.15	  0.0
+8.25	  0.0
+8.35	  0.0
+8.45	  0.0
+8.55	  0.0
+8.65	  0.0
+8.75	  0.0
+8.85	  0.0
+8.95	  0.0
+
+
+
+targetOnFaultSupraSeisMFD_TVZ (SummedMagFreqDist)
+     Name: Incremental Mag Freq Dist
+   Points: 40
+     Info: null
+
+Data[x,y]:
+5.05	  1.0E-20
+5.15	  1.0E-20
+5.25	  1.0E-20
+5.35	  1.0E-20
+5.45	  1.0E-20
+5.55	  1.0E-20
+5.65	  1.0E-20
+5.75	  1.0E-20
+5.85	  1.0E-20
+5.95	  1.0E-20
+6.05	  0.0
+6.15	  0.0
+6.25	  1.6631336E-4
+6.35	  1.4324249E-4
+6.45	  1.9730719E-4
+6.55	  3.3202238E-4
+6.65	  3.0314585E-4
+6.75	  3.4836543E-4
+6.85	  4.0877174E-4
+6.95	  3.3694718E-4
+7.05	  2.7967687E-4
+7.15	  2.4241814E-4
+7.25	  1.9812037E-4
+7.35	  1.6191725E-4
+7.45	  1.3232965E-4
+7.55	  1.0814866E-4
+7.65	  1.0E-20
+7.75	  1.0E-20
+7.85	  1.0E-20
+7.95	  1.0E-20
+8.05	  1.0E-20
+8.15	  1.0E-20
+8.25	  1.0E-20
+8.35	  1.0E-20
+8.45	  1.0E-20
+8.55	  1.0E-20
+8.65	  1.0E-20
+8.75	  1.0E-20
+8.85	  1.0E-20
+8.95	  1.0E-20
+
+
+
+faultSectionData.size() 2532
+fractionSeisOnFault 0.6877248166406176
+totalTargetGR_SansTVZ after setAllButTotMoRate
+     Name: Gutenberg Richter Dist
+   Points: 40
+     Info: minMag=5.05; maxMag=8.95; numMag=40; bValue=0.9; magLower=5.05; magUpper=8.95; totMoRate=5.19953E19; totCumRate=3.9
+
+Data[x,y]:
+5.05	  0.7301444
+5.15	  0.5934836
+5.25	  0.4824016
+5.35	  0.39211076
+5.45	  0.3187196
+5.55	  0.259065
+5.65	  0.21057594
+5.75	  0.17116255
+5.85	  0.13912615
+5.95	  0.11308598
+6.05	  0.091919735
+6.15	  0.07471517
+6.25	  0.060730767
+6.35	  0.049363818
+6.45	  0.04012442
+6.55	  0.03261435
+6.65	  0.02650994
+6.75	  0.021548089
+6.85	  0.017514944
+6.95	  0.014236681
+7.05	  0.011572009
+7.15	  0.009406081
+7.25	  0.00764555
+7.35	  0.0062145367
+7.45	  0.005051365
+7.55	  0.0041059037
+7.65	  0.0033374038
+7.75	  0.0027127436
+7.85	  0.0022050007
+7.95	  0.001792292
+8.05	  0.0014568296
+8.15	  0.0011841556
+8.25	  9.6251775E-4
+8.35	  7.823638E-4
+8.45	  6.359292E-4
+8.55	  5.1690266E-4
+8.65	  4.2015425E-4
+8.75	  3.4151418E-4
+8.85	  2.7759315E-4
+8.95	  2.2563619E-4
+
+
+
+trulyOffFaultMFD_SansTVZ (TriLinearCharOffFaultTargetMFD)
+     Name: offFaultMFD
+   Points: 40
+     Info: (rate(M>=5)=1.2235384; totMoRate=2.6038521252552586E18)
+
+Data[x,y]:
+5.05	  0.23028603
+5.15	  0.18718351
+5.25	  0.15214847
+5.35	  0.12367092
+5.45	  0.1005235
+5.55	  0.081708565
+5.65	  0.06641522
+5.75	  0.053984314
+5.85	  0.043880098
+5.95	  0.035667084
+6.05	  0.028991293
+6.15	  0.02356501
+6.25	  0.019154359
+6.35	  0.015569246
+6.45	  0.0126551585
+6.55	  0.010286499
+6.65	  0.00836118
+6.75	  0.0067962226
+6.85	  0.005524177
+6.95	  0.0046415804
+7.05	  0.0035121124
+7.15	  0.0026357588
+7.25	  0.0019584703
+7.35	  0.0014373823
+7.45	  0.0010385495
+7.55	  7.351335E-4
+7.65	  5.0595263E-4
+7.75	  3.343211E-4
+7.85	  2.071229E-4
+7.95	  1.1407199E-4
+8.05	  4.7122714E-5
+8.15	  0.0
+8.25	  0.0
+8.35	  0.0
+8.45	  0.0
+8.55	  0.0
+8.65	  0.0
+8.75	  0.0
+8.85	  0.0
+8.95	  0.0
+
+
+
+totalSubSeismoOnFaultMFD_SansTVZ (SummedMagFreqDist)
+     Name: Summed Dist
+   Points: 40
+     Info: Sum of these Incremental Mag-Freq Dists
+
+Data[x,y]:
+5.05	  0.5118909
+5.15	  0.4160805
+5.25	  0.33820292
+5.35	  0.27490166
+5.45	  0.22344847
+5.55	  0.18162572
+5.65	  0.14763093
+5.75	  0.11999893
+5.85	  0.09753879
+5.95	  0.07928251
+6.05	  0.06444324
+6.15	  0.052381434
+6.25	  0.042577226
+6.35	  0.03460807
+6.45	  0.028130496
+6.55	  0.022865325
+6.65	  0.018585633
+6.75	  0.01510697
+6.85	  0.005532244
+6.95	  0.0028398181
+7.05	  0.0015695889
+7.15	  0.0010710984
+7.25	  7.23532E-4
+7.35	  5.065058E-4
+7.45	  3.007925E-4
+7.55	  1.8606773E-4
+7.65	  9.740498E-5
+7.75	  0.0
+7.85	  0.0
+7.95	  0.0
+8.05	  0.0
+8.15	  0.0
+8.25	  0.0
+8.35	  0.0
+8.45	  0.0
+8.55	  0.0
+8.65	  0.0
+8.75	  0.0
+8.85	  0.0
+8.95	  0.0
+
+
+
+targetOnFaultSupraSeisMFD_SansTVZ (SummedMagFreqDist)
+     Name: Incremental Mag Freq Dist
+   Points: 40
+     Info: null
+
+Data[x,y]:
+5.05	  1.0E-20
+5.15	  1.0E-20
+5.25	  1.0E-20
+5.35	  1.0E-20
+5.45	  1.0E-20
+5.55	  1.0E-20
+5.65	  1.0E-20
+5.75	  1.0E-20
+5.85	  1.0E-20
+5.95	  1.0E-20
+6.05	  1.0E-20
+6.15	  1.0E-20
+6.25	  1.0E-20
+6.35	  1.0E-20
+6.45	  1.0E-20
+6.55	  1.0E-20
+6.65	  1.0E-20
+6.75	  1.0E-20
+6.85	  0.0064585228
+6.95	  0.006755282
+7.05	  0.0064903074
+7.15	  0.005699225
+7.25	  0.004963548
+7.35	  0.0042706486
+7.45	  0.0037120231
+7.55	  0.0031847025
+7.65	  0.0027340462
+7.75	  0.0023784225
+7.85	  0.0019978778
+7.95	  0.00167822
+8.05	  0.0014097069
+8.15	  0.0011841556
+8.25	  9.6251775E-4
+8.35	  7.823638E-4
+8.45	  6.359292E-4
+8.55	  5.1690266E-4
+8.65	  4.2015425E-4
+8.75	  3.4151418E-4
+8.85	  2.7759315E-4
+8.95	  2.2563619E-4
+
+
+
+tvz pdf fraction: 1.0000000000000002
+sans tvz pdf fraction: 0.9999999999999971
+combined: 1.9999999999999973
+trulyOffFaultMFD.all
+     Name: trulyOffFaultMFD.all
+   Points: 40
+     Info: null
+
+Data[x,y]:
+5.05	  0.33494538
+5.15	  0.26657575
+5.25	  0.21237364
+5.35	  0.16935639
+5.45	  0.13517947
+5.55	  0.10799781
+5.65	  0.086357646
+5.75	  0.0691122
+5.85	  0.05535577
+5.95	  0.04437227
+6.05	  0.035594855
+6.15	  0.02857432
+6.25	  0.02295431
+6.35	  0.018451804
+6.45	  0.014841802
+6.55	  0.011945238
+6.65	  0.009619462
+6.75	  0.0077507272
+6.85	  0.006250137
+6.95	  0.005166214
+7.05	  0.0038887865
+7.15	  0.0029040868
+7.25	  0.0021477907
+7.35	  0.0015693689
+7.45	  0.0011291687
+7.55	  7.961088E-4
+7.65	  5.0595263E-4
+7.75	  3.343211E-4
+7.85	  2.071229E-4
+7.95	  1.1407199E-4
+8.05	  4.7122714E-5
+8.15	  0.0
+8.25	  0.0
+8.35	  0.0
+8.45	  0.0
+8.55	  0.0
+8.65	  0.0
+8.75	  0.0
+8.85	  0.0
+8.95	  0.0
+
+
+
+totalTargetGR.all
+     Name: totalTargetGR.all
+   Points: 40
+     Info: minMag=5.05; maxMag=8.95; numMag=40; bValue=0.0; magLower=5.05; magUpper=0.0; totMoRate=5.249645E19; totCumRate=4.6
+
+Data[x,y]:
+5.05	  0.8992684
+5.15	  0.7217773
+5.25	  0.5797223
+5.35	  0.46593606
+5.45	  0.3747218
+5.55	  0.30154702
+5.65	  0.24280186
+5.75	  0.1956084
+5.85	  0.15767023
+5.95	  0.1271531
+6.05	  0.10259073
+6.15	  0.08280995
+6.25	  0.066871285
+6.35	  0.05402188
+6.45	  0.04365792
+6.55	  0.035294786
+6.65	  0.028543258
+6.75	  0.023090517
+6.85	  0.018684996
+6.95	  0.015124257
+7.05	  0.012245303
+7.15	  0.009916828
+7.25	  0.008032991
+7.35	  0.0065084402
+7.45	  0.005274314
+7.55	  0.0042750277
+7.65	  0.0033374038
+7.75	  0.0027127436
+7.85	  0.0022050007
+7.95	  0.001792292
+8.05	  0.0014568296
+8.15	  0.0011841556
+8.25	  9.6251775E-4
+8.35	  7.823638E-4
+8.45	  6.359292E-4
+8.55	  5.1690266E-4
+8.65	  4.2015425E-4
+8.75	  3.4151418E-4
+8.85	  2.7759315E-4
+8.95	  2.2563619E-4
+
+
+
+totalSubSeismoOnFaultMFD.all
+     Name: totalSubSeismoOnFaultMFD.all
+   Points: 40
+     Info: Sum of these Incremental Mag-Freq Dists
+
+Data[x,y]:
+5.05	  0.57820386
+5.15	  0.46638405
+5.25	  0.3763621
+5.35	  0.30384833
+5.45	  0.24540676
+5.55	  0.1982828
+5.65	  0.16026661
+5.75	  0.12958407
+5.85	  0.104809865
+5.95	  0.08479818
+6.05	  0.068627305
+6.15	  0.055523105
+6.25	  0.044751484
+6.35	  0.03624033
+6.45	  0.029280044
+6.55	  0.023554998
+6.65	  0.019057523
+6.75	  0.015346529
+6.85	  0.0055675646
+6.95	  0.0028658127
+7.05	  0.0015865325
+7.15	  0.0010710984
+7.25	  7.23532E-4
+7.35	  5.065058E-4
+7.45	  3.007925E-4
+7.55	  1.8606773E-4
+7.65	  9.740498E-5
+7.75	  0.0
+7.85	  0.0
+7.95	  0.0
+8.05	  0.0
+8.15	  0.0
+8.25	  0.0
+8.35	  0.0
+8.45	  0.0
+8.55	  0.0
+8.65	  0.0
+8.75	  0.0
+8.85	  0.0
+8.95	  0.0
+
+
+
+Rupture Set:	Removing available module with type 'org.opensha.sha.earthquake.faultSysSolution.modules.InversionTargetMFDs' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.InversionTargetMFDs'
+Rupture Set:	Removing available module with type 'scratch.UCERF3.inversion.U3InversionTargetMFDs' as it is assignable from 'org.opensha.sha.earthquake.faultSysSolution.modules.InversionTargetMFDs'
+Rupture Set:	Mapped module type 'nz.cri.gns.NZSHM22.opensha.inversion.NZSHM22_CrustalInversionTargetMFDs' to: NZSHM22 Crustal Inversion Target MFDs
+Rupture Set:	Mapped module type 'scratch.UCERF3.inversion.U3InversionTargetMFDs' to: NZSHM22 Crustal Inversion Target MFDs
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.InversionTargetMFDs' to: NZSHM22 Crustal Inversion Target MFDs
+Alpine George to Jacksons - Hokuri Creek sections -> Alpine: George to Jacksons, Subsection 4, 0.16550441952475453
+Akatore - Big Creek trench -> Akatore, Subsection 1, 0.19536514870090177
+Alpine George to Jacksons - Lake Ellery cores -> Alpine: George to Jacksons, Subsection 10, 3.2017509747711386
+Alpine George to Jacksons - John O'Groats Wetland -> Alpine: George to Jacksons, Subsection 3, 0.060620302352234846
+Alpine Jacksons to Kaniere - Lake Paringa cores -> Alpine: Jacksons to Kaniere, Subsection 5, 4.374200704791737
+Alpine Jacksons to Kaniere - Lake Mapourika cores -> Alpine: Jacksons to Kaniere, Subsection 13, 5.249529245679511
+Alpine Jacksons to Kaniere - Staples 2 trench -> Alpine: Jacksons to Kaniere, Subsection 20, 0.15466806180468307
+Alpine Jacksons to Kaniere - Staples 3 trench -> Alpine: Jacksons to Kaniere, Subsection 20, 0.18418585609582835
+Alpine Jacksons to Kaniere - Haast South trench -> Alpine: Jacksons to Kaniere, Subsection 2, 0.03162510662694654
+Alpine Kaniere to Springs Junction - Lake Kaniere cores -> Alpine: Kaniere to Springs Junction, Subsection 9, 0.0022731563093730846
+Alpine Kaniere to Springs Junction - Lake Brunner cores -> Alpine: Kaniere to Springs Junction, Subsection 6, 0.0016815515752315277
+Alpine Springs Junction to Tophouse - Maruia Trench-1 -> Alpine: Springs Junction to Tophouse, Subsection 0, 0.048526018480891074
+Alpine Springs Junction to Tophouse - Maruia Trench-2 -> Alpine: Springs Junction to Tophouse, Subsection 0, 0.05575635482655457
+Awatere Northeast 1 - Upcot 1 trench -> Awatere: Northeast 1, Subsection 2, 0.22470802973262233
+Clarence Northeast - Ravine Stream exposure -> Clarence: Northeast, Subsection 3, 0.010135785489882894
+Cloudy 2 - Cloudy seismic lines -> Cloudy 2, Subsection 0, 0.0033057216008771603
+Dunstan - T04/2 -> Dunstan, Subsection 2, 0.41351702759746495
+Te Ikaarongamai - Pakarae River mouth -> Te Ikaarongamai, Subsection 2, 4.323906636937485E-4
+Gable End North - Puatai Beach trench -> Gable End North, Subsection 2, 9.165968640383069E-4
+Hohonu South - Lower Mikonui River exposure -> Hohonu South, Subsection 7, 0.2533937458989641
+Inglewood - Egmont Road trenches -> Inglewood, Subsection 1, 0.20874800463495105
+Inglewood - Everett Park trench -> Inglewood, Subsection 0, 0.3796281538911876
+Kaiapo - Te Mihi outcrop -> Kaiapo, Subsection 2, 0.34285355391250016
+Kaiapo - Lilburn trench fault zone A -> Kaiapo, Subsection 2, 0.21576045116131998
+Kekerengu 1 - Kekerengu Trench 1 -> Kekerengu 1, Subsection 0, 0.0064175938766717275
+Kina - Kina Fault trench -> Kina, Subsection 0, 0.105963360905193
+Lachlan 3 - Table Cape trenches -> Lachlan 3, Subsection 4, 3.6697731241284326
+Maleme - Huffadine trench -> Maleme, Subsection 0, 0.4897754728758476
+Mohaka South - McCool 1 Trench -> Mohaka: South, Subsection 8, 0.05650176883116384
+Mokonui Southwest - Viewfield Trench -> Mokonui Southwest, Subsection 2, 0.05422241182882912
+Oaonui - Oaonui coastal cliff exposure -> Oaonui, Subsection 0, 0.32989602587471417
+Ohariu - Taupo Swamp -> Ohariu, Subsection 3, 0.0014503928334007822
+Ohariu - MacKays Crossing Trench -> Ohariu, Subsection 1, 0.005915531923953239
+Pihama - Pihama coastal cliff exposure -> Pihama, Subsection 2, 0.3168186627486369
+Porters Pass - Porters Pass Trench 1 -> Porters Pass, Subsection 1, 0.5523584611548177
+Poutu - Poutu transect 6- fault 6d -> Poutu, Subsection 2, 0.5743368080454732
+Ruahine North - Davis Trenches -> Ruahine: North, Subsection 2, 0.03857117397688378
+Titri Central - Clarendon T16/03 trench -> Titri Central, Subsection 1, 0.11634798759940188
+Waihi South - Waihi transect 12- fault 5a -> Waihi South, Subsection 0, 0.167748603996328
+Waihi South - Waihi transect 14- fault 6b -> Waihi South, Subsection 0, 0.08845914849978988
+Waimana North - Moana trench -> Waimana: North, Subsection 3, 0.14340010962989486
+Waimana North - Te Hoe / Hautapu Trench -> Waimana: South, Subsection 0, 0.2215942811862037
+Waimana North - Ahirau 1 trench -> Waimana: North, Subsection 5, 0.20852592908445872
+Waipukaka - Hendricksen Trench 1 -> Waipukaka, Subsection 1, 0.0444789003308656
+Wairarapa - Turakirae Head -> Wairarapa: 1, Subsection 2, 0.4630795316617653
+Wairarapa - Lake Kohangapiripiri KP99-1&2 -> Wairarapa: 1, Subsection 2, 3.839717812990487E-4
+Wairarapa 3 - Tea Creek Road -> Wairarapa: 3, Subsection 1, 0.07052687357527875
+Wairau - Wadsworth Trench -> Wairau, Subsection 6, 0.03260043780850129
+Wairau - Dillon Trench -> Wairau, Subsection 5, 0.18051078174659968
+Wairau 2 - Wairau seismic lines -> Wairau 2, Subsection 1, 0.7703722563071919
+Wellington Hutt Valley 3 - Te Kopahou-1 Trenches -> Wellington Hutt Valley: 3, Subsection 1, 0.05381930764949922
+Wellington Hutt Valley 5 - KAF-1 -> Wellington Hutt Valley: 5, Subsection 0, 0.15294479350489504
+Wellington Hutt Valley 5 - KAF-3 -> Wellington Hutt Valley: 5, Subsection 0, 0.1898072210444192
+Wellington Pahiatua - Dougan-1 -> Wellington: Pahiatua, Subsection 3, 0.17362661881281435
+Wellington Pahiatua - Hughes-1 Trench -> Wellington: Pahiatua, Subsection 1, 0.1317090140287818
+Wellington Pahiatua - Dougan-2 -> Wellington: Pahiatua, Subsection 3, 0.16711153241100152
+Whakatane North - Te Whetu trench -> Whakatane: North, Subsection 2, 0.13667150065177266
+Whakatane South - Thalassa trench -> Whakatane: South, Subsection 3, 0.03720023589202575
+Awatere Northeast 1 - Combined Taylors Pass Road trenches and Lake Jasper cores -> Awatere: Northeast 1, Subsection 7, 0.005082104872727866
+Hope Conway - Combined Greenburn East and West trenches -> Hope: Conway, Subsection 3, 0.002873927155333092
+Hope Hope River - Hope Shelter trenches combined -> Hope: Hope River, Subsection 2, 0.40625139194454785
+Paeroa - Combined Paeroa trenches -> Paeroa, Subsection 1, 4.6845318290547546E-4
+Poukawa - Combined Poukawa trenches -> Waipukurau - Poukawa, Subsection 2, 0.002385220405631376
+Wairarapa 2 - Cross Creek South combined (1- 4) -> Wairarapa: 2, Subsection 1, 0.038256169386727226
+Wairarapa 2 - Cross Creek North combined (2- 3) -> Wairarapa: 2, Subsection 1, 0.01958733079217404
+Edgecumbe 1987_5294-5308_Combined -> Edgecumbe 1987, Subsection 1, 7.869582213367654E-4
+Flaxmore - Waimea - Tahunanui_5507_Wairoa-2 trench -> Flaxmore - Waimea - Tahunanui, Subsection 6, 1.1605829251162687
+Fox Peak_4035_Trench 4 -> Fox Peak, Subsection 1, 0.09574417198053711
+Hope Conway_666-675_Combined -> Hope: Conway, Subsection 4, 0.003117483862236354
+Hope Hope River_648_Matagouri Flat -> Hope: Hope River, Subsection 4, 0.5726223352906897
+The Humps_5565-5696_Combined -> The Humps, Subsection 1, 0.003470253069374892
+Wairau_5519-5522_Combined Zinke -> Wairau, Subsection 6, 0.005217626965466522
+Waitawhiti_5369-5379_Combined -> Waitawhiti, Subsection 1, 1.6641071293593249E-4
+Whitemans Valley_1023_Whitemans Valley trench -> Whitemans Valley, Subsection 2, 0.018161793831887995
+buildConstraints
+================
+config.getSlipRateWeightingType(): BOTH
+config.getSlipRateConstraintWt_normalized(): 1000.0
+config.getSlipRateConstraintWt_unnormalized(): 100000.0
+config.getMinimizationConstraintWt(): 10000.0
+config.getMagnitudeEqualityConstraintWt(): 20000.0
+config.getMagnitudeInequalityConstraintWt(): 20000.0
+config.getNucleationMFDConstraintWt():0.0
+Rupture Set:	Lazily loading available module...
+Rupture Set:	Took 0 s to load Modified Section Minimum Magnitudes
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ModSectMinMags$Precomputed' to: Modified Section Minimum Magnitudes
+Rupture Set:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.ModSectMinMags' to: Modified Section Minimum Magnitudes
+Generating inversion inputs with 507755 ruptures and 7 constraints
+Calculating constraint row counts
+	NormSlipRate: [0..2709), 2709 rows (took 0 ms)
+	UnnormSlipRate: [2709..5418), 2709 rows (took 0 ms)
+	PaleoRate: [5418..5492), 74 rows (took 0 ms)
+	LaplaceSmooth: [5492..5665), 173 rows (took 13 ms)
+	RateMinimize: [5665..6820), 1155 rows (took 0 ms)
+	NormMFDEquality: [6820..6860), 40 rows (took 22 ms)
+	NormMFDInequality: [0..18), 18 rows (took 17 ms)
+Took 64 ms to get row counts
+Building A matrix with 6860 rows and 507755 columns
+Building A inequality matrix with 18 rows and 507755 columns
+Encoding matrices
+	Encoding Normalized Slip Rate, ineq=false
+		DONE, took 8.2 s to encode 16579729 values (density: 1.2 %)
+	Encoding Unnormlized Slip Rate, ineq=false
+		DONE, took 3.0 s to encode 16579729 values (density: 1.2 %)
+	Encoding Paleoseismic Event Rate, ineq=false
+		DONE, took 4.5 s to encode 1485897 values (density: 4.0 %)
+	Encoding Laplacian Smoothing (51 parents), ineq=false
+		DONE, took 712 ms to encode 596584 values (density: 0.7 %)
+	Encoding Rupture Rate Minimization, ineq=false
+		DONE, took 1 ms to encode 1155 values (density: 0.0 %)
+	Encoding Normalized MFD Equality, ineq=false
+		DONE, took 1.1 s to encode 149319 values (density: 0.7 %)
+	Encoding Normalized MFD Inequality, ineq=true
+		DONE, took 95 ms to encode 429422 values (density: 4.7 %)
+DONE encoding, took 17.6 s to encode 35821835 values (density: 1.0 %)
+Took 17.7 s to generate inputs
+Threaded Simulated Annealing starting with 4 threads, org.opensha.sha.earthquake.faultSysSolution.inversion.sa.completion.CompoundCompletionCriteria@21740e85, SUB: TimeCompletionCriteria(milis: 30000 = 30.0 seconds)
+Threaded total round 1 DONE after 31 secs, 7,790,467 total iterations (251,168 /sec).
+26,338/507,755 = 5.19% non-zero rates.	Best energy after 226,808 total perturbations:
+	Total:	5.8620232E9	Equality:	5.851646E9	Inequality:	1.037737E7	NormSlipRate:	3.895136E8
+	UnnormSlipRate:	8.5614856E7	PaleoRate:	1.37202784E8	LaplaceSmooth:	10.495056	RateMinimize:	0.0047653513
+	NormMFDEquality:	5.2393149E9	NormMFDInequality:	1.037737E7
+Threaded total round 2 DONE after 1 min 2.1 secs, 16,684,968 total iterations (268,657 /sec).
+33,218/507,755 = 6.54% non-zero rates.	Best energy after 762,147 total perturbations:
+	Total:	5.5923732E9 (-4.60%)	Equality:	5.5884498E9 (-4.50%)	Inequality:	3923370.0 (-62.19%)	NormSlipRate:	2.39536288E8 (-38.50%)
+	UnnormSlipRate:	4.6434024E7 (-45.76%)	PaleoRate:	9.8270208E7 (-28.38%)	LaplaceSmooth:	7.189913 (-31.49%)	RateMinimize:	4.2939873E-4 (-90.99%)
+	NormMFDEquality:	5.2042092E9 (-0.67%)	NormMFDInequality:	3923370.0 (-62.19%)
+Threaded total round 3 DONE after 1 min 33.2 secs, 24,881,858 total iterations (267,107 /sec).
+28,170/507,755 = 5.55% non-zero rates.	Best energy after 1,295,851 total perturbations:
+	Total:	5.53043E9 (-1.11%)	Equality:	5.527703E9 (-1.09%)	Inequality:	2726631.0 (-30.50%)	NormSlipRate:	2.06446128E8 (-13.81%)
+	UnnormSlipRate:	3.48042E7 (-25.05%)	PaleoRate:	8.4170896E7 (-14.35%)	LaplaceSmooth:	19.234451 (+167.52%)	RateMinimize:	3.117039E-4 (-27.41%)
+	NormMFDEquality:	5.202282E9 (-0.04%)	NormMFDInequality:	2726631.0 (-30.50%)
+Threaded total round 4 DONE after 2 mins 4.2 secs, 33,608,001 total iterations (270,611 /sec).
+23,370/507,755 = 4.60% non-zero rates.	Best energy after 1,715,105 total perturbations:
+	Total:	5.502186E9 (-0.51%)	Equality:	5.4998692E9 (-0.50%)	Inequality:	2316805.8 (-15.03%)	NormSlipRate:	1.92743616E8 (-6.64%)
+	UnnormSlipRate:	3.0139226E7 (-13.40%)	PaleoRate:	7.5049728E7 (-10.84%)	LaplaceSmooth:	24.978357 (+29.86%)	RateMinimize:	7.3373405E-5 (-76.46%)
+	NormMFDEquality:	5.2019369E9 (-0.01%)	NormMFDInequality:	2316805.8 (-15.03%)
+Threaded total round 5 DONE after 2 mins 35.2 secs, 41,630,540 total iterations (268,292 /sec).
+20,302/507,755 = 4.00% non-zero rates.	Best energy after 2,054,876 total perturbations:
+	Total:	5.4874885E9 (-0.27%)	Equality:	5.4853888E9 (-0.26%)	Inequality:	2099540.8 (-9.38%)	NormSlipRate:	1.84429744E8 (-4.31%)
+	UnnormSlipRate:	2.759274E7 (-8.45%)	PaleoRate:	7.1657384E7 (-4.52%)	LaplaceSmooth:	19.880503 (-20.41%)	RateMinimize:	5.0543415E-5 (-31.11%)
+	NormMFDEquality:	5.2017091E9 (-0.00%)	NormMFDInequality:	2099540.8 (-9.38%)
+Threaded total round 6 DONE after 3 mins 6.2 secs, 50,873,896 total iterations (273,282 /sec).
+17,728/507,755 = 3.49% non-zero rates.	Best energy after 2,356,823 total perturbations:
+	Total:	5.4774968E9 (-0.18%)	Equality:	5.4755994E9 (-0.18%)	Inequality:	1897646.0 (-9.62%)	NormSlipRate:	1.79229904E8 (-2.82%)
+	UnnormSlipRate:	2.6207384E7 (-5.02%)	PaleoRate:	6.8623408E7 (-4.23%)	LaplaceSmooth:	20.722975 (+4.24%)	RateMinimize:	3.0866934E-6 (-93.89%)
+	NormMFDEquality:	5.2015386E9 (-0.00%)	NormMFDInequality:	1897646.0 (-9.62%)
+Threaded total round 7 DONE after 3 mins 37.2 secs, 59,978,862 total iterations (276,157 /sec).
+16,293/507,755 = 3.21% non-zero rates.	Best energy after 2,624,415 total perturbations:
+	Total:	5.469911E9 (-0.14%)	Equality:	5.4680607E9 (-0.14%)	Inequality:	1849918.6 (-2.52%)	NormSlipRate:	1.75077408E8 (-2.32%)
+	UnnormSlipRate:	2.5076996E7 (-4.31%)	PaleoRate:	6.6404732E7 (-3.23%)	LaplaceSmooth:	16.604694 (-19.87%)	RateMinimize:	4.7898226E-31 (-100.00%)
+	NormMFDEquality:	5.2015017E9 (-0.00%)	NormMFDInequality:	1849918.6 (-2.52%)
+Threaded total round 8 DONE after 4 mins 8.2 secs, 68,216,637 total iterations (274,885 /sec).
+15,420/507,755 = 3.04% non-zero rates.	Best energy after 2,872,257 total perturbations:
+	Total:	5.4639237E9 (-0.11%)	Equality:	5.4622172E9 (-0.11%)	Inequality:	1706421.8 (-7.76%)	NormSlipRate:	1.71888656E8 (-1.82%)
+	UnnormSlipRate:	2.4161248E7 (-3.65%)	PaleoRate:	6.47829E7 (-2.44%)	LaplaceSmooth:	17.40225 (+4.80%)	RateMinimize:	1.3050498E-6 (+272463059937704900000000000.00%)
+	NormMFDEquality:	5.2013844E9 (-0.00%)	NormMFDInequality:	1706421.8 (-7.76%)
+Threaded total round 9 DONE after 4 mins 39.1 secs, 76,548,182 total iterations (274,241 /sec).
+14,788/507,755 = 2.91% non-zero rates.	Best energy after 3,084,482 total perturbations:
+	Total:	5.459436E9 (-0.08%)	Equality:	5.4578294E9 (-0.08%)	Inequality:	1606767.9 (-5.84%)	NormSlipRate:	1.69400432E8 (-1.45%)
+	UnnormSlipRate:	2.3533824E7 (-2.60%)	PaleoRate:	6.3554032E7 (-1.90%)	LaplaceSmooth:	17.56513 (+0.94%)	RateMinimize:	6.161789E-14 (-100.00%)
+	NormMFDEquality:	5.2013409E9 (-0.00%)	NormMFDInequality:	1606767.9 (-5.84%)
+Threaded total round 10 DONE after 5 mins 10.2 secs, 85,080,438 total iterations (274,297 /sec).
+13,355/507,755 = 2.63% non-zero rates.	Best energy after 3,307,470 total perturbations:
+	Total:	5.4555597E9 (-0.07%)	Equality:	5.4539914E9 (-0.07%)	Inequality:	1568373.0 (-2.39%)	NormSlipRate:	1.6740304E8 (-1.18%)
+	UnnormSlipRate:	2.2963604E7 (-2.42%)	PaleoRate:	6.2377256E7 (-1.85%)	LaplaceSmooth:	17.594246 (+0.17%)	RateMinimize:	2.8625672E-7 (+464567440.31%)
+	NormMFDEquality:	5.2012472E9 (-0.00%)	NormMFDInequality:	1568373.0 (-2.39%)
+Threaded total round 11 DONE after 5 mins 41.2 secs, 94,006,761 total iterations (275,557 /sec).
+12,333/507,755 = 2.43% non-zero rates.	Best energy after 3,519,920 total perturbations:
+	Total:	5.4522737E9 (-0.06%)	Equality:	5.4508042E9 (-0.06%)	Inequality:	1469379.1 (-6.31%)	NormSlipRate:	1.65410544E8 (-1.19%)
+	UnnormSlipRate:	2.2410006E7 (-2.41%)	PaleoRate:	6.1746984E7 (-1.01%)	LaplaceSmooth:	17.789219 (+1.11%)	RateMinimize:	1.1823571E-6 (+313.04%)
+	NormMFDEquality:	5.201237E9 (-0.00%)	NormMFDInequality:	1469379.1 (-6.31%)
+Threaded total round 12 DONE after 6 mins 12.1 secs, 102,315,695 total iterations (274,958 /sec).
+11,993/507,755 = 2.36% non-zero rates.	Best energy after 3,691,213 total perturbations:
+	Total:	5.4497413E9 (-0.05%)	Equality:	5.4482918E9 (-0.05%)	Inequality:	1449584.9 (-1.35%)	NormSlipRate:	1.64077248E8 (-0.81%)
+	UnnormSlipRate:	2.1955766E7 (-2.03%)	PaleoRate:	6.1064368E7 (-1.11%)	LaplaceSmooth:	17.566992 (-1.25%)	RateMinimize:	1.1236086E-6 (-4.97%)
+	NormMFDEquality:	5.2011945E9 (-0.00%)	NormMFDInequality:	1449584.9 (-1.35%)
+Threaded total round 13 DONE after 6 mins 43.1 secs, 112,033,836 total iterations (277,936 /sec).
+11,287/507,755 = 2.22% non-zero rates.	Best energy after 3,861,447 total perturbations:
+	Total:	5.4474675E9 (-0.04%)	Equality:	5.446058E9 (-0.04%)	Inequality:	1409578.8 (-2.76%)	NormSlipRate:	1.62850208E8 (-0.75%)
+	UnnormSlipRate:	2.157501E7 (-1.73%)	PaleoRate:	6.044682E7 (-1.01%)	LaplaceSmooth:	17.046267 (-2.96%)	RateMinimize:	1.4735461E-9 (-99.87%)
+	NormMFDEquality:	5.2011858E9 (-0.00%)	NormMFDInequality:	1409578.8 (-2.76%)
+Threaded total round 14 DONE after 7 mins 14.1 secs, 120,578,724 total iterations (277,776 /sec).
+10,540/507,755 = 2.08% non-zero rates.	Best energy after 4,028,928 total perturbations:
+	Total:	5.4454364E9 (-0.04%)	Equality:	5.4440392E9 (-0.04%)	Inequality:	1397201.6 (-0.88%)	NormSlipRate:	1.61699728E8 (-0.71%)
+	UnnormSlipRate:	2.125529E7 (-1.48%)	PaleoRate:	5.99252E7 (-0.86%)	LaplaceSmooth:	17.063826 (+0.10%)	RateMinimize:	7.938882E-31 (-100.00%)
+	NormMFDEquality:	5.2011587E9 (-0.00%)	NormMFDInequality:	1397201.6 (-0.88%)
+Threaded total round 15 DONE after 7 mins 45.1 secs, 129,677,949 total iterations (278,829 /sec).
+10,486/507,755 = 2.07% non-zero rates.	Best energy after 4,192,346 total perturbations:
+	Total:	5.4435297E9 (-0.04%)	Equality:	5.4421868E9 (-0.03%)	Inequality:	1343079.1 (-3.87%)	NormSlipRate:	1.60553408E8 (-0.71%)
+	UnnormSlipRate:	2.0929336E7 (-1.53%)	PaleoRate:	5.9559888E7 (-0.61%)	LaplaceSmooth:	17.066998 (+0.02%)	RateMinimize:	7.938882E-31 (+0.00%)
+	NormMFDEquality:	5.2011443E9 (-0.00%)	NormMFDInequality:	1343079.1 (-3.87%)
+Threaded total round 16 DONE after 8 mins 16 secs, 139,499,572 total iterations (281,250 /sec).
+9,935/507,755 = 1.96% non-zero rates.	Best energy after 4,347,985 total perturbations:
+	Total:	5.4418468E9 (-0.03%)	Equality:	5.4405366E9 (-0.03%)	Inequality:	1310183.5 (-2.45%)	NormSlipRate:	1.59612672E8 (-0.59%)
+	UnnormSlipRate:	2.0688252E7 (-1.15%)	PaleoRate:	5.911448E7 (-0.75%)	LaplaceSmooth:	16.962828 (-0.61%)	RateMinimize:	9.404747E-8 (+11846438264267495000000000.00%)
+	NormMFDEquality:	5.2011213E9 (-0.00%)	NormMFDInequality:	1310183.5 (-2.45%)
+Threaded total round 17 DONE after 8 mins 47 secs, 148,686,069 total iterations (282,129 /sec).
+9,864/507,755 = 1.94% non-zero rates.	Best energy after 4,492,074 total perturbations:
+	Total:	5.4403855E9 (-0.03%)	Equality:	5.4391132E9 (-0.03%)	Inequality:	1271934.1 (-2.92%)	NormSlipRate:	1.58979968E8 (-0.40%)
+	UnnormSlipRate:	2.040711E7 (-1.36%)	PaleoRate:	5.8644076E7 (-0.80%)	LaplaceSmooth:	16.882954 (-0.47%)	RateMinimize:	7.938706E-31 (-100.00%)
+	NormMFDEquality:	5.2010824E9 (-0.00%)	NormMFDInequality:	1271934.1 (-2.92%)
+Threaded total round 18 DONE after 9 mins 18 secs, 157,699,072 total iterations (282,612 /sec).
+9,279/507,755 = 1.83% non-zero rates.	Best energy after 4,633,288 total perturbations:
+	Total:	5.4389934E9 (-0.03%)	Equality:	5.4377574E9 (-0.02%)	Inequality:	1235856.6 (-2.84%)	NormSlipRate:	1.58066048E8 (-0.57%)
+	UnnormSlipRate:	2.01707E7 (-1.16%)	PaleoRate:	5.8417136E7 (-0.39%)	LaplaceSmooth:	16.85525 (-0.16%)	RateMinimize:	7.938716E-31 (+0.00%)
+	NormMFDEquality:	5.2011039E9 (+0.00%)	NormMFDInequality:	1235856.6 (-2.84%)
+Threaded total round 19 DONE after 9 mins 49 secs, 166,421,114 total iterations (282,527 /sec).
+8,982/507,755 = 1.77% non-zero rates.	Best energy after 4,762,619 total perturbations:
+	Total:	5.4377201E9 (-0.02%)	Equality:	5.4364754E9 (-0.02%)	Inequality:	1244411.6 (+0.69%)	NormSlipRate:	1.57413872E8 (-0.41%)
+	UnnormSlipRate:	1.996871E7 (-1.00%)	PaleoRate:	5.8035816E7 (-0.65%)	LaplaceSmooth:	16.733011 (-0.73%)	RateMinimize:	7.938717E-31 (+0.00%)
+	NormMFDEquality:	5.2010568E9 (-0.00%)	NormMFDInequality:	1244411.6 (+0.69%)
+Threaded total round 20 DONE after 10 mins 20.1 secs, 174,572,148 total iterations (281,541 /sec).
+8,368/507,755 = 1.65% non-zero rates.	Best energy after 4,885,295 total perturbations:
+	Total:	5.4366679E9 (-0.02%)	Equality:	5.4354514E9 (-0.02%)	Inequality:	1216389.6 (-2.25%)	NormSlipRate:	1.5685E8 (-0.36%)
+	UnnormSlipRate:	1.9822786E7 (-0.73%)	PaleoRate:	5.7703144E7 (-0.57%)	LaplaceSmooth:	16.638395 (-0.57%)	RateMinimize:	7.938717E-31 (0.00%)
+	NormMFDEquality:	5.2010757E9 (+0.00%)	NormMFDInequality:	1216389.6 (-2.25%)
+Threaded total round 21 DONE after 10 mins 51.1 secs, 183,596,860 total iterations (281,996 /sec).
+8,328/507,755 = 1.64% non-zero rates.	Best energy after 5,005,275 total perturbations:
+	Total:	5.43567E9 (-0.02%)	Equality:	5.4344535E9 (-0.02%)	Inequality:	1216647.4 (+0.02%)	NormSlipRate:	1.56171472E8 (-0.43%)
+	UnnormSlipRate:	1.9661424E7 (-0.81%)	PaleoRate:	5.7548168E7 (-0.27%)	LaplaceSmooth:	16.181383 (-2.75%)	RateMinimize:	4.944938E-6 (+622888850689350800000000000.00%)
+	NormMFDEquality:	5.2010726E9 (-0.00%)	NormMFDInequality:	1216647.4 (+0.02%)
+Threaded total round 22 DONE after 11 mins 22.1 secs, 192,690,057 total iterations (282,487 /sec).
+8,115/507,755 = 1.60% non-zero rates.	Best energy after 5,124,893 total perturbations:
+	Total:	5.4347566E9 (-0.02%)	Equality:	5.4335672E9 (-0.02%)	Inequality:	1189126.1 (-2.26%)	NormSlipRate:	1.55629488E8 (-0.35%)
+	UnnormSlipRate:	1.9586414E7 (-0.38%)	PaleoRate:	5.7310744E7 (-0.41%)	LaplaceSmooth:	16.00175 (-1.11%)	RateMinimize:	9.750742E-31 (-100.00%)
+	NormMFDEquality:	5.2010409E9 (-0.00%)	NormMFDInequality:	1189126.1 (-2.26%)
+Threaded total round 23 DONE after 11 mins 53.2 secs, 200,904,096 total iterations (281,704 /sec).
+7,794/507,755 = 1.53% non-zero rates.	Best energy after 5,234,106 total perturbations:
+	Total:	5.4339963E9 (-0.01%)	Equality:	5.4328212E9 (-0.01%)	Inequality:	1174978.1 (-1.19%)	NormSlipRate:	1.55147696E8 (-0.31%)
+	UnnormSlipRate:	1.9455712E7 (-0.67%)	PaleoRate:	5.7170156E7 (-0.25%)	LaplaceSmooth:	15.927835 (-0.46%)	RateMinimize:	3.4813026E-9 (+357029533161962300000000.00%)
+	NormMFDEquality:	5.2010476E9 (+0.00%)	NormMFDInequality:	1174978.1 (-1.19%)
+Threaded total round 24 DONE after 12 mins 24.2 secs, 210,679,139 total iterations (283,106 /sec).
+7,483/507,755 = 1.47% non-zero rates.	Best energy after 5,341,252 total perturbations:
+	Total:	5.4332431E9 (-0.01%)	Equality:	5.4320814E9 (-0.01%)	Inequality:	1162041.2 (-1.10%)	NormSlipRate:	1.54738336E8 (-0.26%)
+	UnnormSlipRate:	1.9413196E7 (-0.22%)	PaleoRate:	5.6896284E7 (-0.48%)	LaplaceSmooth:	15.498464 (-2.70%)	RateMinimize:	9.7508E-31 (-100.00%)
+	NormMFDEquality:	5.2010337E9 (-0.00%)	NormMFDInequality:	1162041.2 (-1.10%)
+Threaded total round 25 DONE after 12 mins 55.2 secs, 218,917,620 total iterations (282,400 /sec).
+7,337/507,755 = 1.44% non-zero rates.	Best energy after 5,444,709 total perturbations:
+	Total:	5.4325407E9 (-0.01%)	Equality:	5.4313846E9 (-0.01%)	Inequality:	1156151.5 (-0.51%)	NormSlipRate:	1.54302368E8 (-0.28%)
+	UnnormSlipRate:	1.9304656E7 (-0.56%)	PaleoRate:	5.6692744E7 (-0.36%)	LaplaceSmooth:	15.637206 (+0.90%)	RateMinimize:	9.7508E-31 (0.00%)
+	NormMFDEquality:	5.2010849E9 (+0.00%)	NormMFDInequality:	1156151.5 (-0.51%)
+Threaded total round 26 DONE after 13 mins 26.2 secs, 227,201,728 total iterations (281,803 /sec).
+7,093/507,755 = 1.40% non-zero rates.	Best energy after 5,548,194 total perturbations:
+	Total:	5.4318853E9 (-0.01%)	Equality:	5.4307395E9 (-0.01%)	Inequality:	1146039.2 (-0.87%)	NormSlipRate:	1.53949792E8 (-0.23%)
+	UnnormSlipRate:	1.923227E7 (-0.37%)	PaleoRate:	5.6521136E7 (-0.30%)	LaplaceSmooth:	15.6837635 (+0.30%)	RateMinimize:	9.7508E-31 (0.00%)
+	NormMFDEquality:	5.2010363E9 (-0.00%)	NormMFDInequality:	1146039.2 (-0.87%)
+Threaded total round 27 DONE after 13 mins 57.3 secs, 236,211,537 total iterations (282,117 /sec).
+6,812/507,755 = 1.34% non-zero rates.	Best energy after 5,653,295 total perturbations:
+	Total:	5.4312556E9 (-0.01%)	Equality:	5.4301189E9 (-0.01%)	Inequality:	1136285.9 (-0.85%)	NormSlipRate:	1.53529312E8 (-0.27%)
+	UnnormSlipRate:	1.9165174E7 (-0.35%)	PaleoRate:	5.6402612E7 (-0.21%)	LaplaceSmooth:	15.724346 (+0.26%)	RateMinimize:	9.7508E-31 (0.00%)
+	NormMFDEquality:	5.201022E9 (-0.00%)	NormMFDInequality:	1136285.9 (-0.85%)
+Threaded total round 28 DONE after 14 mins 28.2 secs, 244,256,791 total iterations (281,323 /sec).
+6,747/507,755 = 1.33% non-zero rates.	Best energy after 5,749,997 total perturbations:
+	Total:	5.4306488E9 (-0.01%)	Equality:	5.4295204E9 (-0.01%)	Inequality:	1128719.8 (-0.67%)	NormSlipRate:	1.53189008E8 (-0.22%)
+	UnnormSlipRate:	1.9085002E7 (-0.42%)	PaleoRate:	5.6211932E7 (-0.34%)	LaplaceSmooth:	15.549521 (-1.11%)	RateMinimize:	9.7508E-31 (0.00%)
+	NormMFDEquality:	5.2010342E9 (+0.00%)	NormMFDInequality:	1128719.8 (-0.67%)
+Threaded total round 29 DONE after 14 mins 59.2 secs, 252,512,362 total iterations (280,828 /sec).
+6,480/507,755 = 1.28% non-zero rates.	Best energy after 5,840,207 total perturbations:
+	Total:	5.4301332E9 (-0.01%)	Equality:	5.4289987E9 (-0.01%)	Inequality:	1134662.6 (+0.53%)	NormSlipRate:	1.52895408E8 (-0.19%)
+	UnnormSlipRate:	1.901923E7 (-0.34%)	PaleoRate:	5.606498E7 (-0.26%)	LaplaceSmooth:	15.41439 (-0.87%)	RateMinimize:	9.7508E-31 (0.00%)
+	NormMFDEquality:	5.2010189E9 (-0.00%)	NormMFDInequality:	1134662.6 (+0.53%)
+Threaded total round 30 DONE after 15 mins 30.2 secs, 260,776,970 total iterations (280,350 /sec).
+6,478/507,755 = 1.28% non-zero rates.	Best energy after 5,932,765 total perturbations:
+	Total:	5.4296166E9 (-0.01%)	Equality:	5.4285184E9 (-0.01%)	Inequality:	1097823.9 (-3.25%)	NormSlipRate:	1.52604464E8 (-0.19%)
+	UnnormSlipRate:	1.8979938E7 (-0.21%)	PaleoRate:	5.592926E7 (-0.24%)	LaplaceSmooth:	15.4148245 (+0.00%)	RateMinimize:	9.7508E-31 (0.00%)
+	NormMFDEquality:	5.2010051E9 (-0.00%)	NormMFDInequality:	1097823.9 (-3.25%)
+Threaded annealing schedule completed.
+Done with Inversion after 15 mins 30.2 secs.
+Rounds: 30
+Total Iterations: 260776970
+Total Perturbations: 5932765
+Best energy:
+	Total:	5.4296166E9	Equality:	5.4285184E9	Inequality:	1097823.9	NormSlipRate:	1.52604464E8
+	UnnormSlipRate:	1.8979938E7	PaleoRate:	5.592926E7	LaplaceSmooth:	15.4148245	RateMinimize:	9.7508E-31
+	NormMFDEquality:	5.2010051E9	NormMFDInequality:	1097823.9
+Solution:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.BuildInfoModule' to: OpenSHA Build Information
+Solution:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.inversion.sa.completion.AnnealingProgress' to: Annealing Progress
+Solution:	Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.modules.SubSeismoOnFaultMFDs' to: Sub-Seismogenic On-Fault MFDs
+Mapped module type 'nz.cri.gns.NZSHM22.opensha.inversion.NZSHM22_InversionFaultSystemRuptSet' to: Rupture Set
+Mapped module type 'scratch.UCERF3.inversion.InversionFaultSystemRupSet' to: Rupture Set
+Mapped module type 'scratch.UCERF3.U3SlipAlongRuptureModelRupSet' to: Rupture Set
+Mapped module type 'scratch.UCERF3.U3SlipEnabledRupSet' to: Rupture Set
+Mapped module type 'scratch.UCERF3.U3FaultSystemRupSet' to: Rupture Set
+Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.FaultSystemRupSet' to: Rupture Set
+Mapped module type 'org.opensha.sha.earthquake.faultSysSolution.FaultSystemSolution' to: Solution
+------------ WRITING ARCHIVE ------------
+Temporary archive: /WORKING/NZSHM22_InversionSolution-QXV0b21hdGlvblRhc2s6MjQ5MVhtQ0N2.zip.tmp
+Writing 2 modules
+	Writing module: Rupture Set
+Writing 12 nested modules from 'Rupture Set' with prefix='ruptures/'
+	Writing module: OpenSHA Build Information
+	Writing module: Section Slip Rates
+	Writing module: Section Areas
+	Writing module: Info
+	Writing module: Plausibility Configuration
+	Skipping transient module: Default (Uniform) Slip Along Rupture
+	Writing module: Single-Strand Cluster Ruptures
+	Writing module: Logic Tree Branch
+	Writing module: NZSHM22_ScalingRelationship Average Slips
+	Writing module: Polygon Fault Association Manager
+	Writing module: NZSHM22 Crustal Inversion Target MFDs
+	Writing module: Modified Section Minimum Magnitudes
+Wrote 11 modules, writing index to ruptures/modules.json
+	Writing module: Solution
+Writing 3 nested modules from 'Solution' with prefix='solution/'
+	Writing module: OpenSHA Build Information
+	Writing module: Annealing Progress
+	Writing module: Sub-Seismogenic On-Fault MFDs
+Wrote 3 modules, writing index to solution/modules.json
+Wrote 2 modules, writing index to modules.json
+Moving to /WORKING/NZSHM22_InversionSolution-QXV0b21hdGlvblRhc2s6MjQ5MVhtQ0N2.zip
+---------- END WRITING ARCHIVE ----------
+Calculating Rupture Magnitude for 507755 ruptures
+Calculating Rupture Magnitude for 507755 ruptures
+Calculating Rupture Magnitude for 507755 ruptures

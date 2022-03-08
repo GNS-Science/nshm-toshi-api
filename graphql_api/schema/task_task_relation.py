@@ -18,18 +18,11 @@ class ChildTaskUnion(graphene.Union):
 
 class TaskTaskRelation(graphene.ObjectType):
 
-    class Meta:
-        interfaces = (relay.Node, )
-
     parent = graphene.Field(GeneralTask, required=False)
     child = graphene.Field(ChildTaskUnion, required=False)
     
     parent_id = graphene.String()
     child_id = graphene.String()
-
-    @staticmethod
-    def resolve_id(root, info, *args, **kwargs):
-        return root.child_id #needed until clients are able to validate not used
 
     @staticmethod
     def resolve_parent(root, info, *args, **kwargs):

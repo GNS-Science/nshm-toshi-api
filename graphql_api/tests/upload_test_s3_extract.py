@@ -4,14 +4,13 @@ import json
 
 from graphql_api.schema import SearchManager
 from graphql_api.config import REGION, ES_ENDPOINT, ES_INDEX, S3_BUCKET_NAME
-# raises ModuleNotFoundError: No module named 'graphql_api'
 
 '''
 This script is for populating the serverless local S3 service with some dummy data to perform local development of the API.
 To Run:
-sls dynamodb start --stage local & sls s3 start & SLS_OFFLINE=1 TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
+sls dynamodb start --stage local & sls s3 start & SLS_OFFLINE=1 sls wsgi serve
 docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
-S3_BUCKET_NAME=nzshm22-toshi-api-local S3_TEST_DATA_PATH={path/to/your/data} python3 graphql_api/tests/upload_test_s3_extract.py 
+S3_BUCKET_NAME=nzshm22-toshi-api-local S3_TEST_DATA_PATH=s3_extract SLS_OFFLINE=1 python3 graphql_api/tests/upload_test_s3_extract.py 
 '''
 def main():
     bucket_name = S3_BUCKET_NAME
