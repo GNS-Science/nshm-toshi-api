@@ -25,3 +25,4 @@ DEPLOYMENT_STAGE = os.getenv('DEPLOYMENT_STAGE', 'LOCAL').upper()
 STACK_NAME = os.getenv('STACK_NAME')
 CW_METRICS_RESOLUTION = os.getenv('CW_METRICS_RESOLUTION', 60) #1 for high resolution or 60
 S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', "S3_BUCKET_NAME_unconfigured")
+FIRST_DYNAMO_ID = int(os.getenv('FIRST_DYNAMO_ID', 100000))

@@ -21,7 +21,7 @@ pip install -e .
 
 sls dynamodb start --stage local &\
 sls s3 start &\
-SLS_OFFLINE=1 TOSHI_FIX_RANDOM_SEED=1 sls wsgi serve
+SLS_OFFLINE=1 TOSHI_FIX_RANDOM_SEED=1 FIRST_DYNAMO_ID=0 sls wsgi serve
 ```
 Then in another shell,
 ```
@@ -40,7 +40,9 @@ SLS_OFFLINE=1 TESTING=1 pytest
 ```
 
 ## Test locally with Toshi UI
+
 ```
+docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
 sls dynamodb start --stage local &\
 sls s3 start &\
 SLS_OFFLINE=1 sls wsgi serve

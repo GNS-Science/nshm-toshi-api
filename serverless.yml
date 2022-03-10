@@ -160,6 +160,7 @@ functions:
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
       STACK_NAME: ${self:custom.stack_name}
+      FIRST_DYNAMO_ID: 10000
     warmup:
       lowConcurrencyWarmer:
         enabled:

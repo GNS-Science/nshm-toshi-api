@@ -17,7 +17,7 @@ from pynamodb.transactions import TransactWrite
 from botocore.exceptions import ClientError
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING, DEPLOYMENT_STAGE, S3_BUCKET_NAME
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING, DEPLOYMENT_STAGE, S3_BUCKET_NAME, FIRST_DYNAMO_ID
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
@@ -127,11 +127,6 @@ class BaseData():
         pass
         #TODO
 
-if not TESTING and IS_OFFLINE: 
-    FIRST_ID = 0 #start new ids at some large number to make sure of no clashes, unless running locally (then breaks smoketests)
-else:
-    FIRST_ID = 100000
-
 class BaseDynamoDBData(BaseData):
     def __init__(self, client_args, db_manager, model, connection=Connection()):
         super().__init__(client_args, db_manager)
@@ -150,7 +145,7 @@ class BaseDynamoDBData(BaseData):
             identity = ToshiIdentity.get(self._prefix)
         except DoesNotExist as e:
             # very first use of the identity
-            identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_ID)
+            identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_DYNAMO_ID)
             identity.save()
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return identity.object_id    
