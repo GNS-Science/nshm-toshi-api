@@ -6,7 +6,7 @@ import logging
 from importlib import import_module
 from benedict import benedict
 
-from .base_s3_data import BaseS3Data
+from .base_data import BaseDynamoDBData
 # from .helpers import get_objectid_from_global
 from graphql_relay import from_global_id, to_global_id
 # import graphql_api.schema
@@ -14,7 +14,7 @@ from graphql_relay import from_global_id, to_global_id
 logger = logging.getLogger(__name__)
 
 
-class TableData(BaseS3Data):
+class TableData(BaseDynamoDBData):
     """
     TableData provides the data storage for Table objects
     """
@@ -31,7 +31,7 @@ class TableData(BaseS3Data):
             ValueError: invalid data exception
         """
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        next_id  = str(self.get_next_id())
+        next_id  = self.get_next_id()
         if not  kwargs['created'].tzname(): #must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
 
@@ -39,7 +39,7 @@ class TableData(BaseS3Data):
         body = new.__dict__.copy()
         body['clazz_name'] = clazz_name
         body['created'] = body['created'].isoformat()
-        self._write_object(next_id, body)
+        self._write_object(next_id, self._prefix, body)
         return new
 
 
@@ -72,7 +72,7 @@ class TableData(BaseS3Data):
         body.merge(kwargs)
         body['created'] = body['created'].isoformat()
         body['clazz_name'] = clazz_name
-        self._write_object(this_id, body)
+        self.transact_update(this_id, clazz_name, body)
         body.pop('clazz_name')
         # print(body)
         return clazz(**body)

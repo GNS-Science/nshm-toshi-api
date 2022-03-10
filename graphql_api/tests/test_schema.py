@@ -14,8 +14,10 @@ import boto3
 import botocore
 from botocore.exceptions import ClientError
 from graphene.test import Client
-from graphql_api import data_s3
+from graphql_api import data
 from graphql_api.schema import root_schema, RuptureGenerationTask
+from graphql_api.dynamodb.models import migrate
+from moto import mock_dynamodb2
 
 
 
@@ -79,7 +81,6 @@ obj3 = b'{"id": "0", "name": null, "tasktype": null, "started": "2020-10-28T09:1
 r3 = {'ResponseMetadata': {'HTTPStatusCode': 200, 'HTTPHeaders': {'accept-ranges': 'bytes', 'content-type': 'binary/octet-stream', 'last-modified': 'Wed, 28 Oct 2020 08:17:15 GMT', 'etag': '"b91ae62013c8beffb0770a8209a0b426"', 'content-length': '240', 'date': 'Thu, 29 Oct 2020 04:48:40 GMT', 'connection': 'keep-alive'}, 'RetryAttempts': 0}, 'AcceptRanges': 'bytes', 'LastModified': datetime.datetime(2020, 10, 28, 8, 17, 15, tzinfo=tzutc()), 'ContentLength': 240, 'ETag': '"b91ae62013c8beffb0770a8209a0b426"', 'ContentType': 'binary/octet-stream', 'Metadata': {},
       'Body': BytesIO(obj3)}
       # <botocore.response.StreamingBody object at 0x10c255bd0>}
-
 class TestRuptureGeneratorResults(unittest.TestCase):
 
     def setUp(self):
@@ -99,7 +100,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
                 }
               }
             }}'''
-
+        
         def mock_make_api_call(self, operation_name, kwarg):
             if operation_name in ['ListObjects']:
                 return r1 #dict(data=dict(rupture_generation_tasks=dict(edges=[0,1])))
@@ -113,7 +114,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
                 print(res)
                 raise ValueError("got unmocked operation: ", operation_name)
 
-        with mock.patch('graphql_api.data_s3.BaseS3Data.get_all', new=self.mock_all):
+        with mock.patch('graphql_api.data.BaseDynamoDBData.get_all', new=self.mock_all):
         #with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
             executed = self.client.execute(qry)
             print(executed)
@@ -121,15 +122,20 @@ class TestRuptureGeneratorResults(unittest.TestCase):
             # assert 0
             assert len( executed['data']['rupture_generation_tasks']['edges']) == 2
 
-
+@mock_dynamodb2
 class TestCreateDataFile(unittest.TestCase):
 
     def setUp(self):
         #data.setup()
+        # migrate()
         self.client = Client(root_schema)
         self.mock_all = lambda x : []
         self.mock_create = lambda x, y, **z : None
-
+    
+    @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
+    @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
+    # @mock.patch('graphql_api.data.BaseData._read_object', lambda self, object_id: None)
+    # @mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
     def test_upload(self):
         qry = '''
             mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
@@ -158,9 +164,9 @@ class TestCreateDataFile(unittest.TestCase):
             raise ValueError("got unmocked operation: ", operation_name)
 
         #TODO mock out the presigned URL calls
-        with mock.patch('graphql_api.data_s3.BaseS3Data.get_all', new=self.mock_all):
+        with mock.patch('graphql_api.data.BaseData.get_all', new=self.mock_all):
             with mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call):
-                #with mock.patch('graphql_api.data_s3.DataFileData.create', new=self.mock_create):
+                #with mock.patch('graphql_api.data.DataFileData.create', new=self.mock_create):
                 executed = self.client.execute(qry, variable_values=variables)
                 print(executed)
                 assert executed['data']['create_file']['ok'] == True

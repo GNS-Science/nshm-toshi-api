@@ -12,7 +12,7 @@ import logging
 from graphene import relay
 
 from graphql_api.schema.event import EventResult, EventState
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 
 from datetime import datetime as dt
@@ -25,30 +25,19 @@ logger = logging.getLogger(__name__)
 
 class AutomationTaskBase():
 
-    def resolve_parents(self, info, **args):
-        t0 = dt.utcnow()
-        if not self.parents:
-            res = []
-        elif (len(info.field_asts[0].selection_set.selections)==1 and
-            info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
-            from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
-            res =  TaskTaskRelationConnection(edges=[None for x in range(len(self.parents))])
-        else:
-            res = [get_data_manager().thing_relation.get_one(_id) for _id in self.parents]
-        db_metrics.put_duration(__name__, 'AutomationTaskBase.resolve_node' , dt.utcnow()-t0)
-        return res
 
     @classmethod
     def get_node(cls, info, _id):
         return  get_data_manager().thing.get_one(_id)
 
-    @staticmethod
-    def from_json(jsondata):
-        #Field type transforms...
-        created = jsondata.get('created')
-        if created:
-            jsondata['created'] = dt.datetime.fromisoformat(started)
-        return jsondata
+    # @staticmethod
+    # def from_json(jsondata):
+    #     #Field type transforms...
+    #     started = dt.now()
+    #     created = jsondata.get('created')
+    #     if created:
+    #         jsondata['created'] = dt.datetime.fromisoformat(started)
+    #     return jsondata
 
 class AutomationTaskInterface(graphene.Interface):
     """An AutomationTask in the NSHM process"""
@@ -68,6 +57,7 @@ class AutomationTaskInterface(graphene.Interface):
         description="execution environment details, as a list of Key Value pairs.")
     metrics = graphene.List(KeyValuePair, required=False,
         description="result metrics from the task, as a list of Key Value pairs.")
+    
 
 class AutomationTaskInput(graphene.InputObjectType):
     result = EventResult(required=True)

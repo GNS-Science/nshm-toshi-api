@@ -13,7 +13,7 @@ import unittest
 
 # from dateutil.tz import tzutc
 
-# from graphql_api import data_s3
+# from graphql_api import data
 
 from graphene.test import Client
 from graphql_api.schema import root_schema
@@ -99,7 +99,7 @@ def mock_make_api_call(self, operation_name, kwarg):
 @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 class TestSchemaSearchTotalCount(unittest.TestCase):
     """
-    All datastore (data_s3) methods are mocked.
+    All datastore (data) methods are mocked.
     """
     def setUp(self):
         self.client = Client(root_schema)

@@ -9,20 +9,20 @@ from flask import request
 from graphene import relay
 from graphql_relay import from_global_id, to_global_id
 
-from graphql_api.data_s3.data_manager import DataManager
+from graphql_api.data.data_manager import DataManager
 from .custom.rupture_generation_task import RuptureGenerationTaskConnection, CreateRuptureGenerationTask,\
     UpdateRuptureGenerationTask, RuptureGenerationTask
 from requests_aws4auth import AWS4Auth
 
 from .file import CreateFile, File, FileConnection
-from .file_relation import CreateFileRelation, FileRelationConnection
+from .file_relation import CreateFileRelation, FileRelation, FileRelationConnection
 from .search_manager import SearchManager
 
 from graphql_api.schema import file, event, thing
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation,\
     StrongMotionStationConnection
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 
 from .custom.general_task import GeneralTask, CreateGeneralTask, UpdateGeneralTask
 from .task_task_relation import CreateTaskTaskRelation
@@ -34,7 +34,7 @@ from .custom.automation_task import AutomationTask, CreateAutomationTask, Update
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import IS_OFFLINE, ES_REGION, ES_ENDPOINT, ES_INDEX, STACK_NAME
+from graphql_api.config import IS_OFFLINE, ES_REGION, ES_ENDPOINT, ES_INDEX, STACK_NAME, TESTING
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=1)
 
@@ -45,7 +45,7 @@ awsauth = AWS4Auth(
 
 s3_client_args = dict(aws_access_key_id='S3RVER',
         aws_secret_access_key='S3RVER',
-        endpoint_url='http://localhost:4569') if IS_OFFLINE else {}
+        endpoint_url='http://localhost:4569') if not TESTING and IS_OFFLINE else {}
 
 search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=awsauth)
 db_root = DataManager(search_manager, s3_client_args)
@@ -156,7 +156,7 @@ class QueryRoot(graphene.ObjectType):
             elif _type in ['Table']:
                 result.append(db_root.table.get_one(_id))
             else:
-                raise ValueError("unable to resolve, object id", obj['_source'])
+                raise ValueError("unable to resolve, object id")
         db_metrics.put_duration(__name__, 'resolve_nodes' , dt.utcnow()-t0)
         #result =  = db_root.search_manager.search(kwargs.get('search_term'))
         return NodeFilter(ok=True, result =result)

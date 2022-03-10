@@ -3,12 +3,12 @@ Object manager for FileRelation (and subclassed) schema objects
 """
 import logging
 from importlib import import_module
-from .base_s3_data import BaseS3Data
+from .base_data import BaseData
 import datetime as dt
 
 logger = logging.getLogger(__name__)
 
-class FileRelationData(BaseS3Data):
+class FileRelationData(BaseData):
     """
     FileRelationData provides the S3 interface for FileRelation objects
     """
@@ -66,6 +66,6 @@ class FileRelationData(BaseS3Data):
         
         #id is no longer a class attribute, but some old objects may still exist
         jsondata.pop('id', None)
-        jsondata.pop('clazz_name', None),
+        jsondata.pop('clazz_name', None)
 
         return clazz(**jsondata)
