@@ -129,6 +129,8 @@ provider:
          - "dynamodb:CreateTable"
          - "dynamodb:GetItem"
          - "dynamodb:PutItem"
+         - "dynamodb:ConditionCheckItem"
+         - "dynamodb:UpdateItem"
       Resource: '*'
 
   apiGateway:
