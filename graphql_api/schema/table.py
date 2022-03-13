@@ -88,5 +88,5 @@ class CreateTable(relay.ClientIDMutation):
         t0 = dt.utcnow()
         print("mutate_and_get_payload: ", kwargs)
         table = get_data_manager().table.create('Table', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateFile.mutate' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, 'CreateTable.mutate' , dt.utcnow()-t0)
         return CreateTable(table=table)

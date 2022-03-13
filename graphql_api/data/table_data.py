@@ -6,7 +6,7 @@ import logging
 from importlib import import_module
 from benedict import benedict
 
-from .base_data import BaseDynamoDBData
+from .base_data import BaseDynamoDBData, DynamoWriteConsistencyError
 # from .helpers import get_objectid_from_global
 from graphql_relay import from_global_id, to_global_id
 # import graphql_api.schema
@@ -35,14 +35,22 @@ class TableData(BaseDynamoDBData):
         if not  kwargs['created'].tzname(): #must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
 
-        new = clazz(next_id, **kwargs)
-        body = new.__dict__.copy()
-        body['clazz_name'] = clazz_name
-        body['created'] = body['created'].isoformat()
-        self._write_object(next_id, self._prefix, body)
-        return new
+        def new_body(next_id, kwargs):
+            new = clazz(next_id, **kwargs)
+            body = new.__dict__.copy()
+            body['clazz_name'] = clazz_name
+            body['created'] = body['created'].isoformat()
+            return body
 
+        try:
+            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
+            return clazz(next_id, **kwargs)
 
+        except DynamoWriteConsistencyError as e:
+            #try one more
+            next_id  = self.get_next_id()
+            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
+            return clazz(next_id, **kwargs)
 
     def get_one(self, thing_id):
         """

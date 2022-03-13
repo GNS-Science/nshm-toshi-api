@@ -30,9 +30,9 @@ class SearchManager():
             # print("SearchManager.index_document", self._url + key)
             # print('DOCUMENT:', document)
             response = requests.put(self._url + key, auth=self._awsauth, json=document, headers=headers)
-            print(response.content)
+            print(f'index_document response: {response.content}')
         except (Exception) as err:
-            print("ERR SearchManager.index_document ", err)
+            print(f'ERR SearchManager.index_document {err}')
         db_metrics.put_duration(__name__, 'index_document' , dt.utcnow()-t0)
 
     def search(self, term):
@@ -67,5 +67,5 @@ class SearchManager():
         except (Exception) as err:
             print("ERR SearchManager.search() ", err)
 
-        db_metrics.put_duration(__name__, 'index_document' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, 'search' , dt.utcnow()-t0)
         return result

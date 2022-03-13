@@ -12,17 +12,18 @@ import logging
 from graphene.relay import connection
 from graphql_relay.node.node import from_global_id
 from pynamodb.connection.base import Connection
-from pynamodb.exceptions import PutError, VerboseClientError, DoesNotExist
+from pynamodb.exceptions import PutError, VerboseClientError, DoesNotExist, TransactWriteError
 from pynamodb.transactions import TransactWrite
 from botocore.exceptions import ClientError
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING, DEPLOYMENT_STAGE, S3_BUCKET_NAME, FIRST_DYNAMO_ID
+from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING, DEPLOYMENT_STAGE, S3_BUCKET_NAME, FIRST_DYNAMO_ID, REGION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
 
@@ -49,7 +50,7 @@ class BaseData():
         self._s3 = boto3.resource('s3')
         self._bucket = self._s3.Bucket(self._bucket_name, client=self._client)
         self._prefix = self.__class__.__name__
-        self._connection = Connection()
+        self._connection = Connection(region=REGION)
 
     def get_one_raw(self, _id):
         """
@@ -127,8 +128,11 @@ class BaseData():
         pass
         #TODO
 
+class DynamoWriteConsistencyError(RuntimeError):
+    pass
+
 class BaseDynamoDBData(BaseData):
-    def __init__(self, client_args, db_manager, model, connection=Connection()):
+    def __init__(self, client_args, db_manager, model, connection=Connection(region=REGION)):
         super().__init__(client_args, db_manager)
         self._model = model
         self._connection = connection
@@ -147,7 +151,7 @@ class BaseDynamoDBData(BaseData):
             # very first use of the identity
             identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_DYNAMO_ID)
             identity.save()
-        db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
         return identity.object_id    
 
     def _write_object(self, object_id, object_type, body):
@@ -157,7 +161,7 @@ class BaseDynamoDBData(BaseData):
             object_id (int): unique iD of the obect
             body (dict): dict to be serialised to JSON
         """
-        
+
         t0 = dt.utcnow()
         key = "%s/%s" % (self._prefix, object_id)
         
@@ -165,15 +169,26 @@ class BaseDynamoDBData(BaseData):
 
         #TODO: make a transacion conditional check (maybe)
         if not identity.object_id == object_id:
-            raise RuntimeError(F"object ids are not consistent!) {(identity.object_id, object_id)}")
+            raise DynamoWriteConsistencyError(F"object ids are not consistent!) {(identity.object_id, object_id)}")
 
         toshi_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
-       
-        with TransactWrite(connection=self._connection) as transaction:
-            transaction.update(identity, 
-                            actions=[ToshiIdentity.object_id.add(1)])
-            transaction.save(toshi_object)
-    
+
+        try:
+            with TransactWrite(connection=self._connection) as transaction:
+                transaction.update(identity,
+                                actions=[ToshiIdentity.object_id.add(1)])
+                transaction.save(toshi_object)
+        except TransactWriteError as e:
+            logger.error(f'TransactWriteError {e}')
+            logger.error(f"toshi_object: key {key} prefix: {self._prefix}")
+            # logger.error(f'TransactWriteError.response {e.response}')
+
+        #logger.debug(f"toshi_object: {toshi_object}")
+        logger.debug(f"toshi_object: key {key} prefix: {self._prefix}")
+        #logger.debug(f"Identities: {(identity.object_id, object_id)}")
+        #logger.debug(f"connection: {self._connection}")
+        #logger.debug(f"connection.region {self._connection.region}")
+
         db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
