@@ -3,6 +3,7 @@ Object manager for ThingRelation (and subclassed) schema objects
 """
 import datetime as dt
 from graphql_api.dynamodb.models import ToshiThingObject
+from pynamodb.exceptions import TransactWriteError
 import logging
 from importlib import import_module
 from .base_data import BaseData
@@ -20,10 +21,17 @@ class ThingRelationData(BaseData):
             parent_id (TYPE): Description
             child_id (TYPE): Description
             **kwargs: the field data
-
         """
-        self._db_manager.thing.add_child_relation(thing_id=parent_id, relation_id=child_id, relation_clazz=child_clazz)
-        self._db_manager.thing.add_parent_relation(thing_id=child_id, relation_id=parent_id, relation_clazz=parent_clazz)
+        # TODO: a more consistent approach would check that both succeed
+        try:
+            self._db_manager.thing.add_child_relation(thing_id=parent_id, relation_id=child_id, relation_clazz=child_clazz)
+        except TransactWriteError as e:
+            self._db_manager.thing.add_child_relation(thing_id=parent_id, relation_id=child_id, relation_clazz=child_clazz)
+
+        try:
+            self._db_manager.thing.add_parent_relation(thing_id=child_id, relation_id=parent_id, relation_clazz=parent_clazz)
+        except TransactWriteError as e:
+            self._db_manager.thing.add_parent_relation(thing_id=child_id, relation_id=parent_id, relation_clazz=parent_clazz)
 
     def get_one(self, _id):
         """
@@ -50,40 +58,6 @@ class ThingRelationData(BaseData):
         logger.info("build_one: %s" % str(jsondata))
         relation =  self.from_json(jsondata)
         return relation
-
-    # def build_parent(self, parent_id, clazz_name):
-    #     """
-    #     Args:
-    #         parent_id (string): the parent id
-    #         child_id (string): the child id
-    #     Returns:
-    #         File: the Thing object
-    #     """
-
-    #     jsondata = {'id': parent_id, 'clazz_name': clazz_name}
-    #     logger.info("build_one: %s" % str(jsondata))
-    #     relation =  self.from_json(jsondata)
-    #     return relation
-
-    # def build_child(self, child_id, clazz_name):
-    #     """
-    #     Args:
-    #         parent_id (string): the parent id
-    #         child_id (string): the child id
-    #     Returns:
-    #         File: the Thing object
-    #     """
-    #     jsondata = {'id': child_id, 'clazz_name': clazz_name}
-    #     logger.info("build_one: %s" % str(jsondata))
-    #     relation =  self.from_json(jsondata)
-    #     return relation
-
-    # def _read_object(self, object_id):
-    #     key = f'ThingData/{object_id}'
-    #     print ('thing relation reads', key)
-    #     obj = ToshiThingObject.get(key, 'ThingData')
-    #     #print (obj)
-    #     return obj.object_content
 
     @staticmethod
     def from_json(jsondata):

@@ -4,6 +4,7 @@ Object manager for FileRelation (and subclassed) schema objects
 import logging
 from importlib import import_module
 from .base_data import BaseData
+from pynamodb.exceptions import TransactWriteError
 import datetime as dt
 
 logger = logging.getLogger(__name__)
@@ -19,15 +20,18 @@ class FileRelationData(BaseData):
             related_id (TYPE): Description
             file_id (TYPE): Description
             **kwargs: the field data
-
-        Returns:
-            Thing: a new instance of the clazz_name
-
         """
+        # TODO: a more consistent approach would check that both succeed
+        try:
+            self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
+        except TransactWriteError as e:
+            self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
 
-        #update backref to new FileRelation
-        self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
-        self._db_manager.thing.add_file_relation(thing_id=thing_id, file_id=file_id, file_role=role)
+        try:
+            self._db_manager.thing.add_file_relation(thing_id=thing_id, file_id=file_id, file_role=role)
+        except TransactWriteError as e:
+            self._db_manager.thing.add_file_relation(thing_id=thing_id, file_id=file_id, file_role=role)
+
 
     def get_one(self, _id):
         """
