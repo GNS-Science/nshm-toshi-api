@@ -17,7 +17,8 @@ from pynamodb.transactions import TransactWrite
 from botocore.exceptions import ClientError
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING, DEPLOYMENT_STAGE, S3_BUCKET_NAME, FIRST_DYNAMO_ID, REGION
+from graphql_api.config import (STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING, DEPLOYMENT_STAGE, S3_BUCKET_NAME,
+    FIRST_DYNAMO_ID, REGION )
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
@@ -27,11 +28,9 @@ logger.setLevel(logging.DEBUG)
 
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
 
-
 def append_uniq(size):
     uniq = ''.join(random.choice(_ALPHABET) for _ in range(5))
     return str(size)+uniq
-
 
 class BaseData():
     """
@@ -104,10 +103,9 @@ class BaseData():
         Returns:
             dict: object data deserialised from the json object
         """
-        # TODO NEEDS TEST COVERAGE for fail to S3
         t0 = dt.utcnow()
         key = "%s/%s" % (self._prefix, object_id)
-        print('key: ', key, 'prefix', self._prefix)
+        logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
         
         try:
             obj = self._model.get(key, self._prefix)
@@ -149,6 +147,7 @@ class BaseDynamoDBData(BaseData):
             identity = ToshiIdentity.get(self._prefix)
         except DoesNotExist as e:
             # very first use of the identity
+            logger.debug(f'get_next_id settiing initial ID; table_name={self._prefix}, object_id={FIRST_DYNAMO_ID}')
             identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_DYNAMO_ID)
             identity.save()
         db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
@@ -181,7 +180,6 @@ class BaseDynamoDBData(BaseData):
         except TransactWriteError as e:
             logger.error(f'TransactWriteError {e}')
             logger.error(f"toshi_object: key {key} prefix: {self._prefix}")
-            # logger.error(f'TransactWriteError.response {e.response}')
 
         #logger.debug(f"toshi_object: {toshi_object}")
         logger.debug(f"toshi_object: key {key} prefix: {self._prefix}")
@@ -213,3 +211,36 @@ class BaseDynamoDBData(BaseData):
         self._db_manager.search_manager.index_document(es_key, body)
         db_metrics.put_duration(__name__, 'transact_update' , dt.utcnow()-t0)
         print('#####updated:', object_id, self._model.get(key, object_type).object_content)
+
+    def create(self, clazz_name, **kwargs):
+        """
+        Args:
+            clazz_name (String): the class name of schema object
+            **kwargs: the field data
+
+        Returns:
+            Table: a new instance of the clazz_name
+
+        Raises:
+            ValueError: invalid data exception
+        """
+        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+        next_id  = self.get_next_id()
+
+        def new_body(next_id, kwargs):
+            new = clazz(next_id, **kwargs)
+            body = new.__dict__.copy()
+            body['clazz_name'] = clazz_name
+            if body.get('created'):
+                body['created'] = body['created'].isoformat()
+            return body
+
+        try:
+            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
+            return clazz(next_id, **kwargs)
+
+        except DynamoWriteConsistencyError as e:
+            #try one more
+            next_id  = self.get_next_id()
+            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
+            return clazz(next_id, **kwargs)

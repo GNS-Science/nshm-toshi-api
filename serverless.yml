@@ -88,6 +88,8 @@ custom:
   esDomainName: ${self:custom.app_acronym}-es-${self:custom.stage}
   esIndex: toshi_index
 
+  first_dynamo_id: ${env:FIRST_DYNAMO_ID, 10000}
+
 provider:
   name: aws
   runtime: python3.8
@@ -162,7 +164,7 @@ functions:
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
       STACK_NAME: ${self:custom.stack_name}
-      FIRST_DYNAMO_ID: 10000
+      FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
     warmup:
       lowConcurrencyWarmer:
         enabled:

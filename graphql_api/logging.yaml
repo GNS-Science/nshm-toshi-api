@@ -1,0 +1,49 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+  simple:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: simple
+    stream: ext://sys.stdout
+
+loggers:
+
+  flask:
+    level: WARNING
+    handlers: [console]
+    propagate: no
+
+  werkzeug:
+    level: INFO
+    handlers: [console]
+    propagate: no
+
+  api:
+    level: INFO
+    handlers: [console]
+    propagate: no
+
+  pynamodb:
+    level: INFO
+    handlers: [console]
+    propagate: no
+
+  botocore:
+    level: INFO
+    handlers: [console]
+    propagate: no
+
+  urllib3:
+    level: INFO
+    handlers: [console]
+    propagate: no
+
+
+root:
+  level: DEBUG
+  handlers: [console]
