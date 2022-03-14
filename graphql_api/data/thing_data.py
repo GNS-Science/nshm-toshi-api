@@ -13,7 +13,6 @@ from graphql_relay import from_global_id, to_global_id
 
 logger = logging.getLogger(__name__)
 
-
 class ThingData(BaseDynamoDBData):
     """
     ThingData provides the data storage for Thing objects

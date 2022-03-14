@@ -24,7 +24,6 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
 
