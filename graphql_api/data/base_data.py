@@ -9,6 +9,11 @@ from io import BytesIO
 import boto3
 import random
 import logging
+import backoff
+import traceback
+import pynamodb.exceptions
+import requests.exceptions
+
 from graphene.relay import connection
 from graphql_relay.node.node import from_global_id
 from pynamodb.connection.base import Connection
@@ -16,6 +21,7 @@ from pynamodb.exceptions import PutError, VerboseClientError, DoesNotExist, Tran
 from pynamodb.transactions import TransactWrite
 from botocore.exceptions import ClientError
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
+import graphql_api.dynamodb
 
 from graphql_api.config import (STACK_NAME, CW_METRICS_RESOLUTION, DB_ENDPOINT, IS_OFFLINE, TESTING, DEPLOYMENT_STAGE, S3_BUCKET_NAME,
     FIRST_DYNAMO_ID, REGION )
@@ -125,8 +131,11 @@ class BaseData():
         pass
         #TODO
 
-class DynamoWriteConsistencyError(RuntimeError):
-    pass
+
+def backoff_hdlr(details):
+    logger.debug("Backoff {wait:0.1f} seconds after {tries} tries "
+       "calling function {target} with args {args} and kwargs "
+       "{kwargs}".format(**details))
 
 class BaseDynamoDBData(BaseData):
     def __init__(self, client_args, db_manager, model, connection=Connection(region=REGION)):
@@ -146,12 +155,17 @@ class BaseDynamoDBData(BaseData):
             identity = ToshiIdentity.get(self._prefix)
         except DoesNotExist as e:
             # very first use of the identity
-            logger.debug(f'get_next_id settiing initial ID; table_name={self._prefix}, object_id={FIRST_DYNAMO_ID}')
+            logger.debug(f'get_next_id setting initial ID; table_name={self._prefix}, object_id={FIRST_DYNAMO_ID}')
             identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_DYNAMO_ID)
             identity.save()
         db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
         return identity.object_id    
 
+
+    @backoff.on_exception(backoff.expo,
+            ( pynamodb.exceptions.TransactWriteError,
+                requests.exceptions.RequestException),
+            max_time=60, on_backoff=backoff_hdlr)
     def _write_object(self, object_id, object_type, body):
         """write object contents to the DynamoDB table.
 
@@ -167,54 +181,50 @@ class BaseDynamoDBData(BaseData):
 
         #TODO: make a transacion conditional check (maybe)
         if not identity.object_id == object_id:
-            raise DynamoWriteConsistencyError(F"object ids are not consistent!) {(identity.object_id, object_id)}")
+            raise graphql_api.dynamodb.DynamoWriteConsistencyError(
+                F"object ids are not consistent!) {(identity.object_id, object_id)}")
 
         toshi_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
 
-        try:
-            with TransactWrite(connection=self._connection) as transaction:
-                transaction.update(identity,
-                                actions=[ToshiIdentity.object_id.add(1)])
-                transaction.save(toshi_object)
-        except TransactWriteError as e:
-            logger.error(f'BaseDynamoDBData._write_object {e}')
-            logger.error(f"BaseDynamoDBData._write_object key: {key} prefix: {self._prefix}")
+        # try:
+        with TransactWrite(connection=self._connection) as transaction:
+            transaction.update(identity,
+                            actions=[ToshiIdentity.object_id.add(1)])
+            transaction.save(toshi_object)
 
-        #logger.debug(f"toshi_object: {toshi_object}")
         logger.debug(f"toshi_object: key {key} prefix: {self._prefix}")
-        #logger.debug(f"Identities: {(identity.object_id, object_id)}")
-        #logger.debug(f"connection: {self._connection}")
-        #logger.debug(f"connection.region {self._connection.region}")
 
         db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
 
+
+    @backoff.on_exception(backoff.expo,
+            ( pynamodb.exceptions.TransactWriteError,
+                requests.exceptions.RequestException),
+            max_time=6, on_backoff=backoff_hdlr)
     def transact_update(self, object_id, object_type, body):
         t0 = dt.utcnow()
         logger.info("%s.update: %s : %s" % (object_type, object_id, str(body)))
         key = "%s/%s" % (self._prefix, object_id)
-        try:
-            model = self._model.get(key, object_type)
-            with TransactWrite(connection=self._connection) as transaction:
-                transaction.update(
-                    model,
-                    actions=[self._model.object_content.set(body)]
-                )
-        except DoesNotExist as e:
-                logger.info(f'Saving new object: {object_id}')
-                new_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
-                new_object.save()
-        except TransactWriteError as e:
-            logger.error(f'BaseDynamoDBData.transact_update TransactWriteError {e}')
-            logger.error(f"BaseDynamoDBData.transact_update key: {key} prefix: {self._prefix}")
-            raise
-            
+        # try:
+        model = self._model.get(key, object_type)
+        with TransactWrite(connection=self._connection) as transaction:
+            transaction.update(
+                model,
+                actions=[self._model.object_content.set(body)]
+            )
+
         es_key = key.replace("/", "_")
         self._db_manager.search_manager.index_document(es_key, body)
         db_metrics.put_duration(__name__, 'transact_update' , dt.utcnow()-t0)
-        print('#####updated:', object_id, self._model.get(key, object_type).object_content)
+        # print('#####updated:', object_id, self._model.get(key, object_type).object_content)
 
+
+    @backoff.on_exception(backoff.expo,
+        graphql_api.dynamodb.DynamoWriteConsistencyError,
+        max_time=60,
+        on_backoff=backoff_hdlr)
     def create(self, clazz_name, **kwargs):
         """
         Args:
@@ -238,12 +248,5 @@ class BaseDynamoDBData(BaseData):
                 body['created'] = body['created'].isoformat()
             return body
 
-        try:
-            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
-            return clazz(next_id, **kwargs)
-
-        except DynamoWriteConsistencyError as e:
-            #try one more
-            next_id  = self.get_next_id()
-            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
-            return clazz(next_id, **kwargs)
+        self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
+        return clazz(next_id, **kwargs)

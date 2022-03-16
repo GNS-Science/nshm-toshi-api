@@ -88,7 +88,7 @@ class ThingData(BaseDynamoDBData):
             TYPE: the Thing object
         """
         _type, this_id = from_global_id(thing_id)
-        print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
+        #print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
         assert _type == clazz_name
 
         if kwargs.get('created'):
@@ -119,14 +119,21 @@ class ThingData(BaseDynamoDBData):
 
     def add_child_relation(self, thing_id, relation_id, relation_clazz):
         obj = self._read_object(thing_id)
-        print('child obj', obj)
+        #logger.info(f'child obj: {obj}')
         logger.info("add_child_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
         # print("####add_file_relation", thing_id, obj)
+        """
         try:
             obj['children'].append({'child_id': relation_id, 'child_clazz': relation_clazz})
         except (KeyError, AttributeError):
             obj['children'] = [{'child_id': relation_id, 'child_clazz': relation_clazz}]
+        """
+        if not obj.get('children'):
+            obj['children'] = []
+        obj['children'].append({'child_id': relation_id, 'child_clazz': relation_clazz})
+
         self.transact_update(thing_id, self._prefix, obj)
+        logger.info(f'add_child_relation transaction OK: added: {relation_id} to children {len(obj["children"])}')
         return self.from_json(obj)
 
     def add_parent_relation(self, thing_id, relation_id, relation_clazz):

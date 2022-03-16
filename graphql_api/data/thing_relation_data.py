@@ -23,15 +23,16 @@ class ThingRelationData(BaseData):
             **kwargs: the field data
         """
         # TODO: a more consistent approach would check that both succeed
-        try:
-            self._db_manager.thing.add_child_relation(thing_id=parent_id, relation_id=child_id, relation_clazz=child_clazz)
-        except TransactWriteError as e:
-            self._db_manager.thing.add_child_relation(thing_id=parent_id, relation_id=child_id, relation_clazz=child_clazz)
+        #try:
+        self._db_manager.thing.add_child_relation(thing_id=parent_id, relation_id=child_id, relation_clazz=child_clazz)
+        #except TransactWriteError as e:
+        #    self._db_manager.thing.add_child_relation(thing_id=parent_id, relation_id=child_id, relation_clazz=child_clazz)
 
-        try:
-            self._db_manager.thing.add_parent_relation(thing_id=child_id, relation_id=parent_id, relation_clazz=parent_clazz)
-        except TransactWriteError as e:
-            self._db_manager.thing.add_parent_relation(thing_id=child_id, relation_id=parent_id, relation_clazz=parent_clazz)
+        #try:
+        self._db_manager.thing.add_parent_relation(thing_id=child_id, relation_id=parent_id, relation_clazz=parent_clazz)
+        #except TransactWriteError as e:
+        #    self._db_manager.thing.add_parent_relation(thing_id=child_id, relation_id=parent_id, relation_clazz=parent_clazz)
+        return self.build_one(parent_id, child_id)
 
     def get_one(self, _id):
         """

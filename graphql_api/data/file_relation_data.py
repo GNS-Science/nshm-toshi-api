@@ -22,15 +22,15 @@ class FileRelationData(BaseData):
             **kwargs: the field data
         """
         # TODO: a more consistent approach would check that both succeed
-        try:
-            self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
-        except TransactWriteError as e:
-            self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
+        # try:
+        self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
+        # except TransactWriteError as e:
+        #     self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
 
-        try:
-            self._db_manager.thing.add_file_relation(thing_id=thing_id, file_id=file_id, file_role=role)
-        except TransactWriteError as e:
-            self._db_manager.thing.add_file_relation(thing_id=thing_id, file_id=file_id, file_role=role)
+        #try:
+        self._db_manager.thing.add_file_relation(thing_id=thing_id, file_id=file_id, file_role=role)
+        # except TransactWriteError as e:
+        #     self._db_manager.thing.add_file_relation(thing_id=thing_id, file_id=file_id, file_role=role)
 
 
     def get_one(self, _id):
