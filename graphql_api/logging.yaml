@@ -1,49 +1,64 @@
 version: 1
 disable_existing_loggers: False
+
 formatters:
+  standard:
+    format: '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
   simple:
     format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 handlers:
-  console:
+
+  console_handler:
+    level: INFO
+    formatter: standard
     class: logging.StreamHandler
-    level: DEBUG
-    formatter: simple
     stream: ext://sys.stdout
+
+  file_handler:
+    level: WARNING
+    formatter: standard
+    class: logging.FileHandler
+    filename: api.log
+    mode: w
 
 loggers:
 
+  root:
+    level: WARNING
+    handlers: [console_handler, file_handler]
+
   flask:
     level: WARNING
-    handlers: [console]
+    handlers: [console_handler, file_handler]
     propagate: no
 
   werkzeug:
     level: INFO
-    handlers: [console]
-    propagate: no
-
-  api:
-    level: INFO
-    handlers: [console]
+    handlers: [console_handler, file_handler]
     propagate: no
 
   pynamodb:
     level: INFO
-    handlers: [console]
+    handlers: [console_handler, file_handler]
     propagate: no
 
   botocore:
     level: INFO
-    handlers: [console]
+    handlers: [console_handler, file_handler]
     propagate: no
 
   urllib3:
     level: INFO
-    handlers: [console]
+    handlers: [console_handler, file_handler]
     propagate: no
 
+  graphql_api:
+    level: INFO
+    handlers: [console_handler, file_handler]
+    propagate: no
 
-root:
-  level: INFO
-  handlers: [console]
+  graphql_api.schema.search_manager:
+    level: ERROR
+    #handlers: [console_handler, file_handler]
+    propagate: no

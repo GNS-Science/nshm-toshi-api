@@ -177,8 +177,8 @@ class BaseDynamoDBData(BaseData):
                                 actions=[ToshiIdentity.object_id.add(1)])
                 transaction.save(toshi_object)
         except TransactWriteError as e:
-            logger.error(f'TransactWriteError {e}')
-            logger.error(f"toshi_object: key {key} prefix: {self._prefix}")
+            logger.error(f'BaseDynamoDBData._write_object {e}')
+            logger.error(f"BaseDynamoDBData._write_object key: {key} prefix: {self._prefix}")
 
         #logger.debug(f"toshi_object: {toshi_object}")
         logger.debug(f"toshi_object: key {key} prefix: {self._prefix}")
@@ -206,8 +206,8 @@ class BaseDynamoDBData(BaseData):
                 new_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
                 new_object.save()
         except TransactWriteError as e:
-            logger.error(f'transact_update TransactWriteError {e}')
-            logger.error(f"toshi_object: key {key} prefix: {self._prefix}")
+            logger.error(f'BaseDynamoDBData.transact_update TransactWriteError {e}')
+            logger.error(f"BaseDynamoDBData.transact_update key: {key} prefix: {self._prefix}")
             raise
             
         es_key = key.replace("/", "_")

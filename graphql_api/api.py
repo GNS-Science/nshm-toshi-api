@@ -39,5 +39,12 @@ else:
     print('warning, no logging config found, using basicConfig(INFO)')
     logging.basicConfig(level=logging.INFO)
 
+logger = logging.getLogger(__name__)
+
+logger.debug('DEBUG logging enabled')
+logger.info('INFO logging enabled')
+logger.warning('WARN logging enabled')
+logger.error('ERROR logging enabled')
+
 if __name__ == '__main__':
     app.run()
