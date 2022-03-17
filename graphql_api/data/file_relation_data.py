@@ -32,7 +32,7 @@ class FileRelationData(BaseDynamoDBData):
         file_content = file.object_content
         if not file_content.get('relations'):
             file_content['relations'] = []
-        file_content['relations'].append({'thing_id': thing_id, 'file_role': role})
+        file_content['relations'].append({'id': thing_id, 'role': role})
 
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(thing,
