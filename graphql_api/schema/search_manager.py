@@ -28,11 +28,12 @@ class SearchManager():
     def index_document(self, key, document):
         # Index the document
         t0 = dt.utcnow()
+        es_key = key.replace("/", "_")
         headers = { "Content-Type": "application/json" }
         try:
-            logger.debug(f"SearchManager.index_document {self._url + key}")
+            logger.debug(f"SearchManager.index_document {self._url + es_key}")
             # print('DOCUMENT:', document)
-            response = requests.put(self._url + key, auth=self._awsauth, json=document, headers=headers)
+            response = requests.put(self._url + es_key, auth=self._awsauth, json=document, headers=headers)
             logger.debug(f'index_document response: {response.content}')
         except (Exception) as err:
             logger.warning(f'index_document raised err: {err}')
@@ -61,6 +62,7 @@ class SearchManager():
                 elif 'ThingData' in obj['_id']:
                     # clazz_name = obj['_source'].pop('clazz_name')
                     # clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+                    logger.info("search got object ")
                     result.append(ThingData.from_json(obj['_source']))
                 elif 'TableData' in obj['_id']:
                     result.append(TableData.from_json(obj['_source']))

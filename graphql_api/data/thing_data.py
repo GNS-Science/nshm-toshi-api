@@ -54,27 +54,8 @@ class ThingData(BaseDynamoDBData):
         Returns:
             File: the Thing object
         """
-        # TODO: validate the type of the object in case ID passed in by client is invalid
-        #
-        # e.g. query get_new_task {
-        # node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA=") {
-        #         __typename
-        #                 ... on StrongMotionStation {
-        #           id
-        #           site_code
-        #         }
-        #     ... on RuptureGenerationTask {
-        #             arguments {k v}
-        #         created
-        #         state
-        #         result
-        #         }
-        #     }
-        # }
-        # after smoketests the query will return an SMS, but object Type in ID is RuptureGenerationTask
 
         jsondata = self.migrate_old_thing_object(self._read_object(thing_id))
-        # print('JSONDATA', jsondata)
         return self.from_json(jsondata)
 
 
@@ -100,9 +81,7 @@ class ThingData(BaseDynamoDBData):
         jsondata = self.migrate_old_thing_object(self.get_one_raw(this_id))
         body = benedict(jsondata)
         body.merge(kwargs)
-        # body['clazz_name'] = clazz_name
         logger.info("ThingData.update: %s : %s" % (this_id, str(body)))
-        print("ThingData.update: %s : %s" % (this_id, str(body)))
         self.transact_update(this_id, self._prefix, body)
         return self.from_json(body)
 
@@ -115,38 +94,6 @@ class ThingData(BaseDynamoDBData):
             obj['files'] = [{'file_id': file_id, 'file_role': file_role}]
         self.transact_update(thing_id, self._prefix, obj)
         return self.from_json(obj)
-
-
-    def add_child_relation(self, thing_id, relation_id, relation_clazz):
-        obj = self._read_object(thing_id)
-        #logger.info(f'child obj: {obj}')
-        logger.info("add_child_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
-        # print("####add_file_relation", thing_id, obj)
-        """
-        try:
-            obj['children'].append({'child_id': relation_id, 'child_clazz': relation_clazz})
-        except (KeyError, AttributeError):
-            obj['children'] = [{'child_id': relation_id, 'child_clazz': relation_clazz}]
-        """
-        if not obj.get('children'):
-            obj['children'] = []
-        obj['children'].append({'child_id': relation_id, 'child_clazz': relation_clazz})
-
-        self.transact_update(thing_id, self._prefix, obj)
-        logger.info(f'add_child_relation transaction OK: added: {relation_id} to children {len(obj["children"])}')
-        return self.from_json(obj)
-
-    def add_parent_relation(self, thing_id, relation_id, relation_clazz):
-        obj = self._read_object(thing_id)
-        print('parent obj', obj)
-        logger.info("add_parent_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
-        try:
-            obj['parents'].append({'parent_id': relation_id, 'parent_clazz': relation_clazz})
-        except (KeyError, AttributeError):
-            obj['parents'] = [{'parent_id': relation_id, 'parent_clazz': relation_clazz}]
-        self.transact_update(thing_id, self._prefix, obj)
-        return self.from_json(obj)
-
 
     @staticmethod
     def from_json(jsondata):

@@ -60,6 +60,7 @@ class CreateTaskTaskRelation(graphene.Mutation):
         logger.debug(f"CreateTaskTaskRelation.mutate: {kwargs}")
         parent_type, parent_id = from_global_id(kwargs.pop('parent_id'))
         child_type, child_id = from_global_id(kwargs.pop('child_id'))
+
         thing_relation = get_data_manager().thing_relation.create(parent_type, child_type, parent_id, child_id, **kwargs)
         logger.info(f"CreateTaskTaskRelation.mutate: thing_relation {thing_relation}")
 

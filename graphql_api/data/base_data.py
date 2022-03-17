@@ -99,6 +99,23 @@ class BaseData():
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return results
     
+
+    def get_object(self, object_id):
+        """get a pynamodb model instance from  DynamoDB.
+
+        Args:
+            object_id int: unique ID of the obect
+        Returns:
+            pynamodb model object
+        """
+        t0 = dt.utcnow()
+        key = "%s/%s" % (self._prefix, object_id)
+        logger.debug(f'get_object key: {key}')
+
+        obj = self._model.get(key, self._prefix)
+        db_metrics.put_duration(__name__, 'get_object' , dt.utcnow()-t0)
+        return obj
+
     def _read_object(self, object_id):
         """read object contents from the DynamoDB or S3 bucket.
 
@@ -109,11 +126,11 @@ class BaseData():
             dict: object data deserialised from the json object
         """
         t0 = dt.utcnow()
-        key = "%s/%s" % (self._prefix, object_id)
-        logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
+        #key = "%s/%s" % (self._prefix, object_id)
+        #logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
         
         try:
-            obj = self._model.get(key, self._prefix)
+            obj = self.get_object( object_id)
             db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
             return obj.object_content
         except:
@@ -144,7 +161,11 @@ class BaseDynamoDBData(BaseData):
         self._connection = connection
         if not TESTING and IS_OFFLINE:
             self._connection = Connection(host=DB_ENDPOINT)
-            
+
+    @property
+    def model(self):
+        return self._model
+
     def get_next_id(self) -> str:
         """
         Returns:
@@ -163,9 +184,8 @@ class BaseDynamoDBData(BaseData):
 
 
     @backoff.on_exception(backoff.expo,
-            ( pynamodb.exceptions.TransactWriteError,
-                requests.exceptions.RequestException),
-            max_time=60, on_backoff=backoff_hdlr)
+        pynamodb.exceptions.TransactWriteError,
+        max_time=60, on_backoff=backoff_hdlr)
     def _write_object(self, object_id, object_type, body):
         """write object contents to the DynamoDB table.
 
@@ -186,7 +206,6 @@ class BaseDynamoDBData(BaseData):
 
         toshi_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
 
-        # try:
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(identity,
                             actions=[ToshiIdentity.object_id.add(1)])
@@ -200,9 +219,9 @@ class BaseDynamoDBData(BaseData):
 
 
     @backoff.on_exception(backoff.expo,
-            ( pynamodb.exceptions.TransactWriteError,
-                requests.exceptions.RequestException),
-            max_time=6, on_backoff=backoff_hdlr)
+        pynamodb.exceptions.TransactWriteError,
+        max_time=60,
+        on_backoff=backoff_hdlr)
     def transact_update(self, object_id, object_type, body):
         t0 = dt.utcnow()
         logger.info("%s.update: %s : %s" % (object_type, object_id, str(body)))
@@ -215,8 +234,7 @@ class BaseDynamoDBData(BaseData):
                 actions=[self._model.object_content.set(body)]
             )
 
-        es_key = key.replace("/", "_")
-        self._db_manager.search_manager.index_document(es_key, body)
+        self._db_manager.search_manager.index_document(key, body)
         db_metrics.put_duration(__name__, 'transact_update' , dt.utcnow()-t0)
         # print('#####updated:', object_id, self._model.get(key, object_type).object_content)
 

@@ -21,8 +21,7 @@ class DataManager():
         self._thing = ThingData(_args, self, ToshiThingObject)
         self._table = TableData(_args, self, ToshiTableObject)
         self._file_relation = FileRelationData(_args, self)
-        self._thing_relation = ThingRelationData(_args, self)
-        #Todo FileRel and ThingRel dont use DynamoDB?
+        self._thing_relation = ThingRelationData(_args, self, ToshiThingObject)
         self._search_manager = search_manager
         #set up the singleton
         global dm_instance
