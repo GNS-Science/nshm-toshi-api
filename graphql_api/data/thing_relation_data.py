@@ -1,16 +1,13 @@
 """
 Object manager for ThingRelation (and subclassed) schema objects
 """
-import datetime as dt
-
+import logging
+import backoff
 import pynamodb.exceptions
 from pynamodb.transactions import TransactWrite
 
-import logging
-import backoff
 from importlib import import_module
 from .base_data import BaseDynamoDBData
-from .thing_data import ThingData
 
 logger = logging.getLogger(__name__)
 

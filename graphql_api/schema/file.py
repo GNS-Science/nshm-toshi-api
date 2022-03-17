@@ -47,7 +47,7 @@ class FileInterface(graphene.Interface):
 
         elif isinstance(root.relations[0], dict):
             #new form, files is list of objects
-            res = [get_data_manager().file_relation.build_one(root.id, relation['id'], relation['role']) for relation in root.relations]
+            res = [get_data_manager().file_relation.build_one(root.id, relation['thing_id'], relation['file_role']) for relation in root.relations]
             db_metrics.put_duration(__name__, 'resolve_relations[optimised]' , dt.utcnow()-t0)
 
         else:

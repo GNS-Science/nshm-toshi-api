@@ -10,11 +10,12 @@ formatters:
 handlers:
 
   console_handler:
-    level: ERROR
+    level: INFO
     formatter: standard
     class: logging.StreamHandler
     stream: ext://sys.stdout
 
+  #FOR local testing , not AWS
   file_handler:
     level: DEBUG
     formatter: standard
@@ -59,7 +60,7 @@ loggers:
     propagate: no
 
   graphql_api.schema.search_manager:
-    level: DEBUG
+    level: INFO
     handlers: [console_handler, file_handler]
     propagate: no
 

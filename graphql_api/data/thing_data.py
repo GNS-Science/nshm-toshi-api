@@ -110,5 +110,5 @@ class ThingData(BaseDynamoDBData):
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 
-        print('CLAZZ', clazz(**jsondata))
+        logger.debug(f'from_json() CLAZZ from json: {jsondata}')
         return clazz(**jsondata)
