@@ -16,7 +16,7 @@ handlers:
     stream: ext://sys.stdout
 
   file_handler:
-    level: INFO
+    level: DEBUG
     formatter: standard
     class: logging.FileHandler
     filename: api.log
@@ -59,7 +59,7 @@ loggers:
     propagate: no
 
   graphql_api.schema.search_manager:
-    level: ERROR
+    level: DEBUG
     handlers: [console_handler, file_handler]
     propagate: no
 
