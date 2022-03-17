@@ -27,4 +27,4 @@ CW_METRICS_RESOLUTION = os.getenv('CW_METRICS_RESOLUTION', 60) #1 for high resol
 S3_BUCKET_NAME = os.environ.get('S3_BUCKET_NAME', "S3_BUCKET_NAME_unconfigured")
 FIRST_DYNAMO_ID = int(os.getenv('FIRST_DYNAMO_ID', 100000))
 
-LOGGING_CFG = os.getenv('LOGGING_CFG', 'graphql_api/logging.yaml')
+LOGGING_CFG = os.getenv('LOGGING_CFG', 'graphql_api/logging_aws.yaml')

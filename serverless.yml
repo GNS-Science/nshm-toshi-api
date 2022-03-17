@@ -88,7 +88,7 @@ custom:
   esDomainName: ${self:custom.app_acronym}-es-${self:custom.stage}
   esIndex: toshi_index
 
-  first_dynamo_id: ${env:FIRST_DYNAMO_ID, 10000}
+  first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
 
 provider:
   name: aws

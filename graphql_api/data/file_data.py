@@ -121,7 +121,7 @@ class FileData(BaseDynamoDBData):
 
     @staticmethod
     def from_json(jsondata):
-        logger.info("from_json: %s" % str(jsondata))
+        logger.debug("from_json: %s" % str(jsondata))
 
         #datetime comversions
         created = jsondata.get('created')
