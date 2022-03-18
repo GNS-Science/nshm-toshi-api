@@ -2,32 +2,54 @@
 Object manager for FileRelation (and subclassed) schema objects
 """
 import logging
-from importlib import import_module
-from .base_data import BaseData
 import datetime as dt
+from importlib import import_module
+import backoff
+import pynamodb.exceptions
+from pynamodb.transactions import TransactWrite
+from .base_data import BaseDynamoDBData
 
 logger = logging.getLogger(__name__)
 
-class FileRelationData(BaseData):
+class FileRelationData(BaseDynamoDBData):
     """
-    FileRelationData provides the S3 interface for FileRelation objects
+    FileRelationData provides the data interface for FileRelation objects
     """
-    def create(self, clazz_name, thing_id, file_id, role, **kwargs):
-        """
-        Args:
-            clazz_name (String): the class name of schema object
-            related_id (TYPE): Description
-            file_id (TYPE): Description
-            **kwargs: the field data
 
-        Returns:
-            Thing: a new instance of the clazz_name
+    @backoff.on_exception(backoff.expo,
+        pynamodb.exceptions.TransactWriteError,
+        max_time=60)
+    def create(self, clazz_name, thing_id, file_id, role):
 
-        """
+        thing = self._db_manager.thing.get_object(thing_id)
+        file = self._db_manager.file.get_object(file_id)
 
-        #update backref to new FileRelation
-        self._db_manager.file.add_thing_relation(file_id=file_id, thing_id=thing_id, thing_role=role)
-        self._db_manager.thing.add_file_relation(thing_id=thing_id, file_id=file_id, file_role=role)
+        thing_content = thing.object_content
+        if not thing_content.get('files'):
+            thing_content['files'] = []
+        thing_content['files'].append({'file_id': file_id, 'file_role': role})
+
+        file_content = file.object_content
+        if not file_content.get('relations'):
+            file_content['relations'] = []
+        file_content['relations'].append({'id': thing_id, 'role': role})
+
+        with TransactWrite(connection=self._connection) as transaction:
+            transaction.update(thing,
+                actions=[self._db_manager.thing.model.object_content.set(thing_content)])
+            transaction.update(file,
+                actions=[self._db_manager.file.model.object_content.set(file_content)])
+
+        logger.info(f'FileRelationData.create() linking file {file_id} to and thing {thing_id} in role {role}')
+
+        logger.debug(f'FileRelationData.create() thing {thing_id} has {len(thing_content["files"])} file')
+        logger.debug(f'FileRelationData.create() file {file_id} has {len(file_content["relations"])} related things')
+
+        self._db_manager.search_manager.index_document(thing.object_id, thing_content)
+        self._db_manager.search_manager.index_document(file.object_id, file_content)
+
+        return self.build_one(file_id, thing_id, role)
+
 
     def get_one(self, _id):
         """
@@ -48,7 +70,6 @@ class FileRelationData(BaseData):
         Returns:
             File: the Thing object
         """
-
         jsondata = {'file_id': file_id, 'thing_id': thing_id, 'role': thing_role}
         logger.info("get_one: %s" % str(jsondata))
         relation =  self.from_json(jsondata)
@@ -57,7 +78,7 @@ class FileRelationData(BaseData):
 
     @staticmethod
     def from_json(jsondata):
-         #datetime comversions
+        #datetime comversions
         created = jsondata.get('created')
         if created:
             jsondata['created'] = dt.datetime.fromisoformat(created)

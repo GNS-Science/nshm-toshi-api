@@ -67,8 +67,6 @@ TASKMOCK = lambda _self, _id: {
     }
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
-@mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
 class TestGeneralTaskBug29(unittest.TestCase):
     """
     All datastore (data) methods are mocked.
@@ -79,8 +77,8 @@ class TestGeneralTaskBug29(unittest.TestCase):
         # migrate()
 
     @mock.patch('graphql_api.data.BaseData._read_object', TASKMOCK)
-    @mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
     @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
+    @mock.patch('graphql_api.data.thing_relation_data.ThingRelationData.create', lambda self, parent_clazz, child_clazz, parent_id, child_id: {})
     def test_create_two_gts_and_link_them(self):
         # the first GT
         gt1_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))

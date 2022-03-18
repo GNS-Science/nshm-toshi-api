@@ -42,31 +42,8 @@ class FileData(BaseDynamoDBData):
         Returns:
             File: the File object
         """
-        
-        """
-        1: Read objectID for the table type
-        2: Increment the object ID to +1
-        3: create new object with new ID
-        4: save object to DB
-        note: this should complete the transaction and should fail if there was a clash on the object ID,
-              the result of this transaction should be both the Identity.object_ID and File.object_id should be equal and both succeed
-        """
-        
-        
-
-        # TODO remove append_uniq
-
-        next_id = self.get_next_id()
-        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        new = clazz(next_id, **kwargs)
-        body = new.__dict__.copy()
-        body['clazz_name'] = clazz_name
-        if body.get('created'):
-            body['created'] = body['created'].isoformat()
-        
-        self._write_object(next_id, self._prefix, body)
-
-        data_key = "%s/%s/%s" % (self._prefix, next_id, body["file_name"])
+        new_instance = super().create(clazz_name, **kwargs)
+        data_key = "%s/%s/%s" % (self._prefix, new_instance.id, new_instance.file_name)
 
         t0 = dt.utcnow()
         response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
@@ -74,7 +51,7 @@ class FileData(BaseDynamoDBData):
                                           Key=data_key,
                                           Fields={
                                             'acl': 'public-read',
-                                            'Content-MD5': body.get('md5_digest'),
+                                            'Content-MD5': new_instance.md5_digest,
                                             'Content-Type': 'binary/octet-stream'
                                             },
                                           Conditions=[
@@ -86,8 +63,8 @@ class FileData(BaseDynamoDBData):
 
         db_metrics.put_duration(__name__, 'create[placeholder+generate-presigned-post]' , dt.utcnow()-t0)
 
-        new.post_url = json.dumps(parts['fields'])
-        return new
+        new_instance.post_url = json.dumps(parts['fields'])
+        return new_instance
 
     def get_one(self, file_id, expected_class="File"):
         """
@@ -142,25 +119,9 @@ class FileData(BaseDynamoDBData):
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return task_results
 
-    def add_thing_relation(self, file_id, thing_id, thing_role):
-        """
-        Args:
-            file_id (string): the file object id
-            thing_id (string): the thing object id
-            thing_role: the thing's role
-        """
-        logger.info("add_thing_relation: file_id %s, thing_id: %s" % (file_id, thing_id))
-        obj = self._read_object(file_id)
-        try:
-            obj['relations'].append({'id': thing_id, 'role': thing_role})
-        except (KeyError, AttributeError):
-            obj['relations'] = [{'id': thing_id, 'role': thing_role}]
-        self.transact_update(file_id, self._prefix, obj)
-        return self.from_json(obj)
-
     @staticmethod
     def from_json(jsondata):
-        logger.info("from_json: %s" % str(jsondata))
+        logger.debug("from_json: %s" % str(jsondata))
 
         #datetime comversions
         created = jsondata.get('created')

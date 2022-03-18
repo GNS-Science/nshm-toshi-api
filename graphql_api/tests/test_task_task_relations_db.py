@@ -53,19 +53,19 @@ class TestTaskTaskRelations(unittest.TestCase):
         rupt_gen_task= ThingData(thing_args, self._data_manager, ToshiThingObject, self._connection)
         rupt_gen_task.create(clazz_name='RuptureGenerationTask', created=dt.datetime.now(tzutc()))
 
-        general_task.add_child_relation(START_ID, START_ID+1, 'RuptureGenerationTask')
-        rupt_gen_task.add_parent_relation(START_ID+1, START_ID, 'GeneralTask')
+        self._data_manager.thing_relation.create(parent_clazz='GeneralTask', child_clazz='RuptureGenerationTask',
+           parent_id=str(START_ID), child_id=str(START_ID+1))
         
         print(rupt_gen_task._read_object(str(START_ID+1)))
         assert rupt_gen_task._read_object(str(START_ID+1))['id'] == START_ID+1
         assert rupt_gen_task._read_object(str(START_ID+1))['clazz_name'] == 'RuptureGenerationTask'
-        assert rupt_gen_task._read_object(str(START_ID+1))['parents'][0]['parent_id'] == START_ID
+        assert rupt_gen_task._read_object(str(START_ID+1))['parents'][0]['parent_id'] == str(START_ID)
         assert rupt_gen_task._read_object(str(START_ID+1))['parents'][0]['parent_clazz'] == 'GeneralTask'
         
         print(general_task._read_object(str(START_ID)))
         assert general_task._read_object(str(START_ID))['id'] == START_ID
         assert general_task._read_object(str(START_ID))['clazz_name'] == 'GeneralTask'
-        assert general_task._read_object(str(START_ID))['children'][0]['child_id'] == START_ID+1
+        assert general_task._read_object(str(START_ID))['children'][0]['child_id'] == str(START_ID+1)
         assert general_task._read_object(str(START_ID))['children'][0]['child_clazz'] == 'RuptureGenerationTask'
 
         

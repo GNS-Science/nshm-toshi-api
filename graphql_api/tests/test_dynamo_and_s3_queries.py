@@ -203,10 +203,12 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
         self._auto_task_2.create(clazz_name='AutomationTask', created=dt.datetime.now(tzutc()))
         self._inversion = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         self._inversion.create(clazz_name='InversionSolution', created=dt.datetime.now(tzutc()))
-        self._general_task.add_child_relation(str(START_ID), str(START_ID+1), 'AutomationTask')
-        self._general_task.add_child_relation(str(START_ID), str(START_ID+2), 'AutomationTask')
-        self._auto_task_1.add_parent_relation(str(START_ID+1), str(START_ID), 'GeneralTask')
-        self._auto_task_2.add_parent_relation(str(START_ID+2), str(START_ID), 'GeneralTask')
+
+        self._data_manager.thing_relation.create(parent_clazz='GeneralTask', child_clazz='AutomationTask',
+           parent_id=str(START_ID), child_id=str(START_ID+1))
+
+        self._data_manager.thing_relation.create(parent_clazz='GeneralTask', child_clazz='AutomationTask',
+           parent_id=str(START_ID), child_id=str(START_ID+2))
     
     
     def test_get_gt(self):

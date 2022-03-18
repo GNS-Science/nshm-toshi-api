@@ -43,7 +43,7 @@ class FileInterface(graphene.Interface):
             info.field_asts[0].selection_set.selections[0].name.value == 'total_count'):
             from graphql_api.schema.file_relation import FileRelationConnection
             res = FileRelationConnection(edges= [None for x in range(len(root.relations))])
-            db_metrics.put_duration(__name__, 'resolve_files[total_count]' , dt.utcnow()-t0)
+            db_metrics.put_duration(__name__, 'resolve_relations[total_count]' , dt.utcnow()-t0)
 
         elif isinstance(root.relations[0], dict):
             #new form, files is list of objects

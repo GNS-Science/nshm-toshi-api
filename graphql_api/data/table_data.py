@@ -18,6 +18,7 @@ class TableData(BaseDynamoDBData):
     """
     TableData provides the data storage for Table objects
     """
+
     def create(self, clazz_name, **kwargs):
         """
         Args:
@@ -30,18 +31,10 @@ class TableData(BaseDynamoDBData):
         Raises:
             ValueError: invalid data exception
         """
-        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        next_id  = self.get_next_id()
         if not  kwargs['created'].tzname(): #must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
 
-        new = clazz(next_id, **kwargs)
-        body = new.__dict__.copy()
-        body['clazz_name'] = clazz_name
-        body['created'] = body['created'].isoformat()
-        self._write_object(next_id, self._prefix, body)
-        return new
-
+        return super().create(clazz_name, **kwargs)
 
 
     def get_one(self, thing_id):

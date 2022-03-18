@@ -1,18 +1,24 @@
 """
 Object manager for ThingRelation (and subclassed) schema objects
 """
-import datetime as dt
-from graphql_api.dynamodb.models import ToshiThingObject
 import logging
+import backoff
+import pynamodb.exceptions
+from pynamodb.transactions import TransactWrite
+
 from importlib import import_module
-from .base_data import BaseData
+from .base_data import BaseDynamoDBData
 
 logger = logging.getLogger(__name__)
 
-class ThingRelationData(BaseData):
+class ThingRelationData(BaseDynamoDBData):
     """
     ThingRelationData provides the S3 interface for ThingRelation objects
     """
+
+    @backoff.on_exception(backoff.expo,
+        pynamodb.exceptions.TransactWriteError,
+        max_time=60)
     def create(self, parent_clazz, child_clazz, parent_id, child_id, **kwargs):
         """
         Args:
@@ -20,10 +26,33 @@ class ThingRelationData(BaseData):
             parent_id (TYPE): Description
             child_id (TYPE): Description
             **kwargs: the field data
-
         """
-        self._db_manager.thing.add_child_relation(thing_id=parent_id, relation_id=child_id, relation_clazz=child_clazz)
-        self._db_manager.thing.add_parent_relation(thing_id=child_id, relation_id=parent_id, relation_clazz=parent_clazz)
+        parent = self._db_manager.thing.get_object(parent_id)
+        child = self._db_manager.thing.get_object(child_id)
+
+        parent_content = parent.object_content
+        if not parent_content.get('children'):
+            parent_content['children'] = []
+        parent_content['children'].append({'child_id': child_id, 'child_clazz': child_clazz})
+
+        child_content = child.object_content
+        if not child_content.get('parents'):
+            child_content['parents'] = []
+        child_content['parents'].append({'parent_id': parent_id, 'parent_clazz': parent_clazz})
+
+        with TransactWrite(connection=self._connection) as transaction:
+            transaction.update(parent,
+                actions=[self._db_manager.thing.model.object_content.set(parent_content)])
+            transaction.update(child,
+                actions=[self._db_manager.thing.model.object_content.set(child_content)])
+
+        logger.info(f'create add_child_relation transaction OK: added: {child_id} to children {len(parent_content["children"])} of parent {parent_id}')
+        logger.info(f'create parent_relation : added: {parent_id} to parents {len(child_content["parents"])} of child {child_id}')
+
+        self._db_manager.search_manager.index_document(parent.object_id, parent_content)
+        self._db_manager.search_manager.index_document(child.object_id, child_content)
+
+        return self.build_one(parent_id, child_id)
 
     def get_one(self, _id):
         """
@@ -32,7 +61,7 @@ class ThingRelationData(BaseData):
         Returns:
             File: the Thing object
         """
-        print('THING RELATION GET ONE', _id)
+        logger.info(f'LEGACY RELATION GET ONE{_id}')
         jsondata = self._read_object(_id)
         logger.info("get_one: %s" % str(jsondata))
         relation =  self.from_json(jsondata)
@@ -51,48 +80,9 @@ class ThingRelationData(BaseData):
         relation =  self.from_json(jsondata)
         return relation
 
-    # def build_parent(self, parent_id, clazz_name):
-    #     """
-    #     Args:
-    #         parent_id (string): the parent id
-    #         child_id (string): the child id
-    #     Returns:
-    #         File: the Thing object
-    #     """
-
-    #     jsondata = {'id': parent_id, 'clazz_name': clazz_name}
-    #     logger.info("build_one: %s" % str(jsondata))
-    #     relation =  self.from_json(jsondata)
-    #     return relation
-
-    # def build_child(self, child_id, clazz_name):
-    #     """
-    #     Args:
-    #         parent_id (string): the parent id
-    #         child_id (string): the child id
-    #     Returns:
-    #         File: the Thing object
-    #     """
-    #     jsondata = {'id': child_id, 'clazz_name': clazz_name}
-    #     logger.info("build_one: %s" % str(jsondata))
-    #     relation =  self.from_json(jsondata)
-    #     return relation
-
-    # def _read_object(self, object_id):
-    #     key = f'ThingData/{object_id}'
-    #     print ('thing relation reads', key)
-    #     obj = ToshiThingObject.get(key, 'ThingData')
-    #     #print (obj)
-    #     return obj.object_content
-
     @staticmethod
     def from_json(jsondata):
         
-        # created = jsondata.get('created')
-        # if created:
-        #     jsondata['created'] = dt.datetime.fromisoformat(created)
-
-        # jsondata.pop('id', None)
         clazz = getattr(import_module('graphql_api.schema'), "TaskTaskRelation")
 
         #id is no longer a class attribute, but some old objects may still exist

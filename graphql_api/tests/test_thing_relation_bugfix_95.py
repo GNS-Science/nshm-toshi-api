@@ -140,8 +140,6 @@ RUPTMOCK = {'id': 0, "clazz_name": "RuptureGenerationTask",  'created': '2022-10
 GENMOCK = {'id': 1, "clazz_name": "GeneralTask", 'created': '2022-10-10T23:00:00+00:00', 'files': None, 'parents': None, 'children': [{'child_id': '0', 'child_clazz': 'RuptureGenerationTask'}], 'updated': None, 'agent_name': 'benc', 'title': 'My Third Manual task', 'description': '##Some notes go here', 'argument_lists': None, 'swept_arguments': None, 'meta': None, 'notes': None, 'subtask_count': None, 'subtask_type': None, 'model_type': None, 'subtask_result': None}
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
-@mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
 class TestGeneralTaskBug29(unittest.TestCase):
     """
     All datastore (data) methods are mocked.
@@ -152,7 +150,7 @@ class TestGeneralTaskBug29(unittest.TestCase):
         # migrate()
 
     @mock.patch('graphql_api.data.BaseData._read_object', TASKMOCK)
-    @mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
+    @mock.patch('graphql_api.data.thing_relation_data.ThingRelationData.create', lambda self, parent_clazz, child_clazz, parent_id, child_id: {})
     @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
     def test_create_gt_and_ruptgen_and_link_them(self):
         # the first GT

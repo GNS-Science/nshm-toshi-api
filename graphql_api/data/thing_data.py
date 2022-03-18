@@ -13,35 +13,15 @@ from graphql_relay import from_global_id, to_global_id
 
 logger = logging.getLogger(__name__)
 
-
 class ThingData(BaseDynamoDBData):
     """
     ThingData provides the data storage for Thing objects
     """
+
     def create(self, clazz_name, **kwargs):
-        """
-        Args:
-            clazz_name (String): the class name of schema object
-            **kwargs: the field data
-
-        Returns:
-            Thing: a new instance of the clazz_name
-
-        Raises:
-            ValueError: invalid data exception
-        """
-        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-        next_id  = self.get_next_id()
         if not  kwargs['created'].tzname(): #must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
-
-        new = clazz(next_id, **kwargs)
-        body = new.__dict__.copy()
-        body['clazz_name'] = clazz_name
-        body['created'] = body['created'].isoformat()
-        self._write_object(next_id, self._prefix, body)
-        return new
-
+        return super().create(clazz_name, **kwargs)
 
     def migrate_old_thing_object(self, thing):
         """
@@ -74,27 +54,8 @@ class ThingData(BaseDynamoDBData):
         Returns:
             File: the Thing object
         """
-        # TODO: validate the type of the object in case ID passed in by client is invalid
-        #
-        # e.g. query get_new_task {
-        # node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA=") {
-        #         __typename
-        #                 ... on StrongMotionStation {
-        #           id
-        #           site_code
-        #         }
-        #     ... on RuptureGenerationTask {
-        #             arguments {k v}
-        #         created
-        #         state
-        #         result
-        #         }
-        #     }
-        # }
-        # after smoketests the query will return an SMS, but object Type in ID is RuptureGenerationTask
 
         jsondata = self.migrate_old_thing_object(self._read_object(thing_id))
-        # print('JSONDATA', jsondata)
         return self.from_json(jsondata)
 
 
@@ -108,7 +69,7 @@ class ThingData(BaseDynamoDBData):
             TYPE: the Thing object
         """
         _type, this_id = from_global_id(thing_id)
-        print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
+        #print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
         assert _type == clazz_name
 
         if kwargs.get('created'):
@@ -120,9 +81,7 @@ class ThingData(BaseDynamoDBData):
         jsondata = self.migrate_old_thing_object(self.get_one_raw(this_id))
         body = benedict(jsondata)
         body.merge(kwargs)
-        # body['clazz_name'] = clazz_name
         logger.info("ThingData.update: %s : %s" % (this_id, str(body)))
-        print("ThingData.update: %s : %s" % (this_id, str(body)))
         self.transact_update(this_id, self._prefix, body)
         return self.from_json(body)
 
@@ -135,31 +94,6 @@ class ThingData(BaseDynamoDBData):
             obj['files'] = [{'file_id': file_id, 'file_role': file_role}]
         self.transact_update(thing_id, self._prefix, obj)
         return self.from_json(obj)
-
-
-    def add_child_relation(self, thing_id, relation_id, relation_clazz):
-        obj = self._read_object(thing_id)
-        print('child obj', obj)
-        logger.info("add_child_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
-        # print("####add_file_relation", thing_id, obj)
-        try:
-            obj['children'].append({'child_id': relation_id, 'child_clazz': relation_clazz})
-        except (KeyError, AttributeError):
-            obj['children'] = [{'child_id': relation_id, 'child_clazz': relation_clazz}]
-        self.transact_update(thing_id, self._prefix, obj)
-        return self.from_json(obj)
-
-    def add_parent_relation(self, thing_id, relation_id, relation_clazz):
-        obj = self._read_object(thing_id)
-        print('parent obj', obj)
-        logger.info("add_parent_relation: thing_id: %s, relation_id %s, " % (thing_id, relation_id))
-        try:
-            obj['parents'].append({'parent_id': relation_id, 'parent_clazz': relation_clazz})
-        except (KeyError, AttributeError):
-            obj['parents'] = [{'parent_id': relation_id, 'parent_clazz': relation_clazz}]
-        self.transact_update(thing_id, self._prefix, obj)
-        return self.from_json(obj)
-
 
     @staticmethod
     def from_json(jsondata):
@@ -176,5 +110,5 @@ class ThingData(BaseDynamoDBData):
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 
-        print('CLAZZ', clazz(**jsondata))
+        logger.debug(f'from_json() CLAZZ from json: {jsondata}')
         return clazz(**jsondata)
