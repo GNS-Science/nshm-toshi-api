@@ -97,6 +97,7 @@ bin/*
 node_modules/*
 package-lock.json
 /.project
+.dynamodb
 
 #VSCode settings
 .vscode

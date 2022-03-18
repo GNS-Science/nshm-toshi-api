@@ -4,8 +4,8 @@ plugins:
   - serverless-python-requirements
   - serverless-wsgi
   - serverless-s3-local
+  - serverless-dynamodb-local
   - serverless-plugin-warmup
-
 package:
   individually: false
   exclude:
@@ -26,13 +26,33 @@ custom:
   wsgi:
     app: graphql_api.api.app
     packRequirements: false
+    pythonBin: python3
+
   #serverless-python-requirements settings
   pythonRequirements:
     dockerizePip: non-linux
+    slim: true
+    slimPatterns:
+      - '**/*.egg-info*'
+    noDeploy:
+      - botocore
+
   #serverless-s3-local settings
   s3:
     host: localhost
     directory: /tmp
+  #dynamodb-local settings
+  dynamodb:
+  # If you only want to use DynamoDB Local in some stages, declare them here
+    stages:
+      - local
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      sharedDb: true
+
   #Lambda warmer see https://www.serverless.com/plugins/serverless-plugin-warmup
   warmup:
     lowConcurrencyWarmer:
@@ -68,15 +88,18 @@ custom:
   esDomainName: ${self:custom.app_acronym}-es-${self:custom.stage}
   esIndex: toshi_index
 
+  first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
+
 provider:
   name: aws
   runtime: python3.8
-  # stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
   environment:
     REGION: ${self:custom.region}
     S3_BUCKET_NAME: ${self:custom.s3_bucket}
     URL_DEFAULT_TTL: ${self:custom.url_default_ttl}
+    DEPLOYMENT_STAGE: ${self:custom.stage}
   iamRoleStatements:
     # S3 access policy
     - Effect: Allow
@@ -100,9 +123,21 @@ provider:
        Action:
          - "cloudwatch:PutMetricData"
        Resource: "*"
+
+    - Effect: Allow
+      Action:
+         - "dynamodb:Scan"
+         - "dynamodb:DescribeTable"
+         - "dynamodb:CreateTable"
+         - "dynamodb:GetItem"
+         - "dynamodb:PutItem"
+         - "dynamodb:ConditionCheckItem"
+         - "dynamodb:UpdateItem"
+      Resource: '*'
+
   apiGateway:
     apiKeys:
-      - name: TempApiKey-${self:custom.stack_name}
+      - name: TempApiKey-${self:custom.stage}
         description: Api key until we have an auth function # Optional
 
 functions:
@@ -129,6 +164,7 @@ functions:
       ES_REGION: ${self:custom.region}
       ES_DOMAIN_NAME: ${self:custom.esDomainName}
       STACK_NAME: ${self:custom.stack_name}
+      FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
     warmup:
       lowConcurrencyWarmer:
         enabled:

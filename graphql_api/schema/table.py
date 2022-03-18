@@ -15,7 +15,7 @@ This module contains the schema definition for an Table
 import graphene
 from graphene import relay
 from graphene import Enum
-from graphql_api.data_s3 import get_data_manager
+from graphql_api.data import get_data_manager
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, KeyValueListPair, KeyValueListPairInput
 
 from datetime import datetime as dt
@@ -88,5 +88,5 @@ class CreateTable(relay.ClientIDMutation):
         t0 = dt.utcnow()
         print("mutate_and_get_payload: ", kwargs)
         table = get_data_manager().table.create('Table', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateFile.mutate' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, 'CreateTable.mutate' , dt.utcnow()-t0)
         return CreateTable(table=table)

@@ -1,0 +1,2 @@
+class DynamoWriteConsistencyError(RuntimeError):
+    pass
