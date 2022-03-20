@@ -30,7 +30,9 @@ class FileRelationData(BaseDynamoDBData):
         except pynamodb.exceptions.DoesNotExist as err:
             body = self._db_manager.file._from_s3(file_id)
             logger.info(f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix}; object_type={body['clazz_name']}")
+            #file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
             file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
+
             logger.debug(f'ToshiFileObject version {file.version}')
 
         thing_content = thing.object_content
@@ -46,14 +48,21 @@ class FileRelationData(BaseDynamoDBData):
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(thing,
                 actions=[self._db_manager.thing.model.object_content.set(thing_content)])
+            #update will create a new object if it doesn't exist
             transaction.update(file,
                 actions=[self._db_manager.file.model.object_content.set(file_content)])
 
         logger.debug(f'FileRelationData.create() thing {thing_id} has {len(thing_content["files"])} file')
         logger.debug(f'FileRelationData.create() file {file_id} has {len(file_content["relations"])} related things')
 
-        self._db_manager.search_manager.index_document(thing.object_id, thing_content)
-        self._db_manager.search_manager.index_document(file.object_id, file_content)
+        es_thing_key = f"{self._db_manager.thing._prefix}_{thing_id}"
+        es_file_key = f"{self._db_manager.file._prefix}_{file_id}"
+
+        logger.info(f"update ES for key {es_thing_key}")
+        logger.info(f"update ES for key {es_file_key}")
+
+        self._db_manager.search_manager.index_document(es_thing_key, thing_content)
+        self._db_manager.search_manager.index_document(es_file_key, file_content)
 
         return self.build_one(file_id, thing_id, role)
 

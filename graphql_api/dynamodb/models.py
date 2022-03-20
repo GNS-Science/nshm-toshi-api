@@ -11,7 +11,7 @@ class ToshiTableObject(Model):
             host = "http://localhost:8000"
 
     object_id = UnicodeAttribute(hash_key=True)
-    object_type = UnicodeAttribute(range_key=True) #eg WLG-10000
+    object_type = UnicodeAttribute()
     object_content = JSONAttribute() # the json string
     version = VersionAttribute()
     
@@ -24,7 +24,7 @@ class ToshiFileObject(Model):
             host = "http://localhost:8000"
 
     object_id = UnicodeAttribute(hash_key=True)
-    object_type = UnicodeAttribute(range_key=True) #eg WLG-10000
+    object_type = UnicodeAttribute()
     object_content = JSONAttribute() # the json string
     version = VersionAttribute()
     
@@ -38,7 +38,7 @@ class ToshiThingObject(Model):
             host = "http://localhost:8000"
 
     object_id = UnicodeAttribute(hash_key=True)
-    object_type = UnicodeAttribute(range_key=True) #eg WLG-10000
+    object_type = UnicodeAttribute() #eg WLG-10000
     object_content = JSONAttribute() # the json string
     version = VersionAttribute()
     

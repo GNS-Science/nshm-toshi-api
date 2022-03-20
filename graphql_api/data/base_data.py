@@ -110,10 +110,11 @@ class BaseData():
             pynamodb model object
         """
         t0 = dt.utcnow()
-        key = "%s/%s" % (self._prefix, object_id)
-        logger.debug(f'get_object key: {key}')
+        #key = "%s/%s" % (self._prefix, object_id)
+        #logger.info(f'get_object key: {object_id}')
+        logger.info(f'get dynamo key: {object_id} for model {self._model}')
 
-        obj = self._model.get(key, self._prefix)
+        obj = self._model.get(str(object_id))
         db_metrics.put_duration(__name__, 'get_object' , dt.utcnow()-t0)
         return obj
 
@@ -182,6 +183,10 @@ class BaseDynamoDBData(BaseData):
         #logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
 
         try:
+            #key = "%s/%s" % (self._prefix, object_id)
+            #obj = self._model.get(str(object_id))
+            #db_metrics.put_duration(__name__, 'get_object' , dt.utcnow()-t0)
+
             obj = self.get_object( object_id)
             db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
             return obj.object_content
@@ -203,7 +208,7 @@ class BaseDynamoDBData(BaseData):
         """
 
         t0 = dt.utcnow()
-        key = "%s/%s" % (self._prefix, object_id)
+        #key = "%s/%s" % (self._prefix, object_id)
         
         identity = ToshiIdentity.get(self._prefix) #first time round is handled in get_next_id()
 
@@ -212,17 +217,17 @@ class BaseDynamoDBData(BaseData):
             raise graphql_api.dynamodb.DynamoWriteConsistencyError(
                 F"object ids are not consistent!) {(identity.object_id, object_id)}")
 
-        toshi_object = self._model(object_id=key, object_type=self._prefix, object_content=body)
+        toshi_object = self._model(object_id=str(object_id), object_type=body['clazz_name'], object_content=body)
 
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(identity,
                             actions=[ToshiIdentity.object_id.add(1)])
             transaction.save(toshi_object)
 
-        logger.debug(f"toshi_object: key {key} prefix: {self._prefix}")
+        logger.debug(f"toshi_object: object_id {object_id} object_type: {body['clazz_name']}")
 
         db_metrics.put_duration(__name__, '_write_object' , dt.utcnow()-t0)
-        es_key = key.replace("/", "_")
+        es_key = f"{self._prefix}_{object_id}"
         self._db_manager.search_manager.index_document(es_key, body)
 
 
@@ -233,16 +238,18 @@ class BaseDynamoDBData(BaseData):
     def transact_update(self, object_id, object_type, body):
         t0 = dt.utcnow()
         logger.info("%s.update: %s : %s" % (object_type, object_id, str(body)))
-        key = "%s/%s" % (self._prefix, object_id)
+        #key = "%s/%s" % (self._prefix, object_id)
         # try:
-        model = self._model.get(key, object_type)
+        model = self._model.get(object_id)
+        assert model.object_type == body.get('clazz_name')
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(
                 model,
                 actions=[self._model.object_content.set(body)]
             )
 
-        self._db_manager.search_manager.index_document(key, body)
+        es_key = f"{self._prefix}_{object_id}"
+        self._db_manager.search_manager.index_document(es_key, body)
         db_metrics.put_duration(__name__, 'transact_update' , dt.utcnow()-t0)
         # print('#####updated:', object_id, self._model.get(key, object_type).object_content)
 
