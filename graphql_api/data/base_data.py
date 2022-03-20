@@ -51,10 +51,11 @@ class BaseData():
         self._db_manager = db_manager
         self._client = boto3.client('s3', **args)
         self._bucket_name = S3_BUCKET_NAME
-        self._s3 = boto3.resource('s3')
-        self._bucket = self._s3.Bucket(self._bucket_name, client=self._client)
+        self._s3_conn = boto3.resource('s3')
+        self._bucket = self._s3_conn.Bucket(self._bucket_name, client=self._client)
         self._prefix = self.__class__.__name__
         self._connection = Connection(region=REGION)
+
 
     def get_one_raw(self, _id):
         """
@@ -116,33 +117,17 @@ class BaseData():
         db_metrics.put_duration(__name__, 'get_object' , dt.utcnow()-t0)
         return obj
 
-    def _read_object(self, object_id):
-        """read object contents from the DynamoDB or S3 bucket.
 
-        Args:
-            object_id int): unique iD of the obect
+    def _from_s3(self, object_id):
+        S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
+        logger.info(f"get object from bucket {self._bucket_name}, key={S3_key})")
 
-        Returns:
-            dict: object data deserialised from the json object
-        """
-        t0 = dt.utcnow()
-        #key = "%s/%s" % (self._prefix, object_id)
-        #logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
-        
-        try:
-            obj = self.get_object( object_id)
-            db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
-            return obj.object_content
-        except:
-            S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
-            obj = self._s3.Object(bucket_name=self._bucket_name,
-                                  key=S3_key,
-                                  client=self._client)
-            file_object = BytesIO()
-            obj.download_fileobj(file_object)
-            file_object.seek(0)
-            db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
-            return json.load(file_object)
+        s3obj = self._s3_conn.Object(self._bucket_name, S3_key)
+        file_object = BytesIO()
+        s3obj.download_fileobj(file_object)
+        file_object.seek(0)
+
+        return json.load(file_object)
 
     def get_all_in(self, _id_list):
         pass
@@ -181,6 +166,29 @@ class BaseDynamoDBData(BaseData):
             identity.save()
         db_metrics.put_duration(__name__, 'get_next_id' , dt.utcnow()-t0)
         return identity.object_id    
+
+
+    def _read_object(self, object_id):
+        """read object contents from the DynamoDB or S3 bucket.
+
+        Args:
+            object_id int): unique iD of the obect
+
+        Returns:
+            dict: object data deserialised from the json object
+        """
+        t0 = dt.utcnow()
+        #key = "%s/%s" % (self._prefix, object_id)
+        #logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
+
+        try:
+            obj = self.get_object( object_id)
+            db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
+            return obj.object_content
+        except:
+            obj = self._from_s3(object_id)
+            db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
+            return obj
 
 
     @backoff.on_exception(backoff.expo,

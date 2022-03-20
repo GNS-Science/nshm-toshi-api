@@ -61,7 +61,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_create_bare_table(self):
         CREATE_QRY = '''
             mutation ($digest: String!, $file_name: String!, $file_size: Int!, $produced_by: ID!, $mfd_table: ID!) {
@@ -84,7 +84,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         print(result)
         assert result['data']['create_inversion_solution']['inversion_solution']['id'] == 'SW52ZXJzaW9uU29sdXRpb246Tm9uZQ=='
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_get_inversion_solution_by_node_id(self):
         # the first GT
         qry = '''
@@ -114,7 +114,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         assert result['data']['node']['tables'][0]['identity'] == "table0"
 
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, id, updated_body, **kwargs: {})
     @mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
     def test_append_inversion_solution_tables(self):
@@ -186,7 +186,7 @@ class TestCustomResolvers(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data.BaseData._read_object', ISMOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', ISMOCK)
     def test_get_inversion_solution_resolved_by_id_fields(self):
         # the first GT
         qry = '''

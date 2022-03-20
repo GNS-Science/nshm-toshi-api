@@ -153,7 +153,7 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data.BaseData._read_object', TASKZERO)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', TASKZERO)
     def test_update_with_metrics(self):
         qry = '''
             mutation {

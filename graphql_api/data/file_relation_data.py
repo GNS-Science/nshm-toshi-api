@@ -7,6 +7,7 @@ from importlib import import_module
 import backoff
 import pynamodb.exceptions
 from pynamodb.transactions import TransactWrite
+from graphql_api.dynamodb.models import ToshiFileObject
 from .base_data import BaseDynamoDBData
 
 logger = logging.getLogger(__name__)
@@ -21,8 +22,16 @@ class FileRelationData(BaseDynamoDBData):
         max_time=60)
     def create(self, clazz_name, thing_id, file_id, role):
 
+        logger.debug(f'FileRelationData.create() linking file {file_id} to and thing {thing_id} in role {role}')
+
         thing = self._db_manager.thing.get_object(thing_id)
-        file = self._db_manager.file.get_object(file_id)
+        try:
+            file = self._db_manager.file.get_object(file_id)
+        except pynamodb.exceptions.DoesNotExist as err:
+            body = self._db_manager.file._from_s3(file_id)
+            logger.info(f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix}; object_type={body['clazz_name']}")
+            file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
+            logger.debug(f'ToshiFileObject version {file.version}')
 
         thing_content = thing.object_content
         if not thing_content.get('files'):
@@ -39,8 +48,6 @@ class FileRelationData(BaseDynamoDBData):
                 actions=[self._db_manager.thing.model.object_content.set(thing_content)])
             transaction.update(file,
                 actions=[self._db_manager.file.model.object_content.set(file_content)])
-
-        logger.info(f'FileRelationData.create() linking file {file_id} to and thing {thing_id} in role {role}')
 
         logger.debug(f'FileRelationData.create() thing {thing_id} has {len(thing_content["files"])} file')
         logger.debug(f'FileRelationData.create() file {file_id} has {len(file_content["relations"])} related things')

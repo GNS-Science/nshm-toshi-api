@@ -1,17 +1,8 @@
-
-"""
-Test API function for GeneralTask
-
-Mocking our data layer
-
-"""
-#from io import BytesIO
-#from unittest import mock
-
 import datetime as dt
 import unittest
 import boto3
 import json
+from io import BytesIO
 
 from dateutil.tz import tzutc
 
@@ -19,13 +10,14 @@ from graphene.test import Client
 from graphql_relay import from_global_id, to_global_id
 from moto import mock_dynamodb2, mock_s3
 from moto.core import patch_client, patch_resource
+from pynamodb.connection.base import Connection  # for mocking
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
 from graphql_api.schema import root_schema
-from graphql_api.schema import root_schema
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
-
-import graphql_api.data # for mocking
+from graphql_api.data import data_manager
+from graphql_api.schema.search_manager import SearchManager
+from graphql_api.data.thing_data import ThingData
 
 QRY_CREATE_AUTOMATION_TASK = '''
     mutation ($created: DateTime!) {
@@ -58,7 +50,7 @@ QRY_CREATE_AUTOMATION_TASK = '''
 '''
 
 QRY_CREATE_AT_RELATION = '''
-    mutation new_link ($thing_id: ID!, $file_id: ID!) {
+    mutation ($thing_id: ID!, $file_id: ID!) {
       create_file_relation(
         thing_id: $thing_id
         file_id: $file_id
@@ -71,22 +63,8 @@ QRY_CREATE_AT_RELATION = '''
     }
 '''
 
-class IncrId():
-    next_id = -1
-
-    def get_next_id(self, *args):
-        self.next_id +=1
-        return self.next_id
-
-TASKMOCK = lambda _self, _id: {
-    "id": _id,
-    "clazz_name": "GeneralTask",
-    "created": "2020-10-30T09:15:00+00:00",
-    "title": "max_jump_distance"
-    }
 
 ATMOCK = {'id': 0, "clazz_name": "AutomationTask",  'created': '2022-10-10T23:00:00+00:00', 'files': None, 'parents': [{'parent_id': '1', 'parent_clazz': 'GeneralTask'}], 'children': None, 'result': 'undefined', 'state': 'undefined', 'duration': 600.0, 'arguments': [{'k': 'max_jump_distance', 'v': '55.5'}, {'k': 'max_sub_section_length', 'v': '2'}, {'k': 'max_cumulative_azimuth', 'v': '590'}, {'k': 'min_sub_sections_per_parent', 'v': '2'}, {'k': 'permutation_strategy', 'v': 'DOWNDIP'}], 'environment': [{'k': 'gitref_opensha_ucerf3', 'v': 'ABC'}, {'k': 'gitref_opensha_commons', 'v': 'ABC'}, {'k': 'gitref_opensha_core', 'v': 'ABC'}, {'k': 'nshm_nz_opensha', 'v': 'ABC'}, {'k': 'host', 'v': 'tryharder-ubuntu'}, {'k': 'JAVA', 'v': '-Xmx24G'}], 'metrics': None,}
-GENMOCK = {'id': 1, "clazz_name": "GeneralTask", 'created': '2022-10-10T23:00:00+00:00', 'files': None, 'parents': None, 'children': [{'child_id': '0', 'child_clazz': 'RuptureGenerationTask'}], 'updated': None, 'agent_name': 'benc', 'title': 'My Third Manual task', 'description': '##Some notes go here', 'argument_lists': None, 'swept_arguments': None, 'meta': None, 'notes': None, 'subtask_count': None, 'subtask_type': None, 'model_type': None, 'subtask_result': None}
 FILEMOCK = {'id': '1587.0nVoFt',
     'file_name': 'RupSet_Cl_FM(CFM_0_9_).zip',
     'md5_digest': '5f1jFJY5keP7n7pSOX64Mg==', 'file_size': 32045903, 'file_url': None,
@@ -97,7 +75,6 @@ FILEMOCK = {'id': '1587.0nVoFt',
     'clazz_name': 'File'
     }
 
-#@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
 @mock_s3
 @mock_dynamodb2
 class TestBug122(unittest.TestCase):
@@ -115,43 +92,87 @@ class TestBug122(unittest.TestCase):
 
     def setUp(self):
         self.client = Client(root_schema)
-        # migrate()
+
+        self._s3_conn = boto3.resource('s3', region_name=REGION)
+        self._s3_conn.create_bucket(Bucket=S3_BUCKET_NAME)
+        self._bucket = self._s3_conn.Bucket(S3_BUCKET_NAME)
+        self._connection = Connection(region=REGION)
+
+        self._bucket.put_object(Key='FileData/1587.0nVoFt/object.json', Body=json.dumps(FILEMOCK))
+        self._bucket.put_object(Key='ThingData/100002/object.json', Body=json.dumps({'id':'100002'}))
 
         ToshiThingObject.create_table()
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
-        self._s3 = boto3.resource('s3', region_name=REGION)
-        self._s3.create_bucket(Bucket=S3_BUCKET_NAME)
-        self._bucket = self._s3.Bucket(S3_BUCKET_NAME)
 
-        self._bucket.put_object(Key='FileData/1587.0nVoFt/object.json', Body=json.dumps(FILEMOCK))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake':'auth'}))
+        at1 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
+        at1.create(clazz_name='AutomationTask', created=dt.datetime.now(tzutc())) #will get identity 100000 = 'QXV0b21hdGlvblRhc2s6MTAwMDAw',
 
-    def test_create_at_and_link_file(self):
+    def test_s3_create(self):
 
-        # first AT
-        at_result = self.client.execute(QRY_CREATE_AUTOMATION_TASK, variable_values=dict(created=dt.datetime.now(tzutc())))
-        print(at_result)
-        at_id =  at_result['data']['create_automation_task']['task_result']['id']
+        #bucket S3_BUCKET_NAME_unconfigured, key=FileData/1587.0nVoFt/object.json, client=
+        print(f"S3_BUCKET_NAME {S3_BUCKET_NAME}")
+        assert S3_BUCKET_NAME == "S3_BUCKET_NAME_unconfigured"
+        s3obj = self._s3_conn.Object(S3_BUCKET_NAME, 'ThingData/100002/object.json')
+        file_object = BytesIO()
+        s3obj.download_fileobj(file_object)
+        file_object.seek(0)
 
-        assert at_id == 'QXV0b21hdGlvblRhc2s6MTAwMDAw'
-        assert from_global_id(at_id) == ("AutomationTask", "100000")
+        obj = json.load(file_object)
+        assert obj['id'] == '100002'
+
+    def test_s3_config_for_test(self):
+
+        #bucket S3_BUCKET_NAME_unconfigured, key=FileData/1587.0nVoFt/object.json, client=
+        print(f"S3_BUCKET_NAME {S3_BUCKET_NAME}")
+        assert S3_BUCKET_NAME == "S3_BUCKET_NAME_unconfigured"
+        s3obj = self._s3_conn.Object(S3_BUCKET_NAME, 'FileData/1587.0nVoFt/object.json')
+        file_object = BytesIO()
+        s3obj.download_fileobj(file_object)
+        file_object.seek(0)
+
+        obj = json.load(file_object)
+        assert obj['id'] == '1587.0nVoFt'
+
+
+    def test_create_file_relation(self):
+
+        file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCK['id'] )
 
         # the relation
         link_result = self.client.execute(QRY_CREATE_AT_RELATION, variable_values=dict(
             thing_id='QXV0b21hdGlvblRhc2s6MTAwMDAw',
-            file_id='RmlsZToxNTg3LjBuVm9GdA=='))
+            file_id=file_id))
 
-        print('GTLINK ', link_result)
-        assert link_result['data']['create_task_relation']['ok'] == True
-                        
-        # with mock.patch('graphql_api.data.BaseData._read_object', side_effect=[ATMOCK, GENMOCK, GENMOCK]):
-        #     ruptgen_parent_query = self.client.execute(QUERY_RUPTGEN_PARENT, variable_values=dict(created=dt.datetime.now(tzutc())))
-        #     print('RUPTGEN_PARENT', ruptgen_parent_query)
-        #     result = ruptgen_parent_query['data']['node']
-        #     assert result['parents']['edges'][0]['node']['parent']\
-        #                 ['id'] == "R2VuZXJhbFRhc2s6MQ=="
-        #     assert result['parents']['edges'][0]['node']['parent']\
-        #                 ['title'] == "My Third Manual task"
-        #     assert result['parents']['edges'][0]['node']['parent']\
-        #                 ['description'] == "##Some notes go here"
-        #     assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        assert link_result['data']['create_file_relation']['ok'] == True
+
+
+    def test_create_at(self):
+
+        # Create a new AT
+        at_result = self.client.execute(QRY_CREATE_AUTOMATION_TASK, variable_values=dict(created=dt.datetime.now(tzutc())))
+        print(at_result)
+        at_id =  at_result['data']['create_automation_task']['task_result']['id']
+
+        assert at_id == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
+        assert from_global_id(at_id) == ("AutomationTask", "100001")
+
+    def test_create_at_and_link_file(self):
+
+        # Create a new AT
+        at_result = self.client.execute(QRY_CREATE_AUTOMATION_TASK, variable_values=dict(created=dt.datetime.now(tzutc())))
+        print(at_result)
+        at_id =  at_result['data']['create_automation_task']['task_result']['id']
+
+        # assert at_id == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
+        # assert from_global_id(at_id) == ("AutomationTask", "100001")
+
+        file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCK['id'] )
+
+        # the relation
+        link_result = self.client.execute(QRY_CREATE_AT_RELATION, variable_values=dict(
+            thing_id=at_id,
+            file_id=file_id))
+
+        assert link_result['data']['create_file_relation']['ok'] == True
