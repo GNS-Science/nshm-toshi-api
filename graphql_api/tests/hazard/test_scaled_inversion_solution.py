@@ -175,23 +175,48 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(ss['source_solution']['id'], upstream_sid)
 
         print(ToshiFileObject.get("100002").object_content)
+
         #object ID is stored internally as an INT
         self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
 
-    # def test_complete_tas(self):
-    #     at_id = self.create_automation_task()
-    #     self.create_gt_relation(self.new_gt, at_id)
+
+    def test_get_scaled_solution_node(self):
+
+        at_id = self.create_automation_task("SCALE_SOLUTION")
+        upstream_sid = self.create_source_solution()
+        result = self.create_scaled_solution(upstream_sid)
+
+        ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
+
+        query = '''
+        query get_scaled_solution($id: ID!) {
+          node(id:$id) {
+            __typename
+            ... on ScaledInversionSolution {
+              created
+            }
+          }
+        }
+        '''
+        result = self.client.execute(query, variable_values=dict(id=ss_id))
+        print(result)
+
+        delta = dt.datetime.utcnow() - dt.datetime.fromisoformat(result['data']['node']['created'])
+        max_delta = dt.timedelta(microseconds=10000)
+        self.assertTrue(delta < max_delta )
+
 
     def create_scaled_solution(self, upstream_sid):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!) {
+            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
               create_scaled_inversion_solution(
                   input: {
                       source_solution: $source_solution
                       md5_digest: $digest
                       file_name: $file_name
                       file_size: $file_size
+                      created: $created
                   }
               )
               {
@@ -207,7 +232,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         size = len(filedata.read())
         filedata.seek(0) #important!
         variables = dict(source_solution=upstream_sid, file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
-
+        variables['created'] = dt.datetime.utcnow().isoformat()
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result

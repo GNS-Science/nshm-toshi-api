@@ -33,7 +33,7 @@ class ScaledInversionSolution(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node, FileInterface)
 
-    created = FileInterface.created #graphene.DateTime(description="When the task record was created", )
+    created = graphene.DateTime(description="When the scaled solution file was created" )
     source_solution = graphene.Field(InversionSolution, description="The original soloution as produced by opensha")
 
     @classmethod
