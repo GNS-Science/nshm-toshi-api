@@ -1,0 +1,244 @@
+@startuml
+frame "Relay classes" {
+    interface Node {
+      String id
+    }
+     note top of Node : this is the primitive for all graphql Relay objects
+
+    class ConnectionField {
+     Node[] edges
+    }
+}
+
+
+frame "Toshi Enums" {
+
+   enum RowItemType {
+    integer = 'INT'
+    double = 'DBL'
+    string = 'STR'
+    boolean = "BOO"
+   }
+
+   enum TableType {
+    HAZARD_GRIDDED = 'hazard_gridded'
+    HAZARD_SITES = 'hazard_sites'
+    MFD_CURVES = 'mfd_curves'
+    MFD_CURVES_V2 = 'mfd_curves_v2'
+    GENERAL = 'general'
+   }
+   enum FileRole{
+    READ = "read"
+    WRITE = "write"
+    READ_WRITE = "read_write"
+    UNDEFINED = "undefined"
+   }
+
+   enum EventResult {
+    FAILURE = "fail"
+    PARTIAL = "partial"
+    SUCCESS = "success"
+    UNDEFINED = "undefined"
+   }
+
+   enum EventState {
+    SCHEDULED = "scheduled"
+    STARTED = "started"
+    DONE = "done"
+    UNDEFINED = "undefined"
+   }
+}
+
+frame "Toshi API Base classes" {
+
+   class KeyValuePair {
+      String k
+      String v
+   }
+
+   class KeyValueListPair {
+      String k
+      String[] v
+   }
+
+   class Thing< {Node} > {
+     DateTime created
+   }
+
+   class TaskTaskRelation < ConnectionField > {
+      String parent_id
+      String child_id
+   }
+
+   class File < {Node} > {
+      String file_name
+      String md5_digest
+      Int file_size
+      String file_url
+      String post_url
+   }
+
+   class FileRelation < FileRelationConnection >{
+      'Thing thing
+      'FileUnion file
+      'FileRole role
+      String thing_id
+      String file_id
+   }
+
+   class FileRelationConnection < ConnectionField > {
+      Int total_count
+   }
+   remove FileRelationConnection
+
+   class Table< {Node} > {
+      String name
+      String object_id
+      DateTime created
+      String[] column_headers
+      String[] rows
+   }
+
+  /'class relationships '/
+
+  Thing -up--o FileRelation : files
+  File -up--o FileRelation : relations
+  File -up-o KeyValuePair : meta
+
+  FileRelation --> FileRole
+  Thing -up--o TaskTaskRelation : parents
+  Thing --o TaskTaskRelation : children
+
+  Table --o KeyValueListPair : dimensions
+  Table --o KeyValuePair : meta
+  Table -up-> TableType : table_type
+  Table -up-o RowItemType : column_types
+
+   class CuratedCollection < {Thing} > #aliceblue ##[dotted]blue {
+      String name
+      String curator
+      Node[] members
+   }
+
+   class Tag< {Node} > #aliceblue ##[dotted]blue {
+      String name
+      Node[] members
+   }
+
+}
+
+frame "Custom classes" {
+
+   class GeneralTask < {Node}, {Thing} > {
+       DateTime updated
+       String agent_name
+       String title
+       String description
+       KeyValueListPair[] argument_lists
+       KeyValuePair[] meta
+       String notes
+       String swept_arguments()
+       Int subtask_count()
+       TaskSubType subtask_type
+       ModelType model_type
+       EventResult subtask_result
+   }
+
+
+   interface AutomationTaskInterface {
+       EventResult result
+       EventState state
+       DateTime created
+       Float duration
+       KeyValuePair[] arguments
+       KeyValuePair[] environment
+       KeyValuePair[] metrics
+       'TaskTaskRelationConnection parents
+   }
+
+   class AutomationTask < {Node}, {Thing}, {AutomationTaskInterface} > {
+       ModelType model_type
+       TaskSubType task_type
+       InversionSolution inversion_solution only for task_type == INVERSION.")
+   }
+
+   class RuptureGenerationTask< {Node}, {Thing}, {AutomationTaskInterface} > {}
+
+   AutomationTask -up-|> AutomationTaskInterface
+   RuptureGenerationTask -up-|> AutomationTaskInterface
+   AutomationTask -up-|> Thing
+
+   AutomationTaskInterface --o KeyValuePair : (args,env,metrics)
+   AutomationTaskInterface -up--> EventResult
+   AutomationTaskInterface -up--> EventState
+   'AutomationTask --o TaskTaskRelation : parents
+
+   AutomationTask--> GeneralTask : parent
+   GeneralTask -up-|> Thing
+
+   class LabelledTableRelation {
+       String identity description="an internal unique UUID to support mutations."
+       DateTime created description="When the task record was created."
+       ID produced_by_id description="the object responsible for creating this relationship."
+       String label description="Label used to differentiate this relationsip for humans."
+       ID table_id description="the ID of the table"
+       Table table
+       TableType table_type
+       KeyValueListPair[] dimensions description="table dimensions, as a list of Key Value List pairs."
+   }
+
+   class InversionSolution < {Node}, {FileInterface} > {
+       DateTime created
+       KeyValuePair[] metrics
+       'ID produced_by_id = graphene.ID(description='deprecated')
+       'ID mfd_table_id = graphene.ID(description='deprecated')
+       ID hazard_table_id
+       LabelledTableRelation[] tables
+       'hazard_table = graphene.Field(Table, description='deprecated')
+       'mfd_table = graphene.Field(Table, description='deprecated')
+       RuptureGenerationTask produced_by
+   }
+
+   /'proposed hazard stuff #palegreen ##[dashed]green'/
+
+   class OpenquakeConfig #palegreen ##[dashed]green {
+    File config_template
+    KeyValuePair[] arguments
+    File source_model_logic_tree_file
+    File gsim_logic_tree_file
+    KeyValuePair[] arguments
+    File[] required_input_files
+   }
+
+   class OpenquakeSolution < {Node} > #palegreen ##[dashed]green {
+      File hazard_archive
+      File dissagregation_archive
+   }
+
+   class OpenquakeTask < {Node}, {Thing}, {AutomationTaskInterface} > #palegreen ##[dashed]green {
+      OpenquakeConfig config
+      OpenquakeSolution solution
+   }
+
+   OpenquakeTask --> OpenquakeConfig
+   OpenquakeTask --> OpenquakeSolution
+   OpenquakeTask -up-|> AutomationTaskInterface
+
+   class ScaledInversionSolution < {Node}, {FileInterface} > #palegreen ##[dashed]green  {
+      Node source_solution
+      String source_solution_id
+      KeyValuePair[] arguments
+   }
+
+   ScaledInversionSolution --> InversionSolution : source_solution
+
+   class InversionSolutionNrml < {Node}, {FileInterface} > #palegreen ##[dashed]green  {
+      "A zip file containing the two openquake NRML XML files that are converted from an opensha InversionSolution"
+      Node source_solution
+      String source_solution_id
+   }
+
+   InversionSolutionNrml --> InversionSolution : source_solution
+}
+
+@enduml
