@@ -45,6 +45,7 @@ class TaskSubType(graphene.Enum):
     INVERSION = "inversion"
     HAZARD = "hazard"
     REPORT = "report"
+    SCALE_SOLUTION = "scale_solution"
 
 class ModelType(graphene.Enum):
     CRUSTAL = "crustal"

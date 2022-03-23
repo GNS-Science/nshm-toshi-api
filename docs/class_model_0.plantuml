@@ -1,4 +1,6 @@
 @startuml
+
+/'
 frame "Relay classes" {
     interface Node {
       String id
@@ -9,6 +11,7 @@ frame "Relay classes" {
      Node[] edges
     }
 }
+'/
 
 
 frame "Toshi Enums" {
@@ -46,6 +49,19 @@ frame "Toshi Enums" {
     STARTED = "started"
     DONE = "done"
     UNDEFINED = "undefined"
+   }
+
+   enum TaskSubType {
+    RUPTURE_SET = "rupture_set"
+    INVERSION = "inversion"
+    HAZARD = "hazard"
+    REPORT = "report"
+    SCALE_SOLUTION = "scale_solution"
+   }
+
+   enum ModelType {
+    CRUSTAL = "crustal"
+    SUBDUCTION = "subduction"
    }
 }
 
