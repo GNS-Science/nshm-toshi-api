@@ -121,33 +121,6 @@ class SetupHelpersMixin:
         print(result)
         return result['data']['create_task_relation']['thing_relation']
 
-    def create_scaled_solution(self):
-        CREATE_QRY = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!, $file_type: SmsFileType!) {
-              create_scaled_inversion_solution(
-                  md5_digest: $digest
-                  file_name: $file_name
-                  file_size: $file_size
-                  file_type: $file_type
-              )
-              {
-                ok
-                file_result { id, file_name, file_size, md5_digest, post_url, file_type}
-              }
-            }'''
-
-        # from hashlib import sha256, md5
-        filedata = BytesIO("a line\nor two".encode())
-        digest = "sha256(filedata.read()).hexdigest()"
-        filedata.seek(0) #important!
-        size = len(filedata.read())
-        filedata.seek(0) #important!
-        variables = dict(file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size, file_type="DH")
-
-        result = self.client.execute(CREATE_QRY,
-            variable_values=variables)
-        print(result)
-        new_id =  result['data']['create_scaled_inversion_solution']['file_result']['id']
 
 @mock_dynamodb2
 @mock_s3
@@ -191,11 +164,52 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
             ToshiThingObject.get("100001").object_content['parents'][0],
             {'parent_clazz': 'GeneralTask', 'parent_id': '100000'})
 
-    @unittest.skip('TODO')
+    # @unittest.skip('TODO')
     def test_create_scaled_solution(self):
-        sid = self.create_scaled_solution()
+        at_id = self.create_automation_task("SCALE_SOLUTION")
+        upstream_sid = self.create_source_solution()
+        result = self.create_scaled_solution(upstream_sid)
+
+        ss =  result['data']['create_scaled_inversion_solution']['solution']
+
+        self.assertEqual(ss['source_solution']['id'], upstream_sid)
+
+        print(ToshiFileObject.get("100002").object_content)
+        #object ID is stored internally as an INT
+        self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
 
     # def test_complete_tas(self):
     #     at_id = self.create_automation_task()
     #     self.create_gt_relation(self.new_gt, at_id)
+
+    def create_scaled_solution(self, upstream_sid):
+        """test helper"""
+        query = '''
+            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!) {
+              create_scaled_inversion_solution(
+                  input: {
+                      source_solution: $source_solution
+                      md5_digest: $digest
+                      file_name: $file_name
+                      file_size: $file_size
+                  }
+              )
+              {
+                ok
+                solution { id, file_name, file_size, md5_digest, post_url, source_solution { id }}
+              }
+            }'''
+
+        # from hashlib import sha256, md5
+        filedata = BytesIO("a line\nor two".encode())
+        digest = "sha256(filedata.read()).hexdigest()"
+        filedata.seek(0) #important!
+        size = len(filedata.read())
+        filedata.seek(0) #important!
+        variables = dict(source_solution=upstream_sid, file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
+
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
 

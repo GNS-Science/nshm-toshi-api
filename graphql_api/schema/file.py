@@ -17,6 +17,7 @@ class FileInterface(graphene.Interface):
     class Meta:
         interfaces = (relay.Node, )
 
+    created = graphene.DateTime(description="When the file was created")
     file_name = graphene.String(description="The name of the file")
     md5_digest = graphene.String(description='The base64-encoded md5 digest of the file')
     file_size = graphene.Int(description="The size of the file in bytes")
@@ -84,11 +85,13 @@ class FileConnection(relay.Connection):
 
 class CreateFile(graphene.Mutation):
     class Arguments:
+
         file_name = graphene.String()
         md5_digest = graphene.String("The base64-encoded md5 digest of the file")
         file_size = graphene.Int()
         meta = graphene.List(KeyValuePairInput, required=False,
             description="additional file meta data, as a list of Key Value pairs.")
+        created = graphene.DateTime(description="When the file was created", required=False)
 
     ok = graphene.Boolean()
     file_result = graphene.Field(File)
