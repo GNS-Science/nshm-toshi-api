@@ -58,7 +58,7 @@ def mock_make_api_call(self, operation_name, kwarg):
 
 @mock.patch('graphql_api.data.file_data.FileData.get_next_id', lambda self: "10abcdefgh")
 @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
-@mock.patch('graphql_api.data.BaseData._read_object', lambda self, object_id: mock_file_data)
+@mock.patch('graphql_api.data.BaseDynamoDBData._read_object', lambda self, object_id: mock_file_data)
 @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 class TestCreateSMSFile(unittest.TestCase):
     """
@@ -106,7 +106,7 @@ class TestCreateSMSFile(unittest.TestCase):
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 10)
 @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
-@mock.patch('graphql_api.data.BaseData._read_object', lambda self, object_id: mock_file_data)
+@mock.patch('graphql_api.data.BaseDynamoDBData._read_object', lambda self, object_id: mock_file_data)
 @mock.patch('graphql_api.data.thing_data.ThingData._read_object', lambda self, object_id: mock_thing_data)
 class TestCreateSMSFileLink(unittest.TestCase):
     """

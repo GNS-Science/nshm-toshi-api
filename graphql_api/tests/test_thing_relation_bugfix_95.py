@@ -149,7 +149,7 @@ class TestGeneralTaskBug29(unittest.TestCase):
         self.client = Client(root_schema)
         # migrate()
 
-    @mock.patch('graphql_api.data.BaseData._read_object', TASKMOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', TASKMOCK)
     @mock.patch('graphql_api.data.thing_relation_data.ThingRelationData.create', lambda self, parent_clazz, child_clazz, parent_id, child_id: {})
     @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
     def test_create_gt_and_ruptgen_and_link_them(self):
@@ -175,7 +175,7 @@ class TestGeneralTaskBug29(unittest.TestCase):
         assert gt_link_result['data']['create_task_relation']\
                         ['ok'] == True
                         
-        with mock.patch('graphql_api.data.BaseData._read_object', side_effect=[RUPTMOCK, GENMOCK, GENMOCK]):  
+        with mock.patch('graphql_api.data.BaseDynamoDBData._read_object', side_effect=[RUPTMOCK, GENMOCK, GENMOCK]):
             ruptgen_parent_query = self.client.execute(QUERY_RUPTGEN_PARENT, variable_values=dict(created=dt.datetime.now(tzutc())))
             print('RUPTGEN_PARENT', ruptgen_parent_query)
             result = ruptgen_parent_query['data']['node']

@@ -1,8 +1,5 @@
-from graphql_api.schema.search_manager import SearchManager
 from re import S
-from graphql_api.data import data_manager
 from unittest.case import skip
-from graphql_api.config import REGION, S3_BUCKET_NAME
 from io import BytesIO
 from unittest import mock
 import json
@@ -14,9 +11,13 @@ from dateutil.tz import tzutc
 import boto3
 
 from graphene.test import Client
-from graphql_api import data
 from moto import mock_dynamodb2, mock_s3
 from moto.core import patch_client, patch_resource
+
+from graphql_api import data
+from graphql_api.config import REGION, S3_BUCKET_NAME
+from graphql_api.data import data_manager
+from graphql_api.schema.search_manager import SearchManager
 from graphql_api.schema import root_schema
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 
@@ -27,7 +28,7 @@ from graphql_api.data.thing_data import ThingData
 
 GT_DICT = {'id': 100000, 'created': '2022-03-03T00:17:52.352274+00:00', 'files': None, 'parents': None, 'children': [{'child_id': '100001', 'child_clazz': 'AutomationTask'}, {'child_id': '100002', 'child_clazz': 'AutomationTask'}], 'updated': None, 'agent_name': 'benc', 'title': 'TEST Build opensha rupture set Coulomb #1', 'description': None, 'argument_lists': None, 'swept_arguments': None, 'meta': None, 'notes': None, 'subtask_count': None, 'subtask_type': None, 'model_type': None, 'subtask_result': None, 'clazz_name': 'GeneralTask'}
 AT_1_DICT = {'id': 100001, 'created': '2022-03-03T00:19:39.170876+00:00', 'files': None, 'parents': [{'parent_id': '100000', 'parent_clazz': 'GeneralTask'}], 'children': None, 'result': None, 'state': None, 'duration': None, 'arguments': None, 'environment': None, 'metrics': None, 'model_type': None, 'task_type': None, 'inversion_solution': None, 'clazz_name': 'AutomationTask'}
-AT_2_DICT = {'id': 100002, 'created': '2022-03-03T00:20:05.690451+00:00', 'files': None, 'parents': [{'parent_id': '100000', 'parent_clazz': 'GeneralTask'}], 'children': None, 'result': None, 'state': None, 'duration': None, 'arguments': None, 'environment': None, 'metrics': None, 'model_type': None, 'task_type': None, 'inversion_solution': None, 'clazz_name': 'AutomationTask'}
+AT_2_DICT = {'id': '100002', 'created': '2022-03-03T00:20:05.690451+00:00', 'files': None, 'parents': [{'parent_id': '100000', 'parent_clazz': 'GeneralTask'}], 'children': None, 'result': None, 'state': None, 'duration': None, 'arguments': None, 'environment': None, 'metrics': None, 'model_type': None, 'task_type': None, 'inversion_solution': None, 'clazz_name': 'AutomationTask'}
 GET_GT_CHILDREN = """query GeneralTaskChildrenTabQuery(
   $id: ID!
 ) {
@@ -267,6 +268,21 @@ class TestGeneralTaskQueriesS3(unittest.TestCase):
         self._bucket.put_object(Key='ThingData/100000/object.json', Body=json.dumps(GT_DICT))
         self._bucket.put_object(Key='ThingData/100001/object.json', Body=json.dumps(AT_1_DICT))
         self._bucket.put_object(Key='ThingData/100002/object.json', Body=json.dumps(AT_2_DICT))
+
+
+    def test_s3_create(self):
+
+        #bucket S3_BUCKET_NAME_unconfigured, key=FileData/1587.0nVoFt/object.json, client=
+        print(f"S3_BUCKET_NAME {S3_BUCKET_NAME}")
+        assert S3_BUCKET_NAME == "S3_BUCKET_NAME_unconfigured"
+        s3obj = self._s3.Object(S3_BUCKET_NAME, 'ThingData/100002/object.json')
+        file_object = BytesIO()
+        s3obj.download_fileobj(file_object)
+        file_object.seek(0)
+
+        obj = json.load(file_object)
+        assert obj['id'] == '100002'
+
       
     def test_general_task_children_query(self):
         result = self.client.execute(GET_GT_CHILDREN, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})['data']['node']

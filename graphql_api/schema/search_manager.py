@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
 TYPE = '_doc'
+ES_CONNECT_TIMEOUT = 2 #connection timeout seconds
+ES_READ_TIMEOUT = 5 #response timeout seconds
 
 class SearchManager():
 
@@ -32,8 +34,8 @@ class SearchManager():
         headers = { "Content-Type": "application/json" }
         try:
             logger.debug(f"SearchManager.index_document {self._url + es_key}")
-            # print('DOCUMENT:', document)
-            response = requests.put(self._url + es_key, auth=self._awsauth, json=document, headers=headers)
+            response = requests.put(self._url + es_key, auth=self._awsauth, json=document, headers=headers,
+                timeout=(ES_CONNECT_TIMEOUT, ES_READ_TIMEOUT))
             logger.debug(f'index_document response: {response.content}')
         except (Exception) as err:
             logger.warning(f'index_document raised err: {err}')
