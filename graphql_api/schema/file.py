@@ -92,7 +92,6 @@ class CreateFile(graphene.Mutation):
         file_size = graphene.Int()
         meta = graphene.List(KeyValuePairInput, required=False,
             description="additional file meta data, as a list of Key Value pairs.")
-        created = graphene.DateTime(description="When the file was created", required=False)
 
     ok = graphene.Boolean()
     file_result = graphene.Field(File)

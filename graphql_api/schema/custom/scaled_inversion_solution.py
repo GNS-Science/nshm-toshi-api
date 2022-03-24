@@ -1,6 +1,6 @@
 #!python3
 """
-This module contains the schema definition for an InversionSolution.
+This module contains the schema definition for a ScalednversionSolution.
 
 """
 # import copy
@@ -29,6 +29,9 @@ db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodD
 class ScaledInversionSolution(graphene.ObjectType):
     """
     Represents a Scaled Inversion Solution file
+
+    NB the  arguments used to scaling this solution (relatve to the source_solution)
+    should be captured as in meta field.
     """
     class Meta:
         interfaces = (relay.Node, FileInterface)
@@ -46,7 +49,7 @@ class ScaledInversionSolution(graphene.ObjectType):
 
 class CreateScaledInversionSolution(relay.ClientIDMutation):
     """
-    Create an Inversion Solution file
+    Create a ScaledInversionSolution file
     """
     class Input:
         file_name = FileInterface.file_name
