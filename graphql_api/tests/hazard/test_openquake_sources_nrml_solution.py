@@ -44,7 +44,6 @@ class TestOpenQuakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
 
-    @unittest.skip("TODO")
     def test_create_and_scaled_solution_task(self):
         at_id = self.create_automation_task("SCALE_SOLUTION")
 
