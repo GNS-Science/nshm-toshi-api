@@ -45,15 +45,52 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
 
-    def test_create_and_scaled_solution_task(self):
-        at_id = self.create_automation_task("SCALE_SOLUTION")
+
+    def create_openquake_config(self, nrml_id):
+        """test helper"""
+        query = '''
+            mutation ($created: DateTime!) {
+              create_openquake_hazard_config(
+                  input: {
+                      created: $created
+                  }
+              )
+              {
+                ok
+                create_openquake_hazard_config { id, created }
+              }
+            }'''
+
+        variables = dict(source_solution=nrml_id, )
+        variables['created'] = dt.datetime.utcnow().isoformat()
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
+
+    def test_create_a_hazard_config(self):
+        upstream_sid = self.create_source_solution()
+        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid)
+        nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
+
+        result = self.create_openquake_config(nrml_id)
 
         self.assertEqual(
             ToshiThingObject.get("100001").object_content['task_type'],
             TaskSubType.SCALE_SOLUTION.value )
 
+
+    @unittest.skip('WIP')
+    def test_create_a_hazard_task(self):
+        ht_id = self.create_openquake_hazard_task()
+
+        self.assertEqual(
+            ToshiThingObject.get("100001").object_content['task_type'],
+            TaskSubType.SCALE_SOLUTION.value )
+
+    @unittest.skip('WIP')
     def test_create_and_link_tasks(self):
-        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        ht_id = self.create_openquake_hazard_task()
         self.create_gt_relation(self.new_gt, at_id)
 
         self.assertEqual(
@@ -64,7 +101,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
             ToshiThingObject.get("100001").object_content['parents'][0],
             {'parent_clazz': 'GeneralTask', 'parent_id': '100000'})
 
-
+    @unittest.skip('WIP')
     def test_create_opensha_nrml_from_solution(self):
         at_id = self.create_automation_task("SOLUTION_TO_NRML")
         upstream_sid = self.create_source_solution()
@@ -79,7 +116,8 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         #object ID is stored internally as an INT
         self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
 
-    def test_get_scaled_solution_node(self):
+    @unittest.skip('WIP')
+    def test_get_openquake_hazard_task_node(self):
 
         at_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
@@ -105,11 +143,11 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertTrue(delta < max_delta )
 
 
-    def create_inversion_solution_nrml(self, upstream_sid):
+    def create_create_openquake_hazard_task(self, upstream_sid):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
-              create_inversion_solution_nrml(
+            mutation ($created: DateTime!) {
+              create_create_openquake_hazard_task(
                   input: {
                       source_solution: $source_solution
                       md5_digest: $digest
@@ -120,16 +158,9 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
               )
               {
                 ok
-                inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url, source_solution { id }}
+                create_openquake_hazard_task { id, file_name, file_size, md5_digest, post_url, source_solution { id }}
               }
             }'''
-
-        from hashlib import sha256, md5
-        filedata = BytesIO("not_really zip, but close enough".encode())
-        digest = sha256(filedata.read()).hexdigest()
-        filedata.seek(0) #important!
-        size = len(filedata.read())
-        filedata.seek(0) #important!
 
         variables = dict(source_solution=upstream_sid, file=filedata, digest=digest, file_name="alineortwo.zip", file_size=size)
         variables['created'] = dt.datetime.utcnow().isoformat()

@@ -4,6 +4,9 @@ A Mixin class to share in test modules
 The TestCase sub class must setup self.client
 
 """
+from io import BytesIO
+from hashlib import sha256
+import datetime as dt
 
 class SetupHelpersMixin:
 
@@ -105,3 +108,35 @@ class SetupHelpersMixin:
             variable_values=dict(parent_id=parent_id, child_id=child_id))
         print(result)
         return result['data']['create_task_relation']['thing_relation']
+
+    def create_inversion_solution_nrml(self, upstream_sid):
+        """test helper"""
+        query = '''
+            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
+              create_inversion_solution_nrml(
+                  input: {
+                      source_solution: $source_solution
+                      md5_digest: $digest
+                      file_name: $file_name
+                      file_size: $file_size
+                      created: $created
+                  }
+              )
+              {
+                ok
+                inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url, source_solution { id }}
+              }
+            }'''
+
+
+        filedata = BytesIO("not_really zip, but close enough".encode())
+        digest = sha256(filedata.read()).hexdigest()
+        filedata.seek(0) #important!
+        size = len(filedata.read())
+        filedata.seek(0) #important!
+
+        variables = dict(source_solution=upstream_sid, file=filedata, digest=digest, file_name="alineortwo.zip", file_size=size)
+        variables['created'] = dt.datetime.utcnow().isoformat()
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
