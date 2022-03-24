@@ -1,6 +1,6 @@
 #!python3
 """
-This module contains the schema definition for a ScalednversionSolution.
+This module contains the schema definition for a ScaledInversionSolution.
 
 """
 # import copy
