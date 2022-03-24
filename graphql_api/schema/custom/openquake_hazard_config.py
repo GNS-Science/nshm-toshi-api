@@ -29,7 +29,7 @@ class OpenquakeHazardConfig(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node, Thing)
 
-    solution_sources = graphene.List(InversionSolutionNrml, description="List of Source NRML") #TODO add Background to list
+    source_models = graphene.List(InversionSolutionNrml, description="List of Source NRML") #TODO add Background to list
 
     @classmethod
     def get_node(cls, info, _id):
@@ -52,7 +52,7 @@ class CreateOpenquakeHazardConfig(relay.ClientIDMutation):
     class Input:
         #meta = CreateFile.Arguments.meta
         created = Thing.created
-        solution_sources = graphene.List(graphene.ID, description="List of Soource NRML")
+        source_models = graphene.List(graphene.ID, description="List of Soource NRML")
         #solution_sources = OpenquakeHazardConfig.solution_sources
 
     config = graphene.Field(OpenquakeHazardConfig)

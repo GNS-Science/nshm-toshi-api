@@ -52,12 +52,12 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
               create_openquake_hazard_config(
                   input: {
                       created: $created
-                      solution_sources: $sources
+                      source_models: $sources
                   }
               )
               {
                 ok
-                config { id, created, solution_sources { id } }
+                config { id, created, source_models { id } }
               }
             }'''
 
@@ -82,7 +82,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertTrue(delta < max_delta )
 
         self.assertEqual(
-            ToshiThingObject.get("100001").object_content['solution_sources'][0], nrml_id)
+            ToshiThingObject.get("100001").object_content['source_models'][0], nrml_id)
 
     def test_get_hazard_config_node(self):
 
@@ -100,7 +100,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
             __typename
             ... on OpenquakeHazardConfig{
               created
-              solution_sources {
+              source_models {
                 id
                 # source_solution {
                 #     created
