@@ -24,7 +24,7 @@ class InversionSolutionNrml(graphene.ObjectType):
     """
     Represents a InversionSolutionNrml archive file
 
-    This is an archive containing two XML source files that have been converted from the source_solution
+    This is a zip archive containing two XML source files that have been converted from the source_solution
 
     NB any arguments used to generate this object should be captured as in meta field.
     """
