@@ -43,7 +43,7 @@ class TestGetGenerationTaskFiles(unittest.TestCase):
     # (TODO should this ne forbiddien??)
     # @mock.patch('graphql_api.data.BaseS3Data._read_object',
     #     side_effect = [copy(FILE_REL)])
-    @mock.patch('graphql_api.data.BaseData._read_object',
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object',
         side_effect = [copy(GENTASK), copy(FILE_REL), copy(FILE)])
     def test_query_with_files(self, mocked_api_DB):
 

@@ -49,8 +49,18 @@ class ThingRelationData(BaseDynamoDBData):
         logger.info(f'create add_child_relation transaction OK: added: {child_id} to children {len(parent_content["children"])} of parent {parent_id}')
         logger.info(f'create parent_relation : added: {parent_id} to parents {len(child_content["parents"])} of child {child_id}')
 
-        self._db_manager.search_manager.index_document(parent.object_id, parent_content)
-        self._db_manager.search_manager.index_document(child.object_id, child_content)
+        # self._db_manager.search_manager.index_document(parent.object_id, parent_content)
+        # self._db_manager.search_manager.index_document(child.object_id, child_content)
+
+        es_parent_key = f"{self._db_manager.thing._prefix}_{parent_id}"
+        es_child_key = f"{self._db_manager.thing._prefix}_{child_id}"
+
+        logger.info(f"update ES for key {es_parent_key}")
+        logger.info(f"update ES for key {es_child_key}")
+
+        self._db_manager.search_manager.index_document(es_parent_key, parent_content)
+        self._db_manager.search_manager.index_document(es_child_key, child_content)
+
 
         return self.build_one(parent_id, child_id)
 

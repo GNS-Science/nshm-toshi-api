@@ -82,7 +82,7 @@ class ThingData(BaseDynamoDBData):
         body = benedict(jsondata)
         body.merge(kwargs)
         logger.info("ThingData.update: %s : %s" % (this_id, str(body)))
-        self.transact_update(this_id, self._prefix, body)
+        self.transact_update(this_id, _type, body)
         return self.from_json(body)
 
     def add_file_relation(self, thing_id, file_id, file_role):

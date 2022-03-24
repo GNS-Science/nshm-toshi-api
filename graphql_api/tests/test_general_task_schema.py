@@ -49,7 +49,7 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_create_general_task(self):
         CREATE_QRY = '''
             mutation { #($file_name: String!, $file_size: Int!, $produced_by: ID!, $mfd_table: ID!)
@@ -74,7 +74,7 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
         assert result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MA=='
 
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_get_general_task_by_node_id(self):
         # the first GT
         qry = '''
@@ -94,7 +94,7 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
         assert result['data']['node']['id'] == 'R2VuZXJhbFRhc2s6MA=='
         assert result['data']['node']['agent_name'] == "DonDuck"
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_get_general_task_swept_args(self):
         # the first GT
         qry = '''
@@ -127,7 +127,7 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_get_general_task_notes_and_meta(self):
         # the first GT
         qry = '''
@@ -150,7 +150,7 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
         assert result['data']['node']['meta'][0]['k'] == "some_metric"
         assert result['data']['node']['meta'][0]['v'] == "55.5"
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_get_general_task_others(self):
         # the first GT
         qry = '''
@@ -220,7 +220,7 @@ class TestUpdateGeneralTask(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data.BaseData._read_object', READ_MOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_update_with_typical_fields(self):
         qry = '''
             mutation {

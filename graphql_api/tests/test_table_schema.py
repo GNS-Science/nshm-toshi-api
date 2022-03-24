@@ -78,7 +78,7 @@ class TestBasicTableOperations(unittest.TestCase):
         assert result['data']['create_table']['table']['id'] == 'VGFibGU6MFJBTkRN'
         assert result['data']['create_table']['table']['meta'][0]['k'] == 'some_metric'
 
-    @mock.patch('graphql_api.data.BaseData._read_object', TABLEMOCK)
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', TABLEMOCK)
     def test_get_table_by_node_id(self):
         # the first GT
         qry = '''

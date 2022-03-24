@@ -35,7 +35,7 @@ class TestGetGenerationTaskFiles(unittest.TestCase):
         self.client = Client(root_schema)
 
     # Note order of calls must match those made to S3 , and copy is used since the object may be mutated
-    @mock.patch('graphql_api.data.BaseData._read_object',
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object',
         side_effect = [copy(GENTASK), copy(FILE)])
     def test_query_with_files(self, mocked_api):
 
