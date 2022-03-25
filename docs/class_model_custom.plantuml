@@ -1,0 +1,137 @@
+@startuml
+
+enum EventResult {
+FAILURE = "fail"
+PARTIAL = "partial"
+SUCCESS = "success"
+UNDEFINED = "undefined"
+}
+
+enum EventState {
+SCHEDULED = "scheduled"
+STARTED = "started"
+DONE = "done"
+UNDEFINED = "undefined"
+}
+
+class KeyValuePair {
+  String k
+  String v
+}
+
+
+class GeneralTask < {Node}, {Thing} > {
+   DateTime updated
+   String agent_name
+   String title
+   String description
+   KeyValueListPair[] argument_lists
+   KeyValuePair[] meta
+   String notes
+   String swept_arguments()
+   Int subtask_count()
+   TaskSubType subtask_type
+   ModelType model_type
+   EventResult subtask_result
+}
+
+
+interface AutomationTaskInterface {
+   EventResult result
+   EventState state
+   DateTime created
+   Float duration
+   KeyValuePair[] arguments
+   KeyValuePair[] environment
+   KeyValuePair[] metrics
+   'TaskTaskRelationConnection parents
+}
+
+class AutomationTask < {Node}, {Thing}, {AutomationTaskInterface} > {
+   ModelType model_type
+   TaskSubType task_type
+   InversionSolution inversion_solution only for task_type == INVERSION.")
+}
+
+class RuptureGenerationTask< {Node}, {Thing}, {AutomationTaskInterface} > {}
+
+AutomationTask -up-|> AutomationTaskInterface
+RuptureGenerationTask -up-|> AutomationTaskInterface
+'AutomationTask -up-|> Thing
+
+AutomationTaskInterface ---o KeyValuePair : (args,env,metrics)
+AutomationTaskInterface ---> EventResult
+AutomationTaskInterface ---> EventState
+'AutomationTask --o TaskTaskRelation : parents
+
+AutomationTask--> GeneralTask : parent
+'GeneralTask -up-|> Thing
+
+class LabelledTableRelation {
+   String identity 'description="an internal unique UUID to support mutations."
+   DateTime created 'description="When the task record was created."
+   ID produced_by_id 'description="the object responsible for creating this relationship."
+   String label 'description="Label used to differentiate this relationsip for humans."
+   ID table_id 'description="the ID of the table"
+   Table table
+   TableType table_type
+   KeyValueListPair[] dimensions 'description="table dimensions, as a list of Key Value List pairs."
+}
+
+class InversionSolution < {Node}, {FileInterface} > {
+   DateTime created
+   KeyValuePair[] metrics
+   'ID produced_by_id = graphene.ID(description='deprecated')
+   'ID mfd_table_id = graphene.ID(description='deprecated')
+   ID hazard_table_id
+   LabelledTableRelation[] tables
+   'hazard_table = graphene.Field(Table, description='deprecated')
+   'mfd_table = graphene.Field(Table, description='deprecated')
+   RuptureGenerationTask produced_by
+}
+
+/'proposed hazard stuff #palegreen ##[dashed]green
+
+ wip stuff #cornsilk ##[dashed]green
+'/
+
+class OpenquakeConfig #cornsilk ##[dashed]green {
+File config_template
+KeyValuePair[] arguments
+File source_model_logic_tree_file
+File gsim_logic_tree_file
+KeyValuePair[] arguments
+File[] required_input_files
+}
+
+class OpenquakeHazardOutput < {Node} > #cornsilk ##[dashed]green {
+  File hazard_archive
+  File dissagregation_archive
+}
+
+class OpenquakeHazardTask < {Node}, {Thing}, {AutomationTaskInterface} > #cornsilk ##[dashed]green {
+  OpenquakeConfig config
+  OpenquakeSolution solution
+}
+
+OpenquakeHazardTask --> OpenquakeConfig
+OpenquakeHazardTask --> OpenquakeHazardOutput
+OpenquakeHazardTask --|> AutomationTaskInterface
+
+class ScaledInversionSolution < {Node}, {FileInterface} > #cornsilk ##[dashed]green  {
+  Node source_solution
+  String source_solution_id
+  KeyValuePair[] arguments
+}
+
+ScaledInversionSolution --> InversionSolution : source_solution
+
+class InversionSolutionNrml < {Node}, {FileInterface} > #cornsilk ##[dashed]green  {
+  'A zip file containing the two openquake NRML XML files that are converted from an opensha InversionSolution"
+  Node source_solution
+  String source_solution_id
+}
+
+InversionSolutionNrml --> InversionSolution : source_solution
+
+@enduml
