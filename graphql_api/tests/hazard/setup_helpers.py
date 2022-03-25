@@ -7,6 +7,7 @@ The TestCase sub class must setup self.client
 from io import BytesIO
 from hashlib import sha256
 import datetime as dt
+from dateutil.tz import tzutc
 
 class SetupHelpersMixin:
 
@@ -137,6 +138,28 @@ class SetupHelpersMixin:
 
         variables = dict(source_solution=upstream_sid, file=filedata, digest=digest, file_name="alineortwo.zip", file_size=size)
         variables['created'] = dt.datetime.utcnow().isoformat()
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
+    def create_openquake_config(self, sources):
+        """test helper"""
+        query = '''
+            mutation ($created: DateTime!, $sources: [ID!]) {
+              create_openquake_hazard_config(
+                  input: {
+                      created: $created
+                      source_models: $sources
+                  }
+              )
+              {
+                ok
+                config { id, created, source_models { id } }
+              }
+            }'''
+
+        variables = dict(sources=sources)
+        variables['created'] = dt.datetime.now(tzutc()).isoformat()
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result

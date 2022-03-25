@@ -44,29 +44,6 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.new_gt = self.create_general_task() #Thing 100000
         self.source_solution = self.create_source_solution() #File 100000
 
-
-    def create_openquake_config(self, sources):
-        """test helper"""
-        query = '''
-            mutation ($created: DateTime!, $sources: [ID!]) {
-              create_openquake_hazard_config(
-                  input: {
-                      created: $created
-                      source_models: $sources
-                  }
-              )
-              {
-                ok
-                config { id, created, source_models { id } }
-              }
-            }'''
-
-        variables = dict(sources=sources)
-        variables['created'] = dt.datetime.now(tzutc()).isoformat()
-        result = self.client.execute(query, variable_values=variables )
-        print(result)
-        return result
-
     def test_create_a_hazard_config(self):
         upstream_sid = self.create_source_solution() #File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
@@ -83,6 +60,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
 
         self.assertEqual(
             ToshiThingObject.get("100001").object_content['source_models'][0], nrml_id)
+
 
     def test_get_hazard_config_node(self):
 
@@ -102,9 +80,10 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
               created
               source_models {
                 id
-                # source_solution {
-                #     created
-                # }
+                source_solution {
+                    id
+                    file_name
+                }
               }
             }
           }
@@ -112,7 +91,10 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         '''
         result = self.client.execute(query, variable_values=dict(id=hc_id))
         print(result)
-        #assert 0
+
+        config = result['data']['node']
         delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(result['data']['node']['created'])
         max_delta = dt.timedelta(microseconds=10000)
         self.assertTrue(delta < max_delta )
+
+        self.assertEqual(config['source_models'][0]['source_solution']['file_name'], "MyInversion.zip")

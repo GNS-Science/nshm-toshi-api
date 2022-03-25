@@ -21,3 +21,4 @@ from graphql_api.schema.custom.scaled_inversion_solution import CreateScaledInve
 from graphql_api.schema.custom.inversion_solution_nrml import CreateInversionSolutionNrml, InversionSolutionNrml
 from graphql_api.schema.custom.openquake_hazard_output import CreateOpenquakeHazardOutput, OpenquakeHazardOutput
 from graphql_api.schema.custom.openquake_hazard_config import CreateOpenquakeHazardConfig, OpenquakeHazardConfig
+from graphql_api.schema.custom.openquake_hazard_task import CreateOpenquakeHazardTask, OpenquakeHazardTask

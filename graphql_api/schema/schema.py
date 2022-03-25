@@ -35,6 +35,7 @@ from graphql_api.schema.custom.scaled_inversion_solution import ScaledInversionS
 from graphql_api.schema.custom.inversion_solution_nrml import CreateInversionSolutionNrml, InversionSolutionNrml
 from graphql_api.schema.custom.openquake_hazard_output import CreateOpenquakeHazardOutput, OpenquakeHazardOutput
 from graphql_api.schema.custom.openquake_hazard_config import CreateOpenquakeHazardConfig, OpenquakeHazardConfig
+from graphql_api.schema.custom.openquake_hazard_task import CreateOpenquakeHazardTask, OpenquakeHazardTask
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import IS_OFFLINE, ES_REGION, ES_ENDPOINT, ES_INDEX, STACK_NAME, TESTING
@@ -184,5 +185,6 @@ class MutationRoot(graphene.ObjectType):
     create_inversion_solution_nrml = CreateInversionSolutionNrml.Field()
     create_openquake_hazard_output = CreateOpenquakeHazardOutput.Field()
     create_openquake_hazard_config = CreateOpenquakeHazardConfig.Field()
+    create_openquake_hazard_task = CreateOpenquakeHazardTask.Field()
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
