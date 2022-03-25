@@ -100,7 +100,7 @@ class TestOpenQuakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         print(result)
 
         delta = dt.datetime.utcnow() - dt.datetime.fromisoformat(result['data']['node']['created'])
-        max_delta = dt.timedelta(microseconds=10000)
+        max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta )
 
 
