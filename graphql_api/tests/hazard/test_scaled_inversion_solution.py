@@ -206,7 +206,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         node = result['data']['node']
 
         delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(node['created'])
-        max_delta = dt.timedelta(microseconds=10000)
+        max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta )
 
         self.assertEqual( node['produced_by']['id'], at_id)
