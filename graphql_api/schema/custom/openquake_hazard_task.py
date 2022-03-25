@@ -56,36 +56,38 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 #     def resolve_total_count(root, info, *args, **kwargs):
 #         return len(root.edges)
 
-class CreateOpenquakeHazardTask(relay.ClientIDMutation):
-    class Input:
-        config = graphene.ID()
-        created = AutomationTaskInterface.created
+
+class OpenquakeHazardTaskInput(AutomationTaskInput):
+    config = graphene.ID(required=True)
+
+class CreateOpenquakeHazardTask(graphene.Mutation):
+
+    class Arguments:
+        input = OpenquakeHazardTaskInput(required=True)
 
     ok = graphene.Boolean()
     openquake_hazard_task = graphene.Field(OpenquakeHazardTask)
 
     @classmethod
-    def mutate_and_get_payload(cls, root, info, **kwargs):
+    def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        logger.debug(f"payload: {kwargs}")
-        openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate_and_get_payload' , dt.utcnow()-t0)
+        logger.debug(f"CreateOpenquakeHazardTask.mutate payload: {input}")
+        openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input)
+        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate' , dt.utcnow()-t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
 
-class UpdateOpenquakeHazardTask(relay.ClientIDMutation):
-    class Input:
-        # config = = graphene.ID()
-        # created = AutomationTaskBase.created
-        pass
+class UpdateOpenquakeHazardTask(graphene.Mutation):
+    class Arguments:
+        input = AutomationTaskUpdateInput(required=True)
 
     ok = graphene.Boolean()
-    task_result = graphene.Field(OpenquakeHazardTask)
+    openquake_hazard_task = graphene.Field(OpenquakeHazardTask)
 
     @classmethod
-    def mutate_and_get_payload(cls, root, info, **kwargs):
+    def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        logger.debug(f"payload: {kwargs}")
+        logger.debug(f"UpdateOpenquakeHazardTask.mutate payload: {input}")
         thing_id = input.pop('task_id')
-        task_result = get_data_manager().thing.update('OpenquakeHazardTask', thing_id, **input)
-        db_metrics.put_duration(__name__, 'UpdateOpenquakeHazardTask.mutate_and_get_payload' , dt.utcnow()-t0)
-        return UpdateOpenquakeHazardTask(task_result=task_result)
+        openquake_hazard_task = get_data_manager().thing.update('OpenquakeHazardTask', thing_id, **input)
+        db_metrics.put_duration(__name__, 'UpdateOpenquakeHazardTask.mutate' , dt.utcnow()-t0)
+        return UpdateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task, ok=True)

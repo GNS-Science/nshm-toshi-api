@@ -50,13 +50,32 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
             mutation ($created: DateTime!, $config: ID!) {
               create_openquake_hazard_task(
                   input: {
-                      config: $config
-                      created: $created
+                    config: $config
+                    created: $created
+                    state: UNDEFINED
+                    result: UNDEFINED
+
+                    arguments: [
+                        { k:"max_jump_distance" v: "55.5" }
+                        { k:"max_sub_section_length" v: "2" }
+                        { k:"max_cumulative_azimuth" v: "590" }
+                        { k:"min_sub_sections_per_parent" v: "2" }
+                        { k:"permutation_strategy" v: "DOWNDIP" }
+                    ]
+
+                    environment: [
+                        { k:"gitref_opensha_ucerf3" v: "ABC"}
+                        { k:"gitref_opensha_commons" v: "ABC"}
+                        { k:"gitref_opensha_core" v: "ABC"}
+                        { k:"nshm_nz_opensha" v: "ABC"}
+                        { k:"host" v:"tryharder-ubuntu"}
+                        { k:"JAVA" v:"-Xmx24G"  }
+                    ]
                   }
               )
               {
                 ok
-                openquake_hazard_task { id, config { id }, created}
+                openquake_hazard_task { id, config { id }, created, arguments {k v}}
               }
             }'''
 
@@ -68,20 +87,15 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
 
     def test_create_oq_hazard_task(self):
 
-        upstream_sid = self.create_source_solution() #File 100001
-        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
-        nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
-        config = self.create_openquake_config([nrml_id]) #Thing 100001
-        config_id = config['data']['create_openquake_hazard_config']['config']['id'] #Thing 100002
-
-        haztask = self.create_openquake_hazard_task(config_id)
+        haztask = self._build_hazard_task()
 
         print (haztask)
         self.assertEqual(
             ToshiThingObject.get("100002").object_content['clazz_name'], "OpenquakeHazardTask")
 
 
-    def test_link_tasks(self):
+    def _build_hazard_task(self):
+
         upstream_sid = self.create_source_solution() #File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
         nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
@@ -89,6 +103,11 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         config_id = config['data']['create_openquake_hazard_config']['config']['id']
 
         haztask = self.create_openquake_hazard_task(config_id) #Thing 100002
+        return haztask
+
+
+    def test_link_tasks(self):
+        haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         self.create_gt_relation(self.new_gt, ht_id) #Thing 100003
@@ -104,14 +123,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
 
     def test_get_openquake_hazard_task_node(self):
 
-        upstream_sid = self.create_source_solution()
-        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
-
-        nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
-        config = self.create_openquake_config([nrml_id])
-
-        config_id = config['data']['create_openquake_hazard_config']['config']['id']
-        haztask = self.create_openquake_hazard_task(config_id)
+        haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         query = '''
@@ -142,7 +154,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         haztask = result['data']['node']
 
         delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(result['data']['node']['created'])
-        max_delta = dt.timedelta(microseconds=10000)
+        max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta )
 
         self.assertEqual(haztask['config']['source_models'][0]['file_name'],
@@ -150,22 +162,34 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(haztask['config']['source_models'][0]['source_solution']['file_name'],
             "MyInversion.zip")
 
-    @unittest.skip('WIP')
-    def test_create_opensha_nrml_from_solution(self):
-        at_id = self.create_automation_task("SOLUTION_TO_NRML")
-        upstream_sid = self.create_source_solution()
-        result = self.create_inversion_solution_nrml(upstream_sid)
+    def test_update_task_with_metrics(self):
 
-        ss =  result['data']['create_inversion_solution_nrml']['inversion_solution_nrml']
+        haztask = self._build_hazard_task()
+        ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
-        self.assertEqual(ss['source_solution']['id'], upstream_sid)
-
-        print(ToshiFileObject.get("100002").object_content)
-
-        #object ID is stored internally as an INT
-        self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
-
-
+        qry = '''
+            mutation ($task_id: ID!) {
+                update_openquake_hazard_task(input: {
+                    task_id: $task_id
+                    duration: 909,
+                    metrics: {k: "rupture_count" v: "20"}
+                })
+                {
+                    openquake_hazard_task {
+                        id
+                        duration
+                        metrics {k v}
+                    }
+                }
+            }
+        '''
+        executed = self.client.execute(qry, variable_values=dict(task_id=ht_id))
+        print(executed)
+        result = executed['data']['update_openquake_hazard_task']['openquake_hazard_task']
+        assert result['id'] == ht_id
+        assert result['duration'] == 909
+        assert result['metrics'][0]['k'] == "rupture_count"
+        assert result['metrics'][0]['v'] == "20"
 
 
 
