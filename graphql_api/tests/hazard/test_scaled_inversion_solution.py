@@ -168,7 +168,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
     def test_create_scaled_solution(self):
         at_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        result = self.create_scaled_solution(upstream_sid)
+        result = self.create_scaled_solution(upstream_sid, at_id)
 
         ss =  result['data']['create_scaled_inversion_solution']['solution']
 
@@ -184,7 +184,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
 
         at_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        result = self.create_scaled_solution(upstream_sid)
+        result = self.create_scaled_solution(upstream_sid, at_id)
 
         ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
 
@@ -194,6 +194,8 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
             __typename
             ... on ScaledInversionSolution {
               created
+              produced_by { id }
+              source_solution { id }
             }
           }
         }
@@ -201,15 +203,20 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         result = self.client.execute(query, variable_values=dict(id=ss_id))
         print(result)
 
-        delta = dt.datetime.utcnow() - dt.datetime.fromisoformat(result['data']['node']['created'])
+        node = result['data']['node']
+
+        delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(node['created'])
         max_delta = dt.timedelta(microseconds=10000)
         self.assertTrue(delta < max_delta )
 
+        self.assertEqual( node['produced_by']['id'], at_id)
+        self.assertEqual( node['source_solution']['id'], upstream_sid)
 
-    def create_scaled_solution(self, upstream_sid):
+
+    def create_scaled_solution(self, upstream_sid, task_id):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
+            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
               create_scaled_inversion_solution(
                   input: {
                       source_solution: $source_solution
@@ -217,11 +224,12 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
                       file_name: $file_name
                       file_size: $file_size
                       created: $created
+                      produced_by: $produced_by
                   }
               )
               {
                 ok
-                solution { id, file_name, file_size, md5_digest, post_url, source_solution { id }}
+                solution { id, file_name, file_size, md5_digest, post_url, source_solution { id }, produced_by { id }}
               }
             }'''
 
@@ -231,10 +239,10 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         filedata.seek(0) #important!
         size = len(filedata.read())
         filedata.seek(0) #important!
-        variables = dict(source_solution=upstream_sid, file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
-        variables['created'] = dt.datetime.utcnow().isoformat()
+        variables = dict(source_solution=upstream_sid, produced_by=task_id,
+            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
+        variables['created'] = dt.datetime.now(tzutc()).isoformat()
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result
-
 
