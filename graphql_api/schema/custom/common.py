@@ -46,6 +46,7 @@ class TaskSubType(graphene.Enum):
     HAZARD = "hazard"
     REPORT = "report"
     SCALE_SOLUTION = "scale_solution"
+    SOLUTION_TO_NRML = "solution_to_nrml"
 
 class ModelType(graphene.Enum):
     CRUSTAL = "crustal"

@@ -23,7 +23,7 @@ from setup_helpers import SetupHelpersMixin
 
 @mock_dynamodb2
 @mock_s3
-class TestScaling(unittest.TestCase, SetupHelpersMixin):
+class TestOpenQuakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
 
     def setUp(self):
         self.client = Client(root_schema)
@@ -52,7 +52,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
             TaskSubType.SCALE_SOLUTION.value )
 
     def test_create_and_link_tasks(self):
-        at_id = self.create_automation_task("SCALE_SOLUTION")
+        at_id = self.create_automation_task("SOLUTION_TO_NRML")
         self.create_gt_relation(self.new_gt, at_id)
 
         self.assertEqual(
@@ -63,13 +63,13 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
             ToshiThingObject.get("100001").object_content['parents'][0],
             {'parent_clazz': 'GeneralTask', 'parent_id': '100000'})
 
-    # @unittest.skip('TODO')
-    def test_create_scaled_solution(self):
-        at_id = self.create_automation_task("SCALE_SOLUTION")
-        upstream_sid = self.create_source_solution()
-        result = self.create_scaled_solution(upstream_sid, at_id)
 
-        ss =  result['data']['create_scaled_inversion_solution']['solution']
+    def test_create_opensha_nrml_from_solution(self):
+        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        upstream_sid = self.create_source_solution()
+        result = self.create_inversion_solution_nrml(upstream_sid)
+
+        ss =  result['data']['create_inversion_solution_nrml']['inversion_solution_nrml']
 
         self.assertEqual(ss['source_solution']['id'], upstream_sid)
 
@@ -78,23 +78,20 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         #object ID is stored internally as an INT
         self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
 
-
     def test_get_scaled_solution_node(self):
 
         at_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        result = self.create_scaled_solution(upstream_sid, at_id)
+        result = self.create_inversion_solution_nrml(upstream_sid)
 
-        ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
+        ss_id =  result['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
 
         query = '''
         query get_scaled_solution($id: ID!) {
           node(id:$id) {
             __typename
-            ... on ScaledInversionSolution {
+            ... on InversionSolutionNrml {
               created
-              produced_by { id }
-              source_solution { id }
             }
           }
         }
@@ -102,46 +99,41 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         result = self.client.execute(query, variable_values=dict(id=ss_id))
         print(result)
 
-        node = result['data']['node']
-
-        delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(node['created'])
+        delta = dt.datetime.utcnow() - dt.datetime.fromisoformat(result['data']['node']['created'])
         max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta )
 
-        self.assertEqual( node['produced_by']['id'], at_id)
-        self.assertEqual( node['source_solution']['id'], upstream_sid)
 
-
-    def create_scaled_solution(self, upstream_sid, task_id):
+    def create_inversion_solution_nrml(self, upstream_sid):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
-              create_scaled_inversion_solution(
+            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
+              create_inversion_solution_nrml(
                   input: {
                       source_solution: $source_solution
                       md5_digest: $digest
                       file_name: $file_name
                       file_size: $file_size
                       created: $created
-                      produced_by: $produced_by
                   }
               )
               {
                 ok
-                solution { id, file_name, file_size, md5_digest, post_url, source_solution { id }, produced_by { id }}
+                inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url, source_solution { id }}
               }
             }'''
 
-        # from hashlib import sha256, md5
-        filedata = BytesIO("a line\nor two".encode())
-        digest = "sha256(filedata.read()).hexdigest()"
+        from hashlib import sha256, md5
+        filedata = BytesIO("not_really zip, but close enough".encode())
+        digest = sha256(filedata.read()).hexdigest()
         filedata.seek(0) #important!
         size = len(filedata.read())
         filedata.seek(0) #important!
-        variables = dict(source_solution=upstream_sid, produced_by=task_id,
-            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
-        variables['created'] = dt.datetime.now(tzutc()).isoformat()
+
+        variables = dict(source_solution=upstream_sid, file=filedata, digest=digest, file_name="alineortwo.zip", file_size=size)
+        variables['created'] = dt.datetime.utcnow().isoformat()
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result
+
 

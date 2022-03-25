@@ -240,7 +240,7 @@ frame "Custom classes" {
    OpenquakeTask --> OpenquakeSolution
    OpenquakeTask -up-|> AutomationTaskInterface
 
-   class ScaledInversionSolution < {Node}, {FileInterface} > #palegreen ##[dashed]green  {
+   class ScaledInversionSolution < {Node}, {FileInterface} > #cornsilk ##[dashed]cornsilk  {
       Node source_solution
       String source_solution_id
       KeyValuePair[] arguments
@@ -248,7 +248,7 @@ frame "Custom classes" {
 
    ScaledInversionSolution --> InversionSolution : source_solution
 
-   class InversionSolutionNrml < {Node}, {FileInterface} > #palegreen ##[dashed]green  {
+   class InversionSolutionNrml < {Node}, {FileInterface} > #cornsilk ##[dashed]cornsilk  {
       "A zip file containing the two openquake NRML XML files that are converted from an opensha InversionSolution"
       Node source_solution
       String source_solution_id
