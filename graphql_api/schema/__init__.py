@@ -17,4 +17,5 @@ from graphql_api.schema.table import Table
 from graphql_api.schema.custom.inversion_solution import CreateInversionSolution, InversionSolution
 from graphql_api.schema.custom.automation_task import AutomationTask, CreateAutomationTask, UpdateAutomationTask
 from graphql_api.schema.search_manager import SearchManager
+from graphql_api.schema.custom.scaled_inversion_solution import CreateScaledInversionSolution, ScaledInversionSolution
 

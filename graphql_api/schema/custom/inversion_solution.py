@@ -3,89 +3,28 @@
 This module contains the schema definition for an InversionSolution.
 
 """
-import graphene
 import copy
+import graphene
 import uuid
 import datetime
-
 from graphene import relay
 from graphql_relay import from_global_id
 
-from graphql_api.schema.file import FileInterface, CreateFile
-from graphql_api.schema.table import Table, TableType
-from graphql_api.schema.custom.rupture_generation_task import RuptureGenerationTask
-from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, KeyValueListPair, KeyValueListPairInput
-
-from importlib import import_module
+# from importlib import import_module
+from datetime import datetime as dt
 
 from graphql_api.data import get_data_manager
-
-from datetime import datetime as dt
+from graphql_api.schema.file import FileInterface, CreateFile
+from graphql_api.schema.table import Table
+from graphql_api.schema.custom.rupture_generation_task import RuptureGenerationTask
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
+from .common import KeyValuePair, KeyValuePairInput
+from .labelled_table_relation import LabelledTableRelation, LabelledTableRelationInput
+from .helpers import resolve_node
+
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
-
-def resolve_node(root, info, id_field, dm_type):
-    """
-    Optimisation function, looks at the query and avoids a fetch if
-    we only want to resolve the id field.
-    """
-    t0 = dt.utcnow()
-    assert dm_type in ["table", "thing"]
-
-    node_id = getattr(root, id_field)
-    if not node_id:
-        return
-
-    type, nid = from_global_id(node_id)
-
-    if len(info.field_asts[0].selection_set.selections)==1 and \
-        (info.field_asts[0].selection_set.selections[0].name.value == 'id'):
-
-        #create an instance with just it's id attribute set
-        clazz = getattr(import_module('graphql_api.schema'), type)
-        res =  clazz(id=nid)
-    else:
-        res = getattr(get_data_manager(), dm_type).get_one(nid)
-
-    db_metrics.put_duration(__name__, 'resolve_node' , dt.utcnow()-t0)
-    return res
-
-
-class LabelledTableRelation(graphene.ObjectType):
-    """
-    a unique, labelled table relationship.
-
-    This is intended to be used as an internal structure within an InversionSolution (or similar).
-    It must be stored internally in the parent object, so does not implement the node interface. New instances must be mutated via the
-    parent class.
-    """
-
-    identity = graphene.String(description="an internal unique UUID to support mutations.")
-    created = graphene.DateTime(description="When the task record was created.", )
-
-    produced_by_id = graphene.ID(description="the object responsible for creating this relationship.")
-    label = graphene.String(description="Label used to differentiate this relationsip for humans.")
-    table_id = graphene.ID(description="the ID of the table")
-
-    table = graphene.Field(Table)
-
-    table_type = graphene.Field(TableType, description="table type")
-    dimensions = graphene.List(KeyValueListPair, required=False, description="table dimensions, as a list of Key Value List pairs.")
-
-    def resolve_table(root, info, **args):
-        #print('resolve',  'LabelledTableRelation', args)
-        return resolve_node(root, info, 'table_id', 'table')
-
-
-class LabelledTableRelationInput(graphene.InputObjectType):
-
-    produced_by_id =  LabelledTableRelation.produced_by_id
-    label = LabelledTableRelation.label
-    table_id = LabelledTableRelation.table_id
-    table_type = LabelledTableRelation.table_type
-    dimensions = graphene.List(KeyValueListPairInput, required=False, description="table dimensions, as a list of Key Value List pairs.")
 
 class InversionSolution(graphene.ObjectType):
     """
@@ -128,13 +67,6 @@ class InversionSolution(graphene.ObjectType):
                 yield LabelledTableRelation(**table)
         db_metrics.put_duration(__name__, 'InversionSolution.resolve_node' , dt.utcnow()-t0)
 
-    # @staticmethod
-    # def from_json(jsondata):
-    #     #Field type transforms...
-    #     created = jsondata.get('created')
-    #     if created:
-    #         jsondata['created'] = dt.fromisoformat(started)
-    #     return RuptureGenerationTask(**jsondata)
 
 class CreateInversionSolution(relay.ClientIDMutation):
     """
@@ -166,7 +98,6 @@ class CreateInversionSolution(relay.ClientIDMutation):
         inversion_solution = get_data_manager().file.create('InversionSolution', **kwargs)
         db_metrics.put_duration(__name__, 'CreateInversionSolution.mutate_and_get_payload' , dt.utcnow()-t0)
         return CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
-
 
 class AppendInversionSolutionTables(relay.ClientIDMutation):
     """
