@@ -55,7 +55,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
             ToshiThingObject.get("100001").object_content['clazz_name'], 'OpenquakeHazardConfig' )
 
         delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(result['data']['create_openquake_hazard_config']['config']['created'])
-        max_delta = dt.timedelta(microseconds=10000)
+        max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta )
 
         self.assertEqual(
@@ -94,7 +94,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
 
         config = result['data']['node']
         delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(result['data']['node']['created'])
-        max_delta = dt.timedelta(microseconds=10000)
+        max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta )
 
         self.assertEqual(config['source_models'][0]['source_solution']['file_name'], "MyInversion.zip")
