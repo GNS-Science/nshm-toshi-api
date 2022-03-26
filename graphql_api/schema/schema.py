@@ -57,7 +57,7 @@ db_root = DataManager(search_manager, s3_client_args)
 
 class FileUnion(graphene.Union):
     class Meta:
-        types = (SmsFile, File, InversionSolution)
+        types = (SmsFile, File, InversionSolution, ScaledInversionSolution, InversionSolutionNrml)
 
 class SearchResult(graphene.Union):
     class Meta:
