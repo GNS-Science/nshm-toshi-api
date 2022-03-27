@@ -123,7 +123,7 @@ class BaseData():
         S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
         logger.info(f"get object from bucket {self._bucket_name}, key={S3_key})")
 
-        s3obj = self._s3_conn.Object(self._bucket_name, S3_key)
+        s3obj = self._s3_conn.Object(self._bucket_name, S3_key, client=self._client)
         file_object = BytesIO()
         s3obj.download_fileobj(file_object)
         file_object.seek(0)
