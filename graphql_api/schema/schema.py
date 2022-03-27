@@ -30,8 +30,13 @@ from .task_task_relation import CreateTaskTaskRelation
 from .table import CreateTable , Table
 from .custom.automation_task import AutomationTask, CreateAutomationTask, UpdateAutomationTask
 
-#from .custom.inversion_solution import
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
+from graphql_api.schema.custom.scaled_inversion_solution import ScaledInversionSolution, CreateScaledInversionSolution
+from graphql_api.schema.custom.inversion_solution_nrml import CreateInversionSolutionNrml, InversionSolutionNrml
+from graphql_api.schema.custom.openquake_hazard_output import CreateOpenquakeHazardOutput, OpenquakeHazardOutput
+from graphql_api.schema.custom.openquake_hazard_config import CreateOpenquakeHazardConfig, OpenquakeHazardConfig
+from graphql_api.schema.custom.openquake_hazard_task import ( CreateOpenquakeHazardTask, OpenquakeHazardTask,
+    UpdateOpenquakeHazardTask)
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import IS_OFFLINE, ES_REGION, ES_ENDPOINT, ES_INDEX, STACK_NAME, TESTING
@@ -52,7 +57,7 @@ db_root = DataManager(search_manager, s3_client_args)
 
 class FileUnion(graphene.Union):
     class Meta:
-        types = (SmsFile, File, InversionSolution)
+        types = (SmsFile, File, InversionSolution, ScaledInversionSolution, InversionSolutionNrml)
 
 class SearchResult(graphene.Union):
     class Meta:
@@ -162,7 +167,6 @@ class QueryRoot(graphene.ObjectType):
         return NodeFilter(ok=True, result =result)
 
 
-
 class MutationRoot(graphene.ObjectType):
     append_inversion_solution_tables = AppendInversionSolutionTables.Field()
     create_automation_task = CreateAutomationTask.Field()
@@ -178,5 +182,11 @@ class MutationRoot(graphene.ObjectType):
     update_automation_task = UpdateAutomationTask.Field()
     update_general_task = UpdateGeneralTask.Field()
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
+    create_scaled_inversion_solution = CreateScaledInversionSolution.Field()
+    create_inversion_solution_nrml = CreateInversionSolutionNrml.Field()
+    create_openquake_hazard_output = CreateOpenquakeHazardOutput.Field()
+    create_openquake_hazard_config = CreateOpenquakeHazardConfig.Field()
+    create_openquake_hazard_task = CreateOpenquakeHazardTask.Field()
+    update_openquake_hazard_task = UpdateOpenquakeHazardTask.Field()
 
 root_schema = graphene.Schema(query=QueryRoot, mutation=MutationRoot, auto_camelcase=False)
