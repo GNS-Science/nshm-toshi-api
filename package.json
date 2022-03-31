@@ -9,6 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "requirements_1": "serverless requirements clean",
     "requirements_2": "serverless requirements cleanCache",
+    "dummy_pkg": "serverless package --stage dummy",
     "deploy": "serverless deploy --stage ${STAGE}"
   },
   "repository": {
