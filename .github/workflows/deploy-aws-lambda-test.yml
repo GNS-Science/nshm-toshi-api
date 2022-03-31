@@ -42,6 +42,9 @@ jobs:
       - name: sls 3
         run: npm run-script dummy_pkg
 
+      - name: fail now - until requirements are sorted
+        run: serverless --help
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
