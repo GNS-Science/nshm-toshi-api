@@ -34,10 +34,10 @@ jobs:
         run: npm ls	
 
       - name: sls 1
-        run: serverless requirements clean
+        run: npm run-script requirements_1
 
       - name: sls 2
-        run: serverless requirements cleanCache
+        run: npm run-script requirements_2
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
