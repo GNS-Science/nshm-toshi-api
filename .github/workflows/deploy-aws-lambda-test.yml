@@ -32,7 +32,11 @@ jobs:
 
       - name: List packages
         run: npm ls	
+
+      - name: sls 1
         run: serverless requirements clean
+
+      - name: sls 2
         run: serverless requirements cleanCache
 
       - name: Configure AWS Credentials
