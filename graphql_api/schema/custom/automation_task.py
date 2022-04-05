@@ -73,6 +73,28 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
                 break
         db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution' , dt.utcnow()-t0)
         return res
+        
+    @staticmethod
+    def resolve_scaled_inversion_solution(root, info, **args):
+
+        if not len(root.files):
+            return
+        if not root.task_type == TaskSubType.SCALE_SOLUTION.value:
+            return
+
+        t0 = dt.utcnow()
+        res = None
+
+        for file_id in root.files:
+            if not file_id['file_role'] == FileRole.WRITE.value:
+                continue
+            file_relation = get_data_manager().file_relation.build_one(file_id['file_id'], root.id, file_id['file_role'])
+            file = get_data_manager().file.get_one(file_relation.file_id)
+            if file.__class__ == ScaledInversionSolution:
+                res = file
+                break
+        return res
+        db_metrics.put_duration(__name__, 'AutomationTask.resolve_scaled_inversion_solution' , dt.utcnow()-t0)
 
 class AutomationTaskConnection(relay.Connection):
     """A list of AutomationTask items"""
