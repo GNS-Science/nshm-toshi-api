@@ -49,7 +49,9 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
         nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
 
-        result = self.create_openquake_config([nrml_id]) #Thing 100001
+        archive = self.create_file("config_archive.zip") #File 100003
+        archive_id = archive['data']['create_file']['file_result']['id']
+        result = self.create_openquake_config([nrml_id], archive_id) #Thing 100001
 
         self.assertEqual(
             ToshiThingObject.get("100001").object_content['clazz_name'], 'OpenquakeHazardConfig' )
@@ -67,8 +69,11 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         upstream_sid = self.create_source_solution() #File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
         nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
-        config = self.create_openquake_config([nrml_id]) #Thing 100001
 
+        archive = self.create_file("config_archive.zip") #File 100003
+        archive_id = archive['data']['create_file']['file_result']['id']
+
+        config = self.create_openquake_config([nrml_id], archive_id) #Thing 100001
         hc_id =  config['data']['create_openquake_hazard_config']['config']['id']
         print(f"hcid {hc_id}")
 
@@ -78,6 +83,13 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
             __typename
             ... on OpenquakeHazardConfig{
               created
+              archive {
+                id
+                #created
+                meta {k v}
+                md5_digest
+                file_name
+              }
               source_models {
                 id
                 source_solution {

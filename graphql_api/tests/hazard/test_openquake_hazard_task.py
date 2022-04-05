@@ -99,7 +99,10 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         upstream_sid = self.create_source_solution() #File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
         nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
-        config = self.create_openquake_config([nrml_id]) #Thing 100001
+        archive = self.create_file("config_archive.zip") #File 100003
+        archive_id = archive['data']['create_file']['file_result']['id']
+
+        config = self.create_openquake_config([nrml_id], archive_id) #Thing 100001
         config_id = config['data']['create_openquake_hazard_config']['config']['id']
 
         haztask = self.create_openquake_hazard_task(config_id) #Thing 100002
