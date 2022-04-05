@@ -21,6 +21,7 @@ from graphql_api.data import get_data_manager
 from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
 from .inversion_solution import InversionSolution
+from .scaled_inversion_solution import ScaledInversionSolution
 from graphql_api.schema.file_relation import FileRole
 
 from datetime import datetime as dt
