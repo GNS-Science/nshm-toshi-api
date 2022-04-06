@@ -48,14 +48,16 @@ class OpenquakeHazardConfig(graphene.ObjectType):
         db_metrics.put_duration(__name__, 'OpenquakeHazardConfig.resolve_source_models' , dt.utcnow()-t0)
 
     def resolve_archive(root, info, **args):
-        t0 = dt.utcnow()
-        res = None
+        logger.debug(f'root {root}, info {info}, args {args}' )
+        # t0 = dt.utcnow()
+        # res = None
         if root.archive:
-            clazz, key = from_global_id(obj_id)
-            logger.info(f'resolve source_model {(clazz, key)} from {obj_id}')
-            res = get_data_manager().file.get_one(key)
-        db_metrics.put_duration(__name__, 'OpenquakeHazardConfig.resolve_archive' , dt.utcnow()-t0)
-        return res
+            return resolve_node(root, info, 'archive', 'file')
+        #     clazz, key = from_global_id(obj_id)
+        #     logger.info(f'resolve source_model {(clazz, key)} from {obj_id}')
+        #     res = get_data_manager().file.get_one(key)
+        # db_metrics.put_duration(__name__, 'OpenquakeHazardConfig.resolve_archive' , dt.utcnow()-t0)
+        # return res
 
 
 # class OpenquakeHazardConfigConnection(relay.Connection):

@@ -52,6 +52,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
                   input: {
                     config: $config
                     created: $created
+                    model_type: COMPOSITE
                     state: UNDEFINED
                     result: UNDEFINED
 

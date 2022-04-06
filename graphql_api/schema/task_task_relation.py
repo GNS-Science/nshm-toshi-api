@@ -5,7 +5,7 @@ from graphene import Enum
 from graphql_relay import from_global_id
 
 from graphql_api.data import get_data_manager
-from graphql_api.schema.custom import (GeneralTask, RuptureGenerationTask, AutomationTask)
+from graphql_api.schema.custom import (GeneralTask, RuptureGenerationTask, AutomationTask, OpenquakeHazardTask)
 
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ChildTaskUnion(graphene.Union):
     class Meta:
-        types = (GeneralTask, RuptureGenerationTask, AutomationTask)
+        types = (GeneralTask, RuptureGenerationTask, AutomationTask, OpenquakeHazardTask)
 
 class TaskTaskRelation(graphene.ObjectType):
 
