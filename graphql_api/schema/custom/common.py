@@ -47,8 +47,10 @@ class TaskSubType(graphene.Enum):
     REPORT = "report"
     SCALE_SOLUTION = "scale_solution"
     SOLUTION_TO_NRML = "solution_to_nrml"
+    OPENQUAKE_HAZARD = "openquake_hazard"
 
 class ModelType(graphene.Enum):
     CRUSTAL = "crustal"
     SUBDUCTION = "subduction"
+    COMPOSITE = "composite"
 
