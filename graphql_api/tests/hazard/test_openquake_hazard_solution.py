@@ -23,7 +23,7 @@ from setup_helpers import SetupHelpersMixin
 
 @mock_dynamodb2
 @mock_s3
-class TestOpenquakeHazardOutput(unittest.TestCase, SetupHelpersMixin):
+class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
     def setUp(self):
         self.client = Client(root_schema)
@@ -41,25 +41,25 @@ class TestOpenquakeHazardOutput(unittest.TestCase, SetupHelpersMixin):
 
         self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake':'auth'}))
 
-    def test_openquake_hazard_output(self):
+    def test_openquake_hazard_solution(self):
 
         task_id = to_global_id("AutomationTask", "100001")
-        hazout  = self.create_openquake_hazard_output(task_id)
+        hazout  = self.create_openquake_hazard_solution(task_id)
 
         self.assertEqual(
             ToshiFileObject.get("100000").object_content['id'], 100000 )
 
-    def test_get_openquake_hazard_output_node(self):
+    def test_get_openquake_hazard_solution_node(self):
 
         task_id = to_global_id("AutomationTask", "100001")
-        result  = self.create_openquake_hazard_output(task_id)
-        hazout_id =  result['data']['create_openquake_hazard_output']['openquake_hazard_output']['id']
+        result  = self.create_openquake_hazard_solution(task_id)
+        hazout_id =  result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']['id']
 
         query = '''
         query get_scaled_solution($id: ID!) {
           node(id:$id) {
             __typename
-            ... on OpenquakeHazardOutput {
+            ... on OpenquakeHazardSolution {
               created
             }
           }
@@ -72,11 +72,11 @@ class TestOpenquakeHazardOutput(unittest.TestCase, SetupHelpersMixin):
         max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta )
 
-    def create_openquake_hazard_output(self, task_id):
+    def create_openquake_hazard_solution(self, task_id):
         """test helper"""
         query = '''
             mutation ($produced_by: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
-              create_openquake_hazard_output(
+              create_openquake_hazard_solution(
                   input: {
                       produced_by: $produced_by
                       md5_digest: $digest
@@ -87,7 +87,7 @@ class TestOpenquakeHazardOutput(unittest.TestCase, SetupHelpersMixin):
               )
               {
                 ok
-                openquake_hazard_output { id, file_name, file_size, md5_digest, post_url, produced_by { id }}
+                openquake_hazard_solution { id, file_name, file_size, md5_digest, post_url, produced_by { id }}
               }
             }'''
 

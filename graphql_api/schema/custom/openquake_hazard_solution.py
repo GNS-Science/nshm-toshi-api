@@ -1,6 +1,6 @@
 #!python3
 """
-This module contains the schema definition for OpenquakeHazardOutput.
+This module contains the schema definition for OpenquakeHazardSolution.
 
 """
 import graphene
@@ -20,9 +20,9 @@ from .inversion_solution import InversionSolution
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
     resolution=CW_METRICS_RESOLUTION)
 
-class OpenquakeHazardOutput(graphene.ObjectType):
+class OpenquakeHazardSolution(graphene.ObjectType):
     """
-    Represents a OpenquakeHazardOutput archive file
+    Represents a OpenquakeHazardSolution archive file
 
     This is a zip archive containing hazard outputs (`oq engine --export ....)
 
@@ -36,15 +36,15 @@ class OpenquakeHazardOutput(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
-        node = get_data_manager().file.get_one(_id, "OpenquakeHazardOutput")
+        node = get_data_manager().file.get_one(_id, "OpenquakeHazardSolution")
         return node
 
     def resolve_produced_by(root, info, **args):
         return resolve_node(root, info, 'produced_by', 'thing')
 
-class CreateOpenquakeHazardOutput(relay.ClientIDMutation):
+class CreateOpenquakeHazardSolution(relay.ClientIDMutation):
     """
-    Create a OpenquakeHazardOutput file
+    Create a OpenquakeHazardSolution file
     """
     class Input:
         file_name = FileInterface.file_name
@@ -52,14 +52,14 @@ class CreateOpenquakeHazardOutput(relay.ClientIDMutation):
         file_size = FileInterface.file_size
         meta = CreateFile.Arguments.meta
         produced_by = graphene.ID()
-        created = OpenquakeHazardOutput.created
+        created = OpenquakeHazardSolution.created
 
-    openquake_hazard_output = graphene.Field(OpenquakeHazardOutput)
+    openquake_hazard_solution = graphene.Field(OpenquakeHazardSolution)
     ok = graphene.Boolean()
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         t0 = dt.utcnow()
-        openquake_hazard_output = get_data_manager().file.create('OpenquakeHazardOutput', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardOutput.mutate_and_get_payload' , dt.utcnow()-t0)
-        return CreateOpenquakeHazardOutput(openquake_hazard_output=openquake_hazard_output, ok=True)
+        openquake_hazard_solution = get_data_manager().file.create('OpenquakeHazardSolution', **kwargs)
+        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardSolution.mutate_and_get_payload' , dt.utcnow()-t0)
+        return CreateOpenquakeHazardSolution(openquake_hazard_solution=openquake_hazard_solution, ok=True)

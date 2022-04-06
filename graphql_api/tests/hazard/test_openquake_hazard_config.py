@@ -23,7 +23,7 @@ from setup_helpers import SetupHelpersMixin
 
 @mock_dynamodb2
 @mock_s3
-class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
+class TestOpenquakeHazardConfig(unittest.TestCase, SetupHelpersMixin):
 
     def setUp(self):
         self.client = Client(root_schema)
