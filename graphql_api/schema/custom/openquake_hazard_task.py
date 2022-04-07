@@ -27,6 +27,8 @@ from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from .openquake_hazard_config import OpenquakeHazardConfig
+from .openquake_hazard_solution import OpenquakeHazardSolution
+
 from .helpers import resolve_node
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
@@ -39,6 +41,8 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
         interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
     config = graphene.Field(OpenquakeHazardConfig, description = "The task configuration")
+    hazard_solution = graphene.Field(OpenquakeHazardSolution, description = "The openquake solution")
+
     model_type = ModelType()
 
     @staticmethod
@@ -47,6 +51,9 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
     def resolve_config(root, info, **args):
         return resolve_node(root, info, 'config', 'thing')
+
+    def resolve_hazard_solution(root, info, **args):
+        return resolve_node(root, info, 'hazard_solution', 'thing')
 
 # class OpenquakeHazardTaskConnection(relay.Connection):
 #     """A list of OpenquakeHazardTask items"""
@@ -86,9 +93,13 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate' , dt.utcnow()-t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
 
+
+class OpenquakeHazardTaskUpdateInput(AutomationTaskUpdateInput):
+    hazard_solution = graphene.ID()
+
 class UpdateOpenquakeHazardTask(graphene.Mutation):
     class Arguments:
-        input = AutomationTaskUpdateInput(required=True)
+        input = OpenquakeHazardTaskUpdateInput(required=True)
 
     ok = graphene.Boolean()
     openquake_hazard_task = graphene.Field(OpenquakeHazardTask)

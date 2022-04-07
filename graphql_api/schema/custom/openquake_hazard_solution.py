@@ -18,6 +18,8 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from .helpers import resolve_node
 from .inversion_solution import InversionSolution
 from .openquake_hazard_config import OpenquakeHazardConfig
+# from .openquake_hazard_task import OpenquakeHazardTask
+
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
     resolution=CW_METRICS_RESOLUTION)
@@ -52,7 +54,7 @@ class OpenquakeHazardSolution(graphene.ObjectType):
             description="result metrics from the solution, as a list of Key Value pairs.")
 
     #all_the_meta FUTURE
-    #produced_by = graphene.Field(AutomationTaskInterface, description="The task that produced this solution")
+    produced_by = graphene.Field('graphql_api.schema.custom.OpenquakeHazardTask', description="The task that produced this solution")
 
     @classmethod
     def get_node(cls, info, _id):
@@ -71,17 +73,17 @@ class OpenquakeHazardSolution(graphene.ObjectType):
         return resolve_node(root, info, 'hdf5_archive', 'file')
 
 
-class OpenquakeHazardSolutionUpdateInput(graphene.InputObjectType):
-    node_id = graphene.ID(required=True)
+# class OpenquakeHazardSolutionUpdateInput(graphene.InputObjectType):
+#     node_id = graphene.ID(required=True)
 
-    csv_archive = graphene.ID(required=False)
-    hdf5_archive = graphene.ID( required=False)
+#     csv_archive = graphene.ID(required=False)
+#     hdf5_archive = graphene.ID( required=False)
 
-    arguments = graphene.List(KeyValuePairInput, required=False,
-        description="input arguments for the rupture generation task, as a list of Key Value pairs.")
+#     arguments = graphene.List(KeyValuePairInput, required=False,
+#         description="input arguments for the rupture generation task, as a list of Key Value pairs.")
 
-    metrics = graphene.List(KeyValuePairInput, required=False,
-        description="result metrics from the task, as a list of Key Value pairs.")
+#     metrics = graphene.List(KeyValuePairInput, required=False,
+#         description="result metrics from the task, as a list of Key Value pairs.")
 
 class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation):
     """
@@ -89,7 +91,8 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation)
     """
     class Input:
         created = OpenquakeHazardSolution.created
-        config = graphene.ID()
+        config = graphene.ID(required=True)
+        produced_by = graphene.ID(required=True)
 
         csv_archive = graphene.ID(required=False)
         hdf5_archive = graphene.ID( required=False)

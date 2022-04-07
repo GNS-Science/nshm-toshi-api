@@ -45,7 +45,6 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
 
     def test_create_openquake_hazard_solution(self):
-
         upstream_sid = self.create_source_solution() #File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
         nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']\
@@ -62,30 +61,39 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         # self.assertEqual(
         #     ToshiThingObject.get("100000").object_content['clazz_name'], 'OpenquakeHazardConfig' )
 
+        haztask = self.build_hazard_task()
+        print(haztask)
+        haztask_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
+
         query = '''
-            mutation ($created: DateTime!, $config_id: ID!, $csv_archive_id: ID!) {
+            mutation ($created: DateTime!, $config_id: ID!, $csv_archive_id: ID!, $produced_by:ID!) {
               create_openquake_hazard_solution(
                   input: {
                       created: $created
                       config: $config_id
                       csv_archive: $csv_archive_id
+                      #hdf5_archive: $hdf5_archive_id
+                      produced_by: $produced_by
                   }
               )
               {
                 ok
                 openquake_hazard_solution { id
-                    config { archive { file_name }}
-                    csv_archive { file_name }
+                    config { archive { id, file_name }}
+                    csv_archive { id, file_name }
+                    produced_by { id }
                 }
               }
             }'''
-        variables = dict(created=dt.datetime.now(tzutc()).isoformat(), config_id = config_id, csv_archive_id=csv_archive_id )
+        variables = dict(created=dt.datetime.now(tzutc()).isoformat(), config_id = config_id,
+            csv_archive_id=csv_archive_id, produced_by=haztask_id )
 
         result = self.client.execute(query, variable_values=variables )
         print(result)
         oqs = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']
         self.assertEqual(oqs['config']['archive']['file_name'], "config_archive.zip")
         self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
+        self.assertEqual(oqs['produced_by']['id'], haztask_id)
         return result
 
 
