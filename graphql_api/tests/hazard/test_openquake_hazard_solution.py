@@ -41,22 +41,60 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
         self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake':'auth'}))
 
-    def test_openquake_hazard_solution(self):
 
-        task_id = to_global_id("AutomationTask", "100001")
-        hazout  = self.create_openquake_hazard_solution(task_id)
 
-        self.assertEqual(
-            ToshiFileObject.get("100000").object_content['id'], 100000 )
+
+    def test_create_openquake_hazard_solution(self):
+
+        upstream_sid = self.create_source_solution() #File 100001
+        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
+        nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']\
+            ['inversion_solution_nrml']['id']
+
+        archive = self.create_file("config_archive.zip") #File 100003
+        archive_id = archive['data']['create_file']['file_result']['id']
+        result = self.create_openquake_config([nrml_id], archive_id) #Thing 100000
+        config_id = result['data']['create_openquake_hazard_config']['config']['id']
+
+
+        csv_archive = self.create_file("csv_archive.zip") #File 100004
+        csv_archive_id = csv_archive['data']['create_file']['file_result']['id']
+        # self.assertEqual(
+        #     ToshiThingObject.get("100000").object_content['clazz_name'], 'OpenquakeHazardConfig' )
+
+        query = '''
+            mutation ($created: DateTime!, $config_id: ID!, $csv_archive_id: ID!) {
+              create_openquake_hazard_solution(
+                  input: {
+                      created: $created
+                      config: $config_id
+                      csv_archive: $csv_archive_id
+                  }
+              )
+              {
+                ok
+                openquake_hazard_solution { id
+                    config { archive { file_name }}
+                    csv_archive { file_name }
+                }
+              }
+            }'''
+        variables = dict(created=dt.datetime.now(tzutc()).isoformat(), config_id = config_id, csv_archive_id=csv_archive_id )
+
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        oqs = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']
+        self.assertEqual(oqs['config']['archive']['file_name'], "config_archive.zip")
+        self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
+        return result
+
 
     def test_get_openquake_hazard_solution_node(self):
-
-        task_id = to_global_id("AutomationTask", "100001")
-        result  = self.create_openquake_hazard_solution(task_id)
+        result  = self.test_create_openquake_hazard_solution()
         hazout_id =  result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']['id']
 
         query = '''
-        query get_scaled_solution($id: ID!) {
+        query get_solution($id: ID!) {
           node(id:$id) {
             __typename
             ... on OpenquakeHazardSolution {
@@ -68,40 +106,27 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         result = self.client.execute(query, variable_values=dict(id=hazout_id))
         print(result)
 
-        delta = dt.datetime.utcnow() - dt.datetime.fromisoformat(result['data']['node']['created'])
+        delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(result['data']['node']['created'])
         max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta )
 
-    def create_openquake_hazard_solution(self, task_id):
-        """test helper"""
-        query = '''
-            mutation ($produced_by: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
-              create_openquake_hazard_solution(
-                  input: {
-                      produced_by: $produced_by
-                      md5_digest: $digest
-                      file_name: $file_name
-                      file_size: $file_size
-                      created: $created
-                  }
-              )
-              {
-                ok
-                openquake_hazard_solution { id, file_name, file_size, md5_digest, post_url, produced_by { id }}
-              }
-            }'''
+    # def test_update_openquake_hazard_solution_node(self):
+    #     result  = self.test_create_openquake_hazard_solution()
+    #     hazout_id =  result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']['id']
 
-        from hashlib import sha256, md5
-        filedata = BytesIO("not_really zip, but close enough".encode())
-        digest = sha256(filedata.read()).hexdigest()
-        filedata.seek(0) #important!
-        size = len(filedata.read())
-        filedata.seek(0) #important!
+    #     query = '''
+    #     query get_solution($id: ID!) {
+    #       node(id:$id) {
+    #         __typename
+    #         ... on OpenquakeHazardSolution {
+    #           created
+    #         }
+    #       }
+    #     }
+    #     '''
+    #     result = self.client.execute(query, variable_values=dict(id=hazout_id))
+    #     print(result)
 
-        variables = dict(produced_by=task_id, file=filedata, digest=digest, file_name="alineortwo.zip", file_size=size)
-        variables['created'] = dt.datetime.utcnow().isoformat()
-        result = self.client.execute(query, variable_values=variables )
-        print(result)
-        return result
-
-
+    #     delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(result['data']['node']['created'])
+    #     max_delta = dt.timedelta(seconds=1)
+    #     self.assertTrue(delta < max_delta )

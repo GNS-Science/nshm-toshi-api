@@ -169,7 +169,7 @@ class SetupHelpersMixin:
 
         fake_file = fake_file_content()
         variables = dict(file=fake_file, digest=file_digest(fake_file),
-            file_name="alineortwo.zip", file_size=file_size(fake_file),
+            file_name=filename, file_size=file_size(fake_file),
             created=dt.datetime.now(tzutc()).isoformat())
         result = self.client.execute(query, variable_values=variables )
         print(result)
