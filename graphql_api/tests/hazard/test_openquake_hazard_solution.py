@@ -79,7 +79,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
               {
                 ok
                 openquake_hazard_solution { id
-                    config { archive { id, file_name }}
+                    config { template_archive { id, file_name }}
                     csv_archive { id, file_name }
                     produced_by { id }
                 }
@@ -91,7 +91,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         result = self.client.execute(query, variable_values=variables )
         print(result)
         oqs = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']
-        self.assertEqual(oqs['config']['archive']['file_name'], "config_archive.zip")
+        self.assertEqual(oqs['config']['template_archive']['file_name'], "config_archive.zip")
         self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
         self.assertEqual(oqs['produced_by']['id'], haztask_id)
         return result

@@ -83,7 +83,7 @@ class TestOpenquakeHazardConfig(unittest.TestCase, SetupHelpersMixin):
             __typename
             ... on OpenquakeHazardConfig{
               created
-              archive {
+              template_archive {
                 id
                 #created
                 meta {k v}

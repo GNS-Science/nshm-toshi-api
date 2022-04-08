@@ -184,7 +184,7 @@ class SetupHelpersMixin:
                   input: {
                       created: $created
                       source_models: $sources
-                      archive: $archive_id
+                      template_archive: $archive_id
                   }
               )
               {
