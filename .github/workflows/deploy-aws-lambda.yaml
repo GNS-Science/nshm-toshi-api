@@ -24,6 +24,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: upgrade NPM
+        run: npm install -g npm@latest
+
+      - name: Verify NPM
+        run: npm doctor
+
       - name: Install Dependencies
         run: npm install
 
