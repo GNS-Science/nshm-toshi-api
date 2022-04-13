@@ -2,11 +2,13 @@ from graphql_relay import from_global_id
 from importlib import import_module
 from datetime import datetime as dt
 
+import logging
 from graphql_api.data import get_data_manager
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
+logger = logging.getLogger(__name__)
 
 def resolve_node(root, info, id_field, dm_type):
     """
@@ -20,13 +22,15 @@ def resolve_node(root, info, id_field, dm_type):
     if not node_id:
         return
 
-    type, nid = from_global_id(node_id)
+    _type, nid = from_global_id(node_id)
+
+    logger.debug(f"resolve_node() resolving for type {_type}, id: {nid}, id_field: {id_field}, dm_type: {dm_type}")
 
     if len(info.field_asts[0].selection_set.selections)==1 and \
         (info.field_asts[0].selection_set.selections[0].name.value == 'id'):
 
-        #create an instance with just it's id attribute set
-        clazz = getattr(import_module('graphql_api.schema'), type)
+        #create an instance with just the id attribute set
+        clazz = getattr(import_module('graphql_api.schema'), _type)
         res =  clazz(id=nid)
     else:
         res = getattr(get_data_manager(), dm_type).get_one(nid)

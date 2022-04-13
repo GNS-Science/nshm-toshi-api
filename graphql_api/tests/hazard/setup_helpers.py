@@ -9,6 +9,21 @@ from hashlib import sha256
 import datetime as dt
 from dateutil.tz import tzutc
 
+def fake_file_content():
+    filedata = BytesIO("not_really zip, but close enough".encode())
+    filedata.seek(0) #important!
+    return filedata
+
+def file_size(fileobj):
+    size = len(fileobj.read())
+    fileobj.seek(0)
+    return size
+
+def file_digest(fileobj):
+    digest = sha256(fileobj.read()).hexdigest()
+    fileobj.seek(0)
+    return digest
+
 class SetupHelpersMixin:
 
     def create_general_task(self):
@@ -129,27 +144,47 @@ class SetupHelpersMixin:
               }
             }'''
 
-
-        filedata = BytesIO("not_really zip, but close enough".encode())
-        digest = sha256(filedata.read()).hexdigest()
-        filedata.seek(0) #important!
-        size = len(filedata.read())
-        filedata.seek(0) #important!
-
-        variables = dict(source_solution=upstream_sid, file=filedata, digest=digest, file_name="alineortwo.zip", file_size=size)
-        variables['created'] = dt.datetime.utcnow().isoformat()
+        fake_file = fake_file_content()
+        variables = dict(source_solution=upstream_sid, file=fake_file, digest=file_digest(fake_file),
+            file_name="alineortwo.zip", file_size=file_size(fake_file),
+            created = dt.datetime.utcnow().isoformat())
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result
 
-    def create_openquake_config(self, sources):
+    def create_file(self, filename):
         """test helper"""
         query = '''
-            mutation ($created: DateTime!, $sources: [ID!]) {
+            mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
+              create_file(
+                    md5_digest:$digest
+                    file_name: $file_name
+                    file_size: $file_size
+                ) {
+                    ok
+                    file_result { id, file_name, file_size, md5_digest, post_url }
+                }
+            }
+        '''
+
+        fake_file = fake_file_content()
+        variables = dict(file=fake_file, digest=file_digest(fake_file),
+            file_name=filename, file_size=file_size(fake_file),
+            created=dt.datetime.now(tzutc()).isoformat())
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
+
+    def create_openquake_config(self, sources, archive_id):
+        """test helper"""
+        query = '''
+            mutation ($created: DateTime!, $sources: [ID!], $archive_id: ID!) {
               create_openquake_hazard_config(
                   input: {
                       created: $created
                       source_models: $sources
+                      template_archive: $archive_id
                   }
               )
               {
@@ -158,8 +193,64 @@ class SetupHelpersMixin:
               }
             }'''
 
-        variables = dict(sources=sources)
-        variables['created'] = dt.datetime.now(tzutc()).isoformat()
+        variables = dict(sources=sources, archive_id=archive_id,
+            created = dt.datetime.now(tzutc()).isoformat())
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
+
+    def build_hazard_task(self):
+
+        upstream_sid = self.create_source_solution() #File 100001
+        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
+        nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
+        archive = self.create_file("config_archive.zip") #File 100003
+        archive_id = archive['data']['create_file']['file_result']['id']
+
+        config = self.create_openquake_config([nrml_id], archive_id) #Thing 100001
+        config_id = config['data']['create_openquake_hazard_config']['config']['id']
+
+        haztask = self.create_openquake_hazard_task(config_id) #Thing 100002
+        return haztask
+
+    def create_openquake_hazard_task(self, config):
+        """test helper"""
+        query = '''
+            mutation ($created: DateTime!, $config: ID!) {
+              create_openquake_hazard_task(
+                  input: {
+                    config: $config
+                    created: $created
+                    model_type: COMPOSITE
+                    state: UNDEFINED
+                    result: UNDEFINED
+
+                    arguments: [
+                        { k:"max_jump_distance" v: "55.5" }
+                        { k:"max_sub_section_length" v: "2" }
+                        { k:"max_cumulative_azimuth" v: "590" }
+                        { k:"min_sub_sections_per_parent" v: "2" }
+                        { k:"permutation_strategy" v: "DOWNDIP" }
+                    ]
+
+                    environment: [
+                        { k:"gitref_opensha_ucerf3" v: "ABC"}
+                        { k:"gitref_opensha_commons" v: "ABC"}
+                        { k:"gitref_opensha_core" v: "ABC"}
+                        { k:"nshm_nz_opensha" v: "ABC"}
+                        { k:"host" v:"tryharder-ubuntu"}
+                        { k:"JAVA" v:"-Xmx24G"  }
+                    ]
+                  }
+              )
+              {
+                ok
+                openquake_hazard_task { id, config { id }, created, arguments {k v}}
+              }
+            }'''
+
+        variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat())
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result

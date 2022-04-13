@@ -18,6 +18,7 @@ from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThi
 from graphql_api.data import data_manager
 from graphql_api.schema.search_manager import SearchManager
 from graphql_api.schema.custom.common import TaskSubType
+from graphql_api.data.thing_data import ThingData
 
 from setup_helpers import SetupHelpersMixin
 
@@ -44,46 +45,6 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
 
-    def create_openquake_hazard_task(self, config):
-        """test helper"""
-        query = '''
-            mutation ($created: DateTime!, $config: ID!) {
-              create_openquake_hazard_task(
-                  input: {
-                    config: $config
-                    created: $created
-                    state: UNDEFINED
-                    result: UNDEFINED
-
-                    arguments: [
-                        { k:"max_jump_distance" v: "55.5" }
-                        { k:"max_sub_section_length" v: "2" }
-                        { k:"max_cumulative_azimuth" v: "590" }
-                        { k:"min_sub_sections_per_parent" v: "2" }
-                        { k:"permutation_strategy" v: "DOWNDIP" }
-                    ]
-
-                    environment: [
-                        { k:"gitref_opensha_ucerf3" v: "ABC"}
-                        { k:"gitref_opensha_commons" v: "ABC"}
-                        { k:"gitref_opensha_core" v: "ABC"}
-                        { k:"nshm_nz_opensha" v: "ABC"}
-                        { k:"host" v:"tryharder-ubuntu"}
-                        { k:"JAVA" v:"-Xmx24G"  }
-                    ]
-                  }
-              )
-              {
-                ok
-                openquake_hazard_task { id, config { id }, created, arguments {k v}}
-              }
-            }'''
-
-        variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat())
-        result = self.client.execute(query, variable_values=variables )
-        print(result)
-        return result
-
 
     def test_create_oq_hazard_task(self):
 
@@ -95,16 +56,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
 
 
     def _build_hazard_task(self):
-
-        upstream_sid = self.create_source_solution() #File 100001
-        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
-        nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
-        config = self.create_openquake_config([nrml_id]) #Thing 100001
-        config_id = config['data']['create_openquake_hazard_config']['config']['id']
-
-        haztask = self.create_openquake_hazard_task(config_id) #Thing 100002
-        return haztask
-
+        return super().build_hazard_task()
 
     def test_link_tasks(self):
         haztask = self._build_hazard_task()
@@ -167,29 +119,38 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
+
+        things = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
+        hazsol = things.create(clazz_name='OpenquakeHazardSolution', created=dt.datetime.now(tzutc()))
+        # print(hazsol)
+        # print(dir(hazsol))
+        ohs_id = to_global_id("OpenquakeHazardSolution", hazsol.id)
+
         qry = '''
-            mutation ($task_id: ID!) {
+            mutation ($task_id: ID!, $hazard_solution_id: ID!) {
                 update_openquake_hazard_task(input: {
                     task_id: $task_id
                     duration: 909,
                     metrics: {k: "rupture_count" v: "20"}
+                    hazard_solution: $hazard_solution_id
                 })
                 {
                     openquake_hazard_task {
                         id
                         duration
                         metrics {k v}
+                        hazard_solution {__typename, id}
                     }
                 }
             }
         '''
-        executed = self.client.execute(qry, variable_values=dict(task_id=ht_id))
+        executed = self.client.execute(qry, variable_values=dict(task_id=ht_id, hazard_solution_id=ohs_id))
         print(executed)
         result = executed['data']['update_openquake_hazard_task']['openquake_hazard_task']
         assert result['id'] == ht_id
         assert result['duration'] == 909
         assert result['metrics'][0]['k'] == "rupture_count"
         assert result['metrics'][0]['v'] == "20"
-
-
+        assert result['hazard_solution']['__typename'] == "OpenquakeHazardSolution"
+        assert result['hazard_solution']['id'] == ohs_id
 

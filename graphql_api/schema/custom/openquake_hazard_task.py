@@ -13,18 +13,22 @@ import datetime as dt
 import logging
 
 from graphene import relay
+from graphql_relay import from_global_id
 from graphene import Enum
 
 from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
 from graphql_api.data import get_data_manager
-from .common import KeyValuePair, KeyValuePairInput
-from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
+from .common import ModelType
+from .automation_task_base import (AutomationTaskInterface, AutomationTaskBase,
+    AutomationTaskInput, AutomationTaskUpdateInput)
 
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from .openquake_hazard_config import OpenquakeHazardConfig
+from .openquake_hazard_solution import OpenquakeHazardSolution
+
 from .helpers import resolve_node
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
@@ -37,6 +41,9 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
         interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
     config = graphene.Field(OpenquakeHazardConfig, description = "The task configuration")
+    hazard_solution = graphene.Field(OpenquakeHazardSolution, description = "The openquake solution")
+
+    model_type = ModelType()
 
     @staticmethod
     def from_json(jsondata):
@@ -44,6 +51,9 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
     def resolve_config(root, info, **args):
         return resolve_node(root, info, 'config', 'thing')
+
+    def resolve_hazard_solution(root, info, **args):
+        return resolve_node(root, info, 'hazard_solution', 'thing')
 
 # class OpenquakeHazardTaskConnection(relay.Connection):
 #     """A list of OpenquakeHazardTask items"""
@@ -56,9 +66,9 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 #     def resolve_total_count(root, info, *args, **kwargs):
 #         return len(root.edges)
 
-
 class OpenquakeHazardTaskInput(AutomationTaskInput):
     config = graphene.ID(required=True)
+    model_type = ModelType(required=True)
 
 class CreateOpenquakeHazardTask(graphene.Mutation):
 
@@ -72,13 +82,24 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
         logger.debug(f"CreateOpenquakeHazardTask.mutate payload: {input}")
+        #Validation!
+        input_type, nid = from_global_id(input.config)
+        assert input_type == "OpenquakeHazardConfig"
+        ref = get_data_manager().thing.get_one(nid)
+        logger.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
+        if not ref:
+            raise Exception("Broken input")
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate' , dt.utcnow()-t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
 
+
+class OpenquakeHazardTaskUpdateInput(AutomationTaskUpdateInput):
+    hazard_solution = graphene.ID()
+
 class UpdateOpenquakeHazardTask(graphene.Mutation):
     class Arguments:
-        input = AutomationTaskUpdateInput(required=True)
+        input = OpenquakeHazardTaskUpdateInput(required=True)
 
     ok = graphene.Boolean()
     openquake_hazard_task = graphene.Field(OpenquakeHazardTask)

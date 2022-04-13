@@ -33,7 +33,7 @@ from .custom.automation_task import AutomationTask, CreateAutomationTask, Update
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
 from graphql_api.schema.custom.scaled_inversion_solution import ScaledInversionSolution, CreateScaledInversionSolution
 from graphql_api.schema.custom.inversion_solution_nrml import CreateInversionSolutionNrml, InversionSolutionNrml
-from graphql_api.schema.custom.openquake_hazard_output import CreateOpenquakeHazardOutput, OpenquakeHazardOutput
+from graphql_api.schema.custom.openquake_hazard_solution import CreateOpenquakeHazardSolution, OpenquakeHazardSolution
 from graphql_api.schema.custom.openquake_hazard_config import CreateOpenquakeHazardConfig, OpenquakeHazardConfig
 from graphql_api.schema.custom.openquake_hazard_task import ( CreateOpenquakeHazardTask, OpenquakeHazardTask,
     UpdateOpenquakeHazardTask)
@@ -184,7 +184,7 @@ class MutationRoot(graphene.ObjectType):
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_scaled_inversion_solution = CreateScaledInversionSolution.Field()
     create_inversion_solution_nrml = CreateInversionSolutionNrml.Field()
-    create_openquake_hazard_output = CreateOpenquakeHazardOutput.Field()
+    create_openquake_hazard_solution = CreateOpenquakeHazardSolution.Field()
     create_openquake_hazard_config = CreateOpenquakeHazardConfig.Field()
     create_openquake_hazard_task = CreateOpenquakeHazardTask.Field()
     update_openquake_hazard_task = UpdateOpenquakeHazardTask.Field()

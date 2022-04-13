@@ -19,6 +19,6 @@ from graphql_api.schema.custom.automation_task import AutomationTask, CreateAuto
 from graphql_api.schema.search_manager import SearchManager
 from graphql_api.schema.custom.scaled_inversion_solution import CreateScaledInversionSolution, ScaledInversionSolution
 from graphql_api.schema.custom.inversion_solution_nrml import CreateInversionSolutionNrml, InversionSolutionNrml
-from graphql_api.schema.custom.openquake_hazard_output import CreateOpenquakeHazardOutput, OpenquakeHazardOutput
+from graphql_api.schema.custom.openquake_hazard_solution import CreateOpenquakeHazardSolution, OpenquakeHazardSolution
 from graphql_api.schema.custom.openquake_hazard_config import CreateOpenquakeHazardConfig, OpenquakeHazardConfig
 from graphql_api.schema.custom.openquake_hazard_task import CreateOpenquakeHazardTask, OpenquakeHazardTask
