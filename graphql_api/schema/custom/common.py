@@ -53,4 +53,3 @@ class ModelType(graphene.Enum):
     CRUSTAL = "crustal"
     SUBDUCTION = "subduction"
     COMPOSITE = "composite"
-

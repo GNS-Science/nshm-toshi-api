@@ -45,6 +45,7 @@ class InversionSolution(graphene.ObjectType):
     hazard_table = graphene.Field(Table, description='deprecated')
     mfd_table = graphene.Field(Table, description='deprecated')
     produced_by = graphene.Field(RuptureGenerationTask)
+    predecessors = graphene.List('graphql_api.schema.custom.predecessor.Predecessor', required=False, description="list of predecessor info")
 
     @classmethod
     def get_node(cls, info, _id):
@@ -81,6 +82,7 @@ class CreateInversionSolution(relay.ClientIDMutation):
         produced_by_id = InversionSolution.produced_by_id
         mfd_table_id = InversionSolution.mfd_table_id
         hazard_table_id = InversionSolution.hazard_table_id
+        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors")
 
         tables = graphene.List(LabelledTableRelationInput, required=False)
 
