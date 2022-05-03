@@ -71,6 +71,7 @@ class SetupHelpersMixin:
         print(result)
         return result['data']['create_inversion_solution']['inversion_solution']['id']
 
+
     def create_automation_task(self, task_type="INVERSION"):
         CREATE_QRY = '''
             mutation ($created: DateTime! $task_type: TaskSubType!) {
