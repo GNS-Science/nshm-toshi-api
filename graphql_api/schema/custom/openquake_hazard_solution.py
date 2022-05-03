@@ -20,7 +20,6 @@ from .helpers import resolve_node
 from .inversion_solution import InversionSolution
 from .openquake_hazard_config import OpenquakeHazardConfig
 
-
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
     resolution=CW_METRICS_RESOLUTION)
 
