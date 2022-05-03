@@ -1,6 +1,4 @@
 import graphene
-from graphql_relay import from_global_id
-from enum import Enum
 
 class GitReferences():
     """Source code git references (from `git log --oneline -1`)"""
