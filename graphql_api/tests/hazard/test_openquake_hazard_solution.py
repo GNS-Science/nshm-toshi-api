@@ -41,9 +41,6 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
         self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake':'auth'}))
 
-
-
-
     def test_create_openquake_hazard_solution(self):
         upstream_sid = self.create_source_solution() #File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
@@ -181,7 +178,18 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                     config { template_archive { id, file_name }}
                     csv_archive { id, file_name }
                     produced_by { id }
-                    predecessors { id, typename, depth, relationship}
+                    predecessors {
+                        id,
+                        typename,
+                        depth,
+                        relationship
+                        node {
+                            ... on FileInterface {
+                                meta {k v}
+                                file_name
+                            }
+                        }
+                    }
                 }
               }
             }'''
