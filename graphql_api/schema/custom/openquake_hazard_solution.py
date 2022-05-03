@@ -10,7 +10,7 @@ from graphene import relay
 from graphql_api.data import get_data_manager
 from graphql_api.schema.file import File
 from graphql_api.schema.thing import Thing
-from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput
+from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, Predecessor, PredecessorInput
 
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
@@ -19,10 +19,15 @@ from .helpers import resolve_node
 from .inversion_solution import InversionSolution
 from .openquake_hazard_config import OpenquakeHazardConfig
 # from .openquake_hazard_task import OpenquakeHazardTask
-
+from .scaled_inversion_solution import ScaledInversionSolution
+from .inversion_solution_nrml import InversionSolutionNrml
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
     resolution=CW_METRICS_RESOLUTION)
+
+class PredecessorUnion(graphene.Union):
+    class Meta:
+        types = (File, InversionSolution, ScaledInversionSolution, InversionSolutionNrml)
 
 class OpenquakeHazardSolution(graphene.ObjectType):
     """
@@ -54,6 +59,8 @@ class OpenquakeHazardSolution(graphene.ObjectType):
             description="result metrics from the solution, as a list of Key Value pairs.")
 
     #all_the_meta FUTURE
+    predecessors = graphene.List(Predecessor, required=False, description="list of predecessor info")
+
     produced_by = graphene.Field('graphql_api.schema.custom.OpenquakeHazardTask', description="The task that produced this solution")
 
     @classmethod
@@ -72,6 +79,11 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     def resolve_hdf5_archive(root, info, **args):
         return resolve_node(root, info, 'hdf5_archive', 'file')
 
+    # def resolve_predecessors(root, info, **args):
+    #     for pred in getattr(root, 'predecessor_list'):
+    #         print(pred['id'])
+    #         yield pred
+
 
 # class OpenquakeHazardSolutionUpdateInput(graphene.InputObjectType):
 #     node_id = graphene.ID(required=True)
@@ -84,6 +96,8 @@ class OpenquakeHazardSolution(graphene.ObjectType):
 
 #     metrics = graphene.List(KeyValuePairInput, required=False,
 #         description="result metrics from the task, as a list of Key Value pairs.")
+
+#class PredecessorListInput(graphene.InputObjectType):
 
 class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation):
     """
@@ -102,6 +116,8 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation)
 
         metrics = graphene.List(KeyValuePairInput, required=False,
             description="result metrics from the solution, as a list of Key Value pairs.")
+
+        predecessors = graphene.List(PredecessorInput, required=False, description="list of predecessors")
 
     openquake_hazard_solution = graphene.Field(OpenquakeHazardSolution)
     ok = graphene.Boolean()

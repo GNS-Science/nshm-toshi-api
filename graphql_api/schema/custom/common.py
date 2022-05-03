@@ -1,4 +1,6 @@
 import graphene
+from graphql_relay import from_global_id
+from enum import Enum
 
 class GitReferences():
     """Source code git references (from `git log --oneline -1`)"""
@@ -54,3 +56,38 @@ class ModelType(graphene.Enum):
     SUBDUCTION = "subduction"
     COMPOSITE = "composite"
 
+
+class AncestryLabel(Enum):
+    sibling = 0
+    parent = -1
+    grandparent = -2
+    great_grandparent = -3
+    great_great_grandparent = -4
+
+class Predecessor(graphene.ObjectType):
+    """
+    Represents a something that came before this thing.
+
+    """
+    id = graphene.ID(description="The id of the predecessor object")
+    typename = graphene.Field(graphene.String, description="The typename of the predecessor object")
+    depth = graphene.Field(graphene.Int, description="The predecessor relationship numerically")
+    relationship = graphene.Field(graphene.String, description="The predecessor relationship in Title case.")
+
+    def resolve_typename(root, info, **args):
+        idn = getattr(root, 'id')
+        typename, ident = from_global_id(idn)
+        return typename
+
+    def resolve_relationship(root, info, **args):
+        d = int(getattr(root, 'depth'))
+        return str(AncestryLabel(d).name.title())
+
+
+class PredecessorInput(graphene.InputObjectType):
+    """
+    Represents a something that came before this thing.
+
+    """
+    id = Predecessor.id
+    depth = graphene.Field(graphene.Int, description="The predecessor relationship numerically")
