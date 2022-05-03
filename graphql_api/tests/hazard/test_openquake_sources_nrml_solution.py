@@ -78,6 +78,17 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         #object ID is stored internally as an INT
         self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
 
+    def test_create_opensha_nrml_from_solution_with_predecessors(self):
+        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        upstream_sid = self.create_source_solution()
+        result = self.create_inversion_solution_nrml_with_predecessors(upstream_sid)
+
+        ss =  result['data']['create_inversion_solution_nrml']['inversion_solution_nrml']
+
+        self.assertEqual(ss['source_solution']['id'], upstream_sid)
+        self.assertEqual(ss['predecessors'][0]['depth'], -1)
+        self.assertEqual(ss['predecessors'][0]['relationship'], "Parent")
+
     def test_get_scaled_solution_node(self):
 
         at_id = self.create_automation_task("SCALE_SOLUTION")

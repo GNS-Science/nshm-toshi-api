@@ -3,21 +3,12 @@
 This module contains the schema definition for a ScaledInversionSolution.
 
 """
-# import copy
 import graphene
-# import uuid
-# import datetime
 from graphene import relay
-# from graphql_relay import from_global_id
-
-# from importlib import import_module
 from datetime import datetime as dt
 
 from graphql_api.data import get_data_manager
 from graphql_api.schema.file import FileInterface, CreateFile
-# from graphql_api.schema.table import Table
-#from graphql_api.schema.custom.predecessor import Predecessor, PredecessorInput
-
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
