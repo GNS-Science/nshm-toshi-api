@@ -4,7 +4,7 @@ The NSHM data file graphql schema.
 import graphene
 from graphene import relay
 from graphql_api.data import get_data_manager
-from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput
+from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
@@ -15,7 +15,7 @@ db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodD
 class FileInterface(graphene.Interface):
     """A File in the NSHM saga"""
     class Meta:
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node)
 
     #TODO consider if this field ought to be enforced here, instead of in subclasses
     #created = graphene.DateTime(description="When the file was created")
@@ -30,7 +30,6 @@ class FileInterface(graphene.Interface):
 
     relations = relay.ConnectionField(
         'graphql_api.schema.thing.FileRelationConnection', description="things related to this data file")
-
 
     def resolve_file_url(self, info, **args):
         return get_data_manager().file.get_presigned_url(self.id)
@@ -63,7 +62,7 @@ class File(graphene.ObjectType):
     """A data file"""
     class Meta:
         """standard graphene meta class"""
-        interfaces = (relay.Node, FileInterface)
+        interfaces = (relay.Node, FileInterface, PredecessorsInterface)
 
     @classmethod
     def get_node(cls, info, _id):
@@ -92,6 +91,9 @@ class CreateFile(graphene.Mutation):
         file_size = graphene.Int()
         meta = graphene.List(KeyValuePairInput, required=False,
             description="additional file meta data, as a list of Key Value pairs.")
+
+        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput',
+            required=False, description="list of predecessors")
 
     ok = graphene.Boolean()
     file_result = graphene.Field(File)

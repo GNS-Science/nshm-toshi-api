@@ -95,16 +95,17 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
 
         query = '''
-        query get_scaled_solution($id: ID!) {
-          node(id:$id) {
-            __typename
-            ... on ScaledInversionSolution {
-              created
-              produced_by { id }
-              source_solution { id }
+            query get_scaled_solution($id: ID!) {
+              node(id:$id) {
+                __typename
+                ... on ScaledInversionSolution {
+                    created
+                    produced_by { id }
+                    source_solution { id }
+
+                }
+              }
             }
-          }
-        }
         '''
         result = self.client.execute(query, variable_values=dict(id=ss_id))
         print(result)
@@ -117,6 +118,49 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
 
         self.assertEqual( node['produced_by']['id'], at_id)
         self.assertEqual( node['source_solution']['id'], upstream_sid)
+
+
+    def test_get_scaled_solution_with_predecessors(self):
+        at_id = self.create_automation_task("SCALE_SOLUTION")
+        upstream_sid = self.create_source_solution()
+        result = self.create_scaled_solution_with_predecessors(upstream_sid, at_id)
+        ss =  result['data']['create_scaled_inversion_solution']['solution']
+        ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
+        query = '''
+            query get_scaled_solution($id: ID!) {
+              node(id:$id) {
+                __typename
+                ... on ScaledInversionSolution {
+                    created
+                    produced_by { id }
+                    source_solution { id }
+                }
+                ... on PredecessorsInterface {
+                    predecessors {
+                        id,
+                        typename,
+                        depth,
+                        relationship
+                        node {
+                            __typename
+                            ... on FileInterface {
+                                meta {k v}
+                                file_name
+                            }
+                        }
+                    }
+                }
+              }
+            }
+        '''
+        result = self.client.execute(query, variable_values=dict(id=ss_id))
+        print(result)
+
+        node = result['data']['node']
+
+        self.assertEqual( node['produced_by']['id'], at_id)
+        self.assertEqual( node['predecessors'][0]['id'], upstream_sid)
+        self.assertEqual( node['predecessors'][0]['relationship'], 'Parent')
 
 
     def create_scaled_solution(self, upstream_sid, task_id):
@@ -205,3 +249,6 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result
+
+
+

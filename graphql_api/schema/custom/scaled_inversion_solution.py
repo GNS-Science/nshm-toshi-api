@@ -12,8 +12,8 @@ from graphql_api.schema.file import FileInterface, CreateFile
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
+from .common import PredecessorsInterface
 from .helpers import resolve_node
-from .inversion_solution import InversionSolution
 from .automation_task import AutomationTask
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
@@ -27,12 +27,12 @@ class ScaledInversionSolution(graphene.ObjectType):
     should be captured as in meta field.
     """
     class Meta:
-        interfaces = (relay.Node, FileInterface)
+        interfaces = (relay.Node, FileInterface, PredecessorsInterface)
 
     created = graphene.DateTime(description="When the scaled solution file was created" )
-    source_solution = graphene.Field(InversionSolution, description="The original soloution as produced by opensha")
+    source_solution = graphene.Field('graphql_api.schema.custom.inversion_solution.InversionSolution',
+         description="The original soloution as produced by opensha")
     produced_by = graphene.Field(AutomationTask, description="The task creating this")
-    predecessors = graphene.List('graphql_api.schema.custom.predecessor.Predecessor', required=False, description="list of predecessor info")
 
     @classmethod
     def get_node(cls, info, _id):
