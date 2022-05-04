@@ -63,7 +63,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         haztask_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         query = '''
-            mutation ($created: DateTime!, $config_id: ID!, $csv_archive_id: ID!, $produced_by:ID!) {
+            mutation ($created: DateTime!, $config_id: ID!, $csv_archive_id: ID!, $produced_by:ID!, $predecessors: [PredecessorInput]) {
               create_openquake_hazard_solution(
                   input: {
                       created: $created
@@ -71,6 +71,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                       csv_archive: $csv_archive_id
                       #hdf5_archive: $hdf5_archive_id
                       produced_by: $produced_by
+                      predecessors: $predecessors
                   }
               )
               {
@@ -82,8 +83,10 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                 }
               }
             }'''
+
+        predecessors = [dict(id=nrml_id, depth=-1)]
         variables = dict(created=dt.datetime.now(tzutc()).isoformat(), config_id = config_id,
-            csv_archive_id=csv_archive_id, produced_by=haztask_id )
+            csv_archive_id=csv_archive_id, produced_by=haztask_id, predecessors=predecessors )
 
         result = self.client.execute(query, variable_values=variables )
         print(result)
@@ -202,3 +205,41 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
         self.assertEqual(oqs['predecessors'][0]['depth'], -2)
         self.assertEqual(oqs['predecessors'][0]['relationship'], "Grandparent")
+        return result
+
+    def test_get_oq_hazard_solution_with_pred(self):
+
+        result = self.test_create_openquake_hazard_solution_with_predecessors()
+        hazout_id =  result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']['id']
+
+        query = '''
+        query get_openquake_hazard_solution($id: ID!) {
+          node(id:$id) {
+            __typename
+            ... on OpenquakeHazardSolution {
+              created
+            }
+            ... on PredecessorsInterface {
+                predecessors {
+                    id,
+                    typename,
+                    depth,
+                    relationship
+                    node {
+                        __typename
+                        ... on FileInterface {
+                            meta {k v}
+                            file_name
+                        }
+                    }
+                }
+            }
+
+          }
+        }
+        '''
+        result = self.client.execute(query, variable_values=dict(id=hazout_id))
+        print(result)
+        node = result['data']['node']
+        self.assertEqual( node['predecessors'][0]['relationship'], 'Grandparent')
+        self.assertEqual( node['predecessors'][1]['relationship'], 'Parent')
