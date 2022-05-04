@@ -203,25 +203,46 @@ class SetupHelpersMixin:
 
 
 
-    def create_file(self, filename):
+    def create_file(self, filename, predecessor = None):
         """test helper"""
         query = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
+            mutation ($digest: String!, $file_name: String!, $file_size: Int!, $predecessors: [PredecessorInput]) {
               create_file(
                     md5_digest:$digest
                     file_name: $file_name
                     file_size: $file_size
+                    predecessors: $predecessors
                 ) {
                     ok
-                    file_result { id, file_name, file_size, md5_digest, post_url }
+                    file_result {
+                        id, file_name, file_size, md5_digest, post_url
+                        predecessors {
+                            id,
+                            typename,
+                            depth,
+                            relationship
+                            node {
+                                ... on FileInterface {
+                                    meta {k v}
+                                    file_name
+                                }
+                            }
+                        }
+                    }
                 }
             }
         '''
 
         fake_file = fake_file_content()
+
         variables = dict(file=fake_file, digest=file_digest(fake_file),
             file_name=filename, file_size=file_size(fake_file),
             created=dt.datetime.now(tzutc()).isoformat())
+
+        if predecessor:
+            predecessors = [dict(id=predecessor, depth=-1)]
+            variables['predecessors'] = predecessors
+
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result
