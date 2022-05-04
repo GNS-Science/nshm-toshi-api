@@ -98,3 +98,43 @@ class TestInversionSolution(unittest.TestCase, SetupHelpersMixin):
 
         print(result)
         return result['data']['create_inversion_solution']['inversion_solution']
+
+
+    def test_get_inversion_solution_with_predecessors(self):
+
+        result =  self.create_file("myruptset.zip")
+        ruptset_file_id = result['data']['create_file']['file_result']['id']
+
+        isol = self.create_solution_with_predecessor(ruptset_file_id)
+
+        query = '''
+        query inversion_solution_with_predecessors($id: ID!) {
+          node(id:$id) {
+            __typename
+            ... on InversionSolution {
+              created
+            }
+            ... on PredecessorsInterface {
+                predecessors {
+                    id,
+                    typename,
+                    depth,
+                    relationship
+                    node {
+                        __typename
+                        ... on FileInterface {
+                            meta {k v}
+                            file_name
+                        }
+                    }
+                }
+            }
+
+          }
+        }
+        '''
+        result = self.client.execute(query, variable_values=dict(id=isol['id']))
+        print(result)
+        node = result['data']['node']
+        self.assertEqual(node['predecessors'][0]['depth'], -1)
+        self.assertEqual(node['predecessors'][0]['relationship'], "Parent")
