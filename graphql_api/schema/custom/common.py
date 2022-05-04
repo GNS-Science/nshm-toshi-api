@@ -53,3 +53,9 @@ class ModelType(graphene.Enum):
     CRUSTAL = "crustal"
     SUBDUCTION = "subduction"
     COMPOSITE = "composite"
+
+class PredecessorsInterface(graphene.Interface):
+    """A interface for things having predecessors"""
+
+    predecessors = graphene.List('graphql_api.schema.custom.predecessor.Predecessor', required=False,
+        description="list of predecessor info")

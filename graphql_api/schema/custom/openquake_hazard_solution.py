@@ -10,9 +10,7 @@ from graphene import relay
 from graphql_api.data import get_data_manager
 from graphql_api.schema.file import File
 from graphql_api.schema.thing import Thing
-from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput
-from graphql_api.schema.custom.predecessor import Predecessor, PredecessorInput
-
+from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
@@ -35,7 +33,7 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     NB any arguments used to generate this object should be captured as in meta field.
     """
     class Meta:
-        interfaces = (relay.Node, Thing)
+        interfaces = (relay.Node, Thing, PredecessorsInterface)
 
     created = graphene.DateTime(
         description="When it was created (UTZ)")
@@ -51,9 +49,6 @@ class OpenquakeHazardSolution(graphene.ObjectType):
 
     meta = graphene.List(KeyValuePair,
             description="result metrics from the solution, as a list of Key Value pairs.")
-
-    #all_the_meta FUTURE
-    predecessors = graphene.List(Predecessor, required=False, description="list of predecessor info")
 
     produced_by = graphene.Field('graphql_api.schema.custom.OpenquakeHazardTask', description="The task that produced this solution")
 
@@ -105,7 +100,8 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation)
         metrics = graphene.List(KeyValuePairInput, required=False,
             description="result metrics from the solution, as a list of Key Value pairs.")
 
-        predecessors = graphene.List(PredecessorInput, required=False, description="list of predecessors")
+        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput',
+            required=False, description="list of predecessors")
 
     openquake_hazard_solution = graphene.Field(OpenquakeHazardSolution)
     ok = graphene.Boolean()
