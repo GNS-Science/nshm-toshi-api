@@ -63,7 +63,6 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
             ToshiThingObject.get("100001").object_content['parents'][0],
             {'parent_clazz': 'GeneralTask', 'parent_id': '100000'})
 
-    # @unittest.skip('TODO')
     def test_create_scaled_solution(self):
         at_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
@@ -78,6 +77,14 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         #object ID is stored internally as an INT
         self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
 
+    def test_create_scaled_solution_with_predecessors(self):
+        at_id = self.create_automation_task("SCALE_SOLUTION")
+        upstream_sid = self.create_source_solution()
+        result = self.create_scaled_solution_with_predecessors(upstream_sid, at_id)
+        ss =  result['data']['create_scaled_inversion_solution']['solution']
+
+        self.assertEqual(ss['source_solution']['id'], upstream_sid)
+        print(ToshiFileObject.get("100002").object_content)
 
     def test_get_scaled_solution_node(self):
 
@@ -88,16 +95,17 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
 
         query = '''
-        query get_scaled_solution($id: ID!) {
-          node(id:$id) {
-            __typename
-            ... on ScaledInversionSolution {
-              created
-              produced_by { id }
-              source_solution { id }
+            query get_scaled_solution($id: ID!) {
+              node(id:$id) {
+                __typename
+                ... on ScaledInversionSolution {
+                    created
+                    produced_by { id }
+                    source_solution { id }
+
+                }
+              }
             }
-          }
-        }
         '''
         result = self.client.execute(query, variable_values=dict(id=ss_id))
         print(result)
@@ -110,6 +118,49 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
 
         self.assertEqual( node['produced_by']['id'], at_id)
         self.assertEqual( node['source_solution']['id'], upstream_sid)
+
+
+    def test_get_scaled_solution_with_predecessors(self):
+        at_id = self.create_automation_task("SCALE_SOLUTION")
+        upstream_sid = self.create_source_solution()
+        result = self.create_scaled_solution_with_predecessors(upstream_sid, at_id)
+        ss =  result['data']['create_scaled_inversion_solution']['solution']
+        ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
+        query = '''
+            query get_scaled_solution($id: ID!) {
+              node(id:$id) {
+                __typename
+                ... on ScaledInversionSolution {
+                    created
+                    produced_by { id }
+                    source_solution { id }
+                }
+                ... on PredecessorsInterface {
+                    predecessors {
+                        id,
+                        typename,
+                        depth,
+                        relationship
+                        node {
+                            __typename
+                            ... on FileInterface {
+                                meta {k v}
+                                file_name
+                            }
+                        }
+                    }
+                }
+              }
+            }
+        '''
+        result = self.client.execute(query, variable_values=dict(id=ss_id))
+        print(result)
+
+        node = result['data']['node']
+
+        self.assertEqual( node['produced_by']['id'], at_id)
+        self.assertEqual( node['predecessors'][0]['id'], upstream_sid)
+        self.assertEqual( node['predecessors'][0]['relationship'], 'Parent')
 
 
     def create_scaled_solution(self, upstream_sid, task_id):
@@ -144,4 +195,60 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result
+
+
+    def create_scaled_solution_with_predecessors(self, upstream_sid, task_id):
+        """test helper"""
+        query = '''
+            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: Int!,
+                $created: DateTime!, $predecessors: [PredecessorInput]) {
+              create_scaled_inversion_solution(
+                  input: {
+                      source_solution: $source_solution
+                      md5_digest: $digest
+                      file_name: $file_name
+                      file_size: $file_size
+                      created: $created
+                      produced_by: $produced_by
+                      predecessors: $predecessors
+                  }
+              )
+              {
+                ok
+                solution { id, file_name, file_size, md5_digest, post_url, source_solution { id },
+                produced_by { id }
+                    predecessors {
+                        id,
+                        typename,
+                        depth,
+                        relationship
+                        node {
+                            ... on FileInterface {
+                                meta {k v}
+                                file_name
+                            }
+                        }
+                    }
+                }
+              }
+            }'''
+
+        # from hashlib import sha256, md5
+        filedata = BytesIO("a line\nor two".encode())
+        digest = "sha256(filedata.read()).hexdigest()"
+        filedata.seek(0) #important!
+        size = len(filedata.read())
+        filedata.seek(0) #important!
+
+        predecessors = [dict(id=upstream_sid, depth=-1)]
+
+        variables = dict(source_solution=upstream_sid, produced_by=task_id,
+            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size,
+            predecessors=predecessors )
+        variables['created'] = dt.datetime.now(tzutc()).isoformat()
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
+
 

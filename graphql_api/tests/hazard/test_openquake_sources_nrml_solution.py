@@ -78,7 +78,18 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         #object ID is stored internally as an INT
         self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
 
-    def test_get_scaled_solution_node(self):
+    def test_create_opensha_nrml_from_solution_with_predecessors(self):
+        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        upstream_sid = self.create_source_solution()
+        result = self.create_inversion_solution_nrml_with_predecessors(upstream_sid)
+
+        ss =  result['data']['create_inversion_solution_nrml']['inversion_solution_nrml']
+
+        self.assertEqual(ss['source_solution']['id'], upstream_sid)
+        self.assertEqual(ss['predecessors'][0]['depth'], -1)
+        self.assertEqual(ss['predecessors'][0]['relationship'], "Parent")
+
+    def test_get_inversion_solution_nrml_node(self):
 
         at_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
@@ -87,7 +98,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         ss_id =  result['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
 
         query = '''
-        query get_scaled_solution($id: ID!) {
+        query get_inversion_solution_nrml($id: ID!) {
           node(id:$id) {
             __typename
             ... on InversionSolutionNrml {
@@ -104,6 +115,45 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.assertTrue(delta < max_delta )
 
 
+    def test_get_inversion_solution_nrml_with_predecessors_node(self):
 
+        at_id = self.create_automation_task("SCALE_SOLUTION")
+        upstream_sid = self.create_source_solution()
+        result = self.create_inversion_solution_nrml_with_predecessors(upstream_sid)
+
+        ss_id =  result['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
+
+        query = '''
+        query get_inversion_solution_nrml($id: ID!) {
+          node(id:$id) {
+            __typename
+            ... on InversionSolutionNrml {
+              created
+            }
+            ... on PredecessorsInterface {
+                predecessors {
+                    id,
+                    typename,
+                    depth,
+                    relationship
+                    node {
+                        __typename
+                        ... on FileInterface {
+                            meta {k v}
+                            file_name
+                        }
+                    }
+                }
+            }
+          }
+        }
+        '''
+        result = self.client.execute(query, variable_values=dict(id=ss_id))
+        print(result)
+
+        node = result['data']['node']
+
+        self.assertEqual( node['predecessors'][0]['id'], upstream_sid)
+        self.assertEqual( node['predecessors'][0]['relationship'], 'Parent')
 
 

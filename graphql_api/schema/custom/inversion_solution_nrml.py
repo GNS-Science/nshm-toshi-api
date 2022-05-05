@@ -16,6 +16,7 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 
 from .helpers import resolve_node
 from .inversion_solution import InversionSolution
+from .common import PredecessorsInterface
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
     resolution=CW_METRICS_RESOLUTION)
@@ -29,7 +30,7 @@ class InversionSolutionNrml(graphene.ObjectType):
     NB any arguments used to generate this object should be captured as in meta field.
     """
     class Meta:
-        interfaces = (relay.Node, FileInterface)
+        interfaces = (relay.Node, FileInterface, PredecessorsInterface)
 
     created = graphene.DateTime(description="When the scaled solution file was created" )
     source_solution = graphene.Field(InversionSolution, description="The original soloution as produced by opensha")
@@ -53,6 +54,7 @@ class CreateInversionSolutionNrml(relay.ClientIDMutation):
         meta = CreateFile.Arguments.meta
         source_solution = graphene.ID()
         created = InversionSolutionNrml.created
+        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors")
 
     inversion_solution_nrml = graphene.Field(InversionSolutionNrml)
     ok = graphene.Boolean()

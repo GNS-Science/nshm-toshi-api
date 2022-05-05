@@ -71,6 +71,7 @@ class SetupHelpersMixin:
         print(result)
         return result['data']['create_inversion_solution']['inversion_solution']['id']
 
+
     def create_automation_task(self, task_type="INVERSION"):
         CREATE_QRY = '''
             mutation ($created: DateTime! $task_type: TaskSubType!) {
@@ -152,25 +153,96 @@ class SetupHelpersMixin:
         print(result)
         return result
 
-    def create_file(self, filename):
+    def create_inversion_solution_nrml_with_predecessors(self, upstream_sid):
         """test helper"""
         query = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
+            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!
+                $predecessors: [PredecessorInput]) {
+              create_inversion_solution_nrml(
+                  input: {
+                      source_solution: $source_solution
+                      md5_digest: $digest
+                      file_name: $file_name
+                      file_size: $file_size
+                      created: $created
+                      predecessors: $predecessors
+                  }
+              )
+              {
+                ok
+                inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url,
+                    source_solution { id }
+                    predecessors {
+                        id,
+                        typename,
+                        depth,
+                        relationship
+                        node {
+                            ... on FileInterface {
+                                meta {k v}
+                                file_name
+                            }
+                        }
+                    }
+                }
+              }
+            }'''
+
+        fake_file = fake_file_content()
+
+        predecessors = [dict(id=upstream_sid, depth=-1)]
+
+        variables = dict(source_solution=upstream_sid, file=fake_file, digest=file_digest(fake_file),
+            file_name="alineortwo.zip", file_size=file_size(fake_file),
+            created = dt.datetime.utcnow().isoformat(),
+            predecessors=predecessors )
+
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
+
+
+    def create_file(self, filename, predecessor = None):
+        """test helper"""
+        query = '''
+            mutation ($digest: String!, $file_name: String!, $file_size: Int!, $predecessors: [PredecessorInput]) {
               create_file(
                     md5_digest:$digest
                     file_name: $file_name
                     file_size: $file_size
+                    predecessors: $predecessors
                 ) {
                     ok
-                    file_result { id, file_name, file_size, md5_digest, post_url }
+                    file_result {
+                        id, file_name, file_size, md5_digest, post_url
+                        predecessors {
+                            id,
+                            typename,
+                            depth,
+                            relationship
+                            node {
+                                ... on FileInterface {
+                                    meta {k v}
+                                    file_name
+                                }
+                            }
+                        }
+                    }
                 }
             }
         '''
 
         fake_file = fake_file_content()
+
         variables = dict(file=fake_file, digest=file_digest(fake_file),
             file_name=filename, file_size=file_size(fake_file),
             created=dt.datetime.now(tzutc()).isoformat())
+
+        if predecessor:
+            predecessors = [dict(id=predecessor, depth=-1)]
+            variables['predecessors'] = predecessors
+
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result

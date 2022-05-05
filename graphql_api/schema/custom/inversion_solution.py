@@ -20,7 +20,7 @@ from graphql_api.schema.custom.rupture_generation_task import RuptureGenerationT
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
-from .common import KeyValuePair, KeyValuePairInput
+from .common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from .labelled_table_relation import LabelledTableRelation, LabelledTableRelationInput
 from .helpers import resolve_node
 
@@ -31,7 +31,7 @@ class InversionSolution(graphene.ObjectType):
     Represents an Inversion Solution file
     """
     class Meta:
-        interfaces = (relay.Node, FileInterface)
+        interfaces = (relay.Node, FileInterface, PredecessorsInterface)
 
     created = graphene.DateTime(description="When the task record was created", )
     metrics = graphene.List(KeyValuePair, description="result metrics from the task, as a list of Key Value pairs.")
@@ -81,6 +81,8 @@ class CreateInversionSolution(relay.ClientIDMutation):
         produced_by_id = InversionSolution.produced_by_id
         mfd_table_id = InversionSolution.mfd_table_id
         hazard_table_id = InversionSolution.hazard_table_id
+        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput',
+            equired=False, description="list of predecessors")
 
         tables = graphene.List(LabelledTableRelationInput, required=False)
 

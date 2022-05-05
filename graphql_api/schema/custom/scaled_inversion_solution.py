@@ -3,25 +3,17 @@
 This module contains the schema definition for a ScaledInversionSolution.
 
 """
-# import copy
 import graphene
-# import uuid
-# import datetime
 from graphene import relay
-# from graphql_relay import from_global_id
-
-# from importlib import import_module
 from datetime import datetime as dt
 
 from graphql_api.data import get_data_manager
 from graphql_api.schema.file import FileInterface, CreateFile
-# from graphql_api.schema.table import Table
-
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
+from .common import PredecessorsInterface
 from .helpers import resolve_node
-from .inversion_solution import InversionSolution
 from .automation_task import AutomationTask
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
@@ -35,10 +27,11 @@ class ScaledInversionSolution(graphene.ObjectType):
     should be captured as in meta field.
     """
     class Meta:
-        interfaces = (relay.Node, FileInterface)
+        interfaces = (relay.Node, FileInterface, PredecessorsInterface)
 
     created = graphene.DateTime(description="When the scaled solution file was created" )
-    source_solution = graphene.Field(InversionSolution, description="The original soloution as produced by opensha")
+    source_solution = graphene.Field('graphql_api.schema.custom.inversion_solution.InversionSolution',
+         description="The original soloution as produced by opensha")
     produced_by = graphene.Field(AutomationTask, description="The task creating this")
 
     @classmethod
@@ -65,6 +58,7 @@ class CreateScaledInversionSolution(relay.ClientIDMutation):
         source_solution = graphene.ID()
         produced_by = graphene.ID()
         created = ScaledInversionSolution.created
+        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors")
 
     solution = graphene.Field(ScaledInversionSolution)
     ok = graphene.Boolean()
