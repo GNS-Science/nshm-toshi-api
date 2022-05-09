@@ -38,11 +38,13 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     created = graphene.DateTime(
         description="When it was created (UTZ)")
     config = graphene.Field(OpenquakeHazardConfig,
-        description="the configuration used to produce this solution")
+        description="the template configuration used to produce this solution")
     csv_archive = graphene.Field(File,
         description="a zip archive containing hazard csv outputs (`oq engine --export-outputs ....)" )
     hdf5_archive = graphene.Field(File,
         description="a zip archive containing containing the raw hdf5")
+    modified_config = graphene.Field(File,
+        description="a zip archive containing modified config files." )
 
     metrics = graphene.List(KeyValuePair,
             description="result metrics from the solution, as a list of Key Value pairs.")
@@ -67,6 +69,9 @@ class OpenquakeHazardSolution(graphene.ObjectType):
 
     def resolve_hdf5_archive(root, info, **args):
         return resolve_node(root, info, 'hdf5_archive', 'file')
+
+    def resolve_modified_config(root, info, **args):
+        return resolve_node(root, info, 'modified_config', 'file')
 
 
 # class OpenquakeHazardSolutionUpdateInput(graphene.InputObjectType):
@@ -93,6 +98,7 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation)
 
         csv_archive = graphene.ID(required=False)
         hdf5_archive = graphene.ID( required=False)
+        modified_config = graphene.ID( required=False)
 
         meta = graphene.List(KeyValuePairInput, required=False,
             description="additional file meta data, as a list of Key Value pairs.")
