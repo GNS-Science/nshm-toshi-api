@@ -45,6 +45,9 @@ class OpenquakeHazardSolution(graphene.ObjectType):
         description="a zip archive containing containing the raw hdf5")
     modified_config = graphene.Field(File,
         description="a zip archive containing modified config files." )
+    task_args = graphene.Field(File,
+        description="task arguments json file." )
+
 
     metrics = graphene.List(KeyValuePair,
             description="result metrics from the solution, as a list of Key Value pairs.")
@@ -73,6 +76,9 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     def resolve_modified_config(root, info, **args):
         return resolve_node(root, info, 'modified_config', 'file')
 
+    def resolve_task_args(root, info, **args):
+        return resolve_node(root, info, 'task_args', 'file')
+
 
 # class OpenquakeHazardSolutionUpdateInput(graphene.InputObjectType):
 #     node_id = graphene.ID(required=True)
@@ -97,8 +103,9 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation)
         produced_by = graphene.ID(required=True)
 
         csv_archive = graphene.ID(required=False)
-        hdf5_archive = graphene.ID( required=False)
-        modified_config = graphene.ID( required=False)
+        hdf5_archive = graphene.ID(required=False)
+        modified_config = graphene.ID(required=False)
+        task_args = graphene.ID(required=False)
 
         meta = graphene.List(KeyValuePairInput, required=False,
             description="additional file meta data, as a list of Key Value pairs.")

@@ -155,6 +155,8 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         modconf = self.create_file("modified_config_archive.zip") #File 100005
         modconf_id = archive['data']['create_file']['file_result']['id']
 
+        task_args = self.create_file("modified_config_archive.zip") #File 100005
+        task_args_id = archive['data']['create_file']['file_result']['id']
 
         haztask = self.build_hazard_task()
         print(haztask)
@@ -167,7 +169,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
         query = '''
             mutation ($created: DateTime!, $config_id: ID!, $csv_archive_id: ID!, $produced_by:ID!, $predecessors: [PredecessorInput],
-                $modified_config_id: ID!) {
+                $modified_config_id: ID!, $task_args_id: ID!) {
               create_openquake_hazard_solution(
                   input: {
                       created: $created
@@ -177,6 +179,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                       produced_by: $produced_by
                       predecessors: $predecessors
                       modified_config: $modified_config_id
+                      task_args: $task_args_id
                   }
 
               )
@@ -185,6 +188,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                 openquake_hazard_solution { id
                     config { template_archive { id, file_name }}
                     modified_config {id, file_name}
+                    task_args {id, file_name}
                     csv_archive { id, file_name }
                     produced_by { id }
                     predecessors {
@@ -204,7 +208,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
             }'''
         variables = dict(created=dt.datetime.now(tzutc()).isoformat(), config_id = config_id,
             csv_archive_id=csv_archive_id, produced_by=haztask_id, predecessors=predecessors,
-            modified_config_id = modconf_id )
+            modified_config_id = modconf_id, task_args_id = task_args_id )
 
         result = self.client.execute(query, variable_values=variables )
         print(result)
