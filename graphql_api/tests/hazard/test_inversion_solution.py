@@ -58,7 +58,7 @@ class TestInversionSolution(unittest.TestCase, SetupHelpersMixin):
 
     def create_solution_with_predecessor(self, ruptset_file_id):
         CREATE_QRY = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!, $produced_by: ID!
+            mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $produced_by: ID!
                 $predecessors: [PredecessorInput])  {
               create_inversion_solution(input: {
                   md5_digest: $digest

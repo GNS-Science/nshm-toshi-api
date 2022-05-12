@@ -635,6 +635,22 @@ smoketests = [
       }
     }
   ),
+ SmokeTest(query = 
+    '''mutation new_rupt_file {
+        create_file(file_name:"myfile2.txt"
+        file_size: 1125899906842624
+        md5_digest: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
+        meta: [{ k:"encoding" v:"utf8"}]
+        ) {
+            file_result {
+              id
+              file_size
+              meta {k v}
+            }
+        }
+    }''',
+    expected = {'create_file': {'file_result': {'id': 'RmlsZToy', 'file_size': 1125899906842624, 'meta': [{'k': 'encoding', 'v': 'utf8'}]}}}
+ ),
 ]
 
 
