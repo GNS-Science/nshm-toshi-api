@@ -166,7 +166,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
     def create_scaled_solution(self, upstream_sid, task_id):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
+            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: BigInt!, $created: DateTime!) {
               create_scaled_inversion_solution(
                   input: {
                       source_solution: $source_solution
@@ -200,7 +200,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
     def create_scaled_solution_with_predecessors(self, upstream_sid, task_id):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: Int!,
+            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: BigInt!,
                 $created: DateTime!, $predecessors: [PredecessorInput]) {
               create_scaled_inversion_solution(
                   input: {

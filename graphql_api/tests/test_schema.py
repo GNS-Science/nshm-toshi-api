@@ -138,7 +138,7 @@ class TestCreateDataFile(unittest.TestCase):
     # @mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
     def test_upload(self):
         qry = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!) {
+            mutation ($digest: String!, $file_name: String!, $file_size: BigInt!) {
               create_file(
                   md5_digest: $digest
                   file_name: $file_name

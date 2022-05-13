@@ -5,6 +5,7 @@ import graphene
 from graphene import relay
 from graphql_api.data import get_data_manager
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
+from graphql_api.schema.custom.scalars import BigInt
 
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
@@ -21,7 +22,7 @@ class FileInterface(graphene.Interface):
     #created = graphene.DateTime(description="When the file was created")
     file_name = graphene.String(description="The name of the file")
     md5_digest = graphene.String(description='The base64-encoded md5 digest of the file')
-    file_size = graphene.Int(description="The size of the file in bytes")
+    file_size = BigInt(description="The size of the file in bytes")
     file_url = graphene.String(description="A pre-signed URL to download the file from s3")
     post_url = graphene.String(description="A pre-signed URL to post the data to s3")
 
@@ -88,7 +89,7 @@ class CreateFile(graphene.Mutation):
 
         file_name = graphene.String()
         md5_digest = graphene.String("The base64-encoded md5 digest of the file")
-        file_size = graphene.Int()
+        file_size = BigInt()
         meta = graphene.List(KeyValuePairInput, required=False,
             description="additional file meta data, as a list of Key Value pairs.")
 
