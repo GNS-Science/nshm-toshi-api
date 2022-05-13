@@ -51,7 +51,7 @@ class SetupHelpersMixin:
 
     def create_source_solution(self):
         CREATE_QRY = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!, $produced_by: ID!) {
+            mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $produced_by: ID!) {
               create_inversion_solution(input: {
                   md5_digest: $digest
                   file_name: $file_name
@@ -129,7 +129,7 @@ class SetupHelpersMixin:
     def create_inversion_solution_nrml(self, upstream_sid):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!) {
+            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: BigInt!, $created: DateTime!) {
               create_inversion_solution_nrml(
                   input: {
                       source_solution: $source_solution
@@ -156,7 +156,7 @@ class SetupHelpersMixin:
     def create_inversion_solution_nrml_with_predecessors(self, upstream_sid):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: Int!, $created: DateTime!
+            mutation ($source_solution: ID!, $digest: String!, $file_name: String!, $file_size: BigInt!, $created: DateTime!
                 $predecessors: [PredecessorInput]) {
               create_inversion_solution_nrml(
                   input: {
@@ -206,7 +206,7 @@ class SetupHelpersMixin:
     def create_file(self, filename, predecessor = None):
         """test helper"""
         query = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!, $predecessors: [PredecessorInput]) {
+            mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $predecessors: [PredecessorInput]) {
               create_file(
                     md5_digest:$digest
                     file_name: $file_name

@@ -71,7 +71,7 @@ class TestCreateSMSFile(unittest.TestCase):
     def test_create_minimum_fields_happy_case(self):
 
         qry = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!, $file_type: SmsFileType!) {
+            mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $file_type: SmsFileType!) {
               create_sms_file(
                   md5_digest: $digest
                   file_name: $file_name

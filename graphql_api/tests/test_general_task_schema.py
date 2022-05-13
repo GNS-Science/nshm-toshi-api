@@ -52,7 +52,7 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_create_general_task(self):
         CREATE_QRY = '''
-            mutation { #($file_name: String!, $file_size: Int!, $produced_by: ID!, $mfd_table: ID!)
+            mutation { #($file_name: String!, $file_size: BigInt!, $produced_by: ID!, $mfd_table: ID!)
               create_general_task(input: {
                   agent_name:"XO"
                   title:"The title"
@@ -178,7 +178,7 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
 
     def test_create_general_task(self):
         CREATE_QRY = '''
-            mutation { #($file_name: String!, $file_size: Int!, $produced_by: ID!, $mfd_table: ID!)
+            mutation { #($file_name: String!, $file_size: BigInt!, $produced_by: ID!, $mfd_table: ID!)
               create_general_task(input: {
                   agent_name:"XO"
                   title:"The title"

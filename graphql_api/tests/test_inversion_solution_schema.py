@@ -64,7 +64,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_create_bare_table(self):
         CREATE_QRY = '''
-            mutation ($digest: String!, $file_name: String!, $file_size: Int!, $produced_by: ID!, $mfd_table: ID!) {
+            mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $produced_by: ID!, $mfd_table: ID!) {
               create_inversion_solution(input: {
                   md5_digest: $digest
                   file_name: $file_name

@@ -6,6 +6,7 @@ from graphene import relay
 from graphene import Enum
 from graphql_api.schema.file import FileInterface
 from graphql_api.data import get_data_manager
+from graphql_api.schema.custom.scalars import BigInt
 
 class SmsFileType(Enum):
     BH = "bh"
@@ -27,7 +28,7 @@ class CreateSmsFile(graphene.Mutation):
     class Arguments:
         file_name = graphene.String()
         md5_digest = graphene.String("The base64-encoded md5 digest of the file")
-        file_size = graphene.Int()
+        file_size = BigInt()
         file_type = SmsFileType(required=True)
 
     ok = graphene.Boolean()
