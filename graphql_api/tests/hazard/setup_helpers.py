@@ -142,7 +142,8 @@ class SetupHelpersMixin:
               )
               {
                 ok
-                inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url, source_solution { id }}
+                inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url, 
+                source_solution { ... on Node { id } }}
               }
             }'''
 
@@ -172,7 +173,7 @@ class SetupHelpersMixin:
               {
                 ok
                 inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url,
-                    source_solution { id }
+                    source_solution { ... on Node{ id } }
                     predecessors {
                         id,
                         typename,

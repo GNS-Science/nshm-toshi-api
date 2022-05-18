@@ -91,8 +91,8 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
                     id
                     file_name
                     source_solution {
-                        id
-                        file_name
+                        ... on Node{ id }
+                        ... on FileInterface { file_name }
                     }
                 }
               }
