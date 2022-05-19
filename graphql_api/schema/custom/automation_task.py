@@ -20,7 +20,7 @@ from graphql_api.data import get_data_manager
 
 from .common import KeyValuePair, KeyValuePairInput, TaskSubType, ModelType
 from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
-from .inversion_solution import InversionSolution
+#from .inversion_solution import InversionSolution
 from graphql_api.schema.file_relation import FileRole
 
 from datetime import datetime as dt
@@ -38,7 +38,8 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
 
     model_type = ModelType()
     task_type = TaskSubType()
-    inversion_solution = graphene.Field(InversionSolution, description="the primary result of this task (only for task_type == INVERSION.")
+    inversion_solution = graphene.Field('graphql_api.schema.custom.inversion_solution.InversionSolution', 
+        description="the primary result of this task (only for task_type == INVERSION.")
 
     @staticmethod
     def from_json(jsondata):
@@ -68,7 +69,7 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
                 if not file_relation.role == FileRole.WRITE.value:
                     continue
             file = get_data_manager().file.get_one(file_relation.file_id)
-            if file.__class__ == InversionSolution:
+            if file.__class__.__name__ == 'InversionSolution':
                 res = file
                 break
         db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution' , dt.utcnow()-t0)

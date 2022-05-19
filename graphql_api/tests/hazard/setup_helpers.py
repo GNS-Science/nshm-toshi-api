@@ -56,7 +56,7 @@ class SetupHelpersMixin:
                   md5_digest: $digest
                   file_name: $file_name
                   file_size: $file_size
-                  produced_by_id: $produced_by
+                  produced_by: $produced_by
                   metrics: [{k: "some_metric", v: "20"}]
                   created: "2021-06-11T02:37:26.009506Z"
                   }
@@ -65,6 +65,7 @@ class SetupHelpersMixin:
               }
             }
         '''
+
         result = self.client.execute(CREATE_QRY,
             variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, produced_by="PRODUCER_ID"))
 
@@ -141,7 +142,8 @@ class SetupHelpersMixin:
               )
               {
                 ok
-                inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url, source_solution { id }}
+                inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url, 
+                source_solution { ... on Node { id } }}
               }
             }'''
 
@@ -171,7 +173,7 @@ class SetupHelpersMixin:
               {
                 ok
                 inversion_solution_nrml { id, file_name, file_size, md5_digest, post_url,
-                    source_solution { id }
+                    source_solution { ... on Node{ id } }
                     predecessors {
                         id,
                         typename,
@@ -326,3 +328,78 @@ class SetupHelpersMixin:
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result
+
+    def create_scaled_solution(self, upstream_sid, task_id):
+        """test helper"""
+        query = '''
+            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: BigInt!, $created: DateTime!) {
+              create_scaled_inversion_solution(
+                  input: {
+                      source_solution: $source_solution
+                      md5_digest: $digest
+                      file_name: $file_name
+                      file_size: $file_size
+                      created: $created
+                      produced_by: $produced_by
+                  }
+              )
+              {
+                ok
+                solution { id, file_name, file_size, md5_digest, post_url, 
+                    source_solution { ... on Node{id} }
+                    produced_by { ... on Node{ id } }
+                }
+              }
+            }'''
+
+        # from hashlib import sha256, md5
+        filedata = BytesIO("a line\nor two".encode())
+        digest = "sha256(filedata.read()).hexdigest()"
+        filedata.seek(0) #important!
+        size = len(filedata.read())
+        filedata.seek(0) #important!
+        variables = dict(source_solution=upstream_sid, produced_by=task_id,
+            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
+        variables['created'] = dt.datetime.now(tzutc()).isoformat()
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
+    def create_aggregate_solution(self, upstream_sids, task_id, aggregation_fn):
+        """test helper"""
+        query = '''
+            mutation ($source_solutions: [ID!], $produced_by: ID!, $digest: String!,
+                $file_name: String!, $file_size: BigInt!, $created: DateTime!,
+                $aggregation_fn: AggregationFn!) {
+              create_aggregate_inversion_solution(
+                  input: {
+                      source_solutions: $source_solutions
+                      aggregation_fn: $aggregation_fn
+                      md5_digest: $digest
+                      file_name: $file_name
+                      file_size: $file_size
+                      created: $created
+                      produced_by: $produced_by
+                  }
+              )
+              {
+                ok
+                solution { id, file_name, file_size, md5_digest, post_url, 
+                source_solutions { ... on Node{id} } 
+                produced_by { ... on Node{id} } }
+              }
+            }'''
+
+        # from hashlib import sha256, md5
+        filedata = BytesIO("a line\nor two".encode())
+        digest = "sha256(filedata.read()).hexdigest()"
+        filedata.seek(0) #important!
+        size = len(filedata.read())
+        filedata.seek(0) #important!
+        variables = dict(source_solutions=upstream_sids, produced_by=task_id,
+            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size,
+            aggregation_fn=aggregation_fn)
+        variables['created'] = dt.datetime.now(tzutc()).isoformat()
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result                  

@@ -93,8 +93,10 @@ class TestOpenquakeHazardConfig(unittest.TestCase, SetupHelpersMixin):
               source_models {
                 id
                 source_solution {
-                    id
-                    file_name
+                    ... on Node {id}
+                    ... on FileInterface {
+                        file_name
+                    }
                 }
               }
             }

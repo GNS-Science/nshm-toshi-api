@@ -14,7 +14,7 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 
 from .common import PredecessorsInterface
 from .helpers import resolve_node
-from .automation_task import AutomationTask
+from .inversion_solution import InversionSolutionInterface
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
     resolution=CW_METRICS_RESOLUTION)
@@ -27,12 +27,10 @@ class ScaledInversionSolution(graphene.ObjectType):
     should be captured as in meta field.
     """
     class Meta:
-        interfaces = (relay.Node, FileInterface, PredecessorsInterface)
+        interfaces = (relay.Node, FileInterface, PredecessorsInterface, InversionSolutionInterface)
 
-    created = graphene.DateTime(description="When the scaled solution file was created" )
     source_solution = graphene.Field('graphql_api.schema.custom.inversion_solution.InversionSolution',
          description="The original soloution as produced by opensha")
-    produced_by = graphene.Field(AutomationTask, description="The task creating this")
 
     @classmethod
     def get_node(cls, info, _id):
@@ -41,9 +39,6 @@ class ScaledInversionSolution(graphene.ObjectType):
 
     def resolve_source_solution(root, info, **args):
         return resolve_node(root, info, 'source_solution', 'file')
-
-    def resolve_produced_by(root, info, **args):
-        return resolve_node(root, info, 'produced_by', 'thing')
 
 
 class CreateScaledInversionSolution(relay.ClientIDMutation):
@@ -57,7 +52,7 @@ class CreateScaledInversionSolution(relay.ClientIDMutation):
         meta = CreateFile.Arguments.meta
         source_solution = graphene.ID()
         produced_by = graphene.ID()
-        created = ScaledInversionSolution.created
+        created =  graphene.DateTime(description="When the solution was created")
         predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors")
 
     solution = graphene.Field(ScaledInversionSolution)

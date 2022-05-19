@@ -64,7 +64,7 @@ class TestInversionSolution(unittest.TestCase, SetupHelpersMixin):
                   md5_digest: $digest
                   file_name: $file_name
                   file_size: $file_size
-                  produced_by_id: $produced_by
+                  produced_by: $produced_by
                   metrics: [{k: "some_metric", v: "20"}]
                   created: "2021-06-11T02:37:26.009506Z"
                   predecessors: $predecessors

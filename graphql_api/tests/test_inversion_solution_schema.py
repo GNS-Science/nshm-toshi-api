@@ -34,7 +34,7 @@ READ_MOCK = lambda _self, id: dict(
     md5_digest = "$digest",
     file_name = "$file_name",
     file_size = "$file_size",
-    produced_by_id = "VGFibGU6Tm9uZQ==",
+    produced_by = "VGFibGU6Tm9uZQ==",
     mfd_table_id = "VGFibGU6MA==",
     created = "2021-06-11T02:37:26.009506+00:00",
     meta = [{ "k":"max_jump_distance", "v": "55.5" }],
@@ -69,7 +69,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
                   md5_digest: $digest
                   file_name: $file_name
                   file_size: $file_size
-                  produced_by_id: $produced_by
+                  produced_by: $produced_by
                   mfd_table_id: $mfd_table
                   metrics: [{k: "some_metric", v: "20"}]
                   created: "2021-06-11T02:37:26.009506Z"
@@ -80,7 +80,8 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
             }
         '''
         result = self.client.execute(CREATE_QRY,
-            variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, produced_by="PRODUCER_ID", mfd_table="TABLE_ID"))
+            variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, 
+                produced_by="PRODUCER_ID", mfd_table="TABLE_ID"))
         print(result)
         assert result['data']['create_inversion_solution']['inversion_solution']['id'] == 'SW52ZXJzaW9uU29sdXRpb246Tm9uZQ=='
 
@@ -195,9 +196,9 @@ class TestCustomResolvers(unittest.TestCase):
           {
             ... on InversionSolution {
               id
-              produced_by_id
+              #produced_by_id
               produced_by {
-                id
+                ... on Node {id}
               }
               mfd_table_id
               mfd_table {
@@ -219,7 +220,7 @@ class TestCustomResolvers(unittest.TestCase):
         result = self.client.execute(qry, variable_values={})
         print(result)
         assert result['data']['node']['id'] == 'SW52ZXJzaW9uU29sdXRpb246MTU0NC4wdlA4QmQ='
-        assert result['data']['node']['produced_by_id'] == "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5"
+        # assert result['data']['node']['produced_by_id'] == "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5"
         assert result['data']['node']['produced_by']['id'] == "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5"
         assert result['data']['node']['mfd_table_id'] == 'VGFibGU6MG8zZmtm'
         assert result['data']['node']['mfd_table']['id'] == 'VGFibGU6MG8zZmtm'
