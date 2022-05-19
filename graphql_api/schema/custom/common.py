@@ -46,6 +46,7 @@ class TaskSubType(graphene.Enum):
     HAZARD = "hazard"
     REPORT = "report"
     SCALE_SOLUTION = "scale_solution"
+    AGGREGATE_SOLUTION = "aggregate_solution"
     SOLUTION_TO_NRML = "solution_to_nrml"
     OPENQUAKE_HAZARD = "openquake_hazard"
 
@@ -53,6 +54,9 @@ class ModelType(graphene.Enum):
     CRUSTAL = "crustal"
     SUBDUCTION = "subduction"
     COMPOSITE = "composite"
+
+class AggregationFn(graphene.Enum):
+    MEAN = "mean"
 
 class PredecessorsInterface(graphene.Interface):
     """A interface for things having predecessors"""

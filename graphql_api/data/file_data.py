@@ -137,6 +137,11 @@ class FileData(BaseDynamoDBData):
             logger.info("from_json migration to InversionSolution of: %s" % str(jsondata))
             clazz = getattr(import_module('graphql_api.schema'), 'InversionSolution')
 
+        ## produced_by_id -> produced_by schema migration
+        produced_by_id = jsondata.pop('produced_by_id', None)
+        if produced_by_id and not jsondata.get('produced_by'):
+            jsondata['produced_by'] = produced_by_id
+
         #table datetime conversions
         if jsondata.get('tables'):
             for tbl in jsondata.get('tables'):

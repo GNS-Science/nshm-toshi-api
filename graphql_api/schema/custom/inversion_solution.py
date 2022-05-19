@@ -23,19 +23,25 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from .common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from .labelled_table_relation import LabelledTableRelation, LabelledTableRelationInput
 from .helpers import resolve_node
+from .automation_task import AutomationTask
+from .rupture_generation_task import RuptureGenerationTask
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
+
+class AutomationTaskUnion(graphene.Union):
+    class Meta:
+        types = (RuptureGenerationTask, AutomationTask)
 
 class InversionSolutionInterface(graphene.Interface):
     """A interface for things like Inversion Solution"""
     class Meta:
         interfaces = (relay.Node, FileInterface)
 
-    created = graphene.DateTime(description="When the task record was created", )
+    created = graphene.DateTime(description="When the solution was created", )
     metrics = graphene.List(KeyValuePair, description="result metrics from the task, as a list of Key Value pairs.")
 
-    produced_by_id = graphene.ID(description='deprecated')
+    #produced_by_id = graphene.ID(description='deprecated')
     mfd_table_id = graphene.ID(description='deprecated')
     hazard_table_id = graphene.ID()
 
@@ -43,7 +49,7 @@ class InversionSolutionInterface(graphene.Interface):
 
     hazard_table = graphene.Field(Table, description='deprecated')
     mfd_table = graphene.Field(Table, description='deprecated')
-    produced_by = graphene.Field(RuptureGenerationTask)
+    produced_by = graphene.Field(AutomationTaskUnion)
 
     def resolve_hazard_table(root, info, **args):
         return resolve_node(root, info, 'hazard_table_id',  'table')
@@ -52,13 +58,13 @@ class InversionSolutionInterface(graphene.Interface):
         return resolve_node(root, info, 'mfd_table_id', 'table')
 
     def resolve_produced_by(root, info, **args):
-        return resolve_node(root, info, 'produced_by_id', 'thing')
+        return resolve_node(root, info, 'produced_by', 'thing')
 
     def resolve_tables(root, info, **args):
         if root.tables:
             for table in root.tables:
                 yield LabelledTableRelation(**table)
-   
+
 
 class InversionSolution(graphene.ObjectType):
     """
@@ -84,7 +90,7 @@ class CreateInversionSolution(relay.ClientIDMutation):
         file_size = FileInterface.file_size
         meta = CreateFile.Arguments.meta
 
-        produced_by_id = InversionSolutionInterface.produced_by_id
+        produced_by = graphene.ID()
         mfd_table_id = InversionSolutionInterface.mfd_table_id
         hazard_table_id = InversionSolutionInterface.hazard_table_id
         predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput',
