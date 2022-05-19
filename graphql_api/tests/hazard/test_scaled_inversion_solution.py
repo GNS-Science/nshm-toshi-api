@@ -100,7 +100,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
                 __typename
                 ... on ScaledInversionSolution {
                     created
-                    produced_by { id }
+                    produced_by { ... on Node {id} }
                     source_solution { id }
 
                 }
@@ -132,8 +132,8 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
                 __typename
                 ... on ScaledInversionSolution {
                     created
-                    produced_by { id }
-                    source_solution { id }
+                    produced_by { ... on Node {id} }
+                    source_solution { ... on Node {id} }
                 }
                 ... on PredecessorsInterface {
                     predecessors {
@@ -181,8 +181,9 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
               )
               {
                 ok
-                solution { id, file_name, file_size, md5_digest, post_url, source_solution { id },
-                produced_by { id }
+                solution {
+                    id, file_name, file_size, md5_digest, post_url, source_solution { id },
+                    produced_by { ... on Node {id} }
                     predecessors {
                         id,
                         typename,

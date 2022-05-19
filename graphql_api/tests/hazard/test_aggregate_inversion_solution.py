@@ -110,17 +110,17 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
     def test_get_aggregate_solution_with_predecessors(self):
         at_id = self.create_automation_task("AGGREGATE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        result = self.create_aggregate_solution_with_predecessors(upstream_sid, at_id)
-        ss =  result['data']['create_scaled_inversion_solution']['solution']
-        ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
+        result = self.create_aggregate_solution_with_predecessors([upstream_sid], at_id)
+        ss =  result['data']['create_aggregate_inversion_solution']['solution']
+        ss_id =  result['data']['create_aggregate_inversion_solution']['solution']['id']
         query = '''
             query get_aggregate_solution($id: ID!) {
               node(id:$id) {
                 __typename
-                ... on ScaledInversionSolution {
+                ... on AggregateInversionSolution {
                     created
                     produced_by { ... on Node {id} }
-                    source_solution { id }
+                    source_solutions { ... on Node {id} }
                 }
                 ... on PredecessorsInterface {
                     predecessors {
@@ -142,7 +142,6 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
         '''
         result = self.client.execute(query, variable_values=dict(id=ss_id))
         print(result)
-
         node = result['data']['node']
 
         self.assertEqual( node['produced_by']['id'], at_id)
@@ -150,26 +149,28 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual( node['predecessors'][0]['relationship'], 'Parent')
 
 
-    def create_aggregate_solution_with_predecessors(self, upstream_sid, task_id):
+    def create_aggregate_solution_with_predecessors(self, source_solutions, task_id):
         """test helper"""
         query = '''
-            mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: BigInt!,
-                $created: DateTime!, $predecessors: [PredecessorInput]) {
-              create_scaled_inversion_solution(
+           mutation ($source_solutions: [ID!], $produced_by: ID!, $digest: String!,
+                $file_name: String!, $file_size: BigInt!, $created: DateTime!,
+                $predecessors: [PredecessorInput]) {
+              create_aggregate_inversion_solution(
                   input: {
-                      source_solution: $source_solution
+                      source_solutions: $source_solutions
+                      aggregation_fn: MEAN
                       md5_digest: $digest
                       file_name: $file_name
                       file_size: $file_size
                       created: $created
                       produced_by: $produced_by
                       predecessors: $predecessors
-                  }
-              )
+                    })
               {
                 ok
-                solution { id, file_name, file_size, md5_digest, post_url, source_solution { id },
-                produced_by { id }
+                solution { id, file_name, file_size, md5_digest, post_url
+                    source_solutions { ... on Node{id} }
+                    produced_by { ... on Node{id} }
                     predecessors {
                         id,
                         typename,
@@ -193,9 +194,9 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
         size = len(filedata.read())
         filedata.seek(0) #important!
 
-        predecessors = [dict(id=upstream_sid, depth=-1)]
+        predecessors = [dict(id=source_solutions[0], depth=-1)]
 
-        variables = dict(source_solution=upstream_sid, produced_by=task_id,
+        variables = dict(source_solutions=source_solutions, produced_by=task_id,
             file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size,
             predecessors=predecessors )
         variables['created'] = dt.datetime.now(tzutc()).isoformat()

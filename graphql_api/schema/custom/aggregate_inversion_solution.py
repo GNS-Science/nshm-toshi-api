@@ -17,15 +17,11 @@ from .common import PredecessorsInterface, AggregationFn
 from .helpers import resolve_node
 from .automation_task import AutomationTask
 from .inversion_solution import InversionSolutionInterface
-# , InversionSolution
-# from .scaled_inversion_solution import ScaledInversionSolution
+
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
     resolution=CW_METRICS_RESOLUTION)
 
-# class SourceSolutionUnion(graphene.Union):
-#     class Meta:
-#         types = (InversionSolution, ScaledInversionSolution)
 
 class AggregateInversionSolution(graphene.ObjectType):
     """
@@ -55,9 +51,6 @@ class AggregateInversionSolution(graphene.ObjectType):
     def resolve_common_rupture_set(root, info, **args):
         return resolve_node(root, info, 'common_rupture_set', 'file')
 
-    # def resolve_produced_by(root, info, **args):
-    #     return resolve_node(root, info, 'produced_by', 'thing')
-
 
 class CreateAggregateInversionSolution(relay.ClientIDMutation):
     """
@@ -75,7 +68,8 @@ class CreateAggregateInversionSolution(relay.ClientIDMutation):
         
         produced_by = graphene.ID()
         created = graphene.DateTime(description="When the solution was created")
-        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors")
+        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput',
+            required=False, description="list of predecessors")
 
     solution = graphene.Field(AggregateInversionSolution)
     ok = graphene.Boolean()

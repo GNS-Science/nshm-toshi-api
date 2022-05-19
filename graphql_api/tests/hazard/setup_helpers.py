@@ -346,8 +346,9 @@ class SetupHelpersMixin:
               {
                 ok
                 solution { id, file_name, file_size, md5_digest, post_url, 
-                source_solution { id }
-                produced_by { ... on Node{ id } } }
+                    source_solution { ... on Node{id} }
+                    produced_by { ... on Node{ id } }
+                }
               }
             }'''
 
