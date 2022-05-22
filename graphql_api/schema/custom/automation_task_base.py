@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 class AutomationTaskBase():
 
-
     @classmethod
     def get_node(cls, info, _id):
         return  get_data_manager().thing.get_one(_id)

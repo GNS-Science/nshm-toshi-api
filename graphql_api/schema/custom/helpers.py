@@ -26,8 +26,16 @@ def resolve_node(root, info, id_field, dm_type):
 
     logger.debug(f"resolve_node() resolving for type {_type}, id: {nid}, id_field: {id_field}, dm_type: {dm_type}")
 
-    if len(info.field_asts[0].selection_set.selections)==1 and \
-        (info.field_asts[0].selection_set.selections[0].name.value == 'id'):
+    # print(f"DEBUG: {info.field_asts[0].selection_set.selections[0]}")
+    selections = info.field_asts[0].selection_set.selections
+    if len(selections)==1 and getattr(selections[0], "type_condition", None):
+        """We have a sub-selection (e.g `... on Node { ...`, so drill in one more level"""
+        selections = selections[0].selection_set.selections
+
+    # print(f"DEBUG: selections {selections}")
+
+    if len(selections)==1 and \
+        (selections[0].name.value == 'id'):
 
         #create an instance with just the id attribute set
         clazz = getattr(import_module('graphql_api.schema'), _type)
