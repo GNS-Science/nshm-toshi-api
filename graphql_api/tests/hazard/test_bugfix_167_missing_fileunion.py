@@ -1,15 +1,10 @@
-import datetime as dt
 import unittest
 import boto3
-import json
-from io import BytesIO
-
-from dateutil.tz import tzutc
 
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
-from moto import mock_dynamodb2, mock_s3
-from moto.core import patch_client, patch_resource
+# from graphql_relay import from_global_id, to_global_id
+from moto import mock_dynamodb, mock_s3
+# from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
@@ -17,14 +12,13 @@ from graphql_api.schema import root_schema
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 from graphql_api.data import data_manager
 from graphql_api.schema.search_manager import SearchManager
-#from graphql_api.schema.custom.common import TaskSubType
 from graphql_api.schema.custom.common import AggregationFn
 
 from setup_helpers import SetupHelpersMixin
 
-@mock_dynamodb2
+@mock_dynamodb
 @mock_s3
-class TestAutomationTaskUnion(unittest.TestCase, SetupHelpersMixin):
+class TestAutomationTaskFileUnion(unittest.TestCase, SetupHelpersMixin):
 
     def setUp(self):
         self.client = Client(root_schema)
@@ -69,15 +63,11 @@ class TestAutomationTaskUnion(unittest.TestCase, SetupHelpersMixin):
             }
         }'''
 
-
-        print(f'parent_id={at_id}, file_id={file_id}')
-        print()
+        # print(f'parent_id={at_id}, file_id={file_id}')
+        # print()
 
         executed = self.client.execute(query0, variable_values=dict(thing_id=at_id, file_id=file_id, role='WRITE'))
-
-        print( executed ) #['create_file_relation']['ok']
-
-        # print(executed)
+        print( executed )
 
         query = """
             query get_automation_task($id: ID!) {
@@ -114,7 +104,7 @@ class TestAutomationTaskUnion(unittest.TestCase, SetupHelpersMixin):
         print(result)
 
         node = result['data']['node']
-
         files = node['files']['edges']
         print(files)
-        assert 0
+
+        self.assertEqual(files[0]['node']['file']['id'], file_id)
