@@ -114,6 +114,63 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(haztask['config']['source_models'][0]['source_solution']['file_name'],
             "MyInversion.zip")
 
+
+    def test_bugfix_148(self):
+        '''
+        ref https://github.com/GNS-Science/nshm-toshi-api/issues/148
+        Source models can return File objects as well as InversionSolutionNrml objects.
+        The id for each item should reflect this, but at right now they're always returning the type InversionSolutionNrml.
+        '''
+
+
+        upstream_sid = self.create_source_solution() #File 100001
+        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
+
+        #setup need to create source models both NRML and ordinary File
+        nrml_id0 =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
+        nrml_1 = self.create_file("bgsesimicity-nrml.zip") #File 100003
+        nrml_id1 = nrml_1['data']['create_file']['file_result']['id']
+
+        archive = self.create_file("config_archive.zip") #File 100004
+        archive_id = archive['data']['create_file']['file_result']['id']
+
+        config = self.create_openquake_config([nrml_id0, nrml_id1], archive_id) #Thing 100001
+        config_id = config['data']['create_openquake_hazard_config']['config']['id']
+
+        haztask = self.create_openquake_hazard_task(config_id) #Thing 100002
+        ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
+
+
+        query = '''
+        query openquake_hazard_task($id: ID!) {
+          node(id:$id) {
+            __typename
+            ... on OpenquakeHazardTask {
+              created
+              config {
+                id
+                created
+                source_models {
+                    id
+                    file_name
+                    # source_solution {
+                    #     ... on Node{ id }
+                    #     ... on FileInterface { file_name }
+                    # }
+                }
+              }
+            }
+          }
+        }
+        '''
+
+        result = self.client.execute(query, variable_values=dict(id=ht_id))
+        print(result)
+        haztask = result['data']['node']
+        self.assertEqual(haztask['config']['source_models'][0]['id'], nrml_id0)
+        self.assertEqual(haztask['config']['source_models'][1]['id'], nrml_id1)
+
+
     def test_update_task_with_metrics(self):
 
         haztask = self._build_hazard_task()
