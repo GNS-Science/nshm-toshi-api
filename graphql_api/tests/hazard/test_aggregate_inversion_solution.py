@@ -43,6 +43,8 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
 
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
+        self.common_ruptset_id =  self.create_file("myruptset.zip", self.source_solution)\
+            ['data']['create_file']['file_result']['id']
 
     def test_create_an_aggregate_solution_task(self):
         at_id = self.create_automation_task("AGGREGATE_SOLUTION")
@@ -54,14 +56,24 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
     def test_create_aggregate_solution(self):
         at_id = self.create_automation_task("AGGREGATE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        result = self.create_aggregate_solution([upstream_sid], at_id, AggregationFn.MEAN.name)
+        result = self.create_aggregate_solution([upstream_sid], at_id, AggregationFn.MEAN.name, self.common_ruptset_id)
 
         ss =  result['data']['create_aggregate_inversion_solution']['solution']
 
         self.assertIn(upstream_sid, [sid['id'] for sid in ss['source_solutions']])
 
-        print(ToshiFileObject.get("100002").object_content)
-        self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
+        print(ToshiFileObject.get("100003").object_content)
+        self.assertEqual(ToshiFileObject.get("100003").object_content['id'], int(from_global_id(ss['id'])[1]))
+
+    def test_create_aggregate_solution_with_common_rupture_id(self):
+
+        at_id = self.create_automation_task("AGGREGATE_SOLUTION")
+        upstream_sid = self.create_source_solution()
+        result = self.create_aggregate_solution([upstream_sid], at_id, AggregationFn.MEAN.name, self.common_ruptset_id)
+
+        asol = result['data']['create_aggregate_inversion_solution']['solution']
+
+        self.assertEqual(asol['common_rupture_set']['id'], self.common_ruptset_id)
 
     # def test_create_aggregate_solution_with_predecessors(self):
     #     at_id = self.create_automation_task("AGGREGATE_SOLUTION")
@@ -78,7 +90,7 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
 
         print(f"AT_ID {at_id}")
         upstream_sid = self.create_source_solution()
-        result = self.create_aggregate_solution([upstream_sid], at_id, 'MEAN')
+        result = self.create_aggregate_solution([upstream_sid], at_id, 'MEAN', self.common_ruptset_id)
 
         ss_id =  result['data']['create_aggregate_inversion_solution']['solution']['id']
 
@@ -90,7 +102,7 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
                     created
                     produced_by { ... on Node{id} }
                     aggregation_fn
-                    common_rupture_set
+                    common_rupture_set { id }
                     source_solutions { ... on Node{id} }
 
                 }
@@ -110,7 +122,7 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
     def test_get_aggregate_solution_with_predecessors(self):
         at_id = self.create_automation_task("AGGREGATE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        result = self.create_aggregate_solution_with_predecessors([upstream_sid], at_id)
+        result = self.create_aggregate_solution_with_predecessors([upstream_sid], at_id, self.common_ruptset_id)
         ss =  result['data']['create_aggregate_inversion_solution']['solution']
         ss_id =  result['data']['create_aggregate_inversion_solution']['solution']['id']
         query = '''
@@ -149,12 +161,12 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual( node['predecessors'][0]['relationship'], 'Parent')
 
 
-    def create_aggregate_solution_with_predecessors(self, source_solutions, task_id):
+    def create_aggregate_solution_with_predecessors(self, source_solutions, task_id, common_rupture_set):
         """test helper"""
         query = '''
-           mutation ($source_solutions: [ID!], $produced_by: ID!, $digest: String!,
+           mutation ($source_solutions: [ID]!, $produced_by: ID!, $digest: String!,
                 $file_name: String!, $file_size: BigInt!, $created: DateTime!,
-                $predecessors: [PredecessorInput]) {
+                $predecessors: [PredecessorInput], $common_rupture_set: ID!) {
               create_aggregate_inversion_solution(
                   input: {
                       source_solutions: $source_solutions
@@ -165,6 +177,7 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
                       created: $created
                       produced_by: $produced_by
                       predecessors: $predecessors
+                      common_rupture_set: $common_rupture_set
                     })
               {
                 ok
@@ -198,7 +211,7 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
 
         variables = dict(source_solutions=source_solutions, produced_by=task_id,
             file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size,
-            predecessors=predecessors )
+            predecessors=predecessors, common_rupture_set=common_rupture_set)
         variables['created'] = dt.datetime.now(tzutc()).isoformat()
         result = self.client.execute(query, variable_values=variables )
         print(result)
