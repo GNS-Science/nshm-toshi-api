@@ -88,11 +88,13 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
                 id
                 created
                 source_models {
-                    id
-                    file_name
-                    source_solution {
-                        ... on Node{ id }
-                        ... on FileInterface { file_name }
+                    ... on Node { id }
+                    ... on FileInterface { file_name }
+                    ... on InversionSolutionNrml {
+                        source_solution {
+                            ... on Node{ id }
+                            ... on FileInterface { file_name }
+                        }
                     }
                 }
               }
@@ -151,12 +153,14 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
                 id
                 created
                 source_models {
-                    id
-                    file_name
-                    # source_solution {
-                    #     ... on Node{ id }
-                    #     ... on FileInterface { file_name }
-                    # }
+                    ... on Node { id }
+                    ... on FileInterface { file_name }
+                    ... on InversionSolutionNrml {
+                        source_solution {
+                            ... on Node{ id }
+                            ... on FileInterface { file_name }
+                        }
+                    }
                 }
               }
             }

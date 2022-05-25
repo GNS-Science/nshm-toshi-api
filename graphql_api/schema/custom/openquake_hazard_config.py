@@ -25,12 +25,19 @@ db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodD
 
 logger = logging.getLogger(__name__)
 
+class OpenquakeNrmlUnion(graphene.Union):
+    """
+    Some NRML files are just files i.e BG seismicity XML.
+    """
+    class Meta:
+        types = (File, InversionSolutionNrml)
+
 class OpenquakeHazardConfig(graphene.ObjectType):
     """An OpenquakeHazardConfig in the NSHM process"""
     class Meta:
         interfaces = (relay.Node, Thing)
 
-    source_models = graphene.List(InversionSolutionNrml, description="List of Source NRML") #TODO add Background to list
+    source_models = graphene.List(OpenquakeNrmlUnion, description="List of Source NRML files")
     template_archive = graphene.Field(File, description="An archive of all the configuration files (besides those in source_models" )
 
     @classmethod
