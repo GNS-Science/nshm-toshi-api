@@ -9,7 +9,7 @@ from datetime import datetime as dt
 
 from graphql_relay import from_global_id
 from graphql_api.data import get_data_manager
-from graphql_api.schema.file import FileInterface, CreateFile
+from graphql_api.schema.file import File, FileInterface, CreateFile
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
 
@@ -31,8 +31,7 @@ class AggregateInversionSolution(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node, FileInterface, PredecessorsInterface, InversionSolutionInterface)
 
-    common_rupture_set = graphene.ID(
-        description='aggregations must use solutions based on the saem rupture set.')
+    common_rupture_set = graphene.Field(File)
     source_solutions = graphene.List('graphql_api.schema.custom.inversion_solution_nrml.SourceSolutionUnion',
         description="The solutions used to build the aggregate")
     aggregation_fn = graphene.Field(AggregationFn, 
@@ -57,9 +56,9 @@ class CreateAggregateInversionSolution(relay.ClientIDMutation):
     Create a AggregateInversionSolution file
     """
     class Input:
-        common_rupture_set = AggregateInversionSolution.common_rupture_set
-        source_solutions = graphene.List(graphene.ID)
-        aggregation_fn = AggregateInversionSolution.aggregation_fn
+        common_rupture_set = graphene.ID(required=True, description='ID of common rupture set. Aggregations must use solutions based on the same rupture set.')
+        source_solutions = graphene.List(graphene.ID, required=True,  description="The solutions used to build the aggregate")
+        aggregation_fn = graphene.Field(AggregationFn, required=True, description="aggregation function on rupture rates.")
         
         file_name = FileInterface.file_name
         md5_digest = FileInterface.md5_digest

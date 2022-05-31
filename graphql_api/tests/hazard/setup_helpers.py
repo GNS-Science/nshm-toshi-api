@@ -263,7 +263,11 @@ class SetupHelpersMixin:
               )
               {
                 ok
-                config { id, created, source_models { id } }
+                config {
+                    id
+                    created
+                    source_models { ... on Node{ id } }
+                }
               }
             }'''
 
@@ -365,12 +369,12 @@ class SetupHelpersMixin:
         print(result)
         return result
 
-    def create_aggregate_solution(self, upstream_sids, task_id, aggregation_fn):
+    def create_aggregate_solution(self, upstream_sids, task_id, aggregation_fn, common_rupture_set):
         """test helper"""
         query = '''
-            mutation ($source_solutions: [ID!], $produced_by: ID!, $digest: String!,
+            mutation ($source_solutions: [ID]!, $produced_by: ID!, $digest: String!,
                 $file_name: String!, $file_size: BigInt!, $created: DateTime!,
-                $aggregation_fn: AggregationFn!) {
+                $aggregation_fn: AggregationFn!, $common_rupture_set: ID!) {
               create_aggregate_inversion_solution(
                   input: {
                       source_solutions: $source_solutions
@@ -380,13 +384,16 @@ class SetupHelpersMixin:
                       file_size: $file_size
                       created: $created
                       produced_by: $produced_by
+                      common_rupture_set: $common_rupture_set
                   }
               )
               {
                 ok
                 solution { id, file_name, file_size, md5_digest, post_url, 
-                source_solutions { ... on Node{id} } 
-                produced_by { ... on Node{id} } }
+                    source_solutions { ... on Node{id} }
+                    produced_by { ... on Node{id} }
+                    common_rupture_set { id }
+                }
               }
             }'''
 
@@ -398,7 +405,7 @@ class SetupHelpersMixin:
         filedata.seek(0) #important!
         variables = dict(source_solutions=upstream_sids, produced_by=task_id,
             file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size,
-            aggregation_fn=aggregation_fn)
+            aggregation_fn=aggregation_fn, common_rupture_set=common_rupture_set)
         variables['created'] = dt.datetime.now(tzutc()).isoformat()
         result = self.client.execute(query, variable_values=variables )
         print(result)

@@ -82,23 +82,24 @@ class TestOpenquakeHazardConfig(unittest.TestCase, SetupHelpersMixin):
           node(id:$id) {
             __typename
             ... on OpenquakeHazardConfig{
-              created
-              template_archive {
-                id
-                #created
-                meta {k v}
-                md5_digest
-                file_name
-              }
-              source_models {
-                id
-                source_solution {
-                    ... on Node {id}
-                    ... on FileInterface {
-                        file_name
+                created
+                template_archive {
+                    id
+                    #created
+                    meta {k v}
+                    md5_digest
+                    file_name
+                }
+                source_models {
+                    ... on Node { id }
+                    ... on FileInterface { file_name }
+                    ... on InversionSolutionNrml {
+                        source_solution {
+                            ... on Node{ id }
+                            ... on FileInterface { file_name }
+                        }
                     }
                 }
-              }
             }
           }
         }
