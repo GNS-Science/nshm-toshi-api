@@ -93,6 +93,19 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(ss['source_solution']['id'], scaled_sid)
 
 
+    def test_create_opensha_nrml_from_time_dependent_solution(self):
+        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        st_id = self.create_automation_task("SCALE_SOLUTION")
+        upstream_sid = self.create_source_solution()
+        scaled_sid = self.create_time_dependent_solution(upstream_sid, st_id)['data']\
+            ['create_time_dependent_inversion_solution']['solution']['id']
+
+        result = self.create_inversion_solution_nrml(scaled_sid)
+        ss =  result['data']['create_inversion_solution_nrml']['inversion_solution_nrml']
+        self.assertEqual( from_global_id(scaled_sid)[0], "TimeDependentInversionSolution")
+        self.assertEqual(ss['source_solution']['id'], scaled_sid)
+
+
     def test_create_opensha_nrml_from_solution_with_predecessors(self):
         at_id = self.create_automation_task("SOLUTION_TO_NRML")
         upstream_sid = self.create_source_solution()
