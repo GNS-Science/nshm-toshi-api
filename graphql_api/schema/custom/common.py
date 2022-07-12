@@ -49,6 +49,7 @@ class TaskSubType(graphene.Enum):
     AGGREGATE_SOLUTION = "aggregate_solution"
     SOLUTION_TO_NRML = "solution_to_nrml"
     OPENQUAKE_HAZARD = "openquake_hazard"
+    TIME_DEPENDENT_SOLUTION = "time_dependent_solution"
 
 class ModelType(graphene.Enum):
     CRUSTAL = "crustal"
