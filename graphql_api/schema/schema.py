@@ -32,6 +32,7 @@ from .custom.automation_task import AutomationTask, CreateAutomationTask, Update
 
 from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution, AppendInversionSolutionTables, LabelledTableRelationInput
 from graphql_api.schema.custom.scaled_inversion_solution import ScaledInversionSolution, CreateScaledInversionSolution
+from graphql_api.schema.custom.time_dependent_inversion_solution import TimeDependentInversionSolution, CreateTimeDependentInversionSolution
 from graphql_api.schema.custom.aggregate_inversion_solution import AggregateInversionSolution, CreateAggregateInversionSolution
 
 from graphql_api.schema.custom.inversion_solution_nrml import CreateInversionSolutionNrml, InversionSolutionNrml
@@ -59,11 +60,11 @@ db_root = DataManager(search_manager, s3_client_args)
 
 class FileUnion(graphene.Union):
     class Meta:
-        types = (SmsFile, File, InversionSolution, ScaledInversionSolution, AggregateInversionSolution, InversionSolutionNrml)
+        types = (SmsFile, File, InversionSolution, ScaledInversionSolution, AggregateInversionSolution, InversionSolutionNrml, TimeDependentInversionSolution)
 
 class SearchResult(graphene.Union):
     class Meta:
-        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, Table, InversionSolution, AutomationTask)
+        types = (File, RuptureGenerationTask, StrongMotionStation, SmsFile, GeneralTask, Table, InversionSolution, AutomationTask, ScaledInversionSolution, TimeDependentInversionSolution)
 
 class SearchResultConnection(relay.Connection):
     class Meta:
@@ -186,6 +187,7 @@ class MutationRoot(graphene.ObjectType):
     update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_aggregate_inversion_solution = CreateAggregateInversionSolution.Field()
     create_scaled_inversion_solution = CreateScaledInversionSolution.Field()
+    create_time_dependent_inversion_solution = CreateTimeDependentInversionSolution.Field()
     create_inversion_solution_nrml = CreateInversionSolutionNrml.Field()
     create_openquake_hazard_solution = CreateOpenquakeHazardSolution.Field()
     create_openquake_hazard_config = CreateOpenquakeHazardConfig.Field()
