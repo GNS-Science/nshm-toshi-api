@@ -17,6 +17,7 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from .helpers import resolve_node
 from .inversion_solution import InversionSolution, InversionSolutionInterface
 from .scaled_inversion_solution import ScaledInversionSolution
+from .time_dependent_inversion_solution import TimeDependentInversionSolution
 from .common import PredecessorsInterface
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
@@ -24,7 +25,7 @@ db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodD
 
 class SourceSolutionUnion(graphene.Union):
     class Meta:
-        types = (InversionSolution, ScaledInversionSolution)
+        types = (InversionSolution, ScaledInversionSolution, TimeDependentInversionSolution)
 
 class InversionSolutionNrml(graphene.ObjectType):
     """
