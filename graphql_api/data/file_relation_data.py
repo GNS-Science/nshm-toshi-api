@@ -5,10 +5,12 @@ import logging
 import datetime as dt
 from importlib import import_module
 import backoff
+import json
 import pynamodb.exceptions
 from pynamodb.transactions import TransactWrite
 from graphql_api.dynamodb.models import ToshiFileObject
 from .base_data import BaseDynamoDBData
+# from nzshm_common.util import compress_string
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,7 @@ class FileRelationData(BaseDynamoDBData):
 
     @backoff.on_exception(backoff.expo,
         pynamodb.exceptions.TransactWriteError,
-        max_time=60)
+        max_time=25)
     def create(self, clazz_name, thing_id, file_id, role):
 
         logger.debug(f'FileRelationData.create() linking file {file_id} to and thing {thing_id} in role {role}')
@@ -45,12 +47,31 @@ class FileRelationData(BaseDynamoDBData):
             file_content['relations'] = []
         file_content['relations'].append({'id': thing_id, 'role': role})
 
-        with TransactWrite(connection=self._connection) as transaction:
-            transaction.update(thing,
-                actions=[self._db_manager.thing.model.object_content.set(thing_content)])
-            #update will create a new object if it doesn't exist
-            transaction.update(file,
-                actions=[self._db_manager.file.model.object_content.set(file_content)])
+        # ## TEST compression
+        # str_relations = json.dumps(file_content['relations'])
+        # logger.debug("uncompressed rels size: %s" % len(str_relations))
+        # logger.debug("compressed files size: %s" % len(compress_string(str_relations)))
+        # ## [DEBUG] graphql_api.data.file_relation_data: uncompressed rels size: 409258
+        # ## [DEBUG] graphql_api.data.file_relation_data: compressed files size: 11404
+
+        try:
+            with TransactWrite(connection=self._connection) as transaction:
+                    transaction.update(thing,
+                        actions=[self._db_manager.thing.model.object_content.set(thing_content)])
+                    #update will create a new object if it doesn't exist
+                    transaction.update(file,
+                        actions=[self._db_manager.file.model.object_content.set(file_content)])
+
+        except (pynamodb.exceptions.TransactWriteError) as err:
+            thing_len = len(json.dumps(thing_content))
+            file_len = len(json.dumps(file_content))
+            logger.debug("length of thing_content: %s" % thing_len)
+            logger.debug("length of file_content: %s" % file_len)
+            if file_len >=400e3:
+                raise RuntimeError("File object of size (%s) maybe too big, transaction raised exception: %s" % (file_len, err.cause))
+
+            if thing_len >= 400e3:
+                raise RuntimeError("Thing object of size (%s) maybe too big, transaction raised exception: %s" % (thing_len, err.cause))
 
         logger.debug(f'FileRelationData.create() thing {thing_id} has {len(thing_content["files"])} file')
         logger.debug(f'FileRelationData.create() file {file_id} has {len(file_content["relations"])} related things')
