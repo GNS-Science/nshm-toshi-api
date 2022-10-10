@@ -2,6 +2,7 @@ import graphene
 from graphene import relay
 from graphene import Enum
 from graphql_relay import from_global_id
+from graphql import GraphQLError
 
 from .file import File
 from graphql_api.data import get_data_manager
@@ -66,6 +67,9 @@ class CreateFileRelation(graphene.Mutation):
         ttype, thing_id = from_global_id(kwargs.pop('thing_id'))
         #thing = db_root.thing.get_one(kwargs.pop('strong_motion_station_id'))
 
-        file_relation = get_data_manager().file_relation.create('FileRelation', thing_id, file_id, **kwargs)
+        try:
+            file_relation = get_data_manager().file_relation.create('FileRelation', thing_id, file_id, **kwargs)
+        except (Exception) as err:
+            raise GraphQLError('CreateFileRelation.mutate failed with exception: %s' % err )
         db_metrics.put_duration(__name__, 'CreateFileRelation.mutate' , dt.utcnow()-t0)
         return CreateFileRelation(ok=True, file_relation= file_relation)
