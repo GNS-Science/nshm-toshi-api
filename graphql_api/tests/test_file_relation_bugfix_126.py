@@ -8,7 +8,7 @@ from dateutil.tz import tzutc
 
 from graphene.test import Client
 from graphql_relay import from_global_id, to_global_id
-from moto import mock_dynamodb2, mock_s3
+from moto import mock_dynamodb, mock_s3
 from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
 
@@ -76,7 +76,7 @@ FILEMOCK = {'id': '1587.0nVoFt',
     }
 
 @mock_s3
-@mock_dynamodb2
+@mock_dynamodb
 class TestBug122(unittest.TestCase):
     """
     All datastore (data) methods are mocked.

@@ -17,7 +17,7 @@ from graphene.test import Client
 from graphql_api import data
 from graphql_api.schema import root_schema, RuptureGenerationTask
 from graphql_api.dynamodb.models import migrate
-from moto import mock_dynamodb2
+from moto import mock_dynamodb
 
 
 
@@ -122,7 +122,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
             # assert 0
             assert len( executed['data']['rupture_generation_tasks']['edges']) == 2
 
-@mock_dynamodb2
+@mock_dynamodb
 class TestCreateDataFile(unittest.TestCase):
 
     def setUp(self):

@@ -15,7 +15,7 @@ import boto3
 
 from graphene.test import Client
 from graphql_api import data
-from moto import mock_dynamodb2, mock_s3
+from moto import mock_dynamodb, mock_s3
 from graphql_api.schema import root_schema
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 
@@ -30,7 +30,7 @@ body = {'id': 0, 'created': '2022-02-18T00:53:43.934035+00:00', 'files': None, '
 
 START_ID = 100000
 
-@mock_dynamodb2
+@mock_dynamodb
 class TestS3FallBackRead(unittest.TestCase):
 
     def setUp(self):
