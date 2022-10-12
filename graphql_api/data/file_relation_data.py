@@ -10,9 +10,16 @@ import pynamodb.exceptions
 from pynamodb.transactions import TransactWrite
 from graphql_api.dynamodb.models import ToshiFileObject
 from .base_data import BaseDynamoDBData
-# from nzshm_common.util import compress_string
+from nzshm_common.util import compress_string, decompress_string
+from typing import Dict, List, Union
 
 logger = logging.getLogger(__name__)
+UNCOMPRESSED_LIMIT = 100
+
+def ensure_decompressed(maybe_compressed_list: Union[str, List]) -> List[Dict]:
+    if isinstance(maybe_compressed_list, str):
+        return json.loads(decompress_string(maybe_compressed_list))
+    return maybe_compressed_list
 
 class FileRelationData(BaseDynamoDBData):
     """
@@ -27,32 +34,30 @@ class FileRelationData(BaseDynamoDBData):
         logger.debug(f'FileRelationData.create() linking file {file_id} to and thing {thing_id} in role {role}')
 
         thing = self._db_manager.thing.get_object(thing_id)
-        try:
-            file = self._db_manager.file.get_object(file_id)
-        except pynamodb.exceptions.DoesNotExist as err:
-            body = self._db_manager.file._from_s3(file_id)
-            logger.info(f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix}; object_type={body['clazz_name']}")
-            #file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
-            file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
-
-            logger.debug(f'ToshiFileObject version {file.version}')
-
         thing_content = thing.object_content
         if not thing_content.get('files'):
             thing_content['files'] = []
         thing_content['files'].append({'file_id': file_id, 'file_role': role})
 
+        try:
+            file = self._db_manager.file.get_object(file_id)
+        except pynamodb.exceptions.DoesNotExist as err:
+            body = self._db_manager.file._from_s3(file_id)
+            logger.info(f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix}; object_type={body['clazz_name']}")
+            file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
+            logger.debug(f'ToshiFileObject version {file.version}')
+
         file_content = file.object_content
         if not file_content.get('relations'):
             file_content['relations'] = []
+        else:
+            file_content['relations'] = ensure_decompressed(file_content['relations'])
+
         file_content['relations'].append({'id': thing_id, 'role': role})
 
-        # ## TEST compression
-        # str_relations = json.dumps(file_content['relations'])
-        # logger.debug("uncompressed rels size: %s" % len(str_relations))
-        # logger.debug("compressed files size: %s" % len(compress_string(str_relations)))
-        # ## [DEBUG] graphql_api.data.file_relation_data: uncompressed rels size: 409258
-        # ## [DEBUG] graphql_api.data.file_relation_data: compressed files size: 11404
+        #compress file relations if the list grows large...
+        if len(file_content['relations']) > UNCOMPRESSED_LIMIT:
+            file_content['relations'] = compress_string(json.dumps(file_content['relations']))
 
         try:
             with TransactWrite(connection=self._connection) as transaction:
@@ -79,14 +84,12 @@ class FileRelationData(BaseDynamoDBData):
         es_thing_key = f"{self._db_manager.thing._prefix}_{thing_id}"
         es_file_key = f"{self._db_manager.file._prefix}_{file_id}"
 
-        logger.info(f"update ES for key {es_thing_key}")
-        logger.info(f"update ES for key {es_file_key}")
+        logger.debug(f"update ES for key {es_thing_key}")
+        logger.debug(f"update ES for key {es_file_key}")
 
         self._db_manager.search_manager.index_document(es_thing_key, thing_content)
         self._db_manager.search_manager.index_document(es_file_key, file_content)
-
         return self.build_one(file_id, thing_id, role)
-
 
     def get_one(self, _id):
         """
@@ -108,7 +111,7 @@ class FileRelationData(BaseDynamoDBData):
             File: the Thing object
         """
         jsondata = {'file_id': file_id, 'thing_id': thing_id, 'role': thing_role}
-        logger.info("get_one: %s" % str(jsondata))
+        logger.debug("get_one: %s" % str(jsondata))
         relation =  self.from_json(jsondata)
         return relation
 
@@ -121,9 +124,7 @@ class FileRelationData(BaseDynamoDBData):
             jsondata['created'] = dt.datetime.fromisoformat(created)
 
         clazz = getattr(import_module('graphql_api.schema'), "FileRelation")
-        
         #id is no longer a class attribute, but some old objects may still exist
         jsondata.pop('id', None)
         jsondata.pop('clazz_name', None)
-
         return clazz(**jsondata)

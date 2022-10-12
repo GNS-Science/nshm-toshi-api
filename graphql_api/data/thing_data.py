@@ -81,7 +81,7 @@ class ThingData(BaseDynamoDBData):
         jsondata = self.migrate_old_thing_object(self.get_one_raw(this_id))
         body = benedict(jsondata)
         body.merge(kwargs)
-        logger.info("ThingData.update: %s : %s" % (this_id, str(body)))
+        logger.debug("ThingData.update: %s : %s" % (this_id, str(body)))
         self.transact_update(this_id, _type, body)
         return self.from_json(body)
 
@@ -97,7 +97,7 @@ class ThingData(BaseDynamoDBData):
 
     @staticmethod
     def from_json(jsondata):
-        logger.info("from_json: %s" % str(jsondata))
+        logger.debug("from_json: %s" % str(jsondata))
 
         created = jsondata.get('created')
         if created and not isinstance(created, dt.datetime):
