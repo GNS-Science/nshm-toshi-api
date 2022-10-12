@@ -1,4 +1,5 @@
 import graphene
+import logging
 from graphene import relay
 from graphene import Enum
 from graphql_relay import from_global_id
@@ -6,10 +7,12 @@ from graphql import GraphQLError
 
 from .file import File
 from graphql_api.data import get_data_manager
-
+from graphql import GraphQLError
 from datetime import datetime as dt
 from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
 from graphql_api.cloudwatch import ServerlessMetricWriter
+
+logger = logging.getLogger(__name__)
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
 
@@ -36,9 +39,7 @@ class FileRelation(graphene.ObjectType):
         
     @staticmethod
     def resolve_thing(root, info, *args, **kwargs):
-        # print("THING", root.thing_id)
         return get_data_manager().thing.get_one(root.thing_id)
-
 
 class FileRelationConnection(relay.Connection):
     class Meta:
@@ -61,7 +62,7 @@ class CreateFileRelation(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         t0 = dt.utcnow()
-        print("CreateFileRelation.mutate: ", kwargs)
+        logger.debug("CreateFileRelation.mutate: ", kwargs)
         ftype, file_id = from_global_id(kwargs.pop('file_id'))
         #file = db_root.file.get_one(file_id)
         ttype, thing_id = from_global_id(kwargs.pop('thing_id'))

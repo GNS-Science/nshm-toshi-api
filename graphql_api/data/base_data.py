@@ -100,25 +100,6 @@ class BaseData():
         db_metrics.put_duration(__name__, 'get_all' , dt.utcnow()-t0)
         return results
     
-
-    def get_object(self, object_id):
-        """get a pynamodb model instance from  DynamoDB.
-
-        Args:
-            object_id int: unique ID of the obect
-        Returns:
-            pynamodb model object
-        """
-        t0 = dt.utcnow()
-        #key = "%s/%s" % (self._prefix, object_id)
-        #logger.info(f'get_object key: {object_id}')
-        logger.info(f'get dynamo key: {object_id} for model {self._model}')
-
-        obj = self._model.get(str(object_id))
-        db_metrics.put_duration(__name__, 'get_object' , dt.utcnow()-t0)
-        return obj
-
-
     def _from_s3(self, object_id):
         S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
         logger.info(f"get object from bucket {self._bucket_name}, key={S3_key})")
@@ -152,6 +133,20 @@ class BaseDynamoDBData(BaseData):
     def model(self):
         return self._model
 
+    def get_object(self, object_id):
+        """get a pynamodb model instance from  DynamoDB.
+
+        Args:
+            object_id int: unique ID of the obect
+        Returns:
+            pynamodb model object
+        """
+        t0 = dt.utcnow()
+        logger.debug('get dynamo key: %s for model %s' % (object_id, self._model))
+        obj = self._model.get(str(object_id))
+        db_metrics.put_duration(__name__, 'get_object' , dt.utcnow()-t0)
+        return obj
+
     def get_next_id(self) -> str:
         """
         Returns:
@@ -179,14 +174,10 @@ class BaseDynamoDBData(BaseData):
             dict: object data deserialised from the json object
         """
         t0 = dt.utcnow()
-        #key = "%s/%s" % (self._prefix, object_id)
-        #logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
+        key = "%s/%s" % (self._prefix, object_id)
+        logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
 
         try:
-            #key = "%s/%s" % (self._prefix, object_id)
-            #obj = self._model.get(str(object_id))
-            #db_metrics.put_duration(__name__, 'get_object' , dt.utcnow()-t0)
-
             obj = self.get_object( object_id)
             db_metrics.put_duration(__name__, '_read_object' , dt.utcnow()-t0)
             return obj.object_content
@@ -208,8 +199,6 @@ class BaseDynamoDBData(BaseData):
         """
 
         t0 = dt.utcnow()
-        #key = "%s/%s" % (self._prefix, object_id)
-        
         identity = ToshiIdentity.get(self._prefix) #first time round is handled in get_next_id()
 
         #TODO: make a transacion conditional check (maybe)
@@ -238,8 +227,7 @@ class BaseDynamoDBData(BaseData):
     def transact_update(self, object_id, object_type, body):
         t0 = dt.utcnow()
         logger.info("%s.update: %s : %s" % (object_type, object_id, str(body)))
-        #key = "%s/%s" % (self._prefix, object_id)
-        # try:
+
         model = self._model.get(object_id)
         assert model.object_type == body.get('clazz_name')
         with TransactWrite(connection=self._connection) as transaction:
@@ -251,8 +239,6 @@ class BaseDynamoDBData(BaseData):
         es_key = f"{self._prefix}_{object_id}"
         self._db_manager.search_manager.index_document(es_key, body)
         db_metrics.put_duration(__name__, 'transact_update' , dt.utcnow()-t0)
-        # print('#####updated:', object_id, self._model.get(key, object_type).object_content)
-
 
     @backoff.on_exception(backoff.expo,
         graphql_api.dynamodb.DynamoWriteConsistencyError,
