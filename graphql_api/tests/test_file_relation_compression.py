@@ -2,6 +2,7 @@ import datetime as dt
 import unittest
 import boto3
 import json
+import random
 from io import BytesIO
 
 from dateutil.tz import tzutc
@@ -75,6 +76,19 @@ class TestCompressRelations(unittest.TestCase):
         at1.create(**ATMOCK) #will get identity 100000 = 'QXV0b21hdGlvblRhc2s6MTAwMDAw',
         f1 = FileData({}, self._data_manager, ToshiFileObject, self._connection)
         f1.create(**FILEMOCK)
+
+    # @unittest.skip('experimental test code')
+    def test_how_many_relations_in_390k(self):
+        def fake_relation():
+            return {'id': random.randint(1e5, 1e7), 'role': random.choice(['read'])}
+
+        MAX_RELS = int(80e3) # 0000
+        MAX_SIZE = 390e3 # 3000
+
+        rels = [fake_relation() for x in range(MAX_RELS)]
+        size = len(compress_string(json.dumps(rels)))
+        print(size)
+        self.assertTrue( size < MAX_SIZE )
 
     def test_create_file_relation_added_with_compression(self):
 
