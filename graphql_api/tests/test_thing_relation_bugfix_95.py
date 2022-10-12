@@ -19,7 +19,7 @@ from graphql_api import data
 from graphql_api.schema import root_schema
 from graphql_api.schema.custom import StrongMotionStation
 from graphql_api.dynamodb.models import migrate
-from moto import mock_dynamodb2
+from moto import mock_dynamodb
 
 import graphql_api.data # for mocking
 

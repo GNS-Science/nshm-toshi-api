@@ -16,7 +16,7 @@ import boto3
 
 from graphene.test import Client
 from graphql_api import data
-from moto import mock_dynamodb2, mock_s3
+from moto import mock_dynamodb, mock_s3
 from graphql_api.schema import root_schema
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 
@@ -32,7 +32,7 @@ gen_task_body = { "id": 1, "updated": None, "title": "My First Manual task", "de
 
 START_ID = 100000
 
-@mock_dynamodb2
+@mock_dynamodb
 class TestTaskTaskRelations(unittest.TestCase):
 
     def setUp(self):

@@ -11,7 +11,7 @@ from dateutil.tz import tzutc
 import boto3
 
 from graphene.test import Client
-from moto import mock_dynamodb2, mock_s3
+from moto import mock_dynamodb, mock_s3
 from moto.core import patch_client, patch_resource
 
 from graphql_api import data
@@ -182,7 +182,7 @@ query FindQuery(
 
 START_ID = 100000
 
-@mock_dynamodb2
+@mock_dynamodb
 class TestGeneralTaskQueriesDB(unittest.TestCase):
 
     def setUp(self):
@@ -252,7 +252,7 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
         ToshiIdentity.delete_table()
 
 @mock_s3
-@mock_dynamodb2
+@mock_dynamodb
 class TestGeneralTaskQueriesS3(unittest.TestCase):
       
     def setUp(self):
