@@ -215,3 +215,39 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         assert result['hazard_solution']['__typename'] == "OpenquakeHazardSolution"
         assert result['hazard_solution']['id'] == ohs_id
 
+    
+    def test_update_task_without_hazard_soln(self):
+
+        haztask = self._build_hazard_task()
+        ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
+
+        things = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
+        hazsol = things.create(clazz_name='OpenquakeHazardSolution', created=dt.datetime.now(tzutc()))
+
+        qry = '''
+            mutation ($task_id: ID!) {
+                update_openquake_hazard_task(input: {
+                    task_id: $task_id
+                    duration: 909,
+                    metrics: {k: "rupture_count" v: "20"}
+                })
+                {
+                    openquake_hazard_task {
+                        id
+                        duration
+                        metrics {k v}
+                    }
+                }
+            }
+        '''
+        executed = self.client.execute(qry, variable_values=dict(task_id=ht_id))
+        print(executed)
+        result = executed['data']['update_openquake_hazard_task']['openquake_hazard_task']
+        assert result['id'] == ht_id
+        assert result['duration'] == 909
+        assert result['metrics'][0]['k'] == "rupture_count"
+        assert result['metrics'][0]['v'] == "20"
+        assert not (result.get('hazard_solution'))
+
+    
+

@@ -99,7 +99,7 @@ class OpenquakeHazardTaskUpdateInput(AutomationTaskUpdateInput):
 
 class UpdateOpenquakeHazardTask(graphene.Mutation):
     class Arguments:
-        input = OpenquakeHazardTaskUpdateInput(required=True)
+        input = OpenquakeHazardTaskUpdateInput()
 
     ok = graphene.Boolean()
     openquake_hazard_task = graphene.Field(OpenquakeHazardTask)
