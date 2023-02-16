@@ -36,6 +36,9 @@ jobs:
       - name: List packages
         run: npm ls	
 
+      - name: Serverless Doctor
+        run: npm run-script sls_doctor
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
