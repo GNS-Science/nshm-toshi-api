@@ -56,6 +56,11 @@ class ModelType(graphene.Enum):
     SUBDUCTION = "subduction"
     COMPOSITE = "composite"
 
+class OpenquakeTaskType(graphene.Enum):
+    HAZARD = "hazard"
+    DISAGG = "disagg"
+    UNDEFINED = "undefined"
+
 class AggregationFn(graphene.Enum):
     MEAN = "mean"
 

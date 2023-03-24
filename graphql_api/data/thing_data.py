@@ -54,7 +54,6 @@ class ThingData(BaseDynamoDBData):
         Returns:
             File: the Thing object
         """
-
         jsondata = self.migrate_old_thing_object(self._read_object(thing_id))
         return self.from_json(jsondata)
 
