@@ -8,6 +8,7 @@ The core class OpenquakeHazardTask implements the `graphql_api.schema.task.Task`
 
 """
 
+
 import graphene
 import datetime as dt
 import logging
@@ -19,7 +20,7 @@ from graphene import Enum
 from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
 from graphql_api.data import get_data_manager
-from .common import ModelType
+from .common import ModelType, OpenquakeTaskType
 from .automation_task_base import (AutomationTaskInterface, AutomationTaskBase,
     AutomationTaskInput, AutomationTaskUpdateInput)
 
@@ -44,6 +45,7 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
     hazard_solution = graphene.Field(OpenquakeHazardSolution, description = "The openquake solution")
 
     model_type = ModelType()
+    task_type = OpenquakeTaskType()
 
     @staticmethod
     def from_json(jsondata):
@@ -54,6 +56,12 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
     def resolve_hazard_solution(root, info, **args):
         return resolve_node(root, info, 'hazard_solution', 'thing')
+
+    def resolve_task_type(root, info, **args):
+        if task_type:= root.task_type:
+            return task_type
+        return OpenquakeTaskType.UNDEFINED
+
 
 # class OpenquakeHazardTaskConnection(relay.Connection):
 #     """A list of OpenquakeHazardTask items"""
@@ -69,6 +77,7 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 class OpenquakeHazardTaskInput(AutomationTaskInput):
     config = graphene.ID(required=True)
     model_type = ModelType(required=True)
+    task_type = OpenquakeTaskType(default_value=OpenquakeTaskType.HAZARD.value)
 
 class CreateOpenquakeHazardTask(graphene.Mutation):
 

@@ -278,7 +278,7 @@ class SetupHelpersMixin:
         return result
 
 
-    def build_hazard_task(self):
+    def build_hazard_task(self, disagg=False):
 
         upstream_sid = self.create_source_solution() #File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
@@ -289,8 +289,10 @@ class SetupHelpersMixin:
         config = self.create_openquake_config([nrml_id], archive_id) #Thing 100001
         config_id = config['data']['create_openquake_hazard_config']['config']['id']
 
-        haztask = self.create_openquake_hazard_task(config_id) #Thing 100002
-        return haztask
+        if not disagg:
+            return self.create_openquake_hazard_task(config_id) #Thing 100002
+
+        return self.create_openquake_hazard_disagg_task(config_id)
 
     def create_openquake_hazard_task(self, config):
         """test helper"""
@@ -332,6 +334,52 @@ class SetupHelpersMixin:
         result = self.client.execute(query, variable_values=variables )
         print(result)
         return result
+
+    def create_openquake_hazard_disagg_task(self, config):
+        """test helper"""
+        query = '''
+            mutation ($created: DateTime!, $config: ID!) {
+              create_openquake_hazard_task(
+                  input: {
+                    config: $config
+                    created: $created
+                    model_type: COMPOSITE
+                    task_type: DISAGG
+                    state: UNDEFINED
+                    result: UNDEFINED
+
+                    arguments: [
+                        { k:"max_jump_distance" v: "55.5" }
+                        { k:"max_sub_section_length" v: "2" }
+                        { k:"max_cumulative_azimuth" v: "590" }
+                        { k:"min_sub_sections_per_parent" v: "2" }
+                        { k:"permutation_strategy" v: "DOWNDIP" }
+                    ]
+
+                    environment: [
+                        { k:"gitref_opensha_ucerf3" v: "ABC"}
+                        { k:"gitref_opensha_commons" v: "ABC"}
+                        { k:"gitref_opensha_core" v: "ABC"}
+                        { k:"nshm_nz_opensha" v: "ABC"}
+                        { k:"host" v:"tryharder-ubuntu"}
+                        { k:"JAVA" v:"-Xmx24G"  }
+                    ]
+                  }
+              )
+              {
+                ok
+                openquake_hazard_task { id, config { id }, created, arguments {k v}}
+              }
+            }'''
+
+        variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat())
+        result = self.client.execute(query, variable_values=variables )
+        print(result)
+        return result
+
+
+
+
 
     def create_scaled_solution(self, upstream_sid, task_id):
         """test helper"""

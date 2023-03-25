@@ -84,6 +84,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
             __typename
             ... on OpenquakeHazardTask {
               created
+              task_type
               config {
                 id
                 created
@@ -116,6 +117,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(haztask['config']['source_models'][0]['source_solution']['file_name'],
             "MyInversion.zip")
 
+        self.assertEqual(haztask['task_type'], "HAZARD")
 
     def test_bugfix_148(self):
         '''
