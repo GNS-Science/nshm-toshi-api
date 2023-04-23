@@ -2,6 +2,7 @@ import graphene
 from enum import Enum
 from graphql_relay import from_global_id
 
+from .aggregate_inversion_solution import AggregateInversionSolution
 from .scaled_inversion_solution import ScaledInversionSolution
 from .time_dependent_inversion_solution import TimeDependentInversionSolution
 from .inversion_solution_nrml import InversionSolutionNrml
@@ -19,6 +20,7 @@ class AncestryLabel(Enum):
 class PredecessorUnion(graphene.Union):
 
     class Meta:
+        #types = (File, AggregateInversionSolution, InversionSolution, ScaledInversionSolution, InversionSolutionNrml, TimeDependentInversionSolution)
         types = (File, InversionSolution, ScaledInversionSolution, InversionSolutionNrml, TimeDependentInversionSolution)
 
 class Predecessor(graphene.ObjectType):
