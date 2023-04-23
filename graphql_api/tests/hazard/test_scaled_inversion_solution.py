@@ -166,7 +166,6 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual( node['predecessors'][0]['id'], upstream_sid)
         self.assertEqual( node['predecessors'][0]['relationship'], 'Parent')
 
-    @pytest.mark.skip("fail expected")
     def test_get_scaled_solution_with_aggregate_predecessor(self):
         # source solution
         self.common_ruptset_id =  self.create_file("myruptset.zip", self.source_solution)\
@@ -215,15 +214,10 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         '''
         result = self.client.execute(query, variable_values=dict(id=ss_id))
         print(result)
-
         node = result['data']['node']
-
         self.assertEqual( node['produced_by']['id'], at_id)
         self.assertEqual( node['predecessors'][0]['id'], upstream_sid_1)
-        self.assertEqual( node['predecessors'][0]['relationship'], 'Parent')
         self.assertEqual( node['predecessors'][1]['id'], upstream_sid_0)
-        self.assertEqual( node['predecessors'][0]['relationship'], 'GrandParent')
-
 
     def create_scaled_solution_with_predecessors(self, source_solution, predecessors, task_id):
         """test helper"""

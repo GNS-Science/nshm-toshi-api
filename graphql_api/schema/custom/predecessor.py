@@ -20,8 +20,7 @@ class AncestryLabel(Enum):
 class PredecessorUnion(graphene.Union):
 
     class Meta:
-        #types = (File, AggregateInversionSolution, InversionSolution, ScaledInversionSolution, InversionSolutionNrml, TimeDependentInversionSolution)
-        types = (File, InversionSolution, ScaledInversionSolution, InversionSolutionNrml, TimeDependentInversionSolution)
+        types = (File, AggregateInversionSolution, InversionSolution, ScaledInversionSolution, InversionSolutionNrml, TimeDependentInversionSolution)
 
 class Predecessor(graphene.ObjectType):
     """
