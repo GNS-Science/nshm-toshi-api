@@ -80,7 +80,7 @@ class TestCompressRelations(unittest.TestCase):
     # @unittest.skip('experimental test code')
     def test_how_many_relations_in_390k(self):
         def fake_relation():
-            return {'id': random.randint(1e5, 1e7), 'role': random.choice(['read'])}
+            return {'id': random.randint(int(1e5), int(1e7)), 'role': random.choice(['read'])}
 
         MAX_RELS = int(80e3) # 0000
         MAX_SIZE = 390e3 # 3000
