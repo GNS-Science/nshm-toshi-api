@@ -21,6 +21,8 @@ from graphql_api.schema.custom.common import TaskSubType
 
 from setup_helpers import SetupHelpersMixin
 
+import pytest
+
 @mock_dynamodb
 @mock_s3
 class TestScaling(unittest.TestCase, SetupHelpersMixin):
@@ -80,7 +82,8 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
     def test_create_scaled_solution_with_predecessors(self):
         at_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        result = self.create_scaled_solution_with_predecessors(upstream_sid, at_id)
+        predecessors = [dict(id=upstream_sid, depth=-1)]
+        result = self.create_scaled_solution_with_predecessors(upstream_sid, predecessors, at_id)
         ss =  result['data']['create_scaled_inversion_solution']['solution']
 
         self.assertEqual(ss['source_solution']['id'], upstream_sid)
@@ -123,7 +126,8 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
     def test_get_scaled_solution_with_predecessors(self):
         at_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        result = self.create_scaled_solution_with_predecessors(upstream_sid, at_id)
+        predecessors = [dict(id=upstream_sid, depth=-1)]
+        result = self.create_scaled_solution_with_predecessors(upstream_sid, predecessors, at_id)
         ss =  result['data']['create_scaled_inversion_solution']['solution']
         ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
         query = '''
@@ -162,8 +166,60 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual( node['predecessors'][0]['id'], upstream_sid)
         self.assertEqual( node['predecessors'][0]['relationship'], 'Parent')
 
+    def test_get_scaled_solution_with_aggregate_predecessor(self):
+        # source solution
+        self.common_ruptset_id =  self.create_file("myruptset.zip", self.source_solution)\
+            ['data']['create_file']['file_result']['id']
+        upstream_sid_0 = self.create_source_solution()
 
-    def create_scaled_solution_with_predecessors(self, upstream_sid, task_id):
+        # aggregate solution
+        at_id_1= self.create_automation_task("AGGREGATE_SOLUTION")
+        res1 = self.create_aggregate_solution_with_predecessors([upstream_sid_0], at_id_1, self.common_ruptset_id)
+        upstream_sid_1 = res1['data']['create_aggregate_inversion_solution']['solution']['id']
+        # self.assertEqual(asol['common_rupture_set']['id'], self.common_ruptset_id)
+
+        # aggregate solution
+        at_id = self.create_automation_task("SCALE_SOLUTION")
+        predecessors = [dict(id=upstream_sid_1, depth=-1), dict(id=upstream_sid_0, depth=-2)]
+        result = self.create_scaled_solution_with_predecessors(upstream_sid_1, predecessors, at_id)
+
+        ss =  result['data']['create_scaled_inversion_solution']['solution']
+        ss_id =  result['data']['create_scaled_inversion_solution']['solution']['id']
+        query = '''
+            query get_scaled_solution($id: ID!) {
+              node(id:$id) {
+                __typename
+                ... on ScaledInversionSolution {
+                    created
+                    produced_by { ... on Node {id} }
+                    source_solution { ... on Node {id} }
+                }
+                ... on PredecessorsInterface {
+                    predecessors {
+                        id,
+                        typename,
+                        depth,
+                        relationship
+                        node {
+                            __typename
+                            ... on FileInterface {
+                                meta {k v}
+                                file_name
+                            }
+                        }
+                    }
+                }
+              }
+            }
+        '''
+        result = self.client.execute(query, variable_values=dict(id=ss_id))
+        print(result)
+        node = result['data']['node']
+        self.assertEqual( node['produced_by']['id'], at_id)
+        self.assertEqual( node['predecessors'][0]['id'], upstream_sid_1)
+        self.assertEqual( node['predecessors'][1]['id'], upstream_sid_0)
+
+    def create_scaled_solution_with_predecessors(self, source_solution, predecessors, task_id):
         """test helper"""
         query = '''
             mutation ($source_solution: ID!, $produced_by: ID!, $digest: String!, $file_name: String!, $file_size: BigInt!,
@@ -207,9 +263,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         size = len(filedata.read())
         filedata.seek(0) #important!
 
-        predecessors = [dict(id=upstream_sid, depth=-1)]
-
-        variables = dict(source_solution=upstream_sid, produced_by=task_id,
+        variables = dict(source_solution=source_solution, produced_by=task_id,
             file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size,
             predecessors=predecessors )
         variables['created'] = dt.datetime.now(tzutc()).isoformat()
