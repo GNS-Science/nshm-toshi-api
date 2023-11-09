@@ -1,63 +1,70 @@
-
 """
 Test API function for InversionSolution
 Mocking our data layer
 
 """
+import datetime as dt
+import json
+import unittest
 from io import BytesIO
 from unittest import mock
 
-import datetime as dt
-import unittest
-import json
-
 from dateutil.tz import tzutc
-
 from graphene.test import Client
+
+import graphql_api.data  # for mocking
 from graphql_api import data
-
 from graphql_api.schema import root_schema
-from graphql_api.schema.custom.inversion_solution import InversionSolution, CreateInversionSolution
+from graphql_api.schema.custom.inversion_solution import CreateInversionSolution, InversionSolution
 
-import graphql_api.data # for mocking
 
-class IncrId():
+class IncrId:
     next_id = -1
 
     def get_next_id(self, *args):
-        self.next_id +=1
+        self.next_id += 1
         return str(self.next_id) + 'RANDM'
 
+
 READ_MOCK = lambda _self, id: dict(
-    id = "0i93qK",
-    clazz_name = "InversionSolution",
-    md5_digest = "$digest",
-    file_name = "$file_name",
-    file_size = "$file_size",
-    produced_by = "VGFibGU6Tm9uZQ==",
-    mfd_table_id = "VGFibGU6MA==",
-    created = "2021-06-11T02:37:26.009506+00:00",
-    meta = [{ "k":"max_jump_distance", "v": "55.5" }],
-    metrics = [{ "k":"some_metric", "v": "20"}],
-    tables = [{'identity':'table0',
-      "created": "2021-06-11T02:37:26.009506+00:00",
-      "produced_by_id": "VGFibGU6Tm9uZQ==",
-      "label":"MyMFDTable",
-      "table_id": "VGFibGU6MA==",
-      "dimensions": [{"k": "grid_spacings", "v": ["0.1"]}, {"k": "IML_periods", "v": ["0, 0.1, etc"]},
-                 {"k": "tags", "v": ["opensha", "testing"]}, {"k": "gmpes", "v": ["ASK_2014"]}],
-      "table_type": "hazard_gridded",
-      }]
-    )
+    id="0i93qK",
+    clazz_name="InversionSolution",
+    md5_digest="$digest",
+    file_name="$file_name",
+    file_size="$file_size",
+    produced_by="VGFibGU6Tm9uZQ==",
+    mfd_table_id="VGFibGU6MA==",
+    created="2021-06-11T02:37:26.009506+00:00",
+    meta=[{"k": "max_jump_distance", "v": "55.5"}],
+    metrics=[{"k": "some_metric", "v": "20"}],
+    tables=[
+        {
+            'identity': 'table0',
+            "created": "2021-06-11T02:37:26.009506+00:00",
+            "produced_by_id": "VGFibGU6Tm9uZQ==",
+            "label": "MyMFDTable",
+            "table_id": "VGFibGU6MA==",
+            "dimensions": [
+                {"k": "grid_spacings", "v": ["0.1"]},
+                {"k": "IML_periods", "v": ["0, 0.1, etc"]},
+                {"k": "tags", "v": ["opensha", "testing"]},
+                {"k": "gmpes", "v": ["ASK_2014"]},
+            ],
+            "table_type": "hazard_gridded",
+        }
+    ],
+)
+
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
 @mock.patch('graphql_api.data.file_data.FileData.create', lambda self, clazz_name, **kwargs: {})
-#TODO: replace above with this deeper test ....
+# TODO: replace above with this deeper test ....
 # @mock.patch('graphql_api.data.BaseS3Data._write_object', lambda self, id, updated_body, **kwargs: {})
 class TestBasicInversionSolutionOperations(unittest.TestCase):
     """
     All datastore (data) methods are mocked.
     """
+
     def setUp(self):
         self.client = Client(root_schema)
 
@@ -79,11 +86,21 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
               }
             }
         '''
-        result = self.client.execute(CREATE_QRY,
-            variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, 
-                produced_by="PRODUCER_ID", mfd_table="TABLE_ID"))
+        result = self.client.execute(
+            CREATE_QRY,
+            variable_values=dict(
+                digest="ABC",
+                file_name='MyInversion.zip',
+                file_size=1000,
+                produced_by="PRODUCER_ID",
+                mfd_table="TABLE_ID",
+            ),
+        )
         print(result)
-        assert result['data']['create_inversion_solution']['inversion_solution']['id'] == 'SW52ZXJzaW9uU29sdXRpb246Tm9uZQ=='
+        assert (
+            result['data']['create_inversion_solution']['inversion_solution']['id']
+            == 'SW52ZXJzaW9uU29sdXRpb246Tm9uZQ=='
+        )
 
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_get_inversion_solution_by_node_id(self):
@@ -114,7 +131,6 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         assert result['data']['node']['metrics'][0]['v'] == "20"
         assert result['data']['node']['tables'][0]['identity'] == "table0"
 
-
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, id, updated_body, **kwargs: {})
     @mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
@@ -142,27 +158,50 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         '''
 
         input = dict(
-            id = "SW52ZXJzaW9uU29sdXRpb246MGk5M3FL",
-            tables = [{
-              "produced_by_id":"PRODUCER_ID",
-              "label": "MyLabelledTable",
-              "table_id": "VGFibGU6MA==",
-              "table_type" : "HAZARD_GRIDDED",
-              "dimensions": [{"k": "grid_spacings", "v": ["0.1"]}, {"k": "IML_periods", "v": ["0", "0.1"]},
-                {"k": "tags", "v": ["opensha", 'testing']}, {"k": "gmpes", "v": ["ASK_2014"]}]
-            }])
+            id="SW52ZXJzaW9uU29sdXRpb246MGk5M3FL",
+            tables=[
+                {
+                    "produced_by_id": "PRODUCER_ID",
+                    "label": "MyLabelledTable",
+                    "table_id": "VGFibGU6MA==",
+                    "table_type": "HAZARD_GRIDDED",
+                    "dimensions": [
+                        {"k": "grid_spacings", "v": ["0.1"]},
+                        {"k": "IML_periods", "v": ["0", "0.1"]},
+                        {"k": "tags", "v": ["opensha", 'testing']},
+                        {"k": "gmpes", "v": ["ASK_2014"]},
+                    ],
+                }
+            ],
+        )
 
         result = self.client.execute(qry, variable_values=dict(input=input))
         print(result)
-        assert result['data']['append_inversion_solution_tables']['inversion_solution']['id'] == 'SW52ZXJzaW9uU29sdXRpb246MGk5M3FL'
+        assert (
+            result['data']['append_inversion_solution_tables']['inversion_solution']['id']
+            == 'SW52ZXJzaW9uU29sdXRpb246MGk5M3FL'
+        )
         assert len(result['data']['append_inversion_solution_tables']['inversion_solution']['tables']) == 2
-        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table_id'] == "VGFibGU6MA=="
-        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table_type'] == "HAZARD_GRIDDED"
-        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['dimensions'][0]['k'] == 'grid_spacings'
-        assert result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table']['id'] == "VGFibGU6MA=="
+        assert (
+            result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table_id']
+            == "VGFibGU6MA=="
+        )
+        assert (
+            result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table_type']
+            == "HAZARD_GRIDDED"
+        )
+        assert (
+            result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['dimensions'][0]['k']
+            == 'grid_spacings'
+        )
+        assert (
+            result['data']['append_inversion_solution_tables']['inversion_solution']['tables'][1]['table']['id']
+            == "VGFibGU6MA=="
+        )
 
 
-ISMOCK = lambda _self, id: json.loads('''{
+ISMOCK = lambda _self, id: json.loads(
+    '''{
 "id": "1544.0vP8Bd",
 "file_name": "NZSHM22_InversionSolution-UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5.zip",
 "md5_digest": "8tEaawtixFVlzm4iseWeQA==",
@@ -180,10 +219,11 @@ ISMOCK = lambda _self, id: json.loads('''{
 "mfd_table": null,
 "produced_by": null,
 "tables": [{"identity":"table0", "created": "2021-06-11T02:37:26.009506+00:00", "produced_by_id": "VGFibGU6Tm9uZQ==", "label":"MyMFDTable", "table_id": "VGFibGU6MA=="}],
-"clazz_name": "InversionSolution"}''')
+"clazz_name": "InversionSolution"}'''
+)
+
 
 class TestCustomResolvers(unittest.TestCase):
-
     def setUp(self):
         self.client = Client(root_schema)
 

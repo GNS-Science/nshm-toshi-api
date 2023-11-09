@@ -1,27 +1,23 @@
-
 """
 Test API function for GeneralTask
 
 Mocking our data layer
 
 """
+import datetime as dt
+import unittest
 from io import BytesIO
 from unittest import mock
 
-import datetime as dt
-import unittest
-
 from dateutil.tz import tzutc
-
 from graphene.test import Client
-from graphql_api import data
-
-from graphql_api.schema import root_schema
-from graphql_api.schema.custom import StrongMotionStation
-from graphql_api.dynamodb.models import migrate
 from moto import mock_dynamodb
 
-import graphql_api.data # for mocking
+import graphql_api.data  # for mocking
+from graphql_api import data
+from graphql_api.dynamodb.models import migrate
+from graphql_api.schema import root_schema
+from graphql_api.schema.custom import StrongMotionStation
 
 CREATE_GT = '''
     mutation new_gt ($created: DateTime!) {
@@ -52,19 +48,22 @@ CREATE_GT_RELATION = '''
     }
 '''
 
-class IncrId():
+
+class IncrId:
     next_id = -1
 
     def get_next_id(self, *args):
-        self.next_id +=1
+        self.next_id += 1
         return self.next_id
+
 
 TASKMOCK = lambda _self, _id: {
     "id": _id,
     "clazz_name": "GeneralTask",
     "created": "2020-10-30T09:15:00+00:00",
-    "title": "max_jump_distance"
-    }
+    "title": "max_jump_distance",
+}
+
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
 class TestGeneralTaskBug29(unittest.TestCase):
@@ -78,28 +77,25 @@ class TestGeneralTaskBug29(unittest.TestCase):
 
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', TASKMOCK)
     @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
-    @mock.patch('graphql_api.data.thing_relation_data.ThingRelationData.create', lambda self, parent_clazz, child_clazz, parent_id, child_id: {})
+    @mock.patch(
+        'graphql_api.data.thing_relation_data.ThingRelationData.create',
+        lambda self, parent_clazz, child_clazz, parent_id, child_id: {},
+    )
     def test_create_two_gts_and_link_them(self):
         # the first GT
         gt1_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))
         print(gt1_result)
-        assert gt1_result['data']['create_general_task']\
-                        ['general_task']['id'] == 'R2VuZXJhbFRhc2s6MA=='
+        assert gt1_result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MA=='
 
         # the second
         gt2_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))
         print(gt2_result)
-        assert gt2_result['data']['create_general_task']\
-                        ['general_task']['id'] == 'R2VuZXJhbFRhc2s6MQ=='
-
+        assert gt2_result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MQ=='
 
         # finally the relation
-        gt_link_result = self.client.execute(CREATE_GT_RELATION, variable_values=dict(
-            parent_id='R2VuZXJhbFRhc2s6MA==',
-            child_id='R2VuZXJhbFRhc2s6MQ=='))
+        gt_link_result = self.client.execute(
+            CREATE_GT_RELATION, variable_values=dict(parent_id='R2VuZXJhbFRhc2s6MA==', child_id='R2VuZXJhbFRhc2s6MQ==')
+        )
 
         print('GTLINK ', gt_link_result)
-        assert gt_link_result['data']['create_task_relation']\
-                        ['ok'] == True
-
-
+        assert gt_link_result['data']['create_task_relation']['ok'] == True

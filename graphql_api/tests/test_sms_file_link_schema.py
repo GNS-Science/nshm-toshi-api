@@ -1,27 +1,24 @@
-
 """
 Test API function for SMS
 
 Mocking our data layer
 
 """
+import datetime as dt
+import unittest
 from io import BytesIO
 from unittest import mock
 
-import datetime as dt
-import unittest
-
 from dateutil.tz import tzutc
-
 from graphene.test import Client
-from graphql_api import data
 from graphql_relay import from_global_id, to_global_id
 
+import graphql_api.data  # for mocking
+from graphql_api import data
 from graphql_api.schema import root_schema
 from graphql_api.schema.custom import StrongMotionStation
-# from graphql_api.schema.custom.sms_file_link import SmsFileLink #, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 
-import graphql_api.data # for mocking
+# from graphql_api.schema.custom.sms_file_link import SmsFileLink #, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 
 
 # CREATE = '''
@@ -51,10 +48,12 @@ import graphql_api.data # for mocking
 mock_file_data = dict(id=10, file_name="a", md5_digest="ca")
 mock_thing_data = dict(id=13, clazz_name='StrongMotionStation')
 
+
 def mock_make_api_call(self, operation_name, kwarg):
     if operation_name in ['ListObjects', 'PutObject']:
         return {}
     raise ValueError("got unmocked operation: ", operation_name)
+
 
 @mock.patch('graphql_api.data.file_data.FileData.get_next_id', lambda self: "10abcdefgh")
 @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
@@ -69,7 +68,6 @@ class TestCreateSMSFile(unittest.TestCase):
         self.client = Client(root_schema)
 
     def test_create_minimum_fields_happy_case(self):
-
         qry = '''
             mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $file_type: SmsFileType!) {
               create_sms_file(
@@ -87,17 +85,16 @@ class TestCreateSMSFile(unittest.TestCase):
 
         filedata = BytesIO("a line\nor two".encode())
         digest = "sha256(filedata.read()).hexdigest()"
-        filedata.seek(0) #important!
+        filedata.seek(0)  # important!
         size = len(filedata.read())
-        filedata.seek(0) #important!
+        filedata.seek(0)  # important!
         variables = dict(file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size, file_type="DH")
 
-        executed = self.client.execute(qry,
-            variable_values=variables)
+        executed = self.client.execute(qry, variable_values=variables)
         print(executed)
-        new_id =  executed['data']['create_sms_file']['file_result']['id']
+        new_id = executed['data']['create_sms_file']['file_result']['id']
 
-        #assert new_id == 'U21zRmlsZUxpbms6MA=='
+        # assert new_id == 'U21zRmlsZUxpbms6MA=='
         _type, _id = from_global_id(new_id)
         assert _type == 'SmsFile'
         assert _id == "10abcdefgh"
