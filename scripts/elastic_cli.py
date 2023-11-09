@@ -17,16 +17,15 @@ def slt():
 def cli_OHS(disaggs, verbose):
     """Get OpenquakeHazardSolution hits - either hazard or disagg."""
     s = Search()
+    q1 = Q("term", meta__k="hazard_agg_target") # this marks a disagg
+    q2 = Q("term", clazz_name__keyword="OpenquakeHazardSolution")
     if disaggs:
         click.echo('GET disagggregation solutions')
-        q1 = Q("term", meta__k="hazard_agg_target")
     else:
         click.echo('GET hazard solutions')
-        q1 = ~Q("term", meta__k="hazard_agg_target")
-    q2 = Q("term", clazz_name__keyword="OpenquakeHazardSolution")
+        q1 = ~q1 # invert for hazard / non-disaggs
     s = s.query( q2 & q1)
     # aggregate by month ...
-
     s.aggs.bucket('solutions_per_month', 'date_histogram', field='created', interval='month')
     s = s.extra(explain=True, track_total_hits=True)
 
