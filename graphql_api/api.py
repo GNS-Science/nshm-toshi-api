@@ -10,6 +10,27 @@ import logging, logging.config
 import yaml
 
 from .library_version_check import log_library_info
+
+"""
+Setup logging configuration
+ref https://fangpenlin.com/posts/2012/08/26/good-logging-practice-in-python/
+
+"""
+if os.path.exists(LOGGING_CFG):
+    with open(LOGGING_CFG, 'rt') as f:
+        config = yaml.safe_load(f.read())
+    logging.config.dictConfig(config)
+else:
+    print('warning, no logging config found, using basicConfig(INFO)')
+    logging.basicConfig(level=logging.INFO)
+
+logger = logging.getLogger(__name__)
+logger.debug('DEBUG logging enabled')
+logger.info('INFO logging enabled')
+logger.warning('WARN logging enabled')
+logger.error('ERROR logging enabled')
+
+
 if not TESTING:
     # because in testing, this screws up moto mocking
     log_library_info(['botocore', 'boto3'])
@@ -30,27 +51,6 @@ app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
     schema=root_schema,
     graphiql=True,
 ))
-
-"""
-Setup logging configuration
-ref https://fangpenlin.com/posts/2012/08/26/good-logging-practice-in-python/
-
-"""
-
-if os.path.exists(LOGGING_CFG):
-    with open(LOGGING_CFG, 'rt') as f:
-        config = yaml.safe_load(f.read())
-    logging.config.dictConfig(config)
-else:
-    print('warning, no logging config found, using basicConfig(INFO)')
-    logging.basicConfig(level=logging.INFO)
-
-logger = logging.getLogger(__name__)
-
-logger.debug('DEBUG logging enabled')
-logger.info('INFO logging enabled')
-logger.warning('WARN logging enabled')
-logger.error('ERROR logging enabled')
 
 if __name__ == '__main__':
     app.run()
