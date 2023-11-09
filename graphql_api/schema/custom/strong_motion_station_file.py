@@ -2,11 +2,12 @@
 
 
 import graphene
-from graphene import relay
-from graphene import Enum
-from graphql_api.schema.file import FileInterface
+from graphene import Enum, relay
+
 from graphql_api.data import get_data_manager
 from graphql_api.schema.custom.scalars import BigInt
+from graphql_api.schema.file import FileInterface
+
 
 class SmsFileType(Enum):
     BH = "bh"
@@ -15,10 +16,11 @@ class SmsFileType(Enum):
     HVSR = "hsvr"
     SW = "sw"
 
-class SmsFile(graphene.ObjectType):
 
+class SmsFile(graphene.ObjectType):
     class Meta:
         """standard graphene meta class"""
+
         interfaces = (relay.Node, FileInterface)
 
     file_type = SmsFileType(required=True)
@@ -38,4 +40,3 @@ class CreateSmsFile(graphene.Mutation):
         # print("CreateFile.mutate: ", file_in, kwargs)
         file_result = get_data_manager().file.create('SmsFile', **kwargs)
         return CreateSmsFile(ok=True, file_result=file_result)
-

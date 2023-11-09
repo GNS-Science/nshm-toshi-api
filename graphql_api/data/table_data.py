@@ -4,11 +4,14 @@ Object manager for Table schema objects
 import datetime as dt
 import logging
 from importlib import import_module
+
 from benedict import benedict
 
-from .base_data import BaseDynamoDBData
 # from .helpers import get_objectid_from_global
 from graphql_relay import from_global_id, to_global_id
+
+from .base_data import BaseDynamoDBData
+
 # import graphql_api.schema
 
 logger = logging.getLogger(__name__)
@@ -31,11 +34,10 @@ class TableData(BaseDynamoDBData):
         Raises:
             ValueError: invalid data exception
         """
-        if not  kwargs['created'].tzname(): #must have a timezone set
+        if not kwargs['created'].tzname():  # must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
 
         return super().create(clazz_name, **kwargs)
-
 
     def get_one(self, thing_id):
         """
@@ -46,7 +48,6 @@ class TableData(BaseDynamoDBData):
         """
         # jsondata = self.migrate_old_thing_object(self._read_object(thing_id))
         return self.from_json(self._read_object(thing_id))
-
 
     def update(self, clazz_name, thing_id, **kwargs):
         """
@@ -70,12 +71,11 @@ class TableData(BaseDynamoDBData):
         # print(body)
         return clazz(**body)
 
-
     @staticmethod
     def from_json(jsondata):
         logger.info("from_json: %s" % str(jsondata))
 
-        #datetime comversions
+        # datetime comversions
         created = jsondata.get('created')
         if created:
             jsondata['created'] = dt.datetime.fromisoformat(created)

@@ -1,51 +1,48 @@
-
 """
 Test API function for GeneralTask
 
 Mocking our data layer
 
 """
+import datetime as dt
+import unittest
 from io import BytesIO
 from unittest import mock
 
-import datetime as dt
-import unittest
-
 from dateutil.tz import tzutc
-
 from graphene.test import Client
-from graphql_api import data
 
+import graphql_api.data  # for mocking
+from graphql_api import data
 from graphql_api.schema import root_schema
 
-import graphql_api.data # for mocking
 
-
-class IncrId():
+class IncrId:
     next_id = -1
 
     def get_next_id(self, *args):
-        self.next_id +=1
+        self.next_id += 1
         return self.next_id
 
+
 READ_MOCK = lambda _self, id: dict(
-    id = "0",
-    clazz_name = "GeneralTask",
-    agent_name = "DonDuck",
-    created = "2021-06-11T02:37:26.009506+00:00",
-    argument_lists = [{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}],
-    meta = [{ "k":"some_metric", "v": "55.5" }],
+    id="0",
+    clazz_name="GeneralTask",
+    agent_name="DonDuck",
+    created="2021-06-11T02:37:26.009506+00:00",
+    argument_lists=[{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}],
+    meta=[{"k": "some_metric", "v": "55.5"}],
     notes="dum de dum",
     subtask_count=4,
     subtask_type="rupture_set",
     model_type="subduction",
-    subtask_result="partial"
-    )
+    subtask_result="partial",
+)
+
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body:  {})
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: {})
 class TestBasicGeneralTaskOperations(unittest.TestCase):
-
     def setUp(self):
         self.client = Client(root_schema)
 
@@ -68,11 +65,18 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
               }
             }
         '''
-        result = self.client.execute(CREATE_QRY,
-            variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, produced_by="PRODUCER_ID", mfd_table="TABLE_ID"))
+        result = self.client.execute(
+            CREATE_QRY,
+            variable_values=dict(
+                digest="ABC",
+                file_name='MyInversion.zip',
+                file_size=1000,
+                produced_by="PRODUCER_ID",
+                mfd_table="TABLE_ID",
+            ),
+        )
         print(result)
         assert result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MA=='
-
 
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
     def test_get_general_task_by_node_id(self):
@@ -121,9 +125,8 @@ class TestBasicGeneralTaskOperations(unittest.TestCase):
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body:  {})
+@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: {})
 class TestExtraGeneralTaskOperations(unittest.TestCase):
-
     def setUp(self):
         self.client = Client(root_schema)
 
@@ -175,7 +178,6 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
         assert result['data']['node']['model_type'] == "SUBDUCTION"
         assert result['data']['node']['subtask_result'] == "PARTIAL"
 
-
     def test_create_general_task(self):
         CREATE_QRY = '''
             mutation { #($file_name: String!, $file_size: BigInt!, $produced_by: ID!, $mfd_table: ID!)
@@ -201,8 +203,16 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
               }
             }
         '''
-        result = self.client.execute(CREATE_QRY,
-            variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, produced_by="PRODUCER_ID", mfd_table="TABLE_ID"))
+        result = self.client.execute(
+            CREATE_QRY,
+            variable_values=dict(
+                digest="ABC",
+                file_name='MyInversion.zip',
+                file_size=1000,
+                produced_by="PRODUCER_ID",
+                mfd_table="TABLE_ID",
+            ),
+        )
         print(result)
         assert result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MA=='
         assert result['data']['create_general_task']['general_task']['meta'][0]['k'] == "some_metric"
@@ -216,7 +226,6 @@ class TestExtraGeneralTaskOperations(unittest.TestCase):
 @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
 @mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
 class TestUpdateGeneralTask(unittest.TestCase):
-
     def setUp(self):
         self.client = Client(root_schema)
 
@@ -248,11 +257,16 @@ class TestUpdateGeneralTask(unittest.TestCase):
         print(executed)
         result = executed['data']['update_general_task']['general_task']
         assert result['id'] == 'R2VuZXJhbFRhc2s6MA=='
-        #assert result['duration'] == 909
+        # assert result['duration'] == 909
         assert result['updated'] == "2021-08-03T01:38:21.933731+00:00"
         assert result['meta'][0]['k'] == "balderdash"
         assert result['meta'][0]['v'] == "20"
         assert result['subtask_count'] == 4
-        assert result['argument_lists'] == [{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}]
-        assert result['swept_arguments'] == ["bogus_metric",]
+        assert result['argument_lists'] == [
+            {"k": "bogus_metric", "v": ["20", "25"]},
+            {"k": "unswept_metric", "v": [None]},
+        ]
+        assert result['swept_arguments'] == [
+            "bogus_metric",
+        ]
         assert not result.get('errors')

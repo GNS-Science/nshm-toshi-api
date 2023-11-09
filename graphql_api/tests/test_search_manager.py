@@ -1,4 +1,3 @@
-
 """
 Test Elastic Serach via SearchManager
 
@@ -10,27 +9,27 @@ Mocking out ES in requests
 
 # import datetime as dt
 import unittest
+from unittest import mock, skip
+
+import requests_mock
+from graphene.test import Client
+
+from graphql_api.schema import File, root_schema
+from graphql_api.schema.search_manager import SearchManager
+
+from .fixtures import es_query_response as eqr
 
 # from dateutil.tz import tzutc
 
 # from graphql_api import data
 
-from graphene.test import Client
-from graphql_api.schema import root_schema
-from graphql_api.schema.search_manager import SearchManager
-from .fixtures import es_query_response as eqr
-from graphql_api.schema import File
 
-from unittest import mock, skip
-import requests_mock
-
-FAKE_ENDPOINT = 'http://localhost:9200' #matches default local setup
+FAKE_ENDPOINT = 'http://localhost:9200'  # matches default local setup
 FAKE_INDEX = 'toshi-index'
 awsauth = None
 
 
 class TestSearchManager(unittest.TestCase):
-
     def setUp(self):
         self.client = Client(root_schema)
         self.search_manager = SearchManager(endpoint=FAKE_ENDPOINT, es_index=FAKE_INDEX, awsauth=awsauth)
@@ -41,8 +40,8 @@ class TestSearchManager(unittest.TestCase):
     def test_query_with_mock_requests(self):
         with requests_mock.Mocker() as m:
             url = FAKE_ENDPOINT + '/' + FAKE_INDEX + '/_search?q=560'
-            #url = "http://fake.es_search/endpoint/toshi_index/_search?q=560"
-            m.get(url, content=eqr.response_01) #set up the mocking
+            # url = "http://fake.es_search/endpoint/toshi_index/_search?q=560"
+            m.get(url, content=eqr.response_01)  # set up the mocking
 
             result = self.search_manager.search("560")
             res0 = [r for r in result][0]
@@ -52,13 +51,12 @@ class TestSearchManager(unittest.TestCase):
 
 
 class TestSchemaSearch(unittest.TestCase):
-    """
-    """
+    """ """
+
     def setUp(self):
         self.client = Client(root_schema)
 
     def test_query_with_mock_requests(self):
-
         qry = '''
             query m1 {
               search(search_term:"560") {
@@ -85,7 +83,7 @@ class TestSchemaSearch(unittest.TestCase):
         '''
         with requests_mock.Mocker() as m:
             url = FAKE_ENDPOINT + '/' + FAKE_INDEX + '/_search?q=560'
-            m.get(url, content=eqr.response_01) #set up the mocking
+            m.get(url, content=eqr.response_01)  # set up the mocking
 
             executed = self.client.execute(qry)
             print(executed)
@@ -95,15 +93,17 @@ class TestSchemaSearch(unittest.TestCase):
 def mock_make_api_call(self, operation_name, kwarg):
     raise ValueError("query fired an (expensive) S3 API operation: ", operation_name)
 
+
 # @skip("slow")
 @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 class TestSchemaSearchTotalCount(unittest.TestCase):
     """
     All datastore (data) methods are mocked.
     """
+
     def setUp(self):
         self.client = Client(root_schema)
-        #monkey patching
+        # monkey patching
         schema_sm = SearchManager(endpoint=FAKE_ENDPOINT, es_index=FAKE_INDEX, awsauth=awsauth)
 
     def test_relations_only_total_count(self):
@@ -135,16 +135,14 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
         # from hashlib import sha256, md5
         with requests_mock.Mocker() as m:
             url = FAKE_ENDPOINT + '/' + FAKE_INDEX + '/_search?q=560'
-            m.get(url, content=eqr.response_01) #set up the mocking
+            m.get(url, content=eqr.response_01)  # set up the mocking
 
-            executed = self.client.execute(qry,
-                variable_values={})
+            executed = self.client.execute(qry, variable_values={})
             print(executed)
             assert executed['data']['search']['search_result']['total_count'] == 3
             assert executed['data']['search']['search_result']['edges'][0]['node']['relations']['total_count'] == 1
 
-
-    def test_traversing_into_s3_api_call(self): 
+    def test_traversing_into_s3_api_call(self):
         qry = '''
 
             query m1 {
@@ -174,11 +172,9 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
         # from hashlib import sha256, md5
         with requests_mock.Mocker() as m:
             url = FAKE_ENDPOINT + '/' + FAKE_INDEX + '/_search?q=560'
-            m.get(url, content=eqr.response_01) #set up the mocking
+            m.get(url, content=eqr.response_01)  # set up the mocking
 
-            executed = self.client.execute(qry,
-                variable_values={})
+            executed = self.client.execute(qry, variable_values={})
 
             print('EXECUTED:', executed)
             assert executed['data']['search']['search_result']['total_count'] == 3
-

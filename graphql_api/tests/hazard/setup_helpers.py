@@ -4,28 +4,32 @@ A Mixin class to share in test modules
 The TestCase sub class must setup self.client
 
 """
-from io import BytesIO
-from hashlib import sha256
 import datetime as dt
+from hashlib import sha256
+from io import BytesIO
+
 from dateutil.tz import tzutc
+
 
 def fake_file_content():
     filedata = BytesIO("not_really zip, but close enough".encode())
-    filedata.seek(0) #important!
+    filedata.seek(0)  # important!
     return filedata
+
 
 def file_size(fileobj):
     size = len(fileobj.read())
     fileobj.seek(0)
     return size
 
+
 def file_digest(fileobj):
     digest = sha256(fileobj.read()).hexdigest()
     fileobj.seek(0)
     return digest
 
-class SetupHelpersMixin:
 
+class SetupHelpersMixin:
     def create_general_task(self):
         CREATE_QRY = '''
             mutation {
@@ -48,7 +52,6 @@ class SetupHelpersMixin:
         print(result)
         return result['data']['create_general_task']['general_task']['id']
 
-
     def create_source_solution(self):
         CREATE_QRY = '''
             mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $produced_by: ID!) {
@@ -66,12 +69,13 @@ class SetupHelpersMixin:
             }
         '''
 
-        result = self.client.execute(CREATE_QRY,
-            variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, produced_by="PRODUCER_ID"))
+        result = self.client.execute(
+            CREATE_QRY,
+            variable_values=dict(digest="ABC", file_name='MyInversion.zip', file_size=1000, produced_by="PRODUCER_ID"),
+        )
 
         print(result)
         return result['data']['create_inversion_solution']['inversion_solution']['id']
-
 
     def create_automation_task(self, task_type="INVERSION"):
         CREATE_QRY = '''
@@ -100,14 +104,19 @@ class SetupHelpersMixin:
                 }
             }
         '''
-        result = self.client.execute(CREATE_QRY,
+        result = self.client.execute(
+            CREATE_QRY,
             variable_values=dict(
-                task_type = task_type,
-                created="2021-06-11T02:37:26.009506Z", file_name='MyInversion.zip', file_size=1000, produced_by="PRODUCER_ID"))
+                task_type=task_type,
+                created="2021-06-11T02:37:26.009506Z",
+                file_name='MyInversion.zip',
+                file_size=1000,
+                produced_by="PRODUCER_ID",
+            ),
+        )
 
         print(result)
         return result['data']['create_automation_task']['task_result']['id']
-
 
     def create_gt_relation(self, parent_id, child_id):
         CREATE_QRY = '''
@@ -122,8 +131,7 @@ class SetupHelpersMixin:
               }
             }
         '''
-        result = self.client.execute(CREATE_QRY,
-            variable_values=dict(parent_id=parent_id, child_id=child_id))
+        result = self.client.execute(CREATE_QRY, variable_values=dict(parent_id=parent_id, child_id=child_id))
         print(result)
         return result['data']['create_task_relation']['thing_relation']
 
@@ -148,10 +156,15 @@ class SetupHelpersMixin:
             }'''
 
         fake_file = fake_file_content()
-        variables = dict(source_solution=upstream_sid, file=fake_file, digest=file_digest(fake_file),
-            file_name="alineortwo.zip", file_size=file_size(fake_file),
-            created = dt.datetime.utcnow().isoformat())
-        result = self.client.execute(query, variable_values=variables )
+        variables = dict(
+            source_solution=upstream_sid,
+            file=fake_file,
+            digest=file_digest(fake_file),
+            file_name="alineortwo.zip",
+            file_size=file_size(fake_file),
+            created=dt.datetime.utcnow().isoformat(),
+        )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
 
@@ -194,18 +207,21 @@ class SetupHelpersMixin:
 
         predecessors = [dict(id=upstream_sid, depth=-1)]
 
-        variables = dict(source_solution=upstream_sid, file=fake_file, digest=file_digest(fake_file),
-            file_name="alineortwo.zip", file_size=file_size(fake_file),
-            created = dt.datetime.utcnow().isoformat(),
-            predecessors=predecessors )
+        variables = dict(
+            source_solution=upstream_sid,
+            file=fake_file,
+            digest=file_digest(fake_file),
+            file_name="alineortwo.zip",
+            file_size=file_size(fake_file),
+            created=dt.datetime.utcnow().isoformat(),
+            predecessors=predecessors,
+        )
 
-        result = self.client.execute(query, variable_values=variables )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
 
-
-
-    def create_file(self, filename, predecessor = None):
+    def create_file(self, filename, predecessor=None):
         """test helper"""
         query = '''
             mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $predecessors: [PredecessorInput]) {
@@ -237,18 +253,21 @@ class SetupHelpersMixin:
 
         fake_file = fake_file_content()
 
-        variables = dict(file=fake_file, digest=file_digest(fake_file),
-            file_name=filename, file_size=file_size(fake_file),
-            created=dt.datetime.now(tzutc()).isoformat())
+        variables = dict(
+            file=fake_file,
+            digest=file_digest(fake_file),
+            file_name=filename,
+            file_size=file_size(fake_file),
+            created=dt.datetime.now(tzutc()).isoformat(),
+        )
 
         if predecessor:
             predecessors = [dict(id=predecessor, depth=-1)]
             variables['predecessors'] = predecessors
 
-        result = self.client.execute(query, variable_values=variables )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
-
 
     def create_openquake_config(self, sources, archive_id):
         """test helper"""
@@ -271,26 +290,23 @@ class SetupHelpersMixin:
               }
             }'''
 
-        variables = dict(sources=sources, archive_id=archive_id,
-            created = dt.datetime.now(tzutc()).isoformat())
-        result = self.client.execute(query, variable_values=variables )
+        variables = dict(sources=sources, archive_id=archive_id, created=dt.datetime.now(tzutc()).isoformat())
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
 
-
     def build_hazard_task(self, disagg=False):
-
-        upstream_sid = self.create_source_solution() #File 100001
-        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
-        nrml_id =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
-        archive = self.create_file("config_archive.zip") #File 100003
+        upstream_sid = self.create_source_solution()  # File 100001
+        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid)  # File 100002
+        nrml_id = inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
+        archive = self.create_file("config_archive.zip")  # File 100003
         archive_id = archive['data']['create_file']['file_result']['id']
 
-        config = self.create_openquake_config([nrml_id], archive_id) #Thing 100001
+        config = self.create_openquake_config([nrml_id], archive_id)  # Thing 100001
         config_id = config['data']['create_openquake_hazard_config']['config']['id']
 
         if not disagg:
-            return self.create_openquake_hazard_task(config_id) #Thing 100002
+            return self.create_openquake_hazard_task(config_id)  # Thing 100002
 
         return self.create_openquake_hazard_disagg_task(config_id)
 
@@ -331,7 +347,7 @@ class SetupHelpersMixin:
             }'''
 
         variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat())
-        result = self.client.execute(query, variable_values=variables )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
 
@@ -373,10 +389,9 @@ class SetupHelpersMixin:
             }'''
 
         variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat())
-        result = self.client.execute(query, variable_values=variables )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
-
 
     def create_scaled_solution(self, upstream_sid, task_id):
         """test helper"""
@@ -404,13 +419,19 @@ class SetupHelpersMixin:
         # from hashlib import sha256, md5
         filedata = BytesIO("a line\nor two".encode())
         digest = "sha256(filedata.read()).hexdigest()"
-        filedata.seek(0) #important!
+        filedata.seek(0)  # important!
         size = len(filedata.read())
-        filedata.seek(0) #important!
-        variables = dict(source_solution=upstream_sid, produced_by=task_id,
-            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
+        filedata.seek(0)  # important!
+        variables = dict(
+            source_solution=upstream_sid,
+            produced_by=task_id,
+            file=filedata,
+            digest=digest,
+            file_name="alineortwo.txt",
+            file_size=size,
+        )
         variables['created'] = dt.datetime.now(tzutc()).isoformat()
-        result = self.client.execute(query, variable_values=variables )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
 
@@ -440,13 +461,19 @@ class SetupHelpersMixin:
         # from hashlib import sha256, md5
         filedata = BytesIO("a line\nor two".encode())
         digest = "sha256(filedata.read()).hexdigest()"
-        filedata.seek(0) #important!
+        filedata.seek(0)  # important!
         size = len(filedata.read())
-        filedata.seek(0) #important!
-        variables = dict(source_solution=upstream_sid, produced_by=task_id,
-            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size)
+        filedata.seek(0)  # important!
+        variables = dict(
+            source_solution=upstream_sid,
+            produced_by=task_id,
+            file=filedata,
+            digest=digest,
+            file_name="alineortwo.txt",
+            file_size=size,
+        )
         variables['created'] = dt.datetime.now(tzutc()).isoformat()
-        result = self.client.execute(query, variable_values=variables )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
 
@@ -481,17 +508,23 @@ class SetupHelpersMixin:
         # from hashlib import sha256, md5
         filedata = BytesIO("a line\nor two".encode())
         digest = "sha256(filedata.read()).hexdigest()"
-        filedata.seek(0) #important!
+        filedata.seek(0)  # important!
         size = len(filedata.read())
-        filedata.seek(0) #important!
-        variables = dict(source_solutions=upstream_sids, produced_by=task_id,
-            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size,
-            aggregation_fn=aggregation_fn, common_rupture_set=common_rupture_set)
+        filedata.seek(0)  # important!
+        variables = dict(
+            source_solutions=upstream_sids,
+            produced_by=task_id,
+            file=filedata,
+            digest=digest,
+            file_name="alineortwo.txt",
+            file_size=size,
+            aggregation_fn=aggregation_fn,
+            common_rupture_set=common_rupture_set,
+        )
         variables['created'] = dt.datetime.now(tzutc()).isoformat()
-        result = self.client.execute(query, variable_values=variables )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
-        return result                  
-
+        return result
 
     def create_aggregate_solution_with_predecessors(self, source_solutions, task_id, common_rupture_set):
         """test helper"""
@@ -535,16 +568,23 @@ class SetupHelpersMixin:
         # from hashlib import sha256, md5
         filedata = BytesIO("a line\nor two".encode())
         digest = "sha256(filedata.read()).hexdigest()"
-        filedata.seek(0) #important!
+        filedata.seek(0)  # important!
         size = len(filedata.read())
-        filedata.seek(0) #important!
+        filedata.seek(0)  # important!
 
         predecessors = [dict(id=source_solutions[0], depth=-1)]
 
-        variables = dict(source_solutions=source_solutions, produced_by=task_id,
-            file=filedata, digest=digest, file_name="alineortwo.txt", file_size=size,
-            predecessors=predecessors, common_rupture_set=common_rupture_set)
+        variables = dict(
+            source_solutions=source_solutions,
+            produced_by=task_id,
+            file=filedata,
+            digest=digest,
+            file_name="alineortwo.txt",
+            file_size=size,
+            predecessors=predecessors,
+            common_rupture_set=common_rupture_set,
+        )
         variables['created'] = dt.datetime.now(tzutc()).isoformat()
-        result = self.client.execute(query, variable_values=variables )
+        result = self.client.execute(query, variable_values=variables)
         print(result)
         return result
