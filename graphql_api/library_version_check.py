@@ -1,6 +1,6 @@
 #! library_version_check.py
 """
-This module simply attempts to import botocore and boto3 and to report their respective versions.
+This module simply attempts to import botocore and boto3 to report their respective versions.
 
 This is required because in serverless deployments we rely on the AWS lambda environment to have these
 pre-installed in the lambda PythonX installation. But this has recently lead to some version conflicts:
@@ -10,7 +10,23 @@ e.g.
    botocore-package-in-lambda-python-3-9-runtime-return-error-cannot-import-name
  - https://github.com/boto/boto3/issues/3648
 
-Hopefully logging output from this modulw will aid in diagnosing such issues in the future.
+Hopefully logging output from this module will aid in diagnosing such issues in the future.
+
+NOTE: if using serverless-python-requirements to deploy to AWS, then make sure that noDeploy covers both boto3 and 
+botocore, since these libraries must be in-sync.
+
+e.g. excerpt from serverless.yml
+```
+  #serverless-python-requirements settings
+  pythonRequirements:
+    dockerizePip: non-linux
+    slim: true
+    slimPatterns:
+      - '**/*.egg-info*'
+    noDeploy:
+      - boto3
+      - botocore
+```
 """
 
 import importlib.util

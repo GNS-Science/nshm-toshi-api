@@ -1,6 +1,8 @@
-from pynamodb.attributes import UnicodeAttribute, JSONAttribute, VersionAttribute, NumberAttribute
+from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
 from pynamodb.models import Model
-from graphql_api.config import DEPLOYMENT_STAGE, REGION, TESTING, IS_OFFLINE
+
+from graphql_api.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, TESTING
+
 
 class ToshiTableObject(Model):
     class Meta:
@@ -12,9 +14,10 @@ class ToshiTableObject(Model):
 
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute()
-    object_content = JSONAttribute() # the json string
+    object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
-    
+
+
 class ToshiFileObject(Model):
     class Meta:
         billing_mode = 'PAY_PER_REQUEST'
@@ -25,10 +28,10 @@ class ToshiFileObject(Model):
 
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute()
-    object_content = JSONAttribute() # the json string
+    object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
-    
-    
+
+
 class ToshiThingObject(Model):
     class Meta:
         billing_mode = 'PAY_PER_REQUEST'
@@ -38,11 +41,11 @@ class ToshiThingObject(Model):
             host = "http://localhost:8000"
 
     object_id = UnicodeAttribute(hash_key=True)
-    object_type = UnicodeAttribute() #eg WLG-10000
-    object_content = JSONAttribute() # the json string
+    object_type = UnicodeAttribute()  # eg WLG-10000
+    object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
-    
-    
+
+
 class ToshiIdentity(Model):
     class Meta:
         billing_mode = 'PAY_PER_REQUEST'
@@ -58,16 +61,16 @@ class ToshiIdentity(Model):
 
 tables = [ToshiFileObject, ToshiTableObject, ToshiThingObject, ToshiIdentity]
 
+
 def migrate():
     for table in tables:
         if not table.exists():
             table.create_table(wait=True)
             print(f"Migrate created table: {table}")
 
+
 def drop_tables():
     for table in tables:
         if table.exists():
             table.delete_table()
             print(f'deleted table: {table}')
-        
-        

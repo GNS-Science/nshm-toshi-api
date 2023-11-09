@@ -1,13 +1,15 @@
+import logging
+import logging.config
 import os
-from flask import Flask
-from flask_graphql import GraphQLView
-from graphql_api.schema import root_schema
-from flask_cors import CORS
-from graphql_api.dynamodb.models import migrate
-from graphql_api.config import LOGGING_CFG, TESTING
 
-import logging, logging.config
 import yaml
+from flask import Flask
+from flask_cors import CORS
+from flask_graphql import GraphQLView
+
+from graphql_api.config import LOGGING_CFG, TESTING
+from graphql_api.dynamodb.models import migrate
+from graphql_api.schema import root_schema
 
 from .library_version_check import log_library_info
 
@@ -36,9 +38,10 @@ if not TESTING:
     log_library_info(['botocore', 'boto3'])
 
 if os.getenv("TOSHI_FIX_RANDOM_SEED", None):
-	print("Offline, setting random seed for smoketests")
-	import random
-	random.seed(42)
+    print("Offline, setting random seed for smoketests")
+    import random
+
+    random.seed(42)
 
 app = Flask(__name__)
 CORS(app)
@@ -46,11 +49,14 @@ CORS(app)
 # ensure any tables exist ...
 migrate()
 
-app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
-    'graphql',
-    schema=root_schema,
-    graphiql=True,
-))
+app.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view(
+        'graphql',
+        schema=root_schema,
+        graphiql=True,
+    ),
+)
 
 if __name__ == '__main__':
     app.run()
