@@ -4,10 +4,15 @@ from flask_graphql import GraphQLView
 from graphql_api.schema import root_schema
 from flask_cors import CORS
 from graphql_api.dynamodb.models import migrate
-from graphql_api.config import LOGGING_CFG
+from graphql_api.config import LOGGING_CFG, TESTING
 
 import logging, logging.config
 import yaml
+
+from .library_version_check import log_library_info
+if not TESTING:
+    # because in testing, this screws up moto mocking
+    log_library_info(['botocore', 'boto3'])
 
 if os.getenv("TOSHI_FIX_RANDOM_SEED", None):
 	print("Offline, setting random seed for smoketests")
