@@ -17,7 +17,8 @@ if os.getenv("TOSHI_FIX_RANDOM_SEED", None):
 app = Flask(__name__)
 CORS(app)
 
-app.before_first_request(migrate)
+# ensure any tables exist ...
+migrate()
 
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
     'graphql',

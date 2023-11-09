@@ -11,14 +11,12 @@ npm install --save serverless-python-requirements
 npm install --save serverless-wsgi
 sls dynamodb install
 
-pip install -r requirements.txt
-pip install -r test_requirements.txt
-pip install -e .
+poetry install
 ```
 
 ## Smoketest
 ```
-
+poetry shell
 sls dynamodb start --stage local &\
 sls s3 start &\
 SLS_OFFLINE=1 TOSHI_FIX_RANDOM_SEED=1 FIRST_DYNAMO_ID=0 sls wsgi serve
@@ -31,12 +29,12 @@ docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elas
 
 Then in another shell,
 ```
-python3 graphql_api/tests/smoketests.py
+poetry run python3 graphql_api/tests/smoketests.py
 ```
 
 ## Unit test
 ```
-SLS_OFFLINE=1 TESTING=1 pytest
+SLS_OFFLINE=1 TESTING=1 poetry run pytest
 ```
 
 ## Test locally with Toshi UI
