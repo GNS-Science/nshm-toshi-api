@@ -28,7 +28,9 @@ db_metrics = ServerlessMetricWriter(
 
 class FileData(BaseDynamoDBData):
     """
-    FileData provides the S3 interface forFile objects
+    FileData provides the storage for File objects.
+
+    File object have both a json metadata object, and a file object.
     """
 
     def update(self, id, updated_body):
@@ -38,7 +40,10 @@ class FileData(BaseDynamoDBData):
 
     def create(self, clazz_name, **kwargs):
         """
-        create the S3 representation if the File in S3. This is two files:
+        create a new File object in the storage layer. This is two files:
+
+        - The json metadata which, for Legacy objects may be stored in S3. Modern objects will be stored in DyanamoDB.
+        - a placeholder file object in S3, which should be replaced by the actual file conteent by the toshi client.
 
         Args:
          - clazz_name (String): the class name of schema object
@@ -51,8 +56,8 @@ class FileData(BaseDynamoDBData):
         data_key = "%s/%s/%s" % (self._prefix, new_instance.id, new_instance.file_name)
 
         t0 = dt.utcnow()
-        response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
-        parts = self._client.generate_presigned_post(
+        response2 = self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
+        parts = self.s3_client.generate_presigned_post(
             Bucket=self._bucket_name,
             Key=data_key,
             Fields={
@@ -115,7 +120,7 @@ class FileData(BaseDynamoDBData):
     def get_all(self):
         """
         Returns:
-            list: a list containing all the objects materialised from the S3 bucket
+            list: a list containing all the objects materialised from storage
         """
         t0 = dt.utcnow()
         task_results = []
@@ -124,6 +129,55 @@ class FileData(BaseDynamoDBData):
             assert prefix == self._prefix
             if filename == "object.json":
                 task_results.append(self.get_one(task_result_id))
+
+        # now we need the modern dynamodb files ...
+        # here we're doing scan, but this isnot appropriate for paginatio
+        # we can use a secondary index with a partition of "File" that contains
+        # and a sort key using the padded raw id. This would allow us to paginate through
+        #
+        # either:
+        # - a complete object projection, for statsToshiFileObject-PROD
+        """
+        ## Statistics at 2024/04/12
+
+        ### ToshiIdentity-PROD
+
+        Item count: 3
+        Table size: 236 bytes
+        Average item size: 78.67 bytes
+
+        ###: ToshiFileObject-PROD
+
+        Item count: 6,798,698
+        Table size:  2.3 gigabytes
+        Average item size: 343.55 bytes
+
+        ### ToshiThingObject-PROD:
+
+        Item count: 6,826,637
+        Table size: 16 gigabytes
+        Average item size 2,339.86 bytes
+
+        ## ToshiTableObject-PROD
+
+        Item count: 2,932
+        Table size: 43.1 megabytes
+        Average item size: 14,696.82 bytes
+
+        ## S3 stats
+
+        Item count: 7464421 (includes pre dynamodDB objects)
+        Bucket size: 7.7 TB
+
+
+        """
+        for object_meta in self._model.model_id_index.query(
+                "File",
+                self._model.object_id >= "0", # range condition
+                limit = 2
+                ):
+            task_results.append(self.from_json(object_meta.object_content))
+
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
         return task_results
 
