@@ -60,14 +60,15 @@ class BaseData:
         client_args (dict): optional)arguments for the boto3 client
         db_manager (DataManager): reference to the singleton DataManager object
         """
-        args = client_args or {}
-        self._db_manager = db_manager
-        self._client = boto3.client('s3', **args)
-        self._bucket_name = S3_BUCKET_NAME
-        self._s3_conn = boto3.resource('s3')
-        self._bucket = self._s3_conn.Bucket(self._bucket_name, client=self._client)
+        self._aws_client_args = client_args or {}
         self._prefix = self.__class__.__name__
-        self._connection = Connection(region=REGION)
+        self._db_manager = db_manager
+        self._s3_conn = None
+        self._s3_client = None
+        self._s3_bucket = None
+        # self._connection = None
+        self._bucket_name = S3_BUCKET_NAME
+
 
     def get_one_raw(self, _id):
         """
@@ -112,15 +113,37 @@ class BaseData:
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
         return results
 
+    @property
+    def object_type(self):
+        return self._prefix
+
+    @property
+    def s3_client(self):
+        if not self._s3_client:
+            self._s3_client = boto3.client('s3', **self._aws_client_args)
+        return self._s3_client
+
+    @property
+    def s3_connection(self):
+        if not self._s3_conn:
+            self._s3_conn = boto3.resource('s3')
+            # self._connection = Connection(region=REGION)
+        return self._s3_conn
+
+    @property
+    def s3_bucket(self):
+        if not self._s3_bucket:
+            self._s3_bucket = self.s3_connection.Bucket(self._bucket_name, client=self.s3_client)
+        return self._s3_bucket
+
     def _from_s3(self, object_id):
         S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
         logger.info(f"get object from bucket {self._bucket_name}, key={S3_key})")
 
-        s3obj = self._s3_conn.Object(self._bucket_name, S3_key, client=self._client)
+        s3obj = self.s3_connection.Object(self._bucket_name, S3_key, client=self.s3_client)
         file_object = BytesIO()
         s3obj.download_fileobj(file_object)
         file_object.seek(0)
-
         return json.load(file_object)
 
     def get_all_in(self, _id_list):
