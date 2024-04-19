@@ -172,10 +172,8 @@ class FileData(BaseDynamoDBData):
 
         """
         for object_meta in self._model.model_id_index.query(
-                "File",
-                self._model.object_id >= "0", # range condition
-                limit = 2
-                ):
+            "File", self._model.object_id >= "0", limit=2  # range condition
+        ):
             task_results.append(self.from_json(object_meta.object_content))
 
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)

@@ -107,6 +107,7 @@ class Thing(graphene.Interface):
     def get_object_store_handler():
         return get_data_manager()._thing
 
+
 class ThingConnection(relay.Connection):
     """A Relay connection listing Things"""
 

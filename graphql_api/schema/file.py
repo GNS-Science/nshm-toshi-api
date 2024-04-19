@@ -78,6 +78,7 @@ class FileInterface(graphene.Interface):
     def get_object_store_handler():
         return get_data_manager()._file
 
+
 class File(graphene.ObjectType):
     """A data file"""
 
@@ -96,6 +97,7 @@ class File(graphene.ObjectType):
     @staticmethod
     def get_object_store_handler():
         return get_data_manager()._file
+
 
 class FileConnection(relay.Connection):
     """A Relay connection for Files"""

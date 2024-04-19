@@ -1,8 +1,9 @@
 from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
+from pynamodb.indexes import AllProjection, GlobalSecondaryIndex
 from pynamodb.models import Model
-from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 
 from graphql_api.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, TESTING
+
 
 class ModelIdentityIndex(GlobalSecondaryIndex):
     """
@@ -44,6 +45,7 @@ class ToshiFileObject(Model):
     object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
     model_id_index = ModelIdentityIndex()
+
 
 class ToshiThingObject(Model):
     class Meta:

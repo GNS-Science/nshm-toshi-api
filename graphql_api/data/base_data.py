@@ -69,7 +69,6 @@ class BaseData:
         # self._connection = None
         self._bucket_name = S3_BUCKET_NAME
 
-
     def get_one_raw(self, _id):
         """
         Args:

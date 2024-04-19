@@ -90,6 +90,7 @@ class Table(graphene.ObjectType):
     def get_object_store_handler():
         return get_data_manager()._table
 
+
 class CreateTable(relay.ClientIDMutation):
     class Input:
         name = Table.name
