@@ -1,6 +1,7 @@
 from .automation_task import AutomationTask
 from .general_task import GeneralTask
 from .inversion_solution import InversionSolution
+from .inversion_solution_nrml import InversionSolutionNrml
 from .openquake_hazard_solution import OpenquakeHazardSolution
 from .openquake_hazard_task import OpenquakeHazardTask
 from .rupture_generation_task import RuptureGenerationTask

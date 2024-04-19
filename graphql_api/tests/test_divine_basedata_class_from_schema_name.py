@@ -10,7 +10,14 @@ import pytest
 
 from graphql_api.data import FileData, TableData, ThingData
 from graphql_api.schema import File, Table, Thing
-from graphql_api.schema.custom import GeneralTask, InversionSolution, OpenquakeHazardSolution, StrongMotionStation
+from graphql_api.schema.custom import (
+    GeneralTask,
+    InversionSolution,
+    InversionSolutionNrml,
+    OpenquakeHazardSolution,
+    OpenquakeHazardTask,
+    StrongMotionStation,
+)
 from graphql_api.schema.file import FileInterface
 
 
@@ -30,7 +37,9 @@ def test_resolve_clazzname(classname):
         ('FileInterface', FileData),
         ('StrongMotionStation', ThingData),
         ('GeneralTask', ThingData),
+        ('InversionSolutionNrml', FileData),
         ('OpenquakeHazardSolution', ThingData),
+        ('OpenquakeHazardTask', ThingData),
         ('InversionSolution', FileData),
         ('Table', TableData),
     ],
