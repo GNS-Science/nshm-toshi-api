@@ -104,8 +104,8 @@ class Thing(graphene.Interface):
         return res
 
     @staticmethod
-    def get_object_store_handler():
-        return get_data_manager()._thing
+    def get_object_store_handler() -> 'ThingData':
+        return get_data_manager().thing
 
 
 class ThingConnection(relay.Connection):

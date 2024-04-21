@@ -6,6 +6,7 @@ TO do this we at least need to know the object type (is the ModelName).
 - all the model typses are dfeind in the graphql schema  (e.g. GeneralTask, File, RuptureSet, OpenquakeHazardSolution)
 - let figure out where to go looking based on the class name
 """
+import graphene
 import pytest
 
 from graphql_api.data import FileData, TableData, ThingData
@@ -25,8 +26,6 @@ from graphql_api.schema.file import FileInterface
 def test_resolve_clazzname(classname):
     namespace = globals()
     clazz = namespace.get(classname)
-    print(clazz)
-    print(type(clazz))
     assert clazz._meta.name == classname
 
 
@@ -51,8 +50,14 @@ def test_resolve_clazzname_datastore_type(classname, expected_dataclass):
     print(type(clazz))
     assert clazz._meta.name == classname
 
-    def get_handler_via_interface(clazz):
-        interfaces = [interface._meta.name for interface in clazz._meta.interfaces]
+    # TODO: move this to an appropriate home
+    def get_handler_via_interface(schema_clazz):
+        """find the data handler via interace implemented by the schema class
+
+        this covers almost all the custom schema types e.g InversionSolutionNrml
+        """
+        assert isinstance(schema_clazz, (graphene.ObjectType, graphene.utils.subclass_with_meta.SubclassWithMeta_Meta))
+        interfaces = [interface._meta.name for interface in schema_clazz._meta.interfaces]
         print(interfaces)
         for interface in interfaces:
             if interface in ['File', 'FileInterface', 'Thing', 'Table']:

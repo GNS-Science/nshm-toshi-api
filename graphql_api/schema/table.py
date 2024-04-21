@@ -87,8 +87,8 @@ class Table(graphene.ObjectType):
         return res
 
     @staticmethod
-    def get_object_store_handler():
-        return get_data_manager()._table
+    def get_object_store_handler() -> 'TableData':
+        return get_data_manager().table
 
 
 class CreateTable(relay.ClientIDMutation):
