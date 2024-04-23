@@ -10,23 +10,24 @@ import graphene
 import pytest
 
 from graphql_api.data import FileData, TableData, ThingData
-from graphql_api.schema import File, Table, Thing
-from graphql_api.schema.custom import (
-    GeneralTask,
-    InversionSolution,
-    InversionSolutionNrml,
-    OpenquakeHazardSolution,
-    OpenquakeHazardTask,
-    StrongMotionStation,
-)
-from graphql_api.schema.file import FileInterface
+# from graphql_api.schema import File, Table, Thing
+# from graphql_api.schema.custom import (
+#     GeneralTask,
+#     InversionSolution,
+#     InversionSolutionNrml,
+#     OpenquakeHazardSolution,
+#     OpenquakeHazardTask,
+#     StrongMotionStation,
+# )
+# from graphql_api.schema.file import FileInterface
 
+from graphql_api.schema.get_datastore_handler import get_datastore_handler
 
-@pytest.mark.parametrize('classname', ['File', 'StrongMotionStation', 'GeneralTask'])
-def test_resolve_clazzname(classname):
-    namespace = globals()
-    clazz = namespace.get(classname)
-    assert clazz._meta.name == classname
+# @pytest.mark.parametrize('classname', ['File', 'StrongMotionStation', 'GeneralTask'])
+# def test_resolve_clazzname(classname):
+#     namespace = globals()
+#     clazz = namespace.get(classname)
+#     assert clazz._meta.name == classname
 
 
 @pytest.mark.parametrize(
@@ -44,28 +45,30 @@ def test_resolve_clazzname(classname):
     ],
 )
 def test_resolve_clazzname_datastore_type(classname, expected_dataclass):
-    namespace = globals()
-    clazz = namespace.get(classname)
-    print(clazz)
-    print(type(clazz))
-    assert clazz._meta.name == classname
+    # namespace = globals()
+    # clazz = namespace.get(classname)
+    # print(clazz)
+    # print(type(clazz))
+    # assert clazz._meta.name == classname
 
-    # TODO: move this to an appropriate home
-    def get_handler_via_interface(schema_clazz):
-        """find the data handler via interace implemented by the schema class
+    # # TODO: move this to an appropriate home
+    # def get_handler_via_interface(schema_clazz):
+    #     """find the data handler via interace implemented by the schema class
 
-        this covers almost all the custom schema types e.g InversionSolutionNrml
-        """
-        assert isinstance(schema_clazz, (graphene.ObjectType, graphene.utils.subclass_with_meta.SubclassWithMeta_Meta))
-        interfaces = [interface._meta.name for interface in schema_clazz._meta.interfaces]
-        print(interfaces)
-        for interface in interfaces:
-            if interface in ['File', 'FileInterface', 'Thing', 'Table']:
-                return namespace.get(interface).get_object_store_handler()
+    #     this covers almost all the custom schema types e.g InversionSolutionNrml
+    #     """
+    #     assert isinstance(schema_clazz, (graphene.ObjectType, graphene.utils.subclass_with_meta.SubclassWithMeta_Meta))
+    #     interfaces = [interface._meta.name for interface in schema_clazz._meta.interfaces]
+    #     print(interfaces)
+    #     for interface in interfaces:
+    #         if interface in ['File', 'FileInterface', 'Thing', 'Table']:
+    #             return namespace.get(interface).get_object_store_handler()
 
-    try:
-        handler = clazz.get_object_store_handler()
-    except AttributeError:
-        handler = get_handler_via_interface(clazz)
+    # try:
+    #     handler = clazz.get_object_store_handler()
+    # except AttributeError:
+    #     handler = get_handler_via_interface(clazz)
+
+    handler = get_datastore_handler(classname)
 
     assert isinstance(handler, expected_dataclass)

@@ -16,7 +16,7 @@ import pynamodb.exceptions
 import requests.exceptions
 from botocore.exceptions import ClientError
 from graphene.relay import connection
-from graphql_relay.node.node import from_global_id
+from graphql_relay.node.node import from_global_id, to_global_id
 from pynamodb.connection.base import Connection
 from pynamodb.exceptions import DoesNotExist, PutError, TransactWriteError, VerboseClientError
 from pynamodb.transactions import TransactWrite
@@ -294,3 +294,69 @@ class BaseDynamoDBData(BaseData):
 
         self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
         return clazz(next_id, **kwargs)
+
+
+    def get_all(self, limit):
+        """
+        Returns:
+            list: a list containing all the objects materialised from storage
+        """
+        t0 = dt.utcnow()
+        # task_results = []
+
+        # either:
+        # - a complete object projection, for statsToshiFileObject-PROD
+        """
+        ## Statistics at 2024/04/12
+
+        ### ToshiIdentity-PROD
+
+        Item count: 3
+        Table size: 236 bytes
+        Average item size: 78.67 bytes
+
+        ###: ToshiFileObject-PROD
+
+        Item count: 6,798,698
+        Table size:  2.3 gigabytes
+        Average item size: 343.55 bytes
+
+        ### ToshiThingObject-PROD:
+
+        Item count: 6,826,637
+        Table size: 16 gigabytes
+        Average item size 2,339.86 bytes
+
+        ## ToshiTableObject-PROD
+
+        Item count: 2,932
+        Table size: 43.1 megabytes
+        Average item size: 14,696.82 bytes
+
+        ## S3 stats
+
+        Item count: 7464421 (includes pre dynamodDB objects)
+        Bucket size: 7.7 TB
+        """
+
+        # # S3 objects ...
+        # for item in super().get_all(self):
+        #     yield item
+
+        # now we need the modern dynamodb files ...
+
+        # here we're doing scan, but this isnot appropriate for paginatio
+        # we can use a secondary index with a partition of "File" that contains
+        # and a sort key using the padded raw id. This would allow us to paginate through
+        #
+
+        for object_meta in self._model.model_id_index.query(
+            self.prefix, self._model.object_id >= "0", limit=limit  # range condition
+        ):
+            log.debug(object_meta)
+            # yield graphene.Node(typename=object_meta.object_type, id=to_global_id(object_meta.object_type, str(object_meta.object_id))
+            # task_results.append(self.from_json(object_meta.object_content))
+            yield object_meta
+
+        db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
+        # return task_results

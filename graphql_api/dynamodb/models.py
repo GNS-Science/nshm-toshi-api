@@ -1,5 +1,5 @@
 from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
-from pynamodb.indexes import AllProjection, GlobalSecondaryIndex
+from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, IncludeProjection
 from pynamodb.models import Model
 
 from graphql_api.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, TESTING
@@ -11,8 +11,8 @@ class ModelIdentityIndex(GlobalSecondaryIndex):
     """
 
     class Meta:
-        # All attributes are projected
-        projection = AllProjection()
+        # only specific attributes are projected
+        projection = IncludeProjection(["clazz_name"])
 
     object_type = UnicodeAttribute(hash_key=True)
     object_id = UnicodeAttribute(range_key=True)

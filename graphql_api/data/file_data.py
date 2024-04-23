@@ -117,67 +117,6 @@ class FileData(BaseDynamoDBData):
         db_metrics.put_duration(__name__, 'get_presigned_url', dt.utcnow() - t0)
         return url
 
-    def get_all(self):
-        """
-        Returns:
-            list: a list containing all the objects materialised from storage
-        """
-        t0 = dt.utcnow()
-        task_results = []
-        for obj_summary in self._bucket.objects.filter(Prefix='%s/' % self._prefix):
-            prefix, task_result_id, filename = obj_summary.key.split('/')
-            assert prefix == self._prefix
-            if filename == "object.json":
-                task_results.append(self.get_one(task_result_id))
-
-        # now we need the modern dynamodb files ...
-        # here we're doing scan, but this isnot appropriate for paginatio
-        # we can use a secondary index with a partition of "File" that contains
-        # and a sort key using the padded raw id. This would allow us to paginate through
-        #
-        # either:
-        # - a complete object projection, for statsToshiFileObject-PROD
-        """
-        ## Statistics at 2024/04/12
-
-        ### ToshiIdentity-PROD
-
-        Item count: 3
-        Table size: 236 bytes
-        Average item size: 78.67 bytes
-
-        ###: ToshiFileObject-PROD
-
-        Item count: 6,798,698
-        Table size:  2.3 gigabytes
-        Average item size: 343.55 bytes
-
-        ### ToshiThingObject-PROD:
-
-        Item count: 6,826,637
-        Table size: 16 gigabytes
-        Average item size 2,339.86 bytes
-
-        ## ToshiTableObject-PROD
-
-        Item count: 2,932
-        Table size: 43.1 megabytes
-        Average item size: 14,696.82 bytes
-
-        ## S3 stats
-
-        Item count: 7464421 (includes pre dynamodDB objects)
-        Bucket size: 7.7 TB
-
-
-        """
-        for object_meta in self._model.model_id_index.query(
-            "File", self._model.object_id >= "0", limit=2  # range condition
-        ):
-            task_results.append(self.from_json(object_meta.object_content))
-
-        db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
-        return task_results
 
     @staticmethod
     def from_json(jsondata):
