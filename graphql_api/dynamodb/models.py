@@ -1,21 +1,11 @@
 from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
-from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, IncludeProjection
+from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, IncludeProjection, KeysOnlyProjection
 from pynamodb.models import Model
 
 from graphql_api.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, TESTING
 
 
-class ModelIdentityIndex(GlobalSecondaryIndex):
-    """
-    Global secondary index.
-    """
 
-    class Meta:
-        # only specific attributes are projected
-        projection = IncludeProjection(["clazz_name"])
-
-    object_type = UnicodeAttribute(hash_key=True)
-    object_id = UnicodeAttribute(range_key=True)
 
 
 class ToshiTableObject(Model):
@@ -26,10 +16,18 @@ class ToshiTableObject(Model):
         if IS_OFFLINE and not TESTING:
             host = "http://localhost:8000"
 
+    class TableIdentityIndex(GlobalSecondaryIndex):
+        class Meta:
+            projection = KeysOnlyProjection()
+        object_type = UnicodeAttribute(hash_key=True)
+        object_id = UnicodeAttribute(range_key=True)
+
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute()
     object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
+    model_id_index = TableIdentityIndex()
+
 
 
 class ToshiFileObject(Model):
@@ -40,11 +38,20 @@ class ToshiFileObject(Model):
         if IS_OFFLINE and not TESTING:
             host = "http://localhost:8000"
 
+    class FileIdentityIndex(GlobalSecondaryIndex):
+        class Meta:
+            projection = KeysOnlyProjection()
+        object_type = UnicodeAttribute(hash_key=True)
+        object_id = UnicodeAttribute(range_key=True)
+
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute()
     object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
-    model_id_index = ModelIdentityIndex()
+    model_id_index = FileIdentityIndex()
+
+
+
 
 
 class ToshiThingObject(Model):
@@ -55,10 +62,17 @@ class ToshiThingObject(Model):
         if IS_OFFLINE and not TESTING:
             host = "http://localhost:8000"
 
+    class ThingIdentityIndex(GlobalSecondaryIndex):
+        class Meta:
+            projection = KeysOnlyProjection()
+        object_type = UnicodeAttribute(hash_key=True)
+        object_id = UnicodeAttribute(range_key=True)
+
     object_id = UnicodeAttribute(hash_key=True)
     object_type = UnicodeAttribute()  # eg WLG-10000
     object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
+    model_id_index = ThingIdentityIndex()
 
 
 class ToshiIdentity(Model):

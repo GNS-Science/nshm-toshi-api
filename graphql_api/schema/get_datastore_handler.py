@@ -13,6 +13,9 @@ from .custom import (
     OpenquakeHazardSolution,
     OpenquakeHazardTask,
     StrongMotionStation,
+    RuptureGenerationTask,
+    AutomationTask,
+    OpenquakeHazardConfig
 )
 
 def get_datastore_handler(classname):
@@ -20,7 +23,7 @@ def get_datastore_handler(classname):
     clazz = namespace.get(classname)
     # print(clazz)
     # print(type(clazz))
-    # assert clazz._meta.name == classname
+    assert clazz._meta.name == classname
     # TODO: move this to an appropriate home
 
     def get_handler_via_interface(schema_clazz):
@@ -38,4 +41,5 @@ def get_datastore_handler(classname):
         handler = clazz.get_object_store_handler()
     except AttributeError:
         handler = get_handler_via_interface(clazz)
+
     return handler

@@ -113,7 +113,7 @@ class BaseData:
         return results
 
     @property
-    def object_type(self):
+    def prefix(self):
         return self._prefix
 
     @property
@@ -296,7 +296,7 @@ class BaseDynamoDBData(BaseData):
         return clazz(next_id, **kwargs)
 
 
-    def get_all(self, limit):
+    def get_all(self, object_type, limit, after=-1):
         """
         Returns:
             list: a list containing all the objects materialised from storage
@@ -344,19 +344,16 @@ class BaseDynamoDBData(BaseData):
         #     yield item
 
         # now we need the modern dynamodb files ...
+        # and a sort key using the object_id.
 
-        # here we're doing scan, but this isnot appropriate for paginatio
-        # we can use a secondary index with a partition of "File" that contains
-        # and a sort key using the padded raw id. This would allow us to paginate through
-        #
+        # for dynamodb, respect FIRST_DYNAMO_ID
+        if after >= 0:
+            after = max(after, FIRST_DYNAMO_ID)
 
+        logger.info(f"get_all, {self._model} {self.prefix} {object_type}")
         for object_meta in self._model.model_id_index.query(
-            self.prefix, self._model.object_id >= "0", limit=limit  # range condition
+            object_type, self._model.object_id > str(after), limit=limit  # range condition
         ):
-            log.debug(object_meta)
-            # yield graphene.Node(typename=object_meta.object_type, id=to_global_id(object_meta.object_type, str(object_meta.object_id))
-            # task_results.append(self.from_json(object_meta.object_content))
             yield object_meta
 
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
-        # return task_results

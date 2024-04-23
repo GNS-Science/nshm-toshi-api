@@ -10,17 +10,6 @@ import graphene
 import pytest
 
 from graphql_api.data import FileData, TableData, ThingData
-# from graphql_api.schema import File, Table, Thing
-# from graphql_api.schema.custom import (
-#     GeneralTask,
-#     InversionSolution,
-#     InversionSolutionNrml,
-#     OpenquakeHazardSolution,
-#     OpenquakeHazardTask,
-#     StrongMotionStation,
-# )
-# from graphql_api.schema.file import FileInterface
-
 from graphql_api.schema.get_datastore_handler import get_datastore_handler
 
 # @pytest.mark.parametrize('classname', ['File', 'StrongMotionStation', 'GeneralTask'])

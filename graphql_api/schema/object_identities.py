@@ -28,16 +28,17 @@ def paginated_object_identities(object_type, **kwargs) -> ObjectIdentitiesConnec
 
     first = kwargs.get('first', 5)  # how many to fetch
     after = kwargs.get('after')     # cursor of last page, or none
-    log.debug(f'paginated_object_identities first={first}, after={after}')
 
-    cursor_offset = int(from_global_id(after)[1]) + 1 if after else 0
-
-    # rupture_ids = list(rupture_sections_gdf["Rupture Index"])
+    cursor_offset = int(from_global_id(after)[1]) if after else -1
+    log.info(f'paginated_object_identities first={first}, after={after} cursor_offset: {cursor_offset}')
 
     datastore_handler = get_datastore_handler(object_type)
-    log.debug(datastore_handler)
+    log.info(f"datastore_handler: {datastore_handler}")
 
-    nodes = [ObjectIdentity(**itm) for itm in datastore_handler.get_all(limit=first)]
+    nodes = [ObjectIdentity(object_type=itm.object_type,
+                object_id=itm.object_id,
+                node_id=to_global_id(itm.object_type,itm.object_id))
+            for itm in datastore_handler.get_all(object_type, limit=first, after=cursor_offset)]
 
     # print(gen)
     # assert 0
@@ -49,7 +50,8 @@ def paginated_object_identities(object_type, **kwargs) -> ObjectIdentitiesConnec
     # based on https://gist.github.com/AndrewIngram/b1a6e66ce92d2d0befd2f2f65eb62ca5#file-pagination-py-L152
     edges = [
         ObjectIdentitiesConnection.Edge(
-            node=node, cursor=to_global_id("ObjectIdentitiesConnectionCursor", str(cursor_offset + idx))
+            node=node,
+            cursor=to_global_id("ObjectIdentitiesConnectionCursor", node.object_id)
         )
         for idx, node in enumerate(nodes)
     ]
@@ -57,7 +59,7 @@ def paginated_object_identities(object_type, **kwargs) -> ObjectIdentitiesConnec
     # REF https://stackoverflow.com/questions/46179559/custom-connectionfield-in-graphene
     connection_field = relay.ConnectionField.resolve_connection(ObjectIdentitiesConnection, {}, edges)
 
-    has_next = False # TODO total_count > 1 + int(from_global_id(edges[-1].cursor)[1]) if edges else False
+    has_next = False if len(edges) < first else True  # TODO total_count > 1 + int(from_global_id(edges[-1].cursor)[1]) if edges else False
 
     connection_field.page_info = relay.PageInfo(
         end_cursor=edges[-1].cursor

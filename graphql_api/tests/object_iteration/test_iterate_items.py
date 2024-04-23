@@ -10,8 +10,9 @@ import pytest
 
 from graphene.test import Client
 from graphql_api.schema import root_schema
-# import graphql_api.data.BaseDynamoDBData  # for mocking
-import graphql_api.data  # for mocking
+from graphql_api.schema.object_identities import ObjectIdentity
+
+import graphql_api.data
 from graphql_relay import from_global_id, to_global_id
 
 @pytest.fixture(scope="module")
@@ -26,12 +27,12 @@ class MockDBdata:
         self.next_id += 1
         return self.next_id
 
-    def get_all_gt(self, limit, *args):
+    def get_all_gt(self, object_type, limit, *args, **kwargs):
         for n in range(limit):
-            yield dict(
-                object_type="ThingData",
+            yield ObjectIdentity(
+                object_type=object_type,
                 object_id=str(n),
-                clazz_name="GeneralTask",
+                # clazz_name="GeneralTask",
                 node_id=to_global_id("GeneralTask", str(n))
             )
 
@@ -71,7 +72,7 @@ def test_iterate_object_identities_resolver(graphene_client, mock_dbdata):
                         object_type
                         object_id
                         node_id
-                        clazz_name
+                        # clazz_name
 
                     }
                 }
