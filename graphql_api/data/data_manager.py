@@ -22,6 +22,7 @@ class DataManager:
         self._file = FileData(_args, self, ToshiFileObject)
         self._thing = ThingData(_args, self, ToshiThingObject)
         self._table = TableData(_args, self, ToshiTableObject)
+        self._datastores = dict(File=self._file, Thing=self._thing, Table=self._table)
         self._file_relation = FileRelationData(_args, self, None)
         self._thing_relation = ThingRelationData(_args, self, None)
         self._search_manager = search_manager
@@ -52,3 +53,9 @@ class DataManager:
     @property
     def search_manager(self):
         return self._search_manager
+
+    @property
+    def datastores(self):
+        return self._datastores
+
+

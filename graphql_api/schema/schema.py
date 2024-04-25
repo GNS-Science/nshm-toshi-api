@@ -58,7 +58,7 @@ from .file_relation import CreateFileRelation, FileRelation, FileRelationConnect
 from .search_manager import SearchManager
 from .table import CreateTable, Table
 from .task_task_relation import CreateTaskTaskRelation
-from .object_identities import ObjectIdentitiesConnection, paginated_object_identities
+from .object_identities import ObjectIdentitiesConnection, paginated_object_identities, iterate_dynamodb_nodes, iterate_legacy_s3_nodes
 
 log = logging.getLogger(__name__)
 
@@ -149,6 +149,10 @@ class QueryRoot(graphene.ObjectType):
     object_identities = graphene.ConnectionField(ObjectIdentitiesConnection,
         object_type=graphene.Argument(graphene.String))
 
+    legacy_object_identities = graphene.ConnectionField(ObjectIdentitiesConnection,
+        store_type=graphene.Argument(graphene.String))
+
+
     strong_motion_station = graphene.Field(StrongMotionStation, id=graphene.ID(required=True))
     strong_motion_stations = relay.ConnectionField(
         StrongMotionStationConnection, description="The list of strong motion stations"
@@ -198,12 +202,25 @@ class QueryRoot(graphene.ObjectType):
         return Search(ok=True, search_result=search_result)
 
     @staticmethod
-    def resolve_object_identities(root, info, **kwargs):
+    def resolve_object_identities(root, info, object_type, **kwargs):
         log.info(f'resolve_object_identities args: {kwargs}')
         t0 = dt.utcnow()
         #search_result = db_root.search_manager.search(kwargs.get('search_term'))
         # db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
-        return paginated_object_identities(**kwargs)
+        nodes = iterate_dynamodb_nodes(object_type, **kwargs)
+        return paginated_object_identities(nodes, **kwargs)
+
+    @staticmethod
+    def resolve_legacy_object_identities(root, info, store_type, **kwargs):
+        assert store_type in ['File', 'Thing', 'Table']
+        log.info(f'resolve_object_identities args: {kwargs}')
+        t0 = dt.utcnow()
+        #search_result = db_root.search_manager.search(kwargs.get('search_term'))
+        # db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
+        nodes = iterate_legacy_s3_nodes(store_type, **kwargs)
+        return paginated_object_identities(nodes, **kwargs)
+
+
 
     @staticmethod
     def resolve_nodes(root, info, id_in, **kwargs):

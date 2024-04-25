@@ -9,6 +9,7 @@ import traceback
 from datetime import datetime as dt
 from importlib import import_module
 from io import BytesIO
+from collections import namedtuple
 
 import backoff
 import boto3
@@ -45,6 +46,10 @@ logger = logging.getLogger(__name__)
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
 
 
+
+ObjectIdentityRecord = namedtuple("ObjectIdentityRecord", "object_type, object_id")
+
+
 def append_uniq(size):
     uniq = ''.join(random.choice(_ALPHABET) for _ in range(5))
     return str(size) + uniq
@@ -69,10 +74,10 @@ class BaseData:
         # self._connection = None
         self._bucket_name = S3_BUCKET_NAME
 
-    def get_one_raw(self, _id):
+    def get_one_raw(self, _id:str):
         """
         Args:
-            file_id (string): the object id
+            _id: the object id
 
         Returns:
             File: the File object json
@@ -80,11 +85,11 @@ class BaseData:
         obj = self._read_object(_id)
         return obj
 
-    def get_one(self, _id):
+    def get_one(self, _id:str):
         """Summary
 
         Args:
-            _id (int): id for an object
+            _id: id for an object
 
         Raises:
             NotImplementedError: must override
@@ -103,7 +108,7 @@ class BaseData:
             clazz = None
 
         results = []
-        for obj_summary in self._bucket.objects.filter(Prefix='%s/' % self._prefix):
+        for obj_summary in self.s3_bucket.objects.filter(Prefix='%s/' % self._prefix):
             prefix, result_id, _ = obj_summary.key.split('/')
             assert prefix == self._prefix
             object = self.get_one(result_id)
@@ -111,6 +116,30 @@ class BaseData:
                 results.append(object)
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
         return results
+
+
+    def get_all_s3_paginated(self, limit, after):
+        """legacy iterator"""
+        count = 0
+        after = after or ""
+        # TODO refine this, see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/bucket/objects.html#filter
+        # need to handle multiple versions
+        # should use:
+        #  - Marker to define start of itertion
+        #  - MaxKeys to limit iteration
+        for obj_summary in self.s3_bucket.objects.filter(Prefix='%s/' % self.prefix):
+            prefix, object_id, _ = obj_summary.key.split('/')
+            print(object_id, type(object_id))
+            if object_id <= after:
+                continue
+            count +=1
+            if count > limit:
+                break
+            raw_object = self._from_s3(object_id)
+            yield ObjectIdentityRecord(
+                object_type = raw_object['clazz_name'],
+                object_id = object_id
+            )
 
     @property
     def prefix(self):
@@ -296,12 +325,22 @@ class BaseDynamoDBData(BaseData):
         return clazz(next_id, **kwargs)
 
 
-    def get_all(self, object_type, limit, after=-1):
+    def get_all(self, object_type, limit, after):
         """
-        Returns:
-            list: a list containing all the objects materialised from storage
         """
         t0 = dt.utcnow()
+        after = after or -1
+        # for dynamodb, respect FIRST_DYNAMO_ID
+        if after >= 0:
+            after = max(after, FIRST_DYNAMO_ID)
+
+        logger.info(f"get_all, {self._model} {self.prefix} {object_type}")
+        for object_meta in self._model.model_id_index.query(
+            object_type, self._model.object_id > str(after), limit=limit  # range condition
+        ):
+            yield ObjectIdentityRecord(object_meta.object_type, object_meta.object_id)
+
+        db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
         # task_results = []
 
         # either:
@@ -339,21 +378,3 @@ class BaseDynamoDBData(BaseData):
         Bucket size: 7.7 TB
         """
 
-        # # S3 objects ...
-        # for item in super().get_all(self):
-        #     yield item
-
-        # now we need the modern dynamodb files ...
-        # and a sort key using the object_id.
-
-        # for dynamodb, respect FIRST_DYNAMO_ID
-        if after >= 0:
-            after = max(after, FIRST_DYNAMO_ID)
-
-        logger.info(f"get_all, {self._model} {self.prefix} {object_type}")
-        for object_meta in self._model.model_id_index.query(
-            object_type, self._model.object_id > str(after), limit=limit  # range condition
-        ):
-            yield object_meta
-
-        db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
