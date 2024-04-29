@@ -120,26 +120,58 @@ class BaseData:
 
     def get_all_s3_paginated(self, limit, after):
         """legacy iterator"""
-        count = 0
+        count, seen = 0, 0
         after = after or ""
         # TODO refine this, see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/bucket/objects.html#filter
         # need to handle multiple versions
         # should use:
         #  - Marker to define start of itertion
         #  - MaxKeys to limit iteration
-        for obj_summary in self.s3_bucket.objects.filter(Prefix='%s/' % self.prefix):
-            prefix, object_id, _ = obj_summary.key.split('/')
-            print(object_id, type(object_id))
-            if object_id <= after:
+        marker = f"{self.prefix}/{after}" if after else ""
+        filtered_objects = self.s3_bucket.objects.filter(
+            Prefix='%s/' % self.prefix,
+            Marker=marker,
+            MaxKeys=limit  # note this will optimise the filter behaviuor, but does not terminate the loop,
+        )
+
+        # setup f-string arguments for object_ids
+        keylen=len(str(FIRST_DYNAMO_ID))
+        fill=" "
+        align='>'
+
+        for obj_summary in filtered_objects:
+            prefix, object_id, file_name = obj_summary.key.split('/')
+            seen += 1
+
+            # need special handling for File because these are expected to have two objects
+            if not file_name == 'object.json':
                 continue
-            count +=1
-            if count > limit:
-                break
+
+            if object_id == after:
+                # print(f"skip marker {object_id}")
+                continue
+
+            # for FileData types
+            #  respect the FIRST_DYNAMO_DB
+            if self.prefix == "FileData":
+                numeric_part = object_id.split(".")[0]
+                padded_id = f'{numeric_part:{fill}{align}{keylen}}'
+                if padded_id >= str(FIRST_DYNAMO_ID):
+                    # print(f"skip legacy {object_id}")
+                    continue
+
             raw_object = self._from_s3(object_id)
-            yield ObjectIdentityRecord(
+            latest_identity = ObjectIdentityRecord(
                 object_type = raw_object['clazz_name'],
                 object_id = object_id
             )
+            yield latest_identity
+            count +=1
+
+            if count >= limit:
+                break
+
+        print(f'looked at {seen} object_summaries; yielded {count} objects')
 
     @property
     def prefix(self):

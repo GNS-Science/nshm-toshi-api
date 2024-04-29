@@ -32,7 +32,7 @@ loggers:
     propagate: no
 
   pynamodb:
-    level: DEBUG
+    level: INFO
     handlers: [console_handler]
     propagate: no
 
