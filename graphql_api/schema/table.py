@@ -86,6 +86,10 @@ class Table(graphene.ObjectType):
         db_metrics.put_duration(__name__, 'Table.get_node', dt.utcnow() - t0)
         return res
 
+    @staticmethod
+    def get_object_store_handler() -> 'TableData':
+        return get_data_manager().table
+
 
 class CreateTable(relay.ClientIDMutation):
     class Input:

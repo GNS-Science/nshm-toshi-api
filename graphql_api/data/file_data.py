@@ -28,7 +28,9 @@ db_metrics = ServerlessMetricWriter(
 
 class FileData(BaseDynamoDBData):
     """
-    FileData provides the S3 interface forFile objects
+    FileData provides the storage for File objects.
+
+    File object have both a json metadata object, and a file object.
     """
 
     def update(self, id, updated_body):
@@ -38,7 +40,10 @@ class FileData(BaseDynamoDBData):
 
     def create(self, clazz_name, **kwargs):
         """
-        create the S3 representation if the File in S3. This is two files:
+        create a new File object in the storage layer. This is two files:
+
+        - The json metadata which, for Legacy objects may be stored in S3. Modern objects will be stored in DyanamoDB.
+        - a placeholder file object in S3, which should be replaced by the actual file conteent by the toshi client.
 
         Args:
          - clazz_name (String): the class name of schema object
@@ -51,8 +56,8 @@ class FileData(BaseDynamoDBData):
         data_key = "%s/%s/%s" % (self._prefix, new_instance.id, new_instance.file_name)
 
         t0 = dt.utcnow()
-        response2 = self._bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
-        parts = self._client.generate_presigned_post(
+        response2 = self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
+        parts = self.s3_client.generate_presigned_post(
             Bucket=self._bucket_name,
             Key=data_key,
             Fields={
@@ -111,21 +116,6 @@ class FileData(BaseDynamoDBData):
         )
         db_metrics.put_duration(__name__, 'get_presigned_url', dt.utcnow() - t0)
         return url
-
-    def get_all(self):
-        """
-        Returns:
-            list: a list containing all the objects materialised from the S3 bucket
-        """
-        t0 = dt.utcnow()
-        task_results = []
-        for obj_summary in self._bucket.objects.filter(Prefix='%s/' % self._prefix):
-            prefix, task_result_id, filename = obj_summary.key.split('/')
-            assert prefix == self._prefix
-            if filename == "object.json":
-                task_results.append(self.get_one(task_result_id))
-        db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
-        return task_results
 
     @staticmethod
     def from_json(jsondata):

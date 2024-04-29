@@ -6,6 +6,7 @@ import logging
 import os
 import random
 import traceback
+from collections import namedtuple
 from datetime import datetime as dt
 from importlib import import_module
 from io import BytesIO
@@ -16,7 +17,7 @@ import pynamodb.exceptions
 import requests.exceptions
 from botocore.exceptions import ClientError
 from graphene.relay import connection
-from graphql_relay.node.node import from_global_id
+from graphql_relay.node.node import from_global_id, to_global_id
 from pynamodb.connection.base import Connection
 from pynamodb.exceptions import DoesNotExist, PutError, TransactWriteError, VerboseClientError
 from pynamodb.transactions import TransactWrite
@@ -45,6 +46,9 @@ logger = logging.getLogger(__name__)
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
 
 
+ObjectIdentityRecord = namedtuple("ObjectIdentityRecord", "object_type, object_id")
+
+
 def append_uniq(size):
     uniq = ''.join(random.choice(_ALPHABET) for _ in range(5))
     return str(size) + uniq
@@ -60,19 +64,19 @@ class BaseData:
         client_args (dict): optional)arguments for the boto3 client
         db_manager (DataManager): reference to the singleton DataManager object
         """
-        args = client_args or {}
-        self._db_manager = db_manager
-        self._client = boto3.client('s3', **args)
-        self._bucket_name = S3_BUCKET_NAME
-        self._s3_conn = boto3.resource('s3')
-        self._bucket = self._s3_conn.Bucket(self._bucket_name, client=self._client)
+        self._aws_client_args = client_args or {}
         self._prefix = self.__class__.__name__
-        self._connection = Connection(region=REGION)
+        self._db_manager = db_manager
+        self._s3_conn = None
+        self._s3_client = None
+        self._s3_bucket = None
+        # self._connection = None
+        self._bucket_name = S3_BUCKET_NAME
 
-    def get_one_raw(self, _id):
+    def get_one_raw(self, _id: str):
         """
         Args:
-            file_id (string): the object id
+            _id: the object id
 
         Returns:
             File: the File object json
@@ -80,11 +84,11 @@ class BaseData:
         obj = self._read_object(_id)
         return obj
 
-    def get_one(self, _id):
+    def get_one(self, _id: str):
         """Summary
 
         Args:
-            _id (int): id for an object
+            _id: id for an object
 
         Raises:
             NotImplementedError: must override
@@ -103,7 +107,7 @@ class BaseData:
             clazz = None
 
         results = []
-        for obj_summary in self._bucket.objects.filter(Prefix='%s/' % self._prefix):
+        for obj_summary in self.s3_bucket.objects.filter(Prefix='%s/' % self._prefix):
             prefix, result_id, _ = obj_summary.key.split('/')
             assert prefix == self._prefix
             object = self.get_one(result_id)
@@ -112,15 +116,89 @@ class BaseData:
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
         return results
 
+    def get_all_s3_paginated(self, limit, after):
+        """legacy iterator"""
+        count, seen = 0, 0
+        after = after or ""
+        # TODO refine this, see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/bucket/objects.html#filter
+        # need to handle multiple versions
+        # should use:
+        #  - Marker to define start of itertion
+        #  - MaxKeys to limit iteration
+        marker = f"{self.prefix}/{after}" if after else ""
+        filtered_objects = self.s3_bucket.objects.filter(
+            Prefix='%s/' % self.prefix,
+            Marker=marker,
+            MaxKeys=limit,  # note this will optimise the filter behaviuor, but does not terminate the loop,
+        )
+
+        # setup f-string arguments for object_ids
+        keylen = len(str(FIRST_DYNAMO_ID))
+        fill = " "
+        align = '>'
+
+        for obj_summary in filtered_objects:
+            prefix, object_id, file_name = obj_summary.key.split('/')
+            seen += 1
+
+            # need special handling for File because these are expected to have two objects
+            if not file_name == 'object.json':
+                continue
+
+            if object_id == after:
+                # print(f"skip marker {object_id}")
+                continue
+
+            # for FileData types
+            #  respect the FIRST_DYNAMO_DB
+            if self.prefix == "FileData":
+                numeric_part = object_id.split(".")[0]
+                padded_id = f'{numeric_part:{fill}{align}{keylen}}'
+                if padded_id >= str(FIRST_DYNAMO_ID):
+                    # print(f"skip legacy {object_id}")
+                    continue
+
+            raw_object = self._from_s3(object_id)
+            latest_identity = ObjectIdentityRecord(object_type=raw_object['clazz_name'], object_id=object_id)
+            yield latest_identity
+            count += 1
+
+            if count >= limit:
+                break
+
+        print(f'looked at {seen} object_summaries; yielded {count} objects')
+
+    @property
+    def prefix(self):
+        return self._prefix
+
+    @property
+    def s3_client(self):
+        if not self._s3_client:
+            self._s3_client = boto3.client('s3', **self._aws_client_args)
+        return self._s3_client
+
+    @property
+    def s3_connection(self):
+        if not self._s3_conn:
+            self._s3_conn = boto3.resource('s3')
+            # self._connection = Connection(region=REGION)
+        return self._s3_conn
+
+    @property
+    def s3_bucket(self):
+        if not self._s3_bucket:
+            self._s3_bucket = self.s3_connection.Bucket(self._bucket_name, client=self.s3_client)
+        return self._s3_bucket
+
     def _from_s3(self, object_id):
         S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
         logger.info(f"get object from bucket {self._bucket_name}, key={S3_key})")
 
-        s3obj = self._s3_conn.Object(self._bucket_name, S3_key, client=self._client)
+        s3obj = self.s3_connection.Object(self._bucket_name, S3_key, client=self.s3_client)
         file_object = BytesIO()
         s3obj.download_fileobj(file_object)
         file_object.seek(0)
-
         return json.load(file_object)
 
     def get_all_in(self, _id_list):
@@ -272,3 +350,21 @@ class BaseDynamoDBData(BaseData):
 
         self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
         return clazz(next_id, **kwargs)
+
+    def get_all(self, object_type, limit, after):
+        """ """
+        t0 = dt.utcnow()
+        after = after or -1
+        # for dynamodb, respect FIRST_DYNAMO_ID
+        if after >= 0:
+            after = max(after, FIRST_DYNAMO_ID)
+
+        logger.info(f"get_all, {self._model} {self.prefix} {object_type}")
+        for object_meta in self._model.model_id_index.query(
+            object_type, self._model.object_id > str(after), limit=limit  # range condition
+        ):
+            yield ObjectIdentityRecord(object_meta.object_type, object_meta.object_id)
+
+        db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
+
+

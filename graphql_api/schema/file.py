@@ -74,6 +74,10 @@ class FileInterface(graphene.Interface):
 
         return res
 
+    @staticmethod
+    def get_object_store_handler() -> "FileData":
+        return get_data_manager().file
+
 
 class File(graphene.ObjectType):
     """A data file"""
@@ -89,6 +93,10 @@ class File(graphene.ObjectType):
         node = get_data_manager().file.get_one(_id)
         # db_metrics.put_duration(__name__, 'CreateFile.mutate' , dt.utcnow()-t0)
         return node
+
+    @staticmethod
+    def get_object_store_handler() -> "FileData":
+        return get_data_manager().file
 
 
 class FileConnection(relay.Connection):

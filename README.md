@@ -1,5 +1,6 @@
-# nshm-tosh-api
-Where all out tests and outputs are buried  - like so much old fashioned, tedious tosh.
+	# nshm-tosh-api
+Where NSHM experiments and outputs are captured (not so old fashioned, tosh).
+
 ## Getting started
 
 ```
@@ -13,6 +14,11 @@ sls dynamodb install
 
 poetry install
 ```
+
+## running `sls` (alias for `serverless` )
+
+NB to run the following examples, depending on local NPM configuration, it may be necessary to run `npx serverless` instead of `sls`.
+
 
 ## Smoketest
 ```
