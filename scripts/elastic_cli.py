@@ -36,7 +36,7 @@ connections.add_connection('default', es)
 
 log = logging.getLogger()
 logging.basicConfig(level=logging.WARN)
-logging.getLogger('elsaticsearch').setLevel(logging.INFO)
+logging.getLogger('elasticsearch').setLevel(logging.INFO)
 logging.getLogger('urllib3').setLevel(logging.INFO)
 logging.getLogger('botocore').setLevel(logging.INFO)
 logging.getLogger('gql.transport.requests').setLevel(logging.WARN)

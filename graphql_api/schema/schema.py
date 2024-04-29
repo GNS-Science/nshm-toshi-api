@@ -53,6 +53,7 @@ from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotio
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
 from .file import CreateFile, File, FileConnection
 from .file_relation import CreateFileRelation, FileRelation, FileRelationConnection
+from .get_datastore_handler import get_datastore_handler
 from .object_identities import (
     ObjectIdentitiesConnection,
     iterate_dynamodb_nodes,
@@ -100,15 +101,19 @@ class FileUnion(graphene.Union):
 class SearchResult(graphene.Union):
     class Meta:
         types = (
-            File,
-            RuptureGenerationTask,
-            StrongMotionStation,
-            SmsFile,
-            GeneralTask,
-            Table,
-            InversionSolution,
+            AggregateInversionSolution,
             AutomationTask,
+            File,
+            GeneralTask,
+            InversionSolution,
+            InversionSolutionNrml,
+            OpenquakeHazardConfig,
+            OpenquakeHazardSolution,
+            OpenquakeHazardTask,
+            RuptureGenerationTask,
             ScaledInversionSolution,
+            SmsFile,
+            StrongMotionStation,
             TimeDependentInversionSolution,
         )
 
@@ -134,6 +139,10 @@ class NodeFilter(graphene.ObjectType):
     result = relay.ConnectionField(SearchResultConnection)
 
 
+class ReindexResult(graphene.ObjectType):
+    ok = graphene.Boolean()
+
+
 class QueryRoot(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
 
@@ -145,6 +154,10 @@ class QueryRoot(graphene.ObjectType):
 
     node = relay.Node.Field()
     nodes = graphene.Field(NodeFilter, id_in=graphene.List(graphene.ID))
+
+    reindex = graphene.Field(
+        NodeFilter, id_in=graphene.List(graphene.ID), description="reindex objects with the Search (ES) service"
+    )
 
     search = graphene.Field(Search, search_term=graphene.String())
 
@@ -240,6 +253,22 @@ class QueryRoot(graphene.ObjectType):
         db_metrics.put_duration(__name__, 'resolve_nodes', dt.utcnow() - t0)
         # result =  = db_root.search_manager.search(kwargs.get('search_term'))
         return NodeFilter(ok=True, result=result)
+
+    @staticmethod
+    def resolve_reindex(root, info, id_in, **kwargs):
+        t0 = dt.utcnow()
+        result = []
+
+        for gid in id_in:
+            object_type, object_id = from_global_id(gid)
+            handler = get_datastore_handler(object_type)
+            es_key = f"{handler.prefix}_{object_id}"
+            body = handler.get_one_raw(object_id)
+            search_manager.index_document(es_key, body)
+
+        db_metrics.put_duration(__name__, 'resolve_reindex', dt.utcnow() - t0)
+        # result =  = db_root.search_manager.search(kwargs.get('search_term'))
+        return ReindexResult(ok=True)
 
 
 class MutationRoot(graphene.ObjectType):
