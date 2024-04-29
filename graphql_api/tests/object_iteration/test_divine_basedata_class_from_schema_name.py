@@ -53,37 +53,32 @@ from graphql_api.schema.get_datastore_handler import get_datastore_handler, get_
 # ['Node']
 
 
-CLASS_MAPPINGS =     [
-        ('File', FileData),
-        ('Table', TableData),
-        ('StrongMotionStation', ThingData),
-        ('GeneralTask', ThingData),
-        ('RuptureGenerationTask', ThingData),
-        ('SmsFile', FileData),
-        ('InversionSolution', FileData),
-        ('AggregateInversionSolution', FileData),
-        ('TimeDependentInversionSolution', FileData),
-        ('ScaledInversionSolution', FileData),
-        ('InversionSolutionNrml', FileData),
-        ('OpenquakeHazardConfig', ThingData),
-        ('OpenquakeHazardSolution', ThingData),
-        ('OpenquakeHazardTask', ThingData),
-        ('InversionSolution', FileData),
-    ]
+CLASS_MAPPINGS = [
+    ('File', FileData),
+    ('Table', TableData),
+    ('StrongMotionStation', ThingData),
+    ('GeneralTask', ThingData),
+    ('RuptureGenerationTask', ThingData),
+    ('SmsFile', FileData),
+    ('InversionSolution', FileData),
+    ('AggregateInversionSolution', FileData),
+    ('TimeDependentInversionSolution', FileData),
+    ('ScaledInversionSolution', FileData),
+    ('InversionSolutionNrml', FileData),
+    ('OpenquakeHazardConfig', ThingData),
+    ('OpenquakeHazardSolution', ThingData),
+    ('OpenquakeHazardTask', ThingData),
+    ('InversionSolution', FileData),
+]
 
-@pytest.mark.parametrize(
-    'classname, expected_dataclass_instance',
-    CLASS_MAPPINGS
-)
+
+@pytest.mark.parametrize('classname, expected_dataclass_instance', CLASS_MAPPINGS)
 def test_resolve_clazzname_datastore_type(classname, expected_dataclass_instance):
     handler = get_datastore_handler(classname)
     assert isinstance(handler, expected_dataclass_instance)
 
 
-@pytest.mark.parametrize(
-    'classname, expected_class',
-    CLASS_MAPPINGS
-)
+@pytest.mark.parametrize('classname, expected_class', CLASS_MAPPINGS)
 def test_resolve_clazzname_datastore_class(classname, expected_class):
     clazz = get_datastore_handler_class(classname)
     assert type(clazz) is type(expected_class)

@@ -57,5 +57,3 @@ class DataManager:
     @property
     def datastores(self):
         return self._datastores
-
-

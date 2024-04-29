@@ -1,5 +1,6 @@
 from graphql_api.schema import root_schema
 
+
 def test_iterate_schema_types():
     print(dir(root_schema))
     for name, _type in root_schema.get_type_map().items():

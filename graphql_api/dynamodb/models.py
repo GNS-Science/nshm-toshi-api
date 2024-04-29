@@ -5,9 +5,6 @@ from pynamodb.models import Model
 from graphql_api.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, TESTING
 
 
-
-
-
 class ToshiTableObject(Model):
     class Meta:
         billing_mode = 'PAY_PER_REQUEST'
@@ -19,6 +16,7 @@ class ToshiTableObject(Model):
     class TableIdentityIndex(GlobalSecondaryIndex):
         class Meta:
             projection = KeysOnlyProjection()
+
         object_type = UnicodeAttribute(hash_key=True)
         object_id = UnicodeAttribute(range_key=True)
 
@@ -27,7 +25,6 @@ class ToshiTableObject(Model):
     object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
     model_id_index = TableIdentityIndex()
-
 
 
 class ToshiFileObject(Model):
@@ -41,6 +38,7 @@ class ToshiFileObject(Model):
     class FileIdentityIndex(GlobalSecondaryIndex):
         class Meta:
             projection = KeysOnlyProjection()
+
         object_type = UnicodeAttribute(hash_key=True)
         object_id = UnicodeAttribute(range_key=True)
 
@@ -49,9 +47,6 @@ class ToshiFileObject(Model):
     object_content = JSONAttribute()  # the json string
     version = VersionAttribute()
     model_id_index = FileIdentityIndex()
-
-
-
 
 
 class ToshiThingObject(Model):
@@ -65,6 +60,7 @@ class ToshiThingObject(Model):
     class ThingIdentityIndex(GlobalSecondaryIndex):
         class Meta:
             projection = KeysOnlyProjection()
+
         object_type = UnicodeAttribute(hash_key=True)
         object_id = UnicodeAttribute(range_key=True)
 

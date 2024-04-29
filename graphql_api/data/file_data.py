@@ -117,7 +117,6 @@ class FileData(BaseDynamoDBData):
         db_metrics.put_duration(__name__, 'get_presigned_url', dt.utcnow() - t0)
         return url
 
-
     @staticmethod
     def from_json(jsondata):
         logger.debug("from_json: %s" % str(jsondata))

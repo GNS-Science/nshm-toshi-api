@@ -1,16 +1,14 @@
 '''
 
 '''
+import logging
 import os
 from datetime import datetime as dt
 
 import boto3
 import graphene
-import logging
-
 from flask import request
 from graphene import relay
-import graphene
 from graphql_relay import from_global_id, to_global_id
 from requests_aws4auth import AWS4Auth
 
@@ -55,10 +53,15 @@ from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotio
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
 from .file import CreateFile, File, FileConnection
 from .file_relation import CreateFileRelation, FileRelation, FileRelationConnection
+from .object_identities import (
+    ObjectIdentitiesConnection,
+    iterate_dynamodb_nodes,
+    iterate_legacy_s3_nodes,
+    paginated_object_identities,
+)
 from .search_manager import SearchManager
 from .table import CreateTable, Table
 from .task_task_relation import CreateTaskTaskRelation
-from .object_identities import ObjectIdentitiesConnection, paginated_object_identities, iterate_dynamodb_nodes, iterate_legacy_s3_nodes
 
 log = logging.getLogger(__name__)
 
@@ -131,7 +134,6 @@ class NodeFilter(graphene.ObjectType):
     result = relay.ConnectionField(SearchResultConnection)
 
 
-
 class QueryRoot(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
 
@@ -146,12 +148,13 @@ class QueryRoot(graphene.ObjectType):
 
     search = graphene.Field(Search, search_term=graphene.String())
 
-    object_identities = graphene.ConnectionField(ObjectIdentitiesConnection,
-        object_type=graphene.Argument(graphene.String))
+    object_identities = graphene.ConnectionField(
+        ObjectIdentitiesConnection, object_type=graphene.Argument(graphene.String)
+    )
 
-    legacy_object_identities = graphene.ConnectionField(ObjectIdentitiesConnection,
-        store_type=graphene.Argument(graphene.String))
-
+    legacy_object_identities = graphene.ConnectionField(
+        ObjectIdentitiesConnection, store_type=graphene.Argument(graphene.String)
+    )
 
     strong_motion_station = graphene.Field(StrongMotionStation, id=graphene.ID(required=True))
     strong_motion_stations = relay.ConnectionField(
@@ -193,7 +196,6 @@ class QueryRoot(graphene.ObjectType):
         db_metrics.put_duration(__name__, 'resolve_files', dt.utcnow() - t0)
         return files
 
-
     @staticmethod
     def resolve_search(root, info, **kwargs):
         t0 = dt.utcnow()
@@ -205,7 +207,7 @@ class QueryRoot(graphene.ObjectType):
     def resolve_object_identities(root, info, object_type, **kwargs):
         log.info(f'resolve_object_identities args: {kwargs}')
         t0 = dt.utcnow()
-        #search_result = db_root.search_manager.search(kwargs.get('search_term'))
+        # search_result = db_root.search_manager.search(kwargs.get('search_term'))
         # db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
         nodes = iterate_dynamodb_nodes(object_type, **kwargs)
         return paginated_object_identities(nodes, **kwargs)
@@ -215,12 +217,10 @@ class QueryRoot(graphene.ObjectType):
         assert store_type in ['File', 'Thing', 'Table']
         log.info(f'resolve_object_identities args: {kwargs}')
         t0 = dt.utcnow()
-        #search_result = db_root.search_manager.search(kwargs.get('search_term'))
+        # search_result = db_root.search_manager.search(kwargs.get('search_term'))
         # db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
         nodes = iterate_legacy_s3_nodes(store_type, **kwargs)
         return paginated_object_identities(nodes, **kwargs)
-
-
 
     @staticmethod
     def resolve_nodes(root, info, id_in, **kwargs):

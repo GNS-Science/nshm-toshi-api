@@ -6,10 +6,10 @@ import logging
 import os
 import random
 import traceback
+from collections import namedtuple
 from datetime import datetime as dt
 from importlib import import_module
 from io import BytesIO
-from collections import namedtuple
 
 import backoff
 import boto3
@@ -46,7 +46,6 @@ logger = logging.getLogger(__name__)
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")
 
 
-
 ObjectIdentityRecord = namedtuple("ObjectIdentityRecord", "object_type, object_id")
 
 
@@ -74,7 +73,7 @@ class BaseData:
         # self._connection = None
         self._bucket_name = S3_BUCKET_NAME
 
-    def get_one_raw(self, _id:str):
+    def get_one_raw(self, _id: str):
         """
         Args:
             _id: the object id
@@ -85,7 +84,7 @@ class BaseData:
         obj = self._read_object(_id)
         return obj
 
-    def get_one(self, _id:str):
+    def get_one(self, _id: str):
         """Summary
 
         Args:
@@ -117,7 +116,6 @@ class BaseData:
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
         return results
 
-
     def get_all_s3_paginated(self, limit, after):
         """legacy iterator"""
         count, seen = 0, 0
@@ -131,13 +129,13 @@ class BaseData:
         filtered_objects = self.s3_bucket.objects.filter(
             Prefix='%s/' % self.prefix,
             Marker=marker,
-            MaxKeys=limit  # note this will optimise the filter behaviuor, but does not terminate the loop,
+            MaxKeys=limit,  # note this will optimise the filter behaviuor, but does not terminate the loop,
         )
 
         # setup f-string arguments for object_ids
-        keylen=len(str(FIRST_DYNAMO_ID))
-        fill=" "
-        align='>'
+        keylen = len(str(FIRST_DYNAMO_ID))
+        fill = " "
+        align = '>'
 
         for obj_summary in filtered_objects:
             prefix, object_id, file_name = obj_summary.key.split('/')
@@ -161,12 +159,9 @@ class BaseData:
                     continue
 
             raw_object = self._from_s3(object_id)
-            latest_identity = ObjectIdentityRecord(
-                object_type = raw_object['clazz_name'],
-                object_id = object_id
-            )
+            latest_identity = ObjectIdentityRecord(object_type=raw_object['clazz_name'], object_id=object_id)
             yield latest_identity
-            count +=1
+            count += 1
 
             if count >= limit:
                 break
@@ -356,10 +351,8 @@ class BaseDynamoDBData(BaseData):
         self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
         return clazz(next_id, **kwargs)
 
-
     def get_all(self, object_type, limit, after):
-        """
-        """
+        """ """
         t0 = dt.utcnow()
         after = after or -1
         # for dynamodb, respect FIRST_DYNAMO_ID
@@ -409,4 +402,3 @@ class BaseDynamoDBData(BaseData):
         Item count: 7464421 (includes pre dynamodDB objects)
         Bucket size: 7.7 TB
         """
-
