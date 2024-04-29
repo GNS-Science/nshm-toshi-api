@@ -112,7 +112,7 @@ def cli_OHS(filter, list_ids, verbose):
             click.echo(f'{hit}, {hit.created}, {hit.clazz_name}')
 
 
-@main.command(name='n_is')
+@main.command(name='nis')
 @click.option(
     '-f', '--flip', is_flag=True, help='flip 2nd term'
 )
@@ -138,6 +138,9 @@ def cli_nis(flip, clazz, task_type, list_ids, verbose):
     # s = s.source(excludes=["arguments.*", "files.*"])    # "meta.*",
     s = s.extra(track_total_hits=True)
     #for hit in s.execute():
+
+    hit = None
+
     for hit in s.scan():
         tt = hit.to_dict().get('task_type')
         res = f"{to_global_id(hit.clazz_name, hit.id)}\t{hit.created}\t{tt}\t{hit.result}"
@@ -145,8 +148,9 @@ def cli_nis(flip, clazz, task_type, list_ids, verbose):
             res += f"\t{hit.duration/3600}"
         click.echo(res)
 
+    # if hit is None
 
-    print( hit.to_dict())
+    # print( hit.to_dict())
 
     if list_ids and verbose:
         response = s.execute()

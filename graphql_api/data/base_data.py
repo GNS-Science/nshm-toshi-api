@@ -366,39 +366,5 @@ class BaseDynamoDBData(BaseData):
             yield ObjectIdentityRecord(object_meta.object_type, object_meta.object_id)
 
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
-        # task_results = []
 
-        # either:
-        # - a complete object projection, for statsToshiFileObject-PROD
-        """
-        ## Statistics at 2024/04/12
 
-        ### ToshiIdentity-PROD
-
-        Item count: 3
-        Table size: 236 bytes
-        Average item size: 78.67 bytes
-
-        ###: ToshiFileObject-PROD
-
-        Item count: 6,798,698
-        Table size:  2.3 gigabytes
-        Average item size: 343.55 bytes
-
-        ### ToshiThingObject-PROD:
-
-        Item count: 6,826,637
-        Table size: 16 gigabytes
-        Average item size 2,339.86 bytes
-
-        ## ToshiTableObject-PROD
-
-        Item count: 2,932
-        Table size: 43.1 megabytes
-        Average item size: 14,696.82 bytes
-
-        ## S3 stats
-
-        Item count: 7464421 (includes pre dynamodDB objects)
-        Bucket size: 7.7 TB
-        """

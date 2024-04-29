@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{include = "graphql_api"}]
 
 [tool.poetry.scripts]
-search = 'scripts.elastic_cli:main'
+elastic_cli = 'scripts.elastic_cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.10"
