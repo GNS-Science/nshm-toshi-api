@@ -64,6 +64,7 @@ def test_iterate_object_identities_resolver(graphene_client, mock_dbdata):
             object_identities(
                 object_type: "GeneralTask"
                 first: 3
+                after: "T2JqZWN0SWRlbnRpdGllc0Nvbm5lY3Rpb25DdXJzb3I6MTAwMDYz"
             )
             {
                 pageInfo {

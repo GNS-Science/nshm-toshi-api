@@ -31,9 +31,12 @@ def iterate_dynamodb_nodes(object_type, **kwargs):
     # for object_type in get_datastore_handler_names():
     limit = kwargs.get('first', 5)  # how many to fetch
     after = kwargs.get('after')  # cursor of last page, or none
+
+    object_key = from_global_id(after)[1] if after else -1
+
     datastore_handler = get_datastore_handler(object_type)
     log.info(f"datastore_handler: {datastore_handler}")
-    for itm in datastore_handler.get_all(object_type, limit=limit, after=after):
+    for itm in datastore_handler.get_all(object_type, limit=limit, after=object_key):
         yield ObjectIdentity(
             object_type=itm.object_type, object_id=itm.object_id, node_id=to_global_id(itm.object_type, itm.object_id)
         )
@@ -57,7 +60,7 @@ def paginated_object_identities(node_iterable, **kwargs) -> ObjectIdentitiesConn
     first = kwargs.get('first', 5)  # how many to fetch
     after = kwargs.get('after')  # cursor of last page, or none
 
-    cursor_offset = from_global_id(after)[1] if after else -1
+    cursor_offset = from_global_id(after)[1] if after else "-1"
     log.info(f'paginated_object_identities first={first}, after={after} cursor_offset: {cursor_offset}')
 
     # based on https://gist.github.com/AndrewIngram/b1a6e66ce92d2d0befd2f2f65eb62ca5#file-pagination-py-L152

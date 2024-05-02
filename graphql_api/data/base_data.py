@@ -351,17 +351,12 @@ class BaseDynamoDBData(BaseData):
         self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
         return clazz(next_id, **kwargs)
 
-    def get_all(self, object_type, limit, after):
-        """ """
+    def get_all(self, object_type, limit:int, after:str):
         t0 = dt.utcnow()
-        after = after or -1
-        # for dynamodb, respect FIRST_DYNAMO_ID
-        if after >= 0:
-            after = max(after, FIRST_DYNAMO_ID)
-
-        logger.info(f"get_all, {self._model} {self.prefix} {object_type}")
+        after = after or "-1"
+        logger.info(f"get_all, {self._model} {self.prefix} {object_type} after {after}")
         for object_meta in self._model.model_id_index.query(
-            object_type, self._model.object_id > str(after), limit=limit  # range condition
+            object_type, self._model.object_id > after, limit=limit  # range condition
         ):
             yield ObjectIdentityRecord(object_meta.object_type, object_meta.object_id)
 
