@@ -32,8 +32,9 @@ def iterate_dynamodb_nodes(object_type, **kwargs):
     limit = kwargs.get('first', 5)  # how many to fetch
     after = kwargs.get('after')  # cursor of last page, or none
     datastore_handler = get_datastore_handler(object_type)
+    cursor_offset = from_global_id(after)[1] if after else "-1"
     log.info(f"datastore_handler: {datastore_handler}")
-    for itm in datastore_handler.get_all(object_type, limit=limit, after=after):
+    for itm in datastore_handler.get_all(object_type, limit=limit, after=cursor_offset):
         yield ObjectIdentity(
             object_type=itm.object_type, object_id=itm.object_id, node_id=to_global_id(itm.object_type, itm.object_id)
         )
