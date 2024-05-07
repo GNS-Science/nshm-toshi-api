@@ -8,29 +8,37 @@ The core class RuptureGenerationTask implements the `graphql_api.schema.task.Tas
 
 """
 
-import graphene
 import datetime as dt
 import logging
+from datetime import datetime as dt
 
-from graphene import relay
-from graphene import Enum
+import graphene
+from graphene import Enum, relay
 
+from graphql_api.cloudwatch import ServerlessMetricWriter
+from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
+from graphql_api.data import get_data_manager
 from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
-from graphql_api.data import get_data_manager
+
+from .automation_task_base import (
+    AutomationTaskBase,
+    AutomationTaskInput,
+    AutomationTaskInterface,
+    AutomationTaskUpdateInput,
+)
 from .common import KeyValuePair, KeyValuePairInput
-from .automation_task_base import AutomationTaskInterface, AutomationTaskBase, AutomationTaskInput, AutomationTaskUpdateInput
 
-from datetime import datetime as dt
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
-from graphql_api.cloudwatch import ServerlessMetricWriter
-
-db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION)
+db_metrics = ServerlessMetricWriter(
+    lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
+)
 
 logger = logging.getLogger(__name__)
 
+
 class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
     """An RuptureGenerationTask in the NSHM process"""
+
     class Meta:
         interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
@@ -38,8 +46,10 @@ class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
     def from_json(jsondata):
         return RuptureGenerationTask(**AutomationTaskBase.from_json(jsondata))
 
+
 class RuptureGenerationTaskConnection(relay.Connection):
     """A list of RuptureGenerationTask items"""
+
     class Meta:
         node = RuptureGenerationTask
 
@@ -61,8 +71,9 @@ class CreateRuptureGenerationTask(graphene.Mutation):
         t0 = dt.utcnow()
         print("payload: ", input)
         task_result = get_data_manager().thing.create('RuptureGenerationTask', **input)
-        db_metrics.put_duration(__name__, 'CreateRuptureGenerationTask.mutate_and_get_payload' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, 'CreateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
         return CreateRuptureGenerationTask(task_result=task_result)
+
 
 class UpdateRuptureGenerationTask(graphene.Mutation):
     class Arguments:
@@ -76,5 +87,5 @@ class UpdateRuptureGenerationTask(graphene.Mutation):
         print("mutate: ", input)
         thing_id = input.pop('task_id')
         task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **input)
-        db_metrics.put_duration(__name__, 'UpdateRuptureGenerationTask.mutate_and_get_payload' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, 'UpdateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
         return UpdateRuptureGenerationTask(task_result=task_result)

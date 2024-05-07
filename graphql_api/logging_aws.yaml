@@ -27,7 +27,7 @@ loggers:
     propagate: no
 
   werkzeug:
-    level: INFO
+    level: WARNING
     handlers: [console_handler]
     propagate: no
 
@@ -47,12 +47,17 @@ loggers:
     propagate: no
 
   graphql_api:
+    level: INFO
+    handlers: [console_handler]
+    propagate: no
+
+  graphql_api.data:
     level: DEBUG
     handlers: [console_handler]
     propagate: no
 
   graphql_api.schema.search_manager:
-    level: DEBUG
+    level: INFO
     handlers: [console_handler]
     propagate: no
 

@@ -35,6 +35,7 @@ custom:
     slimPatterns:
       - '**/*.egg-info*'
     noDeploy:
+      - boto3
       - botocore
 
   #serverless-s3-local settings
@@ -92,7 +93,7 @@ custom:
 
 provider:
   name: aws
-  runtime: python3.9
+  runtime: python3.10
   stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
   environment:
@@ -127,6 +128,7 @@ provider:
     - Effect: Allow
       Action:
          - "dynamodb:Scan"
+         - "dynamodb:Query"
          - "dynamodb:DescribeTable"
          - "dynamodb:CreateTable"
          - "dynamodb:GetItem"

@@ -11,55 +11,56 @@ Setup:
 now python3 smoketests.py
 """
 
-from gql import gql, Client
-from gql.transport.requests import RequestsHTTPTransport
-import time
+import os
 import random
+import time
+
+from gql import Client, gql
+from gql.transport.requests import RequestsHTTPTransport
+
 # from graphql_api.dynamodb.models import drop_tables
 
-import os
 
 api_url = os.getenv('TOSHI_API_URL', "http://127.0.0.1:5000/graphql")
 auth_token = os.getenv('TOSHI_API_KEY', "")
 
-class SmokeTest():
 
-  def __init__(self, query, expected, query_fragment = None):
-    self.query = query
-    self.expected = expected
-    self.query_fragment = query_fragment
+class SmokeTest:
+    def __init__(self, query, expected, query_fragment=None):
+        self.query = query
+        self.expected = expected
+        self.query_fragment = query_fragment
 
-    headers = {"Authorization": "Bearer %s" % auth_token}
-    headers = {"x-api-key": auth_token}
-    transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
+        headers = {"Authorization": "Bearer %s" % auth_token}
+        headers = {"x-api-key": auth_token}
+        transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
 
-    self._client = Client(transport=transport,
-            fetch_schema_from_transport=True)
+        self._client = Client(transport=transport, fetch_schema_from_transport=True)
 
-  def execute(self):
+    def execute(self):
+        qry = self.query
+        if self.query_fragment:
+            qry = self.query_fragment + '\n\n' + self.query
 
-    qry = self.query
-    if self.query_fragment:
-        qry = self.query_fragment + '\n\n' + self.query
+        response = 'Didnt run'
 
-    response = 'Didnt run'
-    
-    try:
-      gql_query = gql(qry)
-      self._client.validate(gql_query)
-      response = self._client.execute(gql_query)
-    except Exception as e:
-      print(e)
+        try:
+            gql_query = gql(qry)
+            self._client.validate(gql_query)
+            response = self._client.execute(gql_query)
+        except Exception as e:
+            print(e)
 
-    # print(response)
+        # print(response)
 
-    if not response == self.expected:
-        print("query", qry)
-        print()
-        print("expected", self.expected)
-        print()
-        print('response', response)
-        assert 0
+        if not response == self.expected:
+            print("query", qry)
+            print()
+            print("expected", self.expected)
+            print()
+            print('response', response)
+            assert 0
+
 
 test_setup = [
     '''mutation new_sms {
@@ -244,7 +245,8 @@ test_setup = [
           }
         }
     }
-    ''']
+    ''',
+]
 
 search_fragments = '''
 fragment sr on SearchResult {
@@ -400,7 +402,8 @@ fragment sr on SearchResult {
 '''
 
 smoketests = [
-  SmokeTest(query = '''query search_sms {
+    SmokeTest(
+        query='''query search_sms {
       search(
         search_term: "site_class_basis:SPT&size=20&sort=created:asc"
       ) {
@@ -413,13 +416,41 @@ smoketests = [
         }
       }
     }''',
-    expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'StrongMotionStation',
-      'id': 'U3Ryb25nTW90aW9uU3RhdGlvbjow', 'created': '2020-10-10T23:00:00+00:00', 'site_code': 'ABCD',
-      'site_class': 'B', 'site_class_basis': 'SPT', 'liquefiable': None, 'Vs30_mean': [200.0], 'files': {'edges': [
-      {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'file': {'file_name': 'my_sms_File2.txt', 'file_size': 2000}}}]}}}]}}},
-    query_fragment = search_fragments),
-
-  SmokeTest(query = '''query search_rupture {
+        expected={
+            'search': {
+                'search_result': {
+                    'edges': [
+                        {
+                            'node': {
+                                '__typename': 'StrongMotionStation',
+                                'id': 'U3Ryb25nTW90aW9uU3RhdGlvbjow',
+                                'created': '2020-10-10T23:00:00+00:00',
+                                'site_code': 'ABCD',
+                                'site_class': 'B',
+                                'site_class_basis': 'SPT',
+                                'liquefiable': None,
+                                'Vs30_mean': [200.0],
+                                'files': {
+                                    'edges': [
+                                        {
+                                            'node': {
+                                                '__typename': 'FileRelation',
+                                                'role': 'UNDEFINED',
+                                                'file': {'file_name': 'my_sms_File2.txt', 'file_size': 2000},
+                                            }
+                                        }
+                                    ]
+                                },
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        query_fragment=search_fragments,
+    ),
+    SmokeTest(
+        query='''query search_rupture {
       search(
         search_term: "result:SUCCESS"
         #search_term: "file_name: myfile*"
@@ -434,13 +465,42 @@ smoketests = [
         }
       }
     }''',
-    expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'RuptureGenerationTask',
-      'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'result': 'SUCCESS', 'state': 'DONE', 'args': None,
-      'files': {'edges': [
-      {'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'id': 'RmlsZTow', 'file_name': 'myfile2.txt', 'file_size': 2000}}}]}}}]}}},
-    query_fragment = search_fragments),
-
-  SmokeTest(query = '''query search_file {
+        expected={
+            'search': {
+                'search_result': {
+                    'edges': [
+                        {
+                            'node': {
+                                '__typename': 'RuptureGenerationTask',
+                                'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
+                                'result': 'SUCCESS',
+                                'state': 'DONE',
+                                'args': None,
+                                'files': {
+                                    'edges': [
+                                        {
+                                            'node': {
+                                                '__typename': 'FileRelation',
+                                                'role': 'WRITE',
+                                                'file': {
+                                                    'id': 'RmlsZTow',
+                                                    'file_name': 'myfile2.txt',
+                                                    'file_size': 2000,
+                                                },
+                                            }
+                                        }
+                                    ]
+                                },
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        query_fragment=search_fragments,
+    ),
+    SmokeTest(
+        query='''query search_file {
       search(
         search_term: "file_name:my_sms*"
       ) {
@@ -453,13 +513,44 @@ smoketests = [
         }
       }
     }''',
-    expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'SmsFile',
-      'id': 'U21zRmlsZTox', 'file_name': 'my_sms_File2.txt', 'file_type': 'CPT', 'relations': {'edges': [
-      {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'thing': {'__typename': 'StrongMotionStation', 'site_code': 'ABCD'}}},
-      {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'thing': {'__typename': 'GeneralTask'}}}]}}}]}}},
-    query_fragment = search_fragments),
-
-  SmokeTest(query = '''query search_general_task {
+        expected={
+            'search': {
+                'search_result': {
+                    'edges': [
+                        {
+                            'node': {
+                                '__typename': 'SmsFile',
+                                'id': 'U21zRmlsZTox',
+                                'file_name': 'my_sms_File2.txt',
+                                'file_type': 'CPT',
+                                'relations': {
+                                    'edges': [
+                                        {
+                                            'node': {
+                                                '__typename': 'FileRelation',
+                                                'role': 'UNDEFINED',
+                                                'thing': {'__typename': 'StrongMotionStation', 'site_code': 'ABCD'},
+                                            }
+                                        },
+                                        {
+                                            'node': {
+                                                '__typename': 'FileRelation',
+                                                'role': 'UNDEFINED',
+                                                'thing': {'__typename': 'GeneralTask'},
+                                            }
+                                        },
+                                    ]
+                                },
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        query_fragment=search_fragments,
+    ),
+    SmokeTest(
+        query='''query search_general_task {
       search(
         search_term: "agent_name:chrisbc"
       ) {
@@ -472,17 +563,73 @@ smoketests = [
         }
       }
     }''',
-    expected = {'search': {'search_result': {'edges': [{'node': {'__typename': 'GeneralTask',
-    'id': "R2VuZXJhbFRhc2s6Mg==", 'created': '2020-10-10T23:00:00+00:00', 'updated': None, 'title': 'My First Manual task',
-    'description': '##Some notes go here', 'agent_name': 'chrisbc',
-    'children': {'edges': [
-      {'node': {'child': {'__typename': 'RuptureGenerationTask', 'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'state': 'DONE', 'result': 'SUCCESS', 'created': '2020-10-10T23:00:00+00:00'}}}]},
-    'files': {'edges': [
-      {'node': {'__typename': 'FileRelation', 'role': 'READ', 'file': {'__typename': 'File', 'id': 'RmlsZTow', 'file_name': 'myfile2.txt', 'file_size': 2000}}},
-      {'node': {'__typename': 'FileRelation', 'role': 'UNDEFINED', 'file': {'__typename': 'SmsFile', 'id': 'U21zRmlsZTox', 'file_name': 'my_sms_File2.txt', 'file_size': 2000, 'file_type': 'CPT'}}}]}}}]}}},
-    query_fragment = search_fragments),
-
- SmokeTest(query = '''query get_file {
+        expected={
+            'search': {
+                'search_result': {
+                    'edges': [
+                        {
+                            'node': {
+                                '__typename': 'GeneralTask',
+                                'id': "R2VuZXJhbFRhc2s6Mg==",
+                                'created': '2020-10-10T23:00:00+00:00',
+                                'updated': None,
+                                'title': 'My First Manual task',
+                                'description': '##Some notes go here',
+                                'agent_name': 'chrisbc',
+                                'children': {
+                                    'edges': [
+                                        {
+                                            'node': {
+                                                'child': {
+                                                    '__typename': 'RuptureGenerationTask',
+                                                    'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
+                                                    'state': 'DONE',
+                                                    'result': 'SUCCESS',
+                                                    'created': '2020-10-10T23:00:00+00:00',
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                'files': {
+                                    'edges': [
+                                        {
+                                            'node': {
+                                                '__typename': 'FileRelation',
+                                                'role': 'READ',
+                                                'file': {
+                                                    '__typename': 'File',
+                                                    'id': 'RmlsZTow',
+                                                    'file_name': 'myfile2.txt',
+                                                    'file_size': 2000,
+                                                },
+                                            }
+                                        },
+                                        {
+                                            'node': {
+                                                '__typename': 'FileRelation',
+                                                'role': 'UNDEFINED',
+                                                'file': {
+                                                    '__typename': 'SmsFile',
+                                                    'id': 'U21zRmlsZTox',
+                                                    'file_name': 'my_sms_File2.txt',
+                                                    'file_size': 2000,
+                                                    'file_type': 'CPT',
+                                                },
+                                            }
+                                        },
+                                    ]
+                                },
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        query_fragment=search_fragments,
+    ),
+    SmokeTest(
+        query='''query get_file {
       node(id: "RmlsZTow") {
         ... on File {
           file_name
@@ -506,14 +653,29 @@ smoketests = [
         }
       }
     }''',
-    expected = {'node': {'file_name': 'myfile2.txt', 'file_size': 2000,
-      'relations': {'edges': [
-        {'node': {'role': 'WRITE', 'thing': {'__typename': 'RuptureGenerationTask', 'created': '2020-10-10T23:00:00+00:00'}}},
-        {'node': {'role': 'READ', 'thing': {'__typename': 'GeneralTask'}}}]}}}
-
+        expected={
+            'node': {
+                'file_name': 'myfile2.txt',
+                'file_size': 2000,
+                'relations': {
+                    'edges': [
+                        {
+                            'node': {
+                                'role': 'WRITE',
+                                'thing': {
+                                    '__typename': 'RuptureGenerationTask',
+                                    'created': '2020-10-10T23:00:00+00:00',
+                                },
+                            }
+                        },
+                        {'node': {'role': 'READ', 'thing': {'__typename': 'GeneralTask'}}},
+                    ]
+                },
+            }
+        },
     ),
-
- SmokeTest(query = '''query get_task {
+    SmokeTest(
+        query='''query get_task {
       node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=") {
           __typename
         ... on RuptureGenerationTask {
@@ -555,14 +717,29 @@ smoketests = [
         }
       }
     }''',
-    expected = {'node': {'__typename': 'RuptureGenerationTask', 'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=', 'created': '2020-10-10T23:00:00+00:00',
-      'duration': None, 'state': 'DONE', 'result': 'SUCCESS',
-        'parents': {'edges': [
-          {'node': {'parent': {'title': 'My First Manual task', 'description': '##Some notes go here'}}}]},
-        'files': {'edges': [{'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'file_name': 'myfile2.txt'}}}]}}}
+        expected={
+            'node': {
+                '__typename': 'RuptureGenerationTask',
+                'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
+                'created': '2020-10-10T23:00:00+00:00',
+                'duration': None,
+                'state': 'DONE',
+                'result': 'SUCCESS',
+                'parents': {
+                    'edges': [
+                        {'node': {'parent': {'title': 'My First Manual task', 'description': '##Some notes go here'}}}
+                    ]
+                },
+                'files': {
+                    'edges': [
+                        {'node': {'__typename': 'FileRelation', 'role': 'WRITE', 'file': {'file_name': 'myfile2.txt'}}}
+                    ]
+                },
+            }
+        },
     ),
-
- SmokeTest(query = '''query get_node {
+    SmokeTest(
+        query='''query get_node {
       node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=")
       {
         __typename
@@ -575,10 +752,17 @@ smoketests = [
       }
     }
     ''',
-    expected = {'node': {'__typename': 'RuptureGenerationTask', 'state': 'DONE', 'created': '2020-10-10T23:00:00+00:00', 'result': 'SUCCESS'}}
+        expected={
+            'node': {
+                '__typename': 'RuptureGenerationTask',
+                'state': 'DONE',
+                'created': '2020-10-10T23:00:00+00:00',
+                'result': 'SUCCESS',
+            }
+        },
     ),
-
-  SmokeTest(query = '''query search_automation_task {
+    SmokeTest(
+        query='''query search_automation_task {
       search(
         search_term: "task_type:inversion"
       ) {
@@ -591,26 +775,27 @@ smoketests = [
         }
       }
     }''',
-    expected = {"search": {
-      "search_result": {
-        "edges": [
-          {
-            "node": {
-              "__typename": "AutomationTask",
-              "id": "QXV0b21hdGlvblRhc2s6Mw==",
-              "created": "2020-10-10T23:00:00+00:00",
-              "task_type": "INVERSION",
-              "args_at": [
-                { "k":"max_jump_distance", "v": "55.5" }
-              ]
+        expected={
+            "search": {
+                "search_result": {
+                    "edges": [
+                        {
+                            "node": {
+                                "__typename": "AutomationTask",
+                                "id": "QXV0b21hdGlvblRhc2s6Mw==",
+                                "created": "2020-10-10T23:00:00+00:00",
+                                "task_type": "INVERSION",
+                                "args_at": [{"k": "max_jump_distance", "v": "55.5"}],
+                            }
+                        }
+                    ]
+                }
             }
-          }
-        ]
-      }
-    }},
-    query_fragment = search_fragments),
-
- SmokeTest(query = '''
+        },
+        query_fragment=search_fragments,
+    ),
+    SmokeTest(
+        query='''
       query get_new_task {
         node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=") {
             __typename
@@ -621,22 +806,23 @@ smoketests = [
           }
         }
       }''',
-    expected = { "node": {
-          "__typename": "RuptureGenerationTask",
-          "id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=",
-          "created": "2020-10-10T23:00:00+00:00",
-          "arguments": [
-            {"k": "max_jump_distance","v": "55.5"},
-            {"k": "max_sub_section_length","v": "2"},
-            {"k": "max_cumulative_azimuth","v": "590"},
-            {"k": "min_sub_sections_per_parent","v": "2"},
-            {"k": "permutation_strategy","v": "DOWNDIP"}
-          ]
-      }
-    }
-  ),
- SmokeTest(query = 
-    '''mutation new_rupt_file {
+        expected={
+            "node": {
+                "__typename": "RuptureGenerationTask",
+                "id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=",
+                "created": "2020-10-10T23:00:00+00:00",
+                "arguments": [
+                    {"k": "max_jump_distance", "v": "55.5"},
+                    {"k": "max_sub_section_length", "v": "2"},
+                    {"k": "max_cumulative_azimuth", "v": "590"},
+                    {"k": "min_sub_sections_per_parent", "v": "2"},
+                    {"k": "permutation_strategy", "v": "DOWNDIP"},
+                ],
+            }
+        },
+    ),
+    SmokeTest(
+        query='''mutation new_rupt_file {
         create_file(file_name:"myfile2.txt"
         file_size: 1125899906842624
         md5_digest: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
@@ -649,37 +835,44 @@ smoketests = [
             }
         }
     }''',
-    expected = {'create_file': {'file_result': {'id': 'RmlsZToy', 'file_size': 1125899906842624, 'meta': [{'k': 'encoding', 'v': 'utf8'}]}}}
- ),
+        expected={
+            'create_file': {
+                'file_result': {
+                    'id': 'RmlsZToy',
+                    'file_size': 1125899906842624,
+                    'meta': [{'k': 'encoding', 'v': 'utf8'}],
+                }
+            }
+        },
+    ),
 ]
 
 
 def setup(queries):
     headers = {"x-api-key": auth_token}
     transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
-    client = Client(transport=transport,
-            fetch_schema_from_transport=True)
+    client = Client(transport=transport, fetch_schema_from_transport=True)
     for q in queries:
         print('setup_query: ', q)
         print()
-        print( client.execute(gql(q)) )
+        print(client.execute(gql(q)))
         print()
 
 
 if __name__ == "__main__":
-    #cleanup environment
+    # cleanup environment
     os.system('curl -X DELETE "localhost:9200/toshi-index?pretty"')
     # assert 0
     os.system('rm -R /tmp/nzshm22-toshi-api-local/*')
-    os.system('touch ./graphql_api/api.py') #force restart of the local WSGI service
+    os.system('touch ./graphql_api/api.py')  # force restart of the local WSGI service
     time.sleep(1)
 
-    #create some content with graphql mutations
+    # create some content with graphql mutations
     setup(test_setup)
     time.sleep(2)
     print("setup complete...")
 
-    #execute some graphql queries
+    # execute some graphql queries
     for test in smoketests:
         time.sleep(0.05)
         test.execute()
@@ -688,7 +881,6 @@ if __name__ == "__main__":
     print("########################")
     print("Smoke tests completed OK")
     print("########################")
-
 
     print("##########################################################################################################")
     print("ALERT: Now that we have new node_ids, the sls wsgi server MUST be restarted for each run of this smoketest")

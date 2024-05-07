@@ -1,53 +1,57 @@
 import unittest
-import boto3
 
+import boto3
 from graphene.test import Client
+
 # from graphql_relay import from_global_id, to_global_id
 from moto import mock_dynamodb, mock_s3
+
 # from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
+from setup_helpers import SetupHelpersMixin
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
-from graphql_api.schema import root_schema
-from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 from graphql_api.data import data_manager
-from graphql_api.schema.search_manager import SearchManager
+from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
+from graphql_api.schema import root_schema
 from graphql_api.schema.custom.common import AggregationFn
+from graphql_api.schema.search_manager import SearchManager
 
-from setup_helpers import SetupHelpersMixin
 
 @mock_dynamodb
 @mock_s3
 class TestAutomationTaskFileUnion(unittest.TestCase, SetupHelpersMixin):
-
     def setUp(self):
         self.client = Client(root_schema)
 
-        #S3
+        # S3
         self._s3 = boto3.resource('s3', region_name=REGION)
         self._s3.create_bucket(Bucket=S3_BUCKET_NAME)
 
-        #Dynamo
+        # Dynamo
         self._connection = Connection(region=REGION)
 
         ToshiThingObject.create_table()
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake':'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
 
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
-        self.common_ruptset_id =  self.create_file("myruptset.zip", self.source_solution)\
-            ['data']['create_file']['file_result']['id']
+        self.common_ruptset_id = self.create_file("myruptset.zip", self.source_solution)['data']['create_file'][
+            'file_result'
+        ]['id']
 
     def test_get_aggregate_solution_from_automation_task(self):
         at_id = self.create_automation_task("AGGREGATE_SOLUTION")
         upstream_sid = self.create_source_solution()
-        as_result = self.create_aggregate_solution([upstream_sid], at_id, AggregationFn.MEAN.name, self.common_ruptset_id)
+        as_result = self.create_aggregate_solution(
+            [upstream_sid], at_id, AggregationFn.MEAN.name, self.common_ruptset_id
+        )
         file_id = as_result['data']['create_aggregate_inversion_solution']['solution']['id']
 
-        #query to link the aggregate_solution file with the AutomationTask
+        # query to link the aggregate_solution file with the AutomationTask
         query0 = '''
         mutation create_file_relation(
             $thing_id:ID!
@@ -67,7 +71,7 @@ class TestAutomationTaskFileUnion(unittest.TestCase, SetupHelpersMixin):
         # print()
 
         executed = self.client.execute(query0, variable_values=dict(thing_id=at_id, file_id=file_id, role='WRITE'))
-        print( executed )
+        print(executed)
 
         query = """
             query get_automation_task($id: ID!) {

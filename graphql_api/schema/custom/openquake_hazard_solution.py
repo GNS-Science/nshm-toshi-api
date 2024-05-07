@@ -3,23 +3,26 @@
 This module contains the schema definition for OpenquakeHazardSolution.
 
 """
-import graphene
 from datetime import datetime as dt
+
+import graphene
 from graphene import relay
 
+from graphql_api.cloudwatch import ServerlessMetricWriter
+from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
+from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from graphql_api.schema.file import File
 from graphql_api.schema.thing import Thing
-from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
-from graphql_api.config import STACK_NAME, CW_METRICS_RESOLUTION
-from graphql_api.cloudwatch import ServerlessMetricWriter
 
 from .helpers import resolve_node
 from .inversion_solution import InversionSolution
 from .openquake_hazard_config import OpenquakeHazardConfig
 
-db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration",
-    resolution=CW_METRICS_RESOLUTION)
+db_metrics = ServerlessMetricWriter(
+    lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
+)
+
 
 class OpenquakeHazardSolution(graphene.ObjectType):
     """
@@ -32,30 +35,28 @@ class OpenquakeHazardSolution(graphene.ObjectType):
 
     NB any arguments used to generate this object should be captured as in meta field.
     """
+
     class Meta:
         interfaces = (relay.Node, Thing, PredecessorsInterface)
 
-    created = graphene.DateTime(
-        description="When it was created (UTZ)")
-    config = graphene.Field(OpenquakeHazardConfig,
-        description="the template configuration used to produce this solution")
-    csv_archive = graphene.Field(File,
-        description="a zip archive containing hazard csv outputs (`oq engine --export-outputs ....)" )
-    hdf5_archive = graphene.Field(File,
-        description="a zip archive containing containing the raw hdf5")
-    modified_config = graphene.Field(File,
-        description="a zip archive containing modified config files." )
-    task_args = graphene.Field(File,
-        description="task arguments json file." )
+    created = graphene.DateTime(description="When it was created (UTZ)")
+    config = graphene.Field(
+        OpenquakeHazardConfig, description="the template configuration used to produce this solution"
+    )
+    csv_archive = graphene.Field(
+        File, description="a zip archive containing hazard csv outputs (`oq engine --export-outputs ....)"
+    )
+    hdf5_archive = graphene.Field(File, description="a zip archive containing containing the raw hdf5")
+    modified_config = graphene.Field(File, description="a zip archive containing modified config files.")
+    task_args = graphene.Field(File, description="task arguments json file.")
 
+    metrics = graphene.List(KeyValuePair, description="result metrics from the solution, as a list of Key Value pairs.")
 
-    metrics = graphene.List(KeyValuePair,
-            description="result metrics from the solution, as a list of Key Value pairs.")
+    meta = graphene.List(KeyValuePair, description="result metrics from the solution, as a list of Key Value pairs.")
 
-    meta = graphene.List(KeyValuePair,
-            description="result metrics from the solution, as a list of Key Value pairs.")
-
-    produced_by = graphene.Field('graphql_api.schema.custom.OpenquakeHazardTask', description="The task that produced this solution")
+    produced_by = graphene.Field(
+        'graphql_api.schema.custom.OpenquakeHazardTask', description="The task that produced this solution"
+    )
 
     @classmethod
     def get_node(cls, info, _id):
@@ -93,10 +94,11 @@ class OpenquakeHazardSolution(graphene.ObjectType):
 #         description="result metrics from the task, as a list of Key Value pairs.")
 
 
-class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation):
+class CreateOpenquakeHazardSolution(relay.ClientIDMutation):  # graphene.Mutation):
     """
     Create an OpenquakeHazardSolution
     """
+
     class Input:
         created = OpenquakeHazardSolution.created
         config = graphene.ID(required=True)
@@ -107,14 +109,19 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation)
         modified_config = graphene.ID(required=False)
         task_args = graphene.ID(required=False)
 
-        meta = graphene.List(KeyValuePairInput, required=False,
-            description="additional file meta data, as a list of Key Value pairs.")
+        meta = graphene.List(
+            KeyValuePairInput, required=False, description="additional file meta data, as a list of Key Value pairs."
+        )
 
-        metrics = graphene.List(KeyValuePairInput, required=False,
-            description="result metrics from the solution, as a list of Key Value pairs.")
+        metrics = graphene.List(
+            KeyValuePairInput,
+            required=False,
+            description="result metrics from the solution, as a list of Key Value pairs.",
+        )
 
-        predecessors = graphene.List('graphql_api.schema.custom.predecessor.PredecessorInput',
-            required=False, description="list of predecessors")
+        predecessors = graphene.List(
+            'graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors"
+        )
 
     openquake_hazard_solution = graphene.Field(OpenquakeHazardSolution)
     ok = graphene.Boolean()
@@ -123,5 +130,5 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation): #graphene.Mutation)
     def mutate_and_get_payload(cls, root, info, **kwargs):
         t0 = dt.utcnow()
         openquake_hazard_solution = get_data_manager().thing.create('OpenquakeHazardSolution', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardSolution.mutate_and_get_payload' , dt.utcnow()-t0)
+        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardSolution.mutate_and_get_payload', dt.utcnow() - t0)
         return CreateOpenquakeHazardSolution(openquake_hazard_solution=openquake_hazard_solution, ok=True)

@@ -1,59 +1,53 @@
 import datetime as dt
-import unittest
-import boto3
 import json
+import unittest
 from io import BytesIO
 
+import boto3
 from dateutil.tz import tzutc
-
 from graphene.test import Client
 from graphql_relay import from_global_id, to_global_id
 from moto import mock_dynamodb, mock_s3
 from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
+from setup_helpers import SetupHelpersMixin
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
-from graphql_api.schema import root_schema
-from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 from graphql_api.data import data_manager
-from graphql_api.schema.search_manager import SearchManager
-from graphql_api.schema.custom.common import TaskSubType
 from graphql_api.data.thing_data import ThingData
+from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
+from graphql_api.schema import root_schema
+from graphql_api.schema.custom.common import TaskSubType
+from graphql_api.schema.search_manager import SearchManager
 
-from setup_helpers import SetupHelpersMixin
 
 @mock_dynamodb
 @mock_s3
 class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
-
     def setUp(self):
         self.client = Client(root_schema)
 
-        #S3
+        # S3
         self._s3 = boto3.resource('s3', region_name=REGION)
         self._s3.create_bucket(Bucket=S3_BUCKET_NAME)
 
-        #Dynamo
+        # Dynamo
         self._connection = Connection(region=REGION)
 
         ToshiThingObject.create_table()
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake':'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
 
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
 
-
     def test_create_oq_hazard_task(self):
-
         haztask = self._build_hazard_task()
 
-        print (haztask)
-        self.assertEqual(
-            ToshiThingObject.get("100002").object_content['clazz_name'], "OpenquakeHazardTask")
-
+        print(haztask)
+        self.assertEqual(ToshiThingObject.get("100002").object_content['clazz_name'], "OpenquakeHazardTask")
 
     def _build_hazard_task(self):
         return super().build_hazard_task()
@@ -62,19 +56,19 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
-        self.create_gt_relation(self.new_gt, ht_id) #Thing 100003
+        self.create_gt_relation(self.new_gt, ht_id)  # Thing 100003
 
         self.assertEqual(
             ToshiThingObject.get("100000").object_content['children'][0],
-            {'child_clazz': 'OpenquakeHazardTask', 'child_id': '100002'})
+            {'child_clazz': 'OpenquakeHazardTask', 'child_id': '100002'},
+        )
 
         self.assertEqual(
             ToshiThingObject.get("100002").object_content['parents'][0],
-            {'parent_clazz': 'GeneralTask', 'parent_id': '100000'})
-
+            {'parent_clazz': 'GeneralTask', 'parent_id': '100000'},
+        )
 
     def test_get_openquake_hazard_task_node(self):
-
         haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
@@ -110,12 +104,10 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
 
         delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(result['data']['node']['created'])
         max_delta = dt.timedelta(seconds=1)
-        self.assertTrue(delta < max_delta )
+        self.assertTrue(delta < max_delta)
 
-        self.assertEqual(haztask['config']['source_models'][0]['file_name'],
-            "alineortwo.zip")
-        self.assertEqual(haztask['config']['source_models'][0]['source_solution']['file_name'],
-            "MyInversion.zip")
+        self.assertEqual(haztask['config']['source_models'][0]['file_name'], "alineortwo.zip")
+        self.assertEqual(haztask['config']['source_models'][0]['source_solution']['file_name'], "MyInversion.zip")
 
         self.assertEqual(haztask['task_type'], "HAZARD")
 
@@ -126,24 +118,22 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         The id for each item should reflect this, but at right now they're always returning the type InversionSolutionNrml.
         '''
 
+        upstream_sid = self.create_source_solution()  # File 100001
+        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid)  # File 100002
 
-        upstream_sid = self.create_source_solution() #File 100001
-        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid) #File 100002
-
-        #setup need to create source models both NRML and ordinary File
-        nrml_id0 =  inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
-        nrml_1 = self.create_file("bgsesimicity-nrml.zip") #File 100003
+        # setup need to create source models both NRML and ordinary File
+        nrml_id0 = inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
+        nrml_1 = self.create_file("bgsesimicity-nrml.zip")  # File 100003
         nrml_id1 = nrml_1['data']['create_file']['file_result']['id']
 
-        archive = self.create_file("config_archive.zip") #File 100004
+        archive = self.create_file("config_archive.zip")  # File 100004
         archive_id = archive['data']['create_file']['file_result']['id']
 
-        config = self.create_openquake_config([nrml_id0, nrml_id1], archive_id) #Thing 100001
+        config = self.create_openquake_config([nrml_id0, nrml_id1], archive_id)  # Thing 100001
         config_id = config['data']['create_openquake_hazard_config']['config']['id']
 
-        haztask = self.create_openquake_hazard_task(config_id) #Thing 100002
+        haztask = self.create_openquake_hazard_task(config_id)  # Thing 100002
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
-
 
         query = '''
         query openquake_hazard_task($id: ID!) {
@@ -176,12 +166,9 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(haztask['config']['source_models'][0]['id'], nrml_id0)
         self.assertEqual(haztask['config']['source_models'][1]['id'], nrml_id1)
 
-
     def test_update_task_with_metrics(self):
-
         haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
-
 
         things = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         hazsol = things.create(clazz_name='OpenquakeHazardSolution', created=dt.datetime.now(tzutc()))
@@ -217,9 +204,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         assert result['hazard_solution']['__typename'] == "OpenquakeHazardSolution"
         assert result['hazard_solution']['id'] == ohs_id
 
-    
     def test_update_task_without_hazard_soln(self):
-
         haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
@@ -250,6 +235,3 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         assert result['metrics'][0]['k'] == "rupture_count"
         assert result['metrics'][0]['v'] == "20"
         assert not (result.get('hazard_solution'))
-
-    
-

@@ -1,25 +1,22 @@
-
 """
 Test API function for opensha Rupture Generation
 
 Mocking our data layer
 
 """
+import datetime as dt
+import unittest
 from io import BytesIO
 from unittest import mock
 
-import datetime as dt
-import unittest
-
 from dateutil.tz import tzutc
-
 from graphene.test import Client
+
+import graphql_api.data  # for mocking
 from graphql_api import data
+from graphql_api.schema import RuptureGenerationTask, root_schema
 
-from graphql_api.schema import root_schema, RuptureGenerationTask
 # from graphql_api.schema.file_relation import FileRelation
-
-import graphql_api.data # for mocking
 
 
 CREATE = '''
@@ -74,14 +71,15 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         self.client = Client(root_schema)
 
     def test_create_minimum_fields_happy_case(self):
-        executed = self.client.execute(CREATE,
-            variable_values=dict(created=dt.datetime.now(tzutc())))
+        executed = self.client.execute(CREATE, variable_values=dict(created=dt.datetime.now(tzutc())))
         print(executed)
-        assert executed['data']['create_rupture_generation_task']\
-                        ['task_result']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        assert (
+            executed['data']['create_rupture_generation_task']['task_result']['id']
+            == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        )
 
     def test_date_must_include_timezone(self):
-        startdate = dt.datetime.now() #no timesone
+        startdate = dt.datetime.now()  # no timesone
         executed = self.client.execute(CREATE, variable_values=dict(created=startdate))
         print(executed)
         assert "must have a timezone" in executed['errors'][0]['message']
@@ -99,7 +97,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
                 }
             }
         '''
-        startdate = dt.datetime.now() #no timesone
+        startdate = dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
         assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
@@ -114,8 +112,10 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         print(qry)
         executed = self.client.execute(qry, variable_values=dict(created=dt.datetime.now(tzutc())))
         print(executed)
-        assert executed['data']['create_rupture_generation_task']\
-                        ['task_result']['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        assert (
+            executed['data']['create_rupture_generation_task']['task_result']['id']
+            == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        )
 
 
 TASKZERO = lambda _self, _id: {
@@ -124,13 +124,14 @@ TASKZERO = lambda _self, _id: {
     "created": "2020-10-30T09:15:00+00:00",
     "duration": 600.0,
     "arguments": [
-            { "k":"max_jump_distance", "v": "55.5" },
-            { "k":"max_sub_section_length", "v": "2" },
-            { "k":"max_cumulative_azimuth", "v": "590" },
-            { "k":"min_sub_sections_per_parent", "v": "2" },
-            { "k":"permutation_strategy", "v": "DOWNDIP" },
-        ]
-    }
+        {"k": "max_jump_distance", "v": "55.5"},
+        {"k": "max_sub_section_length", "v": "2"},
+        {"k": "max_cumulative_azimuth", "v": "590"},
+        {"k": "min_sub_sections_per_parent", "v": "2"},
+        {"k": "permutation_strategy", "v": "DOWNDIP"},
+    ],
+}
+
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
 @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
@@ -141,6 +142,7 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
 
     TODO: more coverage please
     """
+
     def setUp(self):
         self.client = Client(root_schema)
 
@@ -171,7 +173,6 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
         assert result['metrics'][0]['k'] == "rupture_count"
         assert result['metrics'][0]['v'] == "20"
 
-
     @unittest.skip("TODO")
     def test_merge_update_is_effective(self):
         """need to show that the json being saved to S3 is correct"""
@@ -184,8 +185,10 @@ TASK_OLD = lambda _self, _id: {
     "created": "2020-10-30T09:15:00+00:00",
     "duration": 600.0,
     "git_refs": {"opensha_ucerf3": "B", "opensha_commons": "C", "opensha_core": "A", "nshm_nz_opensha": "D"},
-    "arguments": None, "metrics": None
-    }
+    "arguments": None,
+    "metrics": None,
+}
+
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
 @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, body: None)
@@ -197,6 +200,7 @@ class TestMigrateRuptureGenerationTask(unittest.TestCase):
         raise TypeError(
     TypeError: 'git_refs' is an invalid keyword argument for RuptureGenerationTask
     """
+
     def setUp(self):
         self.client = Client(root_schema)
 

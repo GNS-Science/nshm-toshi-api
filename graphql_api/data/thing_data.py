@@ -5,13 +5,16 @@ import datetime as dt
 import json
 import logging
 from importlib import import_module
+
 from benedict import benedict
 
-from .base_data import BaseDynamoDBData
 # from .helpers import get_objectid_from_global
 from graphql_relay import from_global_id, to_global_id
 
+from .base_data import BaseDynamoDBData
+
 logger = logging.getLogger(__name__)
+
 
 class ThingData(BaseDynamoDBData):
     """
@@ -19,7 +22,7 @@ class ThingData(BaseDynamoDBData):
     """
 
     def create(self, clazz_name, **kwargs):
-        if not  kwargs['created'].tzname(): #must have a timezone set
+        if not kwargs['created'].tzname():  # must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
         return super().create(clazz_name, **kwargs)
 
@@ -43,7 +46,7 @@ class ThingData(BaseDynamoDBData):
             envnew = thing.get('environment') or []
             envnew.extend(env_as_kvs)
             thing['environment'] = envnew
-        
+
         # print('Migrated ', thing)
         return thing
 
@@ -57,7 +60,6 @@ class ThingData(BaseDynamoDBData):
         jsondata = self.migrate_old_thing_object(self._read_object(thing_id))
         return self.from_json(jsondata)
 
-
     def update(self, clazz_name, thing_id, **kwargs):
         """
         Args:
@@ -68,7 +70,7 @@ class ThingData(BaseDynamoDBData):
             TYPE: the Thing object
         """
         _type, this_id = from_global_id(thing_id)
-        #print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
+        # print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
         assert _type == clazz_name
 
         if kwargs.get('created'):
@@ -105,7 +107,7 @@ class ThingData(BaseDynamoDBData):
         updated = jsondata.get('updated')
         if updated and not isinstance(updated, dt.datetime):
             jsondata['updated'] = dt.datetime.fromisoformat(updated)
-            
+
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 

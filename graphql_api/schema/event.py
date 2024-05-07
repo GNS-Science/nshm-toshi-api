@@ -1,6 +1,5 @@
 import graphene
-from graphene import relay
-from graphene import Enum
+from graphene import Enum, relay
 
 global db_root
 
@@ -10,6 +9,7 @@ class EventResult(Enum):
     PARTIAL = "partial"
     SUCCESS = "success"
     UNDEFINED = "undefined"
+
 
 class EventState(Enum):
     SCHEDULED = "scheduled"

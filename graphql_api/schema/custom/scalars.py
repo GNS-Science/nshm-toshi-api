@@ -1,6 +1,6 @@
-from graphene.types.scalars import MIN_INT, MAX_INT
+from graphene.types.scalars import MAX_INT, MIN_INT, Scalar
 from graphql.language.ast import IntValue
-from graphene.types.scalars import Scalar
+
 
 class BigInt(Scalar):
     """
@@ -8,6 +8,7 @@ class BigInt(Scalar):
         that supports Integers bigger than a signed
         32-bit integer.
     """
+
     @staticmethod
     def coerce_int(value):
         try:

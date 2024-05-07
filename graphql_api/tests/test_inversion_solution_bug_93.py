@@ -1,26 +1,20 @@
-from graphql_api.schema.custom import inversion_solution
-from typing import Sized
-
+import datetime as dt
+import unittest
+from copy import copy
 from io import BytesIO
+from typing import Sized
 from unittest import mock
 from unittest.mock import patch
 
-import datetime as dt
-import unittest
-
 from dateutil.tz import tzutc
-
 from graphene.test import Client
-from graphql_api import data
-from copy import copy
-
-from graphql_api.schema import root_schema
 from graphql_relay import from_global_id, to_global_id
-from graphql_api.data.file_relation_data import FileRelationData
-
 
 import graphql_api.data  # for mocking
-
+from graphql_api import data
+from graphql_api.data.file_relation_data import FileRelationData
+from graphql_api.schema import root_schema
+from graphql_api.schema.custom import inversion_solution
 
 AUTO_TASK = {
     "id": "6040tkPow",
@@ -122,27 +116,33 @@ FILE2 = {
 
 class TestInversionSolutionRelationBugFix(unittest.TestCase):
     """
-        This test replicates a bug which occurs from the relation of two inversion solutions, one as read and one as write
-        The automation task inversion solution resolver needs to be able to handle having a read and write solution
-        The get_one function is mocked 3 times, as it is called 3 times by the list of file relations in auto task : 
-            - "files": ["21001AXf9j", "21005LE452", "21008R7VUG"],
-        Each time it is called, the inversion_solution_resolver calls file_relation.get_one(file_id)and checks if it has a 
-        'role' of write, if it doesn't it continues. If the 'role' is write, it calls file.get_one(file_relation.file_id) 
-        and checks if it is an InversionSolution. 
-        mock_get_one is patched for all 3 file_rels which it traverse through and checks if its 'role' is write (FILE_REL1 & FILE_REL2 are).
-        Because FILE_REL1 is write, mock_read_object sees if its an InversionSolution (which it is not), and then continues onto 
-        FILE_REL2 which is.
-        It has now found the correct file relation!
+    This test replicates a bug which occurs from the relation of two inversion solutions, one as read and one as write
+    The automation task inversion solution resolver needs to be able to handle having a read and write solution
+    The get_one function is mocked 3 times, as it is called 3 times by the list of file relations in auto task :
+        - "files": ["21001AXf9j", "21005LE452", "21008R7VUG"],
+    Each time it is called, the inversion_solution_resolver calls file_relation.get_one(file_id)and checks if it has a
+    'role' of write, if it doesn't it continues. If the 'role' is write, it calls file.get_one(file_relation.file_id)
+    and checks if it is an InversionSolution.
+    mock_get_one is patched for all 3 file_rels which it traverse through and checks if its 'role' is write (FILE_REL1 & FILE_REL2 are).
+    Because FILE_REL1 is write, mock_read_object sees if its an InversionSolution (which it is not), and then continues onto
+    FILE_REL2 which is.
+    It has now found the correct file relation!
     """
+
     def setUp(self) -> None:
         self.client = Client(root_schema)
-        
-    @mock.patch('graphql_api.data.file_relation_data.FileRelationData.get_one',
-                side_effect = [FileRelationData.from_json(copy(FILE_REL0)),
-                               FileRelationData.from_json(copy(FILE_REL1)), 
-                               FileRelationData.from_json(copy(FILE_REL2))])
-    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object',
-        side_effect = [copy(AUTO_TASK), copy(FILE1), copy(FILE2)])
+
+    @mock.patch(
+        'graphql_api.data.file_relation_data.FileRelationData.get_one',
+        side_effect=[
+            FileRelationData.from_json(copy(FILE_REL0)),
+            FileRelationData.from_json(copy(FILE_REL1)),
+            FileRelationData.from_json(copy(FILE_REL2)),
+        ],
+    )
+    @mock.patch(
+        'graphql_api.data.BaseDynamoDBData._read_object', side_effect=[copy(AUTO_TASK), copy(FILE1), copy(FILE2)]
+    )
     def test_query_with_files(self, mocked_read_object, mocked_get_one):
         qry = """ 
         query InversionSolutionDiagnosticContainerQuery {
@@ -177,7 +177,7 @@ class TestInversionSolutionRelationBugFix(unittest.TestCase):
         print(qry)
         executed = self.client.execute(qry)
         print(executed)
-        node = executed['data']['nodes']['result']['edges'][0]['node']       
+        node = executed['data']['nodes']['result']['edges'][0]['node']
         assert mocked_get_one.call_args[0][0] == "21008R7VUG"
         assert node["inversion_solution"]["id"] == 'SW52ZXJzaW9uU29sdXRpb246MTcxODcuMGIzQ24z'
         assert mocked_read_object.call_count == 3
