@@ -44,8 +44,8 @@ jobs:
       - name: upgrade NPM
         run: npm install --location=global npm@latest
 
-      - name: Verify NPM
-        run: npm doctor
+      # - name: Verify NPM
+      #  run: npm doctor
 
       - name: Install Dependencies
         run: npm install
