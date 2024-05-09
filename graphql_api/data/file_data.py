@@ -87,6 +87,8 @@ class FileData(BaseDynamoDBData):
         """
         jsondata = self.get_one_raw(file_id)
 
+        logger.debug(jsondata)
+
         # more migration hacks
         if not jsondata['clazz_name'] == expected_class:
             if expected_class == "InversionSolution":
@@ -106,7 +108,7 @@ class FileData(BaseDynamoDBData):
         t0 = dt.utcnow()
         file = self.get_one(_id)
         key = "%s/%s/%s" % (self._prefix, _id, file.file_name)
-        url = self._client.generate_presigned_url(
+        url = self.s3_client.generate_presigned_url(
             'get_object',
             Params={
                 'Bucket': self._bucket_name,

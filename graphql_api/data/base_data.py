@@ -351,7 +351,7 @@ class BaseDynamoDBData(BaseData):
         self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
         return clazz(next_id, **kwargs)
 
-    def get_all(self, object_type, limit:int, after:str):
+    def get_all(self, object_type, limit: int, after: str):
         t0 = dt.utcnow()
         after = after or "-1"
         logger.info(f"get_all, {self._model} {self.prefix} {object_type} after {after}")
@@ -361,5 +361,3 @@ class BaseDynamoDBData(BaseData):
             yield ObjectIdentityRecord(object_meta.object_type, object_meta.object_id)
 
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
-
-
