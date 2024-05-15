@@ -258,7 +258,7 @@ class QueryRoot(graphene.ObjectType):
     def resolve_reindex(root, info, id_in, **kwargs):
         t0 = dt.utcnow()
         result = []
-
+        log.info(f'resolve_resolve_reindex id_in: {id_in}')
         for gid in id_in:
             object_type, object_id = from_global_id(gid)
             handler = get_datastore_handler(object_type)

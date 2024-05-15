@@ -2,6 +2,7 @@
 Search Manager
 """
 import logging
+import json
 from datetime import datetime as dt
 
 import requests
@@ -40,7 +41,7 @@ class SearchManager:
             response = requests.put(
                 self._url + es_key,
                 auth=self._awsauth,
-                json=document,
+                json=json.dumps(document),
                 headers=headers,
                 timeout=(ES_CONNECT_TIMEOUT, ES_READ_TIMEOUT),
             )
