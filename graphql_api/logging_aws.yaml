@@ -57,7 +57,7 @@ loggers:
     propagate: no
 
   graphql_api.schema.search_manager:
-    level: INFO
+    level: DEBUG
     handlers: [console_handler]
     propagate: no
 
