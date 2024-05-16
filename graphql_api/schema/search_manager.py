@@ -6,14 +6,18 @@ import json
 from datetime import datetime as dt
 
 import requests
+import boto3
+from elasticsearch import Elasticsearch, RequestsHttpConnection
+from requests_aws4auth import AWS4Auth
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
+from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME, ES_REGION, ES_ENDPOINT
 from graphql_api.data.file_data import FileData
 from graphql_api.data.table_data import TableData
 from graphql_api.data.thing_data import ThingData
 
-logger = logging.getLogger(__name__)
+
+log = logging.getLogger(__name__)
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -23,6 +27,20 @@ TYPE = '_doc'
 ES_CONNECT_TIMEOUT = 2  # connection timeout seconds
 ES_READ_TIMEOUT = 5  # response timeout seconds
 
+credentials = boto3.Session().get_credentials()
+awsauth = AWS4Auth(
+        credentials.access_key,
+        credentials.secret_key,
+        ES_REGION,
+        'es',
+        session_token=credentials.token)
+es = Elasticsearch(
+    hosts=[ES_ENDPOINT],
+    http_auth=awsauth,
+    use_ssl=True,
+    verify_certs=True,
+    connection_class=RequestsHttpConnection
+)
 
 class SearchManager:
     def __init__(self, endpoint, es_index, awsauth):
@@ -37,17 +55,13 @@ class SearchManager:
         es_key = key.replace("/", "_")
         headers = {"Content-Type": "application/json"}
         try:
-            logger.debug(f"SearchManager.index_document {self._url + es_key}")
-            response = requests.put(
-                self._url + es_key,
-                auth=self._awsauth,
-                json=json.dumps(document),
-                headers=headers,
-                timeout=(ES_CONNECT_TIMEOUT, ES_READ_TIMEOUT),
-            )
-            logger.debug(f'index_document response: {response.content}')
+            # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.create
+            # create(index, id, body, doc_type=None, params=None, headers=None)
+            log.debug(f' calling es.create() with {self._es_index}, {es_key}, {document}, {TYPE}')
+            response = es.create(self._es_index, es_key, document, TYPE )
+            log.debug(f'es response {response}')
         except Exception as err:
-            logger.warning(f'index_document raised err: {err}')
+            log.warning(f'index_document raised err: {err}')
         db_metrics.put_duration(__name__, 'index_document', dt.utcnow() - t0)
 
     def search(self, term):
@@ -56,15 +70,15 @@ class SearchManager:
         headers = {}  # "Content-Type": "application/json" }
         result = []
         try:
-            logger.debug(f"SearchManager.search({term})")
+            log.debug(f"SearchManager.search({term})")
             qurl = self._endpoint + '/' + self._es_index + '/_search?q=' + term
-            logger.debug(f"Query URL: {qurl}")
+            log.debug(f"Query URL: {qurl}")
             response = requests.get(qurl, auth=self._awsauth, headers=headers).json()
             # print(response)
             # count = response['hits']['total']
             # print ("count",  count)
             for obj in response['hits']['hits']:
-                logger.debug(f"hit: {(obj['_index'], obj['_type'], obj['_id'], obj['_score'])}")
+                log.debug(f"hit: {(obj['_index'], obj['_type'], obj['_id'], obj['_score'])}")
                 # if 'TaskData' in obj['_id']:
                 #     result.append(RuptureGenerationTask.from_json(obj['_source']))
                 # el
@@ -73,7 +87,7 @@ class SearchManager:
                 elif 'ThingData' in obj['_id']:
                     # clazz_name = obj['_source'].pop('clazz_name')
                     # clazz = getattr(import_module('graphql_api.schema'), clazz_name)
-                    logger.info("search got object ")
+                    log.info("search got object ")
                     result.append(ThingData.from_json(obj['_source']))
                 elif 'TableData' in obj['_id']:
                     result.append(TableData.from_json(obj['_source']))
@@ -81,7 +95,7 @@ class SearchManager:
                     raise ValueError("unable to resolve, object id", obj['_source'])
 
         except Exception as err:
-            logger.warning(f"search() raised err: {err}")
+            log.warning(f"search() raised err: {err}")
 
         db_metrics.put_duration(__name__, 'search', dt.utcnow() - t0)
         return result

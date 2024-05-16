@@ -87,7 +87,7 @@ custom:
 
   #elastic search
   esDomainName: ${self:custom.app_acronym}-es-${self:custom.stage}
-  esIndex: toshi_index
+  esIndex: toshi_index_mapped
 
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
 

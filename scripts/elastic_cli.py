@@ -11,9 +11,7 @@ from elasticsearch_dsl import Q, Search, connections
 
 
 from graphql_relay import to_global_id
-from graphql_api.config import ES_ENDPOINT
-
-ES_REGION = 'ap-southeast-2'
+from graphql_api.config import ES_ENDPOINT, ES_REGION, ES_INDEX
 
 credentials = boto3.Session().get_credentials()
 awsauth = AWS4Auth(
@@ -158,6 +156,72 @@ def cli_nis(flip, clazz, task_type, list_ids, verbose):
     return
 
 
+
+"""
+    created = graphene.DateTime(
+        description="When the task record was created",
+    )
+    updated = graphene.DateTime(
+        description="When the task record was last updated",
+    )
+    agent_name = graphene.String(description='The name of the person or process responsible for the task')
+    title = graphene.String(description='A title always helps')
+    description = graphene.String(description='Some description of the task, potentially Markdown')
+    argument_lists = graphene.List(
+        KeyValueListPair, description="subtask arguments, as a list of Key Value List pairs."
+    )
+    swept_arguments = graphene.List(
+        graphene.String, description='list of keys for items having >1 value in argument_lists'
+    )
+    meta = graphene.List(KeyValuePair, description="arbitrary metadata for the task, as a list of Key Value pairs.")
+    notes = graphene.String(description='notes about the task, potentially Markdown')
+
+    # fields to replave the Job Control sheeet
+    subtask_count = graphene.Int(description='count of subtasks')
+    subtask_type = graphene.Field(
+        TaskSubType,
+    )
+    model_type = graphene.Field(
+        ModelType,
+    )
+    subtask_result = EventResult()  # added PARTIAL option since some GT will have mixed subtask results
+
+    # duration = graphene.Float(description="the final duration of the event in seconds")
+
+    children = relay.ConnectionField(
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="sub-tasks of this task"
+    )
+
+    parents = relay.ConnectionField(
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="parent task(s) of this task"
+    )
+"""
+
+@main.command(name='mapping')
+def mapping():
+    mappings = dict(
+        properties=dict(
+            # object_id = {"type": "keyword"},
+            # clazz_name = {"type": "keyword"},
+            # updated = {"type": "date"},
+            # created = {"type": "date"},
+            # model_type= {"type": "keyword"},
+            # subtask_type= {"type": "keyword"},
+            # subtask_count = {"type": "integer"},
+            # subtask_result= {"type": "keyword"},
+            # agent_name = {"type": "keyword"},
+            # title = {"type": "text"},
+            # description = {"type": "text"},
+            # argument_lists = {"type": "text"},
+            # swept_arguments = {"type": "text"},
+            children = {"type": "object"},
+            parents = {"type": "object"},
+        )
+    )
+
+    es.indices.delete(index=ES_INDEX)
+    response = es.indices.create(index=ES_INDEX, body={"mappings": mappings})
+    click.echo(response)
 
 if __name__ == '__main__':
     main()  # pragma: no cover
