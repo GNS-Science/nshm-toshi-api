@@ -27,20 +27,6 @@ TYPE = '_doc'
 ES_CONNECT_TIMEOUT = 2  # connection timeout seconds
 ES_READ_TIMEOUT = 5  # response timeout seconds
 
-credentials = boto3.Session().get_credentials()
-awsauth = AWS4Auth(
-        credentials.access_key,
-        credentials.secret_key,
-        ES_REGION,
-        'es',
-        session_token=credentials.token)
-es = Elasticsearch(
-    hosts=[ES_ENDPOINT],
-    http_auth=awsauth,
-    use_ssl=True,
-    verify_certs=True,
-    connection_class=RequestsHttpConnection
-)
 
 class SearchManager:
     def __init__(self, endpoint, es_index, awsauth):
@@ -48,6 +34,14 @@ class SearchManager:
         self._endpoint = endpoint
         self._es_index = es_index
         self._url = endpoint + '/' + es_index + '/' + TYPE + '/'
+        self.es = Elasticsearch(
+            hosts=[ES_ENDPOINT],
+            http_auth=awsauth,
+            use_ssl=True,
+            verify_certs=True,
+            connection_class=RequestsHttpConnection
+        )
+
 
     def index_document(self, key, document):
         # Index the document
@@ -58,7 +52,7 @@ class SearchManager:
             # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.create
             # create(index, id, body, doc_type=None, params=None, headers=None)
             log.debug(f' calling es.create() with {self._es_index}, {es_key}, {document}, {TYPE}')
-            response = es.create(self._es_index, es_key, document, TYPE )
+            response = self.es.create(self._es_index, es_key, document, TYPE )
             log.debug(f'es response {response}')
         except Exception as err:
             log.warning(f'index_document raised err: {err}')

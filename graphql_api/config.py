@@ -18,7 +18,7 @@ else:
     ES_ENDPOINT = os.getenv("ES_ENDPOINT", '')
     DB_ENDPOINT = os.getenv("DB_ENDPOINT", '')
 
-ES_INDEX = os.getenv("ES_INDEX", "toshi-index")
+ES_INDEX = os.getenv("ES_INDEX", "toshi-index-mapped")
 ES_REGION = os.getenv("ES_REGION", 'us-east-1')
 ES_DOMAIN_NAME = os.getenv("ES_DOMAIN_NAME")
 
