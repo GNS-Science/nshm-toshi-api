@@ -3,6 +3,7 @@ Test API function for InversionSolution
 Mocking our data layer
 
 """
+
 import datetime as dt
 import json
 import unittest

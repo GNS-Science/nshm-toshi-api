@@ -1,11 +1,10 @@
-import logging
 import copy
+import logging
 from datetime import datetime as dt
 from importlib import import_module
 
-from graphql_relay import from_global_id
-
 import graphql.language.ast
+from graphql_relay import from_global_id
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
@@ -52,7 +51,6 @@ def resolve_node(root, info, id_field, dm_type):
         """We have a sub-selection InlineFragment (e.g `... on Node { ...`, so drill in one more level"""
         selections = copy.copy(selections[0].selection_set.selections)
 
-
     log.debug(f"resolve_node selections C {selections}")
 
     if len(selections) == 1 and (selections[0].name.value == 'id'):
@@ -63,7 +61,6 @@ def resolve_node(root, info, id_field, dm_type):
     else:
 
         res = getattr(get_data_manager(), dm_type).get_one(nid)
-
 
     log.debug(f"resolve_node() returning  {res}")
 

@@ -3,6 +3,7 @@ Test API function for InversionSolution
 Mocking our data layer
 
 """
+
 import copy
 import datetime as dt
 import itertools

@@ -7,6 +7,7 @@ automatically by Graphene.
 The core class AutomationTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
+
 import datetime as dt
 import logging
 from datetime import datetime as dt

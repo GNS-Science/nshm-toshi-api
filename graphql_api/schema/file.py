@@ -1,6 +1,7 @@
 """
 The NSHM data file graphql schema.
 """
+
 from datetime import datetime as dt
 
 import graphene

@@ -1,21 +1,21 @@
 """
 Search Manager
 """
-import logging
+
 import json
+import logging
 from datetime import datetime as dt
 
-import requests
 import boto3
+import requests
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME, ES_REGION, ES_ENDPOINT
+from graphql_api.config import CW_METRICS_RESOLUTION, ES_ENDPOINT, ES_REGION, STACK_NAME
 from graphql_api.data.file_data import FileData
 from graphql_api.data.table_data import TableData
 from graphql_api.data.thing_data import ThingData
-
 
 log = logging.getLogger(__name__)
 
@@ -39,9 +39,8 @@ class SearchManager:
             http_auth=awsauth,
             use_ssl=True,
             verify_certs=True,
-            connection_class=RequestsHttpConnection
+            connection_class=RequestsHttpConnection,
         )
-
 
     def index_document(self, key, document):
         # Index the document
@@ -52,7 +51,7 @@ class SearchManager:
             # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.create
             # create(index, id, body, doc_type=None, params=None, headers=None)
             log.debug(f' calling es.create() with {self._es_index}, {es_key}, {document}, {TYPE}')
-            response = self.es.create(self._es_index, es_key, document, TYPE )
+            response = self.es.create(self._es_index, es_key, document, TYPE)
             log.debug(f'es response {response}')
         except Exception as err:
             log.warning(f'index_document raised err: {err}')

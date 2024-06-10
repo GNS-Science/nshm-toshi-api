@@ -6,6 +6,7 @@ TO do this we at least need to know the object type (is the ModelName).
 - all the model typses are dfeind in the graphql schema  (e.g. GeneralTask, File, RuptureSet, OpenquakeHazardSolution)
 - let figure out where to go looking based on the class name
 """
+
 import graphene
 import pytest
 

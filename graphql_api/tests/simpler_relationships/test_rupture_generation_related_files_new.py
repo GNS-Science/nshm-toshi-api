@@ -4,6 +4,7 @@ Test API function for opensha Rupture Generation related files
 Mocking our data layer
 
 """
+
 import unittest
 from copy import copy
 from unittest import mock

@@ -75,9 +75,9 @@ def paginated_object_identities(node_iterable, **kwargs) -> ObjectIdentitiesConn
     has_next = False if len(edges) < first else True
 
     connection_field.page_info = relay.PageInfo(
-        end_cursor=edges[-1].cursor
-        if edges
-        else None,  # graphql_relay.to_global_id("CompositeRuptureDetail", str(cursor_offset+first)),
+        end_cursor=(
+            edges[-1].cursor if edges else None
+        ),  # graphql_relay.to_global_id("CompositeRuptureDetail", str(cursor_offset+first)),
         has_next_page=has_next,
     )
     connection_field.edges = edges

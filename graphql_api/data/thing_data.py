@@ -1,6 +1,7 @@
 """
 Object manager for Thing schema objects
 """
+
 import datetime as dt
 import json
 import logging

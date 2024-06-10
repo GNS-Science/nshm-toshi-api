@@ -18,7 +18,6 @@ from .helpers import resolve_node
 from .inversion_solution import InversionSolution, InversionSolutionInterface
 from .scaled_inversion_solution import ScaledInversionSolution
 
-
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
@@ -39,8 +38,8 @@ class InversionSolutionNrml(graphene.ObjectType):
     created = graphene.DateTime(description="When the scaled solution file was created")
     source_solution = graphene.Field(
         'graphql_api.schema.custom.source_solution_union.SourceSolutionUnion',
-        description="The original soloution as produced by opensha"
-        )
+        description="The original soloution as produced by opensha",
+    )
 
     @classmethod
     def get_node(cls, info, _id):

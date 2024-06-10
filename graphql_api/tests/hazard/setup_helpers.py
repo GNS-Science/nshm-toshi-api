@@ -4,6 +4,7 @@ A Mixin class to share in test modules
 The TestCase sub class must setup self.client
 
 """
+
 import datetime as dt
 from hashlib import sha256
 from io import BytesIO

@@ -4,6 +4,7 @@ Test Elastic Serach via SearchManager
 Mocking out ES in requests
 
 """
+
 # from io import BytesIO
 # from unittest import mock
 

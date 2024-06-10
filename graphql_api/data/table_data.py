@@ -1,6 +1,7 @@
 """
 Object manager for Table schema objects
 """
+
 import datetime as dt
 import logging
 from importlib import import_module

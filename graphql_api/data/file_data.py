@@ -1,6 +1,7 @@
 """
 The object manager for File (and subclassed) schema objects
 """
+
 import json
 import logging
 import re
@@ -149,6 +150,5 @@ class FileData(BaseDynamoDBData):
         if jsondata.get('tables'):
             for tbl in jsondata.get('tables'):
                 tbl['created'] = dt.fromisoformat(tbl['created'])
-
 
         return clazz(**jsondata)

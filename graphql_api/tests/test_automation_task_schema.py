@@ -4,6 +4,7 @@ Test API function for opensha Rupture Generation
 Mocking our data layer
 
 """
+
 import datetime as dt
 import unittest
 from io import BytesIO

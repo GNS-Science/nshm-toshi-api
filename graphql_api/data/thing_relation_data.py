@@ -1,6 +1,7 @@
 """
 Object manager for ThingRelation (and subclassed) schema objects
 """
+
 import logging
 from importlib import import_module
 

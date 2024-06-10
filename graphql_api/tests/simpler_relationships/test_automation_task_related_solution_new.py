@@ -4,6 +4,7 @@ Test API function for opensha AutomationTask & related InversionSolution files
 Mocking our data layer
 
 """
+
 import json
 import unittest
 from copy import copy
