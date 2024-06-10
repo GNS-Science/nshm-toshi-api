@@ -17,19 +17,11 @@ from .common import PredecessorsInterface
 from .helpers import resolve_node
 from .inversion_solution import InversionSolution, InversionSolutionInterface
 from .scaled_inversion_solution import ScaledInversionSolution
-from .time_dependent_inversion_solution import TimeDependentInversionSolution
-
-# from graphql_api.schema.table import Table
 
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
-
-
-class SourceSolutionUnion(graphene.Union):
-    class Meta:
-        types = (InversionSolution, ScaledInversionSolution, TimeDependentInversionSolution)
 
 
 class InversionSolutionNrml(graphene.ObjectType):
@@ -45,7 +37,10 @@ class InversionSolutionNrml(graphene.ObjectType):
         interfaces = (relay.Node, FileInterface, PredecessorsInterface)
 
     created = graphene.DateTime(description="When the scaled solution file was created")
-    source_solution = graphene.Field(SourceSolutionUnion, description="The original solution.")
+    source_solution = graphene.Field(
+        'graphql_api.schema.custom.source_solution_union.SourceSolutionUnion',
+        description="The original soloution as produced by opensha"
+        )
 
     @classmethod
     def get_node(cls, info, _id):

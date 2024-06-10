@@ -131,11 +131,14 @@ class FileData(BaseDynamoDBData):
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 
-        # Rule based migration
+        # Rule based migration,
+        # this deals with graphql_api/tests/legacy/test_inversion_solution_file_migration_bug.py
         if clazz_name == "File" and (jsondata.get('tables') or jsondata.get('metrics')):
             # this is actually an InversionSolution
             logger.info("from_json migration to InversionSolution of: %s" % str(jsondata))
             clazz = getattr(import_module('graphql_api.schema'), 'InversionSolution')
+
+        logger.debug("from_json clazz: %s" % str(clazz))
 
         ## produced_by_id -> produced_by schema migration
         produced_by_id = jsondata.pop('produced_by_id', None)
@@ -147,5 +150,5 @@ class FileData(BaseDynamoDBData):
             for tbl in jsondata.get('tables'):
                 tbl['created'] = dt.fromisoformat(tbl['created'])
 
-        # print('updated json', jsondata)
+
         return clazz(**jsondata)

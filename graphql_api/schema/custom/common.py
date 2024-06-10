@@ -80,3 +80,5 @@ class PredecessorsInterface(graphene.Interface):
     predecessors = graphene.List(
         'graphql_api.schema.custom.predecessor.Predecessor', required=False, description="list of predecessor info"
     )
+
+

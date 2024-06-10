@@ -35,7 +35,7 @@ class AggregateInversionSolution(graphene.ObjectType):
 
     common_rupture_set = graphene.Field(File)
     source_solutions = graphene.List(
-        'graphql_api.schema.custom.inversion_solution_nrml.SourceSolutionUnion',
+        'graphql_api.schema.custom.source_solution_union.SourceSolutionUnion',
         description="The solutions used to build the aggregate",
     )
     aggregation_fn = graphene.Field(AggregationFn, description="aggregation function on rupture rates.")
