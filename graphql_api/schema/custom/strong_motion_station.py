@@ -6,7 +6,6 @@ automatically by Graphene.
 
 """
 
-import datetime as dt
 import logging
 
 import graphene

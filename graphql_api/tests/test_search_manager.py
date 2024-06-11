@@ -10,7 +10,7 @@ Mocking out ES in requests
 
 # import datetime as dt
 import unittest
-from unittest import mock, skip
+from unittest import mock
 
 import requests_mock
 from graphene.test import Client

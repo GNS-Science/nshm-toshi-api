@@ -4,9 +4,7 @@ BaseData is the base class for AWS_S3 data handlers
 
 import json
 import logging
-import os
 import random
-import traceback
 from collections import namedtuple
 from datetime import datetime as dt
 from importlib import import_module
@@ -15,12 +13,8 @@ from io import BytesIO
 import backoff
 import boto3
 import pynamodb.exceptions
-import requests.exceptions
-from botocore.exceptions import ClientError
-from graphene.relay import connection
-from graphql_relay.node.node import from_global_id, to_global_id
 from pynamodb.connection.base import Connection
-from pynamodb.exceptions import DoesNotExist, PutError, TransactWriteError, VerboseClientError
+from pynamodb.exceptions import DoesNotExist
 from pynamodb.transactions import TransactWrite
 
 import graphql_api.dynamodb
@@ -28,7 +22,6 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import (
     CW_METRICS_RESOLUTION,
     DB_ENDPOINT,
-    DEPLOYMENT_STAGE,
     FIRST_DYNAMO_ID,
     IS_OFFLINE,
     REGION,
@@ -36,7 +29,7 @@ from graphql_api.config import (
     STACK_NAME,
     TESTING,
 )
-from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
+from graphql_api.dynamodb.models import ToshiIdentity
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -249,7 +242,7 @@ class BaseDynamoDBData(BaseData):
         t0 = dt.utcnow()
         try:
             identity = ToshiIdentity.get(self._prefix)
-        except DoesNotExist as e:
+        except DoesNotExist:
             # very first use of the identity
             logger.debug(f'get_next_id setting initial ID; table_name={self._prefix}, object_id={FIRST_DYNAMO_ID}')
             identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_DYNAMO_ID)

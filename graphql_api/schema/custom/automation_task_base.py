@@ -6,9 +6,7 @@ automatically by Graphene.
 
 """
 
-import datetime
 import logging
-from datetime import datetime as dt
 
 import graphene
 from graphene import relay
@@ -18,7 +16,7 @@ from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.event import EventResult, EventState
 
-from .common import KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
+from .common import KeyValuePair, KeyValuePairInput
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION

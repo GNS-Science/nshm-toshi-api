@@ -14,8 +14,6 @@ from dateutil.tz import tzutc
 from graphene.test import Client
 from moto import mock_dynamodb
 
-from graphql_api import data
-from graphql_api.dynamodb.models import migrate
 from graphql_api.schema import RuptureGenerationTask, root_schema
 
 orig = botocore.client.BaseClient._make_api_call
@@ -42,7 +40,7 @@ class TestBotoMocked(unittest.TestCase):
             # o = client.get_object(Bucket='my-bucket', Key='my-key')
             # Should return mocked exception
             with self.assertRaises(ClientError):
-                e = client.upload_part_copy()
+                client.upload_part_copy()
 
 
 # r0 = {'ResponseMetadata': {

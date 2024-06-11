@@ -3,15 +3,13 @@ Squash the bug in Scaled and Aggregate Solutinos whene they retrun ther incorrec
 
 """
 
-import json
 from copy import copy
 
 # from moto import mock_dynamodb, mock_s3
-from unittest import mock
 
 import pytest
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import to_global_id
 
 import graphql_api.data
 from graphql_api.schema import root_schema

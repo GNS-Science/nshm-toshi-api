@@ -7,18 +7,13 @@ Mocking our data layer
 
 import datetime as dt
 import unittest
-from io import BytesIO
 from unittest import mock
 
 from dateutil.tz import tzutc
 from graphene.test import Client
-from moto import mock_dynamodb
 
 import graphql_api.data  # for mocking
-from graphql_api import data
-from graphql_api.dynamodb.models import migrate
 from graphql_api.schema import root_schema
-from graphql_api.schema.custom import StrongMotionStation
 
 CREATE_GT = '''
     mutation new_gt ($created: DateTime!) {

@@ -2,7 +2,7 @@ import logging
 from datetime import datetime as dt
 
 import graphene
-from graphene import Enum, relay
+from graphene import relay
 from graphql_relay import from_global_id
 
 from graphql_api.cloudwatch import ServerlessMetricWriter

@@ -2,12 +2,11 @@ import datetime as dt
 import json
 import random
 import unittest
-from io import BytesIO
 
 import boto3
 from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import to_global_id
 from moto import mock_dynamodb, mock_s3
 from nzshm_common.util import compress_string, decompress_string
 from pynamodb.connection.base import Connection  # for mocking

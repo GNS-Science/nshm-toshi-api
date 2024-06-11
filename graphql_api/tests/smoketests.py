@@ -12,7 +12,6 @@ now python3 smoketests.py
 """
 
 import os
-import random
 import time
 
 from gql import Client, gql

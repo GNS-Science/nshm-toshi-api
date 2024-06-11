@@ -13,13 +13,12 @@ import logging
 from datetime import datetime as dt
 
 import graphene
-from graphene import Enum, relay
+from graphene import relay
 from graphql_relay import from_global_id
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
-from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.thing import Thing
 
 from .automation_task_base import (

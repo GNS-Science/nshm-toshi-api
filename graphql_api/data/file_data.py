@@ -4,18 +4,11 @@ The object manager for File (and subclassed) schema objects
 
 import json
 import logging
-import re
 from datetime import datetime as dt
 from importlib import import_module
 
-from boto3.resources.model import Identifier
-from graphene.relay import connection
-from pynamodb.exceptions import DoesNotExist
-from pynamodb.transactions import Connection, TransactGet, TransactWrite
 
-from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
-
-from .base_data import BaseDynamoDBData, append_uniq
+from .base_data import BaseDynamoDBData
 
 logger = logging.getLogger(__name__)
 

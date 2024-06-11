@@ -1,4 +1,4 @@
-from graphene.types.scalars import MAX_INT, MIN_INT, Scalar
+from graphene.types.scalars import Scalar
 from graphql.language.ast import IntValue
 
 

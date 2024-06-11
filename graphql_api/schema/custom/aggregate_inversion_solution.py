@@ -14,7 +14,6 @@ from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.file import CreateFile, File, FileInterface
 
-from .automation_task import AutomationTask
 from .common import AggregationFn, PredecessorsInterface
 from .helpers import resolve_node
 from .inversion_solution import InversionSolutionInterface

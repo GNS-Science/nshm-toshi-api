@@ -1,8 +1,7 @@
 from datetime import datetime as dt
 
 import graphene
-from graphene import Enum, relay
-from graphql_relay import from_global_id
+from graphene import relay
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME

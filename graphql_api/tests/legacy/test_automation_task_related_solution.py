@@ -8,14 +8,12 @@ Mocking our data layer
 import json
 import unittest
 from copy import copy
-from unittest import mock, skip
+from unittest import mock
 
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
 
 from graphql_api.schema import root_schema
 from graphql_api.tests.fixtures import automation_task_example as ate
-from graphql_api.tests.legacy.test_rupture_generation_related_files import FILE
 
 AUTO_TASK = {
     "id": "0zHJ450",

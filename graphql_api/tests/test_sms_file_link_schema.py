@@ -5,19 +5,15 @@ Mocking our data layer
 
 """
 
-import datetime as dt
 import unittest
 from io import BytesIO
 from unittest import mock
 
-from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import from_global_id
 
 import graphql_api.data  # for mocking
-from graphql_api import data
 from graphql_api.schema import root_schema
-from graphql_api.schema.custom import StrongMotionStation
 
 # from graphql_api.schema.custom.sms_file_link import SmsFileLink #, SmsFileLinkConnection, CreateSmsFileLink, SmsFileType
 

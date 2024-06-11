@@ -4,21 +4,14 @@ Mocking our data layer
 
 """
 
-import copy
-import datetime as dt
 import itertools
-import json
 import unittest
-from io import BytesIO
 from unittest import mock
 
-from dateutil.tz import tzutc
 from graphene.test import Client
 
 import graphql_api.data  # for mocking
-from graphql_api import data
 from graphql_api.schema import root_schema
-from graphql_api.schema.custom.inversion_solution import CreateInversionSolution, InversionSolution
 
 FILE = lambda: {
     "id": "1233.0nAmGD",

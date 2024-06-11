@@ -7,7 +7,6 @@ TO do this we at least need to know the object type (is the ModelName).
 - let figure out where to go looking based on the class name
 """
 
-import graphene
 import pytest
 
 from graphql_api.data import FileData, TableData, ThingData

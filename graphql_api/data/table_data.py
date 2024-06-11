@@ -9,7 +9,7 @@ from importlib import import_module
 from benedict import benedict
 
 # from .helpers import get_objectid_from_global
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import from_global_id
 
 from .base_data import BaseDynamoDBData
 

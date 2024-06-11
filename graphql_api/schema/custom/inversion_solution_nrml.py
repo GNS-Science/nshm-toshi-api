@@ -15,8 +15,6 @@ from graphql_api.schema.file import CreateFile, FileInterface
 
 from .common import PredecessorsInterface
 from .helpers import resolve_node
-from .inversion_solution import InversionSolution, InversionSolutionInterface
-from .scaled_inversion_solution import ScaledInversionSolution
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION

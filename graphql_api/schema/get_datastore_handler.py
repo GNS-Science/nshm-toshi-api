@@ -28,6 +28,7 @@ from .thing import Thing
 SchemaObjectStorageHandler = namedtuple("SchemaObjectStorageType", "schema_class, handler_class")
 
 SCHEMA_STORAGE_HANDLERS = dict(
+    AutomationTask=SchemaObjectStorageHandler(AutomationTask, ThingData),
     File=SchemaObjectStorageHandler(File, FileData),
     # SchemaObjectStorageHandler(FileInterface, FileData),
     Table=SchemaObjectStorageHandler(Table, TableData),

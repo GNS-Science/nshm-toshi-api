@@ -1,8 +1,6 @@
-import datetime as dt
 import unittest
 from unittest import mock
 
-from dateutil.tz import tzutc
 from graphene.test import Client
 
 from graphql_api.schema import root_schema

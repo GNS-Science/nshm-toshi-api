@@ -1,5 +1,5 @@
 from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
-from pynamodb.indexes import AllProjection, GlobalSecondaryIndex, IncludeProjection, KeysOnlyProjection
+from pynamodb.indexes import GlobalSecondaryIndex, KeysOnlyProjection
 from pynamodb.models import Model
 
 from graphql_api.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, TESTING

@@ -6,7 +6,7 @@ from graphql_relay import from_global_id, to_global_id
 
 from graphql_api.data import get_data_manager
 
-from .get_datastore_handler import get_datastore_handler, get_datastore_handler_names, get_datastore_handlers
+from .get_datastore_handler import get_datastore_handler
 
 log = logging.getLogger(__name__)
 

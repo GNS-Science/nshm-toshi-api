@@ -2,17 +2,14 @@
 Search Manager
 """
 
-import json
 import logging
 from datetime import datetime as dt
 
-import boto3
 import requests
 from elasticsearch import Elasticsearch, RequestsHttpConnection
-from requests_aws4auth import AWS4Auth
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import CW_METRICS_RESOLUTION, ES_ENDPOINT, ES_REGION, STACK_NAME
+from graphql_api.config import CW_METRICS_RESOLUTION, ES_ENDPOINT, STACK_NAME
 from graphql_api.data.file_data import FileData
 from graphql_api.data.table_data import TableData
 from graphql_api.data.thing_data import ThingData
