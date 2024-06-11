@@ -1,8 +1,8 @@
 """
 This module contains the schema definition for an NSHM Strong Motion Station.
 
-Comments and descriptions defined here will be available to end-users of the API via the graphql schema, which is generated
-automatically by Graphene.
+Comments and descriptions defined here will be available to end-users of the API via
+the graphql schema, which is generated automatically by Graphene.
 
 """
 

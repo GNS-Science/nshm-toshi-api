@@ -3,6 +3,7 @@ The NSHM data file graphql schema.
 """
 
 from datetime import datetime as dt
+from typing import TYPE_CHECKING
 
 import graphene
 from graphene import relay
@@ -14,6 +15,9 @@ from graphql_api.data.file_relation_data import ensure_decompressed
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from graphql_api.schema.custom.scalars import BigInt
 
+if TYPE_CHECKING:
+    from graphql_api.data import FileData
+
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
@@ -22,8 +26,8 @@ db_metrics = ServerlessMetricWriter(
 class FileInterface(graphene.Interface):
     """A File in the NSHM saga"""
 
-    class Meta:
-        interfaces = relay.Node
+    # class Meta:
+    #     interfaces = (relay.Node,)
 
     # TODO consider if this field ought to be enforced here, instead of in subclasses
     # created = graphene.DateTime(description="When the file was created")

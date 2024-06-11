@@ -10,7 +10,6 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 
-
 logger = logging.getLogger(__name__)
 
 db_metrics = ServerlessMetricWriter(

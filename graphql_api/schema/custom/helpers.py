@@ -55,7 +55,7 @@ def resolve_node(root, info, id_field, dm_type):
 
     if len(selections) == 1 and (selections[0].name.value == 'id'):
         # create an instance with just the id attribute set
-        log.debug(f"resolve_node no fetch needed")
+        log.debug("resolve_node no fetch needed")
         clazz = getattr(import_module('graphql_api.schema'), _type)
         res = clazz(id=nid)
     else:

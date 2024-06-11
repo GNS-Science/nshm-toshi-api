@@ -17,7 +17,6 @@ from graphql_relay import from_global_id
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
-from graphql_api.schema.custom.rupture_generation_task import RuptureGenerationTask
 from graphql_api.schema.file import CreateFile, FileInterface
 from graphql_api.schema.table import Table
 
@@ -40,8 +39,8 @@ class AutomationTaskUnion(graphene.Union):
 class InversionSolutionInterface(graphene.Interface):
     """A interface for things like Inversion Solution"""
 
-    class Meta:
-        interfaces = (relay.Node, FileInterface)
+    # class Meta:
+    #     interfaces = (relay.Node, FileInterface)
 
     created = graphene.DateTime(
         description="When the solution was created",
@@ -154,7 +153,7 @@ class AppendInversionSolutionTables(relay.ClientIDMutation):
         if not inversion_solution.get('tables'):
             inversion_solution['tables'] = []
 
-        ##do table updates...
+        # table updates...
         for table in kwargs['tables']:
             table_relation = copy.copy(table)
             table_relation['identity'] = str(uuid.uuid4())

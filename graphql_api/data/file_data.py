@@ -7,13 +7,13 @@ import logging
 from datetime import datetime as dt
 from importlib import import_module
 
+from graphql_api.cloudwatch import ServerlessMetricWriter
+from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 
 from .base_data import BaseDynamoDBData
 
 logger = logging.getLogger(__name__)
 
-from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -50,7 +50,7 @@ class FileData(BaseDynamoDBData):
         data_key = "%s/%s/%s" % (self._prefix, new_instance.id, new_instance.file_name)
 
         t0 = dt.utcnow()
-        response2 = self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
+        self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
         parts = self.s3_client.generate_presigned_post(
             Bucket=self._bucket_name,
             Key=data_key,

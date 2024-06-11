@@ -1,4 +1,3 @@
-import os
 import sys
 
 import click
@@ -118,7 +117,7 @@ def cli_nis(flip, clazz, task_type, list_ids, verbose):
     # q2 = Q("term", task_type__keyword=task_type)
 
     # flip 2nd term
-    expr = qClass  #  & ~q2 if flip else qClass & q2
+    expr = qClass  # & ~q2 if flip else qClass & q2
 
     s = s.query(expr)
     # explicitly include/exclude fields

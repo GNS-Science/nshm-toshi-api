@@ -44,10 +44,11 @@ class FileRelationData(BaseDynamoDBData):
 
         try:
             file = self._db_manager.file.get_object(file_id)
-        except pynamodb.exceptions.DoesNotExist as err:
+        except pynamodb.exceptions.DoesNotExist:
             body = self._db_manager.file._from_s3(file_id)
             logger.info(
-                f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix}; object_type={body['clazz_name']}"
+                f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix};"
+                f" object_type={body['clazz_name']}"
             )
             file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
             logger.debug(f'ToshiFileObject version {file.version}')

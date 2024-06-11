@@ -1,5 +1,7 @@
 from graphene.types.scalars import Scalar
-from graphql.language.ast import IntValue
+
+# from graphql.language.ast import IntValue
+from graphql.language import ast
 
 
 class BigInt(Scalar):
@@ -24,6 +26,6 @@ class BigInt(Scalar):
     parse_value = coerce_int
 
     @staticmethod
-    def parse_literal(ast):
-        if isinstance(ast, IntValue):
-            return int(ast.value)
+    def parse_literal(ast_node):
+        if isinstance(ast_node, ast.IntValue): #Node):
+            return int(ast_node.value)

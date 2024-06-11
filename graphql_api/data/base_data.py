@@ -105,7 +105,7 @@ class BaseData:
             prefix, result_id, _ = obj_summary.key.split('/')
             assert prefix == self._prefix
             object = self.get_one(result_id)
-            if clazz == None or isinstance(object, clazz):
+            if clazz is None or isinstance(object, clazz):
                 results.append(object)
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
         return results
@@ -114,7 +114,8 @@ class BaseData:
         """legacy iterator"""
         count, seen = 0, 0
         after = after or ""
-        # TODO refine this, see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/bucket/objects.html#filter
+        # TODO refine this, see
+        #   https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/bucket/objects.html#filter
         # need to handle multiple versions
         # should use:
         #  - Marker to define start of itertion
@@ -267,7 +268,7 @@ class BaseDynamoDBData(BaseData):
             obj = self.get_object(object_id)
             db_metrics.put_duration(__name__, '_read_object', dt.utcnow() - t0)
             return obj.object_content
-        except:
+        except Exception:
             obj = self._from_s3(object_id)
             db_metrics.put_duration(__name__, '_read_object', dt.utcnow() - t0)
             return obj

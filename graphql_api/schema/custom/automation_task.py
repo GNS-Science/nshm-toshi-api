@@ -1,14 +1,13 @@
 """
 This module contains the schema definitions used by NSHM Automation tasks.
 
-Comments and descriptions defined here will be available to end-users of the API via the graphql schema, which is generated
-automatically by Graphene.
+Comments and descriptions defined here will be available to end-users of the API via the graphql schema,
+which is generated automatically by Graphene.
 
 The core class AutomationTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
 
-import datetime as dt
 import logging
 from datetime import datetime as dt
 
@@ -35,7 +34,7 @@ db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class AutomationTask(graphene.ObjectType, AutomationTaskBase):
@@ -114,7 +113,7 @@ class CreateAutomationTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        print("payload: ", input)
+        log.debug(f"payload: {input}")
         task_result = get_data_manager().thing.create('AutomationTask', **input)
         db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.utcnow() - t0)
         return CreateAutomationTask(task_result=task_result)

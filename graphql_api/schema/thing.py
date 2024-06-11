@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+from typing import TYPE_CHECKING
 
 import graphene
 from graphene import relay
@@ -13,11 +14,15 @@ db_metrics = ServerlessMetricWriter(
 )
 
 
+if TYPE_CHECKING:
+    from graphql_api.data import ThingData
+
+
 class Thing(graphene.Interface):
     """A Thing in the NSHM saga"""
 
-    class Meta:
-        interfaces = (relay.Node,)
+    # class Meta:
+    #     interfaces = (relay.Node,)
 
     created = graphene.DateTime(description="When the thing was created")
 
@@ -70,7 +75,7 @@ class Thing(graphene.Interface):
 
             res = TaskTaskRelationConnection(edges=[None for x in range(len(root.parents))])
         elif isinstance(root.parents[0], dict):
-            print(f'#new form, parents is list of objects')
+            # print(f'#new form, parents is list of objects')
             res = [get_data_manager().thing_relation.build_one(parent['parent_id'], root.id) for parent in root.parents]
             db_metrics.put_duration(__name__, 'resolve_parents[optimised]', dt.utcnow() - t0)
         else:
@@ -92,7 +97,7 @@ class Thing(graphene.Interface):
 
             res = TaskTaskRelationConnection(edges=[None for x in range(len(root.children))])
         elif isinstance(root.children[0], dict):
-            print(f'#new form, children is list of objects')
+            # print(f'#new form, children is list of objects')
             res = [get_data_manager().thing_relation.build_one(root.id, child['child_id']) for child in root.children]
             db_metrics.put_duration(__name__, 'resolve_children[optimised]', dt.utcnow() - t0)
         else:

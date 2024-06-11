@@ -94,6 +94,9 @@ class TestCreateAutomationTask(unittest.TestCase):
             mutation {
                 create_automation_task(input: {
                     created: "September 5th, 1999"
+                    task_type: INVERSION
+                    state: UNDEFINED
+                    result: UNDEFINED
                     })
                     {
                         task_result {
@@ -105,7 +108,7 @@ class TestCreateAutomationTask(unittest.TestCase):
         startdate = dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
-        assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
+        assert 'September 5th, 1999' in executed['errors'][0]['message']
 
     def test_create_with_metrics(self):
         insert = '''

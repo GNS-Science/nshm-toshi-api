@@ -21,7 +21,7 @@ from .custom import (
     StrongMotionStation,
     TimeDependentInversionSolution,
 )
-from .file import File, FileInterface
+from .file import File, FileInterface  # noqa: F401
 from .table import Table
 from .thing import Thing
 

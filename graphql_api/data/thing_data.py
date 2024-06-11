@@ -33,7 +33,7 @@ class ThingData(BaseDynamoDBData):
         NB only handles gitrefs
         """
         if thing.get('clazz_name') == 'RuptureGenerationTask':
-            ##fix gitrefs
+            # fix gitrefs
             env = dict()
             gitrefs = thing.pop('git_refs', None)
             if gitrefs:

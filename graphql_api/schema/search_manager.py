@@ -43,7 +43,6 @@ class SearchManager:
         # Index the document
         t0 = dt.utcnow()
         es_key = key.replace("/", "_")
-        headers = {"Content-Type": "application/json"}
         try:
             # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.create
             # create(index, id, body, doc_type=None, params=None, headers=None)

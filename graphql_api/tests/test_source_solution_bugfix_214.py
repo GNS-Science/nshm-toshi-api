@@ -5,14 +5,15 @@ Squash the bug in Scaled and Aggregate Solutinos whene they retrun ther incorrec
 
 from copy import copy
 
-# from moto import mock_dynamodb, mock_s3
-
 import pytest
 from graphene.test import Client
 from graphql_relay import to_global_id
 
 import graphql_api.data
 from graphql_api.schema import root_schema
+
+# from moto import mock_dynamodb, mock_s3
+
 
 # from graphql_api.dynamodb.models import ToshiFileObject
 
