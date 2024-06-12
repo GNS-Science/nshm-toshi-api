@@ -7,7 +7,7 @@ Comments and descriptions defined here will be available to end-users of the API
 The core class OpenquakeHazardTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
-
+import copy
 import logging
 from datetime import datetime as dt
 
@@ -35,7 +35,7 @@ db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
@@ -81,7 +81,7 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 class OpenquakeHazardTaskInput(AutomationTaskInput):
     config = graphene.ID(required=True)
     model_type = ModelType(required=True)
-    task_type = OpenquakeTaskType(default_value=OpenquakeTaskType.HAZARD.value)
+    task_type = OpenquakeTaskType(default_value=OpenquakeTaskType.HAZARD)
 
 
 class CreateOpenquakeHazardTask(graphene.Mutation):
@@ -94,15 +94,21 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        logger.debug(f"CreateOpenquakeHazardTask.mutate payload: {input}")
+        log.info(f"CreateOpenquakeHazardTask.mutate payload: {input}")
         # Validation!
         input_type, nid = from_global_id(input.config)
         assert input_type == "OpenquakeHazardConfig"
+
+        json_ready_input = copy.copy(input)
+
+        for fld in ['task_type', 'model_type', 'state', 'result']:
+            json_ready_input[fld] = json_ready_input[fld].value
+
         ref = get_data_manager().thing.get_one(nid)
-        logger.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
+        log.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
         if not ref:
             raise Exception("Broken input")
-        openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input)
+        openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **json_ready_input)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
 
@@ -121,8 +127,9 @@ class UpdateOpenquakeHazardTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        logger.debug(f"UpdateOpenquakeHazardTask.mutate payload: {input}")
+        log.debug(f"UpdateOpenquakeHazardTask.mutate payload: {input}")
         thing_id = input.pop('task_id')
+
         openquake_hazard_task = get_data_manager().thing.update('OpenquakeHazardTask', thing_id, **input)
         db_metrics.put_duration(__name__, 'UpdateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return UpdateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task, ok=True)

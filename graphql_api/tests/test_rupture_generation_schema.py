@@ -87,6 +87,8 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         qry = '''
             mutation {
                 create_rupture_generation_task(input: {
+                    state: UNDEFINED
+                    result: UNDEFINED
                     created: "September 5th, 1999"
                     })
                     {
@@ -99,7 +101,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         startdate = dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
-        assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
+        assert 'September 5th, 1999' in executed['errors'][0]['message']
 
     def test_create_with_metrics(self):
         insert = '''

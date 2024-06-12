@@ -4,8 +4,9 @@ This module contains the schema definition for a AggregateInversionSolution.
 
 """
 from datetime import datetime as dt
-
+import copy
 import graphene
+import logging
 from graphene import relay
 from graphql_relay import from_global_id
 
@@ -22,6 +23,7 @@ db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
 
+log = logging.getLogger(__name__)
 
 class AggregateInversionSolution(graphene.ObjectType):
     """
@@ -87,6 +89,13 @@ class CreateAggregateInversionSolution(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         t0 = dt.utcnow()
-        solution = get_data_manager().file.create('AggregateInversionSolution', **kwargs)
+        log.info(f"CreateAggregateInversionSolution mutate_and_get_payload {kwargs}")
+
+        json_ready_input = copy.copy(kwargs)
+
+        for fld in ['aggregation_fn']:
+            json_ready_input[fld] = json_ready_input[fld].value
+
+        solution = get_data_manager().file.create('AggregateInversionSolution', **json_ready_input)
         db_metrics.put_duration(__name__, 'CreateAggregateInversionSolution.mutate_and_get_payload', dt.utcnow() - t0)
         return CreateAggregateInversionSolution(solution=solution, ok=True)

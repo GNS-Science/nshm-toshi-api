@@ -5,7 +5,9 @@ The NSHM data file graphql schema.
 from datetime import datetime as dt
 from typing import TYPE_CHECKING
 
+
 import graphene
+import logging
 from graphene import relay
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
@@ -17,6 +19,8 @@ from graphql_api.schema.custom.scalars import BigInt
 
 if TYPE_CHECKING:
     from graphql_api.data import FileData
+
+log = logging.getLogger(__name__)
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -135,6 +139,10 @@ class CreateFile(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         t0 = dt.utcnow()
+        log.info(f"CreateFile mutate {kwargs}")
+
+        t0 = dt.utcnow()
+
         file_result = get_data_manager().file.create('File', **kwargs)
         db_metrics.put_duration(__name__, 'CreateFile.mutate', dt.utcnow() - t0)
         return CreateFile(ok=True, file_result=file_result)

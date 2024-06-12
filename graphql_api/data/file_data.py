@@ -46,6 +46,7 @@ class FileData(BaseDynamoDBData):
         Returns:
             File: the File object
         """
+        logger.info(f"FileData.create {kwargs}")
         new_instance = super().create(clazz_name, **kwargs)
         data_key = "%s/%s/%s" % (self._prefix, new_instance.id, new_instance.file_name)
 

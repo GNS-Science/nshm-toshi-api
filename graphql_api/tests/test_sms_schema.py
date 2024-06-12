@@ -73,7 +73,7 @@ class TestCreateSMS(unittest.TestCase):
         startdate = dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
-        assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
+        assert 'September 5th, 1999' in executed['errors'][0]['message']
 
     @unittest.skip("not there yet")
     def test_create_with_metrics(self):

@@ -7,7 +7,7 @@ schema, which is generated automatically by Graphene.
 The core class RuptureGenerationTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
-
+import copy
 import logging
 from datetime import datetime as dt
 
@@ -30,7 +30,7 @@ db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
@@ -66,7 +66,12 @@ class CreateRuptureGenerationTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        print("payload: ", input)
+        log.info(f"CreateRuptureGenerationTaskmnutate {input}")
+
+        json_ready_input = copy.copy(input)
+        for fld in ['result', 'state']:
+            json_ready_input[fld] = json_ready_input[fld].value
+
         task_result = get_data_manager().thing.create('RuptureGenerationTask', **input)
         db_metrics.put_duration(__name__, 'CreateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
         return CreateRuptureGenerationTask(task_result=task_result)

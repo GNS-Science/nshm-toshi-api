@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime as dt
 
 import graphene
+import logging
 from graphene import relay
 from graphql_relay import from_global_id
 
@@ -25,6 +26,8 @@ from .common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from .helpers import resolve_node
 from .labelled_table_relation import LabelledTableRelation, LabelledTableRelationInput
 from .rupture_generation_task import RuptureGenerationTask
+
+log = logging.getLogger(__name__)
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -122,10 +125,13 @@ class CreateInversionSolution(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         t0 = dt.utcnow()
+        log.info(f"CreateInversionSolution mutate_and_get_payload {kwargs}")
         inversion_solution = get_data_manager().file.create('InversionSolution', **kwargs)
         db_metrics.put_duration(__name__, 'CreateInversionSolution.mutate_and_get_payload', dt.utcnow() - t0)
-        return CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
 
+        solution = CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
+        log.info(f"solution: {solution}")
+        return solution
 
 class AppendInversionSolutionTables(relay.ClientIDMutation):
     """

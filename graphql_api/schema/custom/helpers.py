@@ -40,7 +40,7 @@ def resolve_node(root, info, id_field, dm_type):
             if selection.name.value == '__typename':
                 return selection
 
-    selections = copy.copy(info.field_nodes[0].selection_set.selections)
+    selections = list(info.field_nodes[0].selection_set.selections)
     log.debug(f"resolve_node selections A {selections}")
     type_name_field = typename_field(selections)
     if type_name_field:
