@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import unittest
+import pytest
 from io import BytesIO
 
 import boto3
@@ -178,6 +179,7 @@ class TestBug122(unittest.TestCase):
         obj = json.load(file_object)
         assert obj['id'] == '1587.0nVoFt'
 
+    # @pytest.mark.skip("graphene udpate")
     def test_create_file_relation(self):
         file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCK['id'])
 
@@ -185,9 +187,10 @@ class TestBug122(unittest.TestCase):
         link_result = self.client.execute(
             QRY_CREATE_AT_RELATION, variable_values=dict(thing_id='QXV0b21hdGlvblRhc2s6MTAwMDAw', file_id=file_id)
         )
-
+        print(link_result)
         assert link_result['data']['create_file_relation']['ok'] == True
 
+    #@pytest.mark.skip("graphene udpate")
     def test_create_at(self):
         # Create a new AT
         at_result = self.client.execute(
@@ -199,6 +202,7 @@ class TestBug122(unittest.TestCase):
         assert at_id == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
         assert from_global_id(at_id) == ("AutomationTask", "100001")
 
+    # @pytest.mark.skip("graphene udpate")
     def test_create_at_and_link_file(self):
         # Create a new AT
         at_result = self.client.execute(

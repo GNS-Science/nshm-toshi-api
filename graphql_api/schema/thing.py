@@ -1,6 +1,7 @@
 from datetime import datetime as dt
 from typing import TYPE_CHECKING
 
+import logging
 import graphene
 from graphene import relay
 
@@ -8,6 +9,8 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.file_relation import FileRelationConnection
+
+logger = logging.getLogger(__name__)
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -41,8 +44,8 @@ class Thing(graphene.Interface):
             res = []
 
         elif (
-            len(info.field_asts[0].selection_set.selections) == 1
-            and info.field_asts[0].selection_set.selections[0].name.value == 'total_count'
+            len(info.field_nodes[0].selection_set.selections) == 1
+            and info.field_nodes[0].selection_set.selections[0].name.value == 'total_count'
         ):
             # OPTIMISE return list of Nones, if total count is the ONLY field selection
             res = FileRelationConnection(edges=[None for x in range(len(root.files))])
@@ -65,11 +68,14 @@ class Thing(graphene.Interface):
 
     def resolve_parents(root, info, **args):
         t0 = dt.utcnow()
+
+        logger.info(f'>> Thing.resolve_parents() ROOT: {root} INFO: {info}')
+
         if not root.parents:
             res = []
         elif (
-            len(info.field_asts[0].selection_set.selections) == 1
-            and info.field_asts[0].selection_set.selections[0].name.value == 'total_count'
+            len(info.field_nodes[0].selection_set.selections) == 1
+            and info.field_nodes[0].selection_set.selections[0].name.value == 'total_count'
         ):
             from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
 
@@ -83,15 +89,22 @@ class Thing(graphene.Interface):
             res = [get_data_manager().thing_relation.get_one(_id) for _id in root.parents]
             db_metrics.put_duration(__name__, 'resolve_parents[legacy]', dt.utcnow() - t0)
 
+        logger.info(f'>> Thing.resolve_parents() res: {res}')
         return res
 
     def resolve_children(root, info, **args):
         t0 = dt.utcnow()
+        logger.info(f'>> Thing.resolve_children() ROOT: {root}')
+        logger.info(f'>> Thing.resolve_children() INFO: {info}')
+        # logger.info(f'>> Thing.resolve_children() : {dir(info.field_nodes[0])}')
+        # logger.info(f'>> Thing.resolve_children() : {info.field_nodes[0].name.value}')
+        # logger.info(f'>> Thing.resolve_children() : {info.field_nodes[0].selection_set.selections}')
+
         if not root.children:
             res = []
         elif (
-            len(info.field_asts[0].selection_set.selections) == 1
-            and info.field_asts[0].selection_set.selections[0].name.value == 'total_count'
+            len(info.field_nodes[0].selection_set.selections) == 1
+            and info.field_nodes[0].selection_set.selections[0].name.value == 'total_count'
         ):
             from graphql_api.schema.task_task_relation import TaskTaskRelationConnection
 
@@ -105,6 +118,7 @@ class Thing(graphene.Interface):
             res = [get_data_manager().thing_relation.get_one(_id) for _id in root.children]
             db_metrics.put_duration(__name__, 'resolve_children[legacy]', dt.utcnow() - t0)
 
+        logger.info(f'>> Thing.resolve_children() res: {res}')
         return res
 
     @staticmethod

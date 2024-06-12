@@ -22,6 +22,7 @@ class ThingData(BaseDynamoDBData):
     """
 
     def create(self, clazz_name, **kwargs):
+        logger.info(f"ThingData.create() kwargs: {kwargs}")
         if not kwargs['created'].tzname():  # must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
         return super().create(clazz_name, **kwargs)

@@ -27,5 +27,22 @@ class BigInt(Scalar):
 
     @staticmethod
     def parse_literal(ast_node):
-        if isinstance(ast_node, ast.IntValue): #Node):
+        print(f'parse_literal; {ast_node}')
+        if isinstance(ast_node, ast.IntValueNode):
             return int(ast_node.value)
+
+
+    # @staticmethod
+    # def parse_value(value):
+    #     return int(value)
+
+
+    # @staticmethod
+    # def serialize(dt):
+    #     return dt.isoformat()
+
+    # @staticmethod
+    # def parse_literal(node, _variables=None):
+    #     if isinstance(node, ast.StringValueNode):
+    #         return datetime.datetime.strptime(
+    #             node.value, "%Y-%m-%dT%H:%M:%S.%f")

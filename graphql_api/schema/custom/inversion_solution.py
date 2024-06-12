@@ -158,6 +158,7 @@ class AppendInversionSolutionTables(relay.ClientIDMutation):
             table_relation = copy.copy(table)
             table_relation['identity'] = str(uuid.uuid4())
             table_relation['created'] = dt.now(datetime.timezone.utc).isoformat()
+            table_relation['table_type'] = table_relation['table_type'].value # ENUM
             inversion_solution['tables'].append(table_relation)
 
         inversion_solution = get_data_manager().file.update(nid, inversion_solution)

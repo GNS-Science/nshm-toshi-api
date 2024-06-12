@@ -82,40 +82,40 @@ GET_GT_CHILDREN = """query GeneralTaskChildrenTabQuery(
       id
       model_type
       children {
-        edges {
-          node {
-            child {
-              __typename
-              ... on AutomationTask {
+         total_count
+         edges {
+           node {
+             child {
                 __typename
-                id
-                created
-                duration
-                state
-                result
-                arguments {
-                  k
-                  v
+                ... on AutomationTask {
+                  __typename
+                  id
+                  created
+                  duration
+                  state
+                  result
+                  arguments {
+                    k
+                    v
+                  }
                 }
-              }
-              ... on RuptureGenerationTask {
-                __typename
-                id
-                created
-                duration
-                state
-                result
-                arguments {
-                  k
-                  v
+                ... on RuptureGenerationTask {
+                  __typename
+                  id
+                  created
+                  duration
+                  state
+                  result
+                  arguments {
+                    k
+                    v
+                  }
                 }
-              }
-              ... on Node {
-                __isNode: __typename
-                id
-              }
+               ... on Node {
+                 __isNode: __typename
+                 id
+               }
             }
-            # id
           }
         }
       }
@@ -277,6 +277,7 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
 
     def test_general_task_children_query(self):
         data = self.client.execute(GET_GT_CHILDREN, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})
+        print(data)
         result = data['data']['node']
         child_1 = result['children']['edges'][0]['node']['child']
         child_2 = result['children']['edges'][1]['node']['child']
@@ -348,6 +349,8 @@ class TestGeneralTaskQueriesS3(unittest.TestCase):
         assert result['__typename'] == 'GeneralTask'
         assert child_1['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
         assert child_2['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAy'
+        assert len(result['children']['edges']) == 2
+        assert result['children']['total_count'] == 2
 
     def test_get_by_id_query(self):
         gt_result = self.client.execute(FIND_BY_ID_QUERY, variable_values={'id': 'R2VuZXJhbFRhc2s6MTAwMDAw'})

@@ -56,8 +56,8 @@ class FileInterface(graphene.Interface):
         root_relations = root_relations or []
 
         if (
-            len(info.field_asts[0].selection_set.selections) == 1
-            and info.field_asts[0].selection_set.selections[0].name.value == 'total_count'
+            len(info.field_nodes[0].selection_set.selections) == 1
+            and info.field_nodes[0].selection_set.selections[0].name.value == 'total_count'
         ):
             from graphql_api.schema.file_relation import FileRelationConnection
 

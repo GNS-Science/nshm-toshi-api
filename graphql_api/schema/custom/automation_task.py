@@ -7,7 +7,7 @@ which is generated automatically by Graphene.
 The core class AutomationTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
-
+import copy
 import logging
 from datetime import datetime as dt
 
@@ -100,8 +100,8 @@ class AutomationTaskConnection(relay.Connection):
 
 
 class NewAutomationTaskInput(AutomationTaskInput):
-    model_type = ModelType(required=False)
-    task_type = TaskSubType(required=True)
+    model_type = graphene.Field(ModelType, required=False)
+    task_type = graphene.Field(TaskSubType, required=True)
 
 
 class CreateAutomationTask(graphene.Mutation):
@@ -113,8 +113,15 @@ class CreateAutomationTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        log.debug(f"payload: {input}")
-        task_result = get_data_manager().thing.create('AutomationTask', **input)
+        json_ready_input = copy.copy(input)
+
+        for fld in ['result', 'state', 'task_type']:
+            json_ready_input[fld] = json_ready_input[fld].value
+
+        log.info(f"payload: {json_ready_input}")
+        task_result = get_data_manager().thing.create('AutomationTask', **json_ready_input)
+        log.info(f"task_result: {task_result}")
+
         db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.utcnow() - t0)
         return CreateAutomationTask(task_result=task_result)
 
@@ -128,7 +135,7 @@ class UpdateAutomationTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        print("mutate: ", input)
+        log.debug("mutate: ", input)
         thing_id = input.pop('task_id')
         task_result = get_data_manager().thing.update('AutomationTask', thing_id, **input)
         db_metrics.put_duration(__name__, 'UpdateAutomationTask.mutate', dt.utcnow() - t0)

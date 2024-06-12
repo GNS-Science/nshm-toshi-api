@@ -143,6 +143,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
                 identity
                 table_id
                 table_type
+                label
                 dimensions {k v}
                 table {
                  id
@@ -172,7 +173,9 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         )
 
         result = self.client.execute(qry, variable_values=dict(input=input))
+
         print(result)
+
         assert (
             result['data']['append_inversion_solution_tables']['inversion_solution']['id']
             == 'SW52ZXJzaW9uU29sdXRpb246MGk5M3FL'

@@ -39,7 +39,7 @@ QRY_CREATE_AT_RELATION = '''
 '''
 
 ATMOCK = {
-    'id': '100000',
+    #'id': '100000',
     "clazz_name": "AutomationTask",
     'created': dt.datetime.now(tzutc()),
     'files': None,
@@ -69,7 +69,7 @@ FAKE_RELATION = {'id': '100000', 'role': 'read'}
 # FILE_RELATIONS = compress_string(json.dumps([FAKE_RELATION for x in range(UNCOMPRESSED_LIMIT )]))
 FILE_RELATIONS = [FAKE_RELATION for x in range(UNCOMPRESSED_LIMIT)]
 FILEMOCK = {
-    'id': '100000',
+    #'id': '100000',
     'file_name': 'RupSet_Cl_FM(CFM_0_9_).zip',
     'md5_digest': '5f1jFJY5keP7n7pSOX64Mg==',
     'file_size': 32045903,
@@ -88,6 +88,7 @@ FILEMOCK = {
     'relations': FILE_RELATIONS,
     'clazz_name': 'File',
 }
+FILEMOCKID = '100000'
 
 
 @mock_s3
@@ -126,7 +127,8 @@ class TestCompressRelations(unittest.TestCase):
         self.assertTrue(size < MAX_SIZE)
 
     def test_create_file_relation_added_with_compression(self):
-        file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCK['id'])
+
+        file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCKID)
 
         # the relation
         link_result = self.client.execute(
@@ -137,7 +139,7 @@ class TestCompressRelations(unittest.TestCase):
         assert link_result['data']['create_file_relation']['ok'] == True
 
         # get the file back from dyamodb
-        file = ToshiFileObject.get(FILEMOCK['id'])
+        file = ToshiFileObject.get(FILEMOCKID)
         print(file.object_content)
         self.assertEqual(len(json.loads(decompress_string(file.object_content['relations']))), UNCOMPRESSED_LIMIT + 1)
         self.assertEqual(
@@ -145,13 +147,13 @@ class TestCompressRelations(unittest.TestCase):
         )
 
     def test_round_trip_file_relation_with_compression(self):
-        file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCK['id'])
+        file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCKID)
 
         link_result = self.client.execute(
             QRY_CREATE_AT_RELATION, variable_values=dict(thing_id='QXV0b21hdGlvblRhc2s6MTAwMDAw', file_id=file_id)
         )
 
-        file = ToshiFileObject.get(FILEMOCK['id'])
+        file = ToshiFileObject.get(FILEMOCKID)
         # print(file.object_content)
         self.assertEqual(len(json.loads(decompress_string(file.object_content['relations']))), UNCOMPRESSED_LIMIT + 1)
         self.assertEqual(

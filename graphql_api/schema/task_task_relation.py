@@ -31,12 +31,12 @@ class TaskTaskRelation(graphene.ObjectType):
 
     @staticmethod
     def resolve_parent(root, info, *args, **kwargs):
-        # logger.debug(f'ROOT {root.parent_id} ')
+        logger.info(f'TaskTaskRelation.resolve_parent() ROOT: {root.parent_id} ')
         return get_data_manager().thing.get_one(root.parent_id)
 
     @staticmethod
     def resolve_child(root, info, *args, **kwargs):
-        # logger.debug(f'ROOT {root.child_id} ')
+        logger.info(f'TaskTaskRelation.resolve_child() ROOT: {root.child_id} ')
         return get_data_manager().thing.get_one(root.child_id)
 
 

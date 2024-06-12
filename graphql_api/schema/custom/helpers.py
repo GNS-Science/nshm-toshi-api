@@ -35,12 +35,12 @@ def resolve_node(root, info, id_field, dm_type):
     def typename_field(selections):
         for selection in selections:
             log.debug(f'selection {type(selection)}')
-            if isinstance(selection, graphql.language.ast.InlineFragment):
+            if isinstance(selection, graphql.language.ast.InlineFragmentNode):
                 continue
             if selection.name.value == '__typename':
                 return selection
 
-    selections = copy.copy(info.field_asts[0].selection_set.selections)
+    selections = copy.copy(info.field_nodes[0].selection_set.selections)
     log.debug(f"resolve_node selections A {selections}")
     type_name_field = typename_field(selections)
     if type_name_field:
