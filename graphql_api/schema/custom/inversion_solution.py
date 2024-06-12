@@ -5,13 +5,13 @@ This module contains the schema definition for an InversionSolution.
 """
 import copy
 import datetime
+import logging
 import uuid
 
 # from importlib import import_module
 from datetime import datetime as dt
 
 import graphene
-import logging
 from graphene import relay
 from graphql_relay import from_global_id
 
@@ -133,6 +133,7 @@ class CreateInversionSolution(relay.ClientIDMutation):
         log.info(f"solution: {solution}")
         return solution
 
+
 class AppendInversionSolutionTables(relay.ClientIDMutation):
     """
     Append LabelledTableRelationTable to an existing Inversion Solution
@@ -164,7 +165,7 @@ class AppendInversionSolutionTables(relay.ClientIDMutation):
             table_relation = copy.copy(table)
             table_relation['identity'] = str(uuid.uuid4())
             table_relation['created'] = dt.now(datetime.timezone.utc).isoformat()
-            table_relation['table_type'] = table_relation['table_type'].value # ENUM
+            table_relation['table_type'] = table_relation['table_type'].value  # ENUM
             inversion_solution['tables'].append(table_relation)
 
         inversion_solution = get_data_manager().file.update(nid, inversion_solution)

@@ -7,6 +7,7 @@ Comments and descriptions defined here will be available to end-users of the API
 The core class OpenquakeHazardTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
+
 import copy
 import logging
 from datetime import datetime as dt

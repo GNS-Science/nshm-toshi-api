@@ -11,8 +11,8 @@ from unittest import mock
 from graphene.test import Client
 
 import graphql_api.data  # for mocking
-from graphql_api.schema import root_schema
-from graphql_api.schema import InversionSolution
+from graphql_api.schema import InversionSolution, root_schema
+
 
 class IncrId:
     next_id = -1
@@ -53,7 +53,10 @@ READ_MOCK = lambda _self, id: dict(
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data.file_data.FileData.create', lambda self, clazz_name, **kwargs: InversionSolution(**{"id":"100000"}))
+@mock.patch(
+    'graphql_api.data.file_data.FileData.create',
+    lambda self, clazz_name, **kwargs: InversionSolution(**{"id": "100000"}),
+)
 # TODO: replace above with this deeper test ....
 # @mock.patch('graphql_api.data.BaseS3Data._write_object', lambda self, id, updated_body, **kwargs: {})
 class TestBasicInversionSolutionOperations(unittest.TestCase):

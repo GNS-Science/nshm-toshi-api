@@ -1,7 +1,7 @@
+import logging
 from datetime import datetime as dt
 from typing import TYPE_CHECKING
 
-import logging
 import graphene
 from graphene import relay
 

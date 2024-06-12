@@ -3,10 +3,11 @@
 This module contains the schema definition for a AggregateInversionSolution.
 
 """
-from datetime import datetime as dt
 import copy
-import graphene
 import logging
+from datetime import datetime as dt
+
+import graphene
 from graphene import relay
 from graphql_relay import from_global_id
 
@@ -24,6 +25,7 @@ db_metrics = ServerlessMetricWriter(
 )
 
 log = logging.getLogger(__name__)
+
 
 class AggregateInversionSolution(graphene.ObjectType):
     """

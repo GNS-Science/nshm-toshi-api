@@ -7,6 +7,7 @@ schema, which is generated automatically by Graphene.
 The core class RuptureGenerationTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
+
 import copy
 import logging
 from datetime import datetime as dt

@@ -46,7 +46,6 @@ class FileRelationData(BaseDynamoDBData):
         thing_content['files'].append({'file_id': file_id, 'file_role': role.value})
         logger.info(thing_content['files'])
 
-
         try:
             file = self._db_manager.file.get_object(file_id)
         except pynamodb.exceptions.DoesNotExist:

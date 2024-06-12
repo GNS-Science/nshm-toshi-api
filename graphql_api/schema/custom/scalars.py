@@ -31,11 +31,9 @@ class BigInt(Scalar):
         if isinstance(ast_node, ast.IntValueNode):
             return int(ast_node.value)
 
-
     # @staticmethod
     # def parse_value(value):
     #     return int(value)
-
 
     # @staticmethod
     # def serialize(dt):

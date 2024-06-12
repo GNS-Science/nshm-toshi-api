@@ -2,12 +2,11 @@
 The NSHM data file graphql schema.
 """
 
+import logging
 from datetime import datetime as dt
 from typing import TYPE_CHECKING
 
-
 import graphene
-import logging
 from graphene import relay
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
