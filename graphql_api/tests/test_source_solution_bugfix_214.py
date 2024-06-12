@@ -12,31 +12,6 @@ from graphql_relay import to_global_id
 import graphql_api.data
 from graphql_api.schema import root_schema
 
-# from moto import mock_dynamodb, mock_s3
-
-
-# from graphql_api.dynamodb.models import ToshiFileObject
-
-
-@pytest.fixture(scope="module")
-def graphene_client():
-    yield Client(root_schema)
-
-
-# scaled_inversion_object_120837 = ToshiFileObject(
-#     object_id = "120827",
-#     object_type="ScaledInversionSolution",
-#     object_content = json.loads('''{"id": 120837, "file_name": "NZSHM22_ScaledInversionSolution-QXV0b21hdGlvblRhc2s6MTEzMTg4.zip",
-#         "md5_digest": "TXiN7F4ft1rPzNsKhRgnmQ==", "file_size": 27915950, "file_url": null, "post_url": null,
-#         "predecessors": [{"id": "VGltZURlcGVuZGVudEludmVyc2lvblNvbHV0aW9uOjExOTE2NA==", "depth": -1}, {"id": "SW52ZXJzaW9uU29sdXRpb246MTEzMDYz", "depth": -2}, {"id": "RmlsZToxMDAwODc=", "depth": -3}],
-#         "meta": [{"k": "scale", "v": "1.41"}, {"k": "polygon_scale", "v": "0.8"}, {"k": "polygon_max_mag", "v": "8"}, {"k": "model_type", "v": "CRUSTAL"}],
-#         "created": "2022-08-12T02:57:05.508741+00:00", "metrics": null, "mfd_table_id": null, "hazard_table_id": null, "tables": null, "hazard_table": null, "mfd_table": null,
-#         "produced_by": "QXV0b21hdGlvblRhc2s6MTEzMTg4",
-#         "source_solution": "VGltZURlcGVuZGVudEludmVyc2lvblNvbHV0aW9uOjExOTE2NA==", "clazz_name": "ScaledInversionSolution"}''')
-
-# ).object_content
-
-
 scaled_inversion_object_120837 = {
     "id": 120837,
     "file_name": "NZSHM22_ScaledInversionSolution-QXV0b21hdGlvblRhc2s6MTEzMTg4.zip",
@@ -65,10 +40,6 @@ scaled_inversion_object_120837 = {
 }
 
 
-"""
->>> graphql_relay.from_global_id("VGltZURlcGVuZGVudEludmVyc2lvblNvbHV0aW9uOjExOTE2NA==")
-('TimeDependentInversionSolution', '119164')
-"""
 td_solution_object_119164 = {
     "id": 119164,
     "file_name": "NZSHM22_TimeDependentInversionSolution-QXV0b21hdGlvblRhc2s6MTExNjI5.zip",
@@ -106,18 +77,12 @@ td_solution_object_119164 = {
     "clazz_name": "TimeDependentInversionSolution",
 }
 
-# # custom mock for graphql_api.data.BaseDynamoDBData_read_obect
-# mock_db_read0 = lambda _self, _id: scaled_inversion_object_120837
-# mock_db_read1 = lambda _self, _id: td_solution_object_119164
+
+@pytest.fixture(scope="module")
+def graphene_client():
+    yield Client(root_schema)
 
 
-# @pytest.fixture
-# def mock_dbdata(monkeypatch):
-#     """graphql_api.data.BaseDynamoDBData._read_object"""
-#     monkeypatch.setattr(graphql_api.data.BaseDynamoDBData, "_read_object", mock_db_read0)
-
-
-# monkeypatched requests.get moved to a fixture
 @pytest.fixture
 def mock_dynamodb_read(monkeypatch):
     """Requests.get() mocked to return {'mock_key':'mock_response'}."""
@@ -133,8 +98,6 @@ def mock_dynamodb_read(monkeypatch):
     monkeypatch.setattr(graphql_api.data.BaseDynamoDBData, "_read_object", mock_read)
 
 
-# @mock_dynamodb
-# @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', side_effect=[copy(scaled_inversion_object_120837), copy(td_solution_object_119164)])
 def test_scaled_inversion_example(graphene_client, mock_dynamodb_read):
     """Test fgor modern DynamoDB objects"""
     QRY = """
@@ -150,12 +113,12 @@ def test_scaled_inversion_example(graphene_client, mock_dynamodb_read):
                     id
                 }
               }
-              # predecessors {
-              #   typename
-              #   id
-              #   depth
-              #   relationship
-              # }
+              predecessors {
+                typename
+                id
+                depth
+                relationship
+              }
             }
           }
         }
