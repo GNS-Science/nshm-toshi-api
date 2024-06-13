@@ -11,6 +11,7 @@ from graphene import relay
 from graphql_relay import from_global_id
 from requests_aws4auth import AWS4Auth
 
+from graphql_api import __version__
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import ES_ENDPOINT, ES_INDEX, ES_REGION, IS_OFFLINE, STACK_NAME, TESTING
 from graphql_api.data.data_manager import DataManager
@@ -142,6 +143,9 @@ class ReindexResult(graphene.ObjectType):
 class QueryRoot(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
 
+    about = graphene.String(description="About this API ")
+    version = graphene.String(description="API version string")
+
     rupture_generation_tasks = relay.ConnectionField(
         RuptureGenerationTaskConnection, description="List Opensha Rupture Generation tasks."
     )
@@ -169,6 +173,12 @@ class QueryRoot(graphene.ObjectType):
     strong_motion_stations = relay.ConnectionField(
         StrongMotionStationConnection, description="The list of strong motion stations"
     )
+
+    def resolve_about(root, info, **args):
+        return "Hello, I am nshm_toshi_api, version: %s!" % __version__
+
+    def resolve_version(root, info, **args):
+        return __version__
 
     def resolve_strong_motion_stations(root, info):
         t0 = dt.utcnow()
