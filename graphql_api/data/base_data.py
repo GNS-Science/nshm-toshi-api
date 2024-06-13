@@ -293,11 +293,17 @@ class BaseDynamoDBData(BaseData):
 
         toshi_object = self._model(object_id=str(object_id), object_type=body['clazz_name'], object_content=body)
 
+        # Note that we won't see any json serialisatoin errors here, body seriaze is called
+        logger.debug(f"toshi_object: {toshi_object}")
+
+        # print(dir(toshi_object))
+        # print(toshi_object.to_json())
+
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(identity, actions=[ToshiIdentity.object_id.add(1)])
             transaction.save(toshi_object)
 
-        logger.debug(f"toshi_object: object_id {object_id} object_type: {body['clazz_name']}")
+        logger.info(f"toshi_object: object_id {object_id} object_type: {body['clazz_name']}")
 
         db_metrics.put_duration(__name__, '_write_object', dt.utcnow() - t0)
         es_key = f"{self._prefix}_{object_id}"
@@ -332,9 +338,15 @@ class BaseDynamoDBData(BaseData):
         Raises:
             ValueError: invalid data exception
         """
+        logger.info(f"create() {clazz_name} {kwargs}")
+
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         next_id = self.get_next_id()
 
+        # TODO: this whole approach sucks !@#%$#
+        # consider the ENUM problem, and datatime serialisatin
+        # mayby graphene o
+        # cant we just use the graphene classes json serialisation ??
         def new_body(next_id, kwargs):
             new = clazz(next_id, **kwargs)
             body = new.__dict__.copy()
@@ -343,8 +355,23 @@ class BaseDynamoDBData(BaseData):
                 body['created'] = body['created'].isoformat()
             return body
 
-        self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
-        return clazz(next_id, **kwargs)
+        object_instance = clazz(next_id, **kwargs)
+
+        # print(object_instance.__class__)
+        # print(type(object_instance))
+        # print(dir(object_instance))
+        # print(f" TODICT: {graphql.utilities.ast_to_dict(object_instance)}")
+        # # print(f" PRINT_TYPE: {graphql.utilities.print_type(object_instance._type.value_from_ast)}")
+        # # print( graphql.utilities.value_from_ast_untyped(object_instance.created) )
+
+        try:
+            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
+        except Exception as err:
+            logger.error(F"faild to write {clazz_name} {kwargs} {err}")
+            raise
+
+        logger.info(f"create() object_instance: {object_instance}")
+        return object_instance
 
     def get_all(self, object_type, limit: int, after: str):
         t0 = dt.utcnow()

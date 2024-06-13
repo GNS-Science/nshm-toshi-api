@@ -6,6 +6,7 @@ the graphql schema, which is generated automatically by Graphene.
 
 """
 
+import copy
 import logging
 
 import graphene
@@ -108,5 +109,10 @@ class CreateStrongMotionStation(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         print("mutate_and_get_payload: ", kwargs)
-        strong_motion_station = get_data_manager().thing.create('StrongMotionStation', **kwargs)
+
+        json_ready_input = copy.copy(kwargs)
+        for fld in ['site_class', 'site_class_basis']:
+            json_ready_input[fld] = json_ready_input[fld].value
+
+        strong_motion_station = get_data_manager().thing.create('StrongMotionStation', **json_ready_input)
         return CreateStrongMotionStation(strong_motion_station=strong_motion_station)

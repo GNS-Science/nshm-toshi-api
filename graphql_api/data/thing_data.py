@@ -70,6 +70,7 @@ class ThingData(BaseDynamoDBData):
         Returns:
             TYPE: the Thing object
         """
+        logger.info(f"update {clazz_name} {thing_id} {kwargs}")
         _type, this_id = from_global_id(thing_id)
         # print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
         assert _type == clazz_name

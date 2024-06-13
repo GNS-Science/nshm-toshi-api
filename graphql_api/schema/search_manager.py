@@ -34,7 +34,7 @@ class SearchManager:
         self.es = Elasticsearch(
             hosts=[ES_ENDPOINT],
             http_auth=awsauth,
-            use_ssl=True,
+            # use_ssl=True,
             verify_certs=True,
             connection_class=RequestsHttpConnection,
         )
@@ -45,10 +45,16 @@ class SearchManager:
         es_key = key.replace("/", "_")
         try:
             # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.create
+
             # create(index, id, body, doc_type=None, params=None, headers=None)
-            log.debug(f' calling es.create() with {self._es_index}, {es_key}, {document}, {TYPE}')
-            response = self.es.create(self._es_index, es_key, document, TYPE)
-            log.debug(f'es response {response}')
+            # log.info(f' calling es.create() with {self._es_index}, {es_key}, {document}, {TYPE}')
+            # response = self.es.create(self._es_index, es_key, document, TYPE)
+
+            # index(index, body, doc_type=None, id=None, params=None, headers=None)
+            log.info(f' calling es.index() with {self._es_index}, {document}, {TYPE}, {es_key}')
+            response = self.es.index(index=self._es_index, body=document, doc_type=TYPE, id=es_key)
+            log.info(f'es response {response}')
+
         except Exception as err:
             log.warning(f'index_document raised err: {err}')
         db_metrics.put_duration(__name__, 'index_document', dt.utcnow() - t0)
@@ -59,10 +65,11 @@ class SearchManager:
         headers = {}  # "Content-Type": "application/json" }
         result = []
         try:
-            log.debug(f"SearchManager.search({term})")
+            log.info(f"SearchManager.search({term})")
             qurl = self._endpoint + '/' + self._es_index + '/_search?q=' + term
-            log.debug(f"Query URL: {qurl}")
+            log.info(f"Query URL: {qurl}")
             response = requests.get(qurl, auth=self._awsauth, headers=headers).json()
+            log.info(f"Query reponse: {response}")
             # print(response)
             # count = response['hits']['total']
             # print ("count",  count)

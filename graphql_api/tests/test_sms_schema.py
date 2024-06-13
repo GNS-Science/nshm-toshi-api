@@ -19,6 +19,8 @@ CREATE = '''
     mutation ($created: DateTime!) {
         create_strong_motion_station(input: {
             created: $created
+            site_class_basis:SPT
+            site_class:B
             #updated: $updated
             ##EXTRA_INPUT##
             }
@@ -50,6 +52,7 @@ class TestCreateSMS(unittest.TestCase):
             executed['data']['create_strong_motion_station']['strong_motion_station']['id']
             == 'U3Ryb25nTW90aW9uU3RhdGlvbjow'
         )
+        # assert 0
 
     def test_created_date_must_include_timezone(self):
         created = dt.datetime.now()  # no timesone

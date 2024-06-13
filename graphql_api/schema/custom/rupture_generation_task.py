@@ -58,6 +58,14 @@ class RuptureGenerationTaskConnection(relay.Connection):
         return len(root.edges)
 
 
+def json_ready(input):
+    json_ready_input = copy.copy(input)
+    for fld in ['result', 'state']:
+        if json_ready_input.get(fld):
+            json_ready_input[fld] = json_ready_input[fld].value
+    return json_ready_input
+
+
 class CreateRuptureGenerationTask(graphene.Mutation):
     class Arguments:
         input = AutomationTaskInput(required=True)
@@ -68,12 +76,7 @@ class CreateRuptureGenerationTask(graphene.Mutation):
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
         log.info(f"CreateRuptureGenerationTaskmnutate {input}")
-
-        json_ready_input = copy.copy(input)
-        for fld in ['result', 'state']:
-            json_ready_input[fld] = json_ready_input[fld].value
-
-        task_result = get_data_manager().thing.create('RuptureGenerationTask', **input)
+        task_result = get_data_manager().thing.create('RuptureGenerationTask', **json_ready(input))
         db_metrics.put_duration(__name__, 'CreateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
         return CreateRuptureGenerationTask(task_result=task_result)
 
@@ -88,7 +91,9 @@ class UpdateRuptureGenerationTask(graphene.Mutation):
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
         print("mutate: ", input)
+        log.info(f"UpdateRuptureGenerationTask {input}")
         thing_id = input.pop('task_id')
-        task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **input)
+        log.info(f"UpdateRuptureGenerationTask thing_id {thing_id}")
+        task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **json_ready(input))
         db_metrics.put_duration(__name__, 'UpdateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
         return UpdateRuptureGenerationTask(task_result=task_result)

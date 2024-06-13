@@ -27,15 +27,15 @@ QRY_CREATE_AUTOMATION_TASK = '''
             created: $created
             duration: 600
 
-            arguments: [
-                { k:"max_jump_distance" v: "55.5" }
-                { k:"permutation_strategy" v: "DOWNDIP" }
-            ]
+            # arguments: [
+            #     { k:"max_jump_distance" v: "55.5" }
+            #     { k:"permutation_strategy" v: "DOWNDIP" }
+            # ]
 
-            environment: [
-                { k:"gitref_opensha_ucerf3" v: "ABC"}
-                { k:"JAVA" v:"-Xmx24G"  }
-                ]
+            # environment: [
+            #     { k:"gitref_opensha_ucerf3" v: "ABC"}
+            #     { k:"JAVA" v:"-Xmx24G"  }
+            #     ]
             })
             {
                 task_result {
@@ -117,6 +117,9 @@ FILEMOCK = {
     ],
     'clazz_name': 'File',
 }
+
+
+# TOdO: this is a more complete test than most others,
 
 
 @mock_s3

@@ -24,15 +24,15 @@ botocore = "^1.29.98"
 nzshm-common = "^0.4.0"
 backoff = "2.2.1"
 pynamodb = "^5.5.0"
-requests = "^2.31.0"
 python-benedict = "^0.33.0"
 requests-aws4auth = "^1.2.3"
 pyyaml = "^6.0"
 elasticsearch-dsl = ">=7.0.0,<8.0"
 elasticsearch = ">=7.0.0,<7.14"
+gql = "^3.5.0"
+requests-toolbelt = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
-gql = "<3"
 click = "^8.1.7"
 tox = "^4.2.8"
 black  = { version = "^24.3.0"}

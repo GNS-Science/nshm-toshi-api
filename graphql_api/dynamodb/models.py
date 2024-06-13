@@ -1,8 +1,12 @@
+import logging
+
 from pynamodb.attributes import JSONAttribute, NumberAttribute, UnicodeAttribute, VersionAttribute
 from pynamodb.indexes import GlobalSecondaryIndex, KeysOnlyProjection
 from pynamodb.models import Model
 
 from graphql_api.config import DEPLOYMENT_STAGE, IS_OFFLINE, REGION, TESTING
+
+log = logging.getLogger(__name__)
 
 
 class ToshiTableObject(Model):
@@ -88,6 +92,7 @@ tables = [ToshiFileObject, ToshiTableObject, ToshiThingObject, ToshiIdentity]
 
 
 def migrate():
+    log.info(f'migrate() stage: {DEPLOYMENT_STAGE} offline: {IS_OFFLINE} region: {REGION} testing: {TESTING}')
     for table in tables:
         if not table.exists():
             table.create_table(wait=True)
