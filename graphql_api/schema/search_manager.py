@@ -44,12 +44,7 @@ class SearchManager:
         t0 = dt.utcnow()
         es_key = key.replace("/", "_")
         try:
-            # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.create
-
-            # create(index, id, body, doc_type=None, params=None, headers=None)
-            # log.info(f' calling es.create() with {self._es_index}, {es_key}, {document}, {TYPE}')
-            # response = self.es.create(self._es_index, es_key, document, TYPE)
-
+            # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.index
             # index(index, body, doc_type=None, id=None, params=None, headers=None)
             log.info(f' calling es.index() with {self._es_index}, {document}, {TYPE}, {es_key}')
             response = self.es.index(index=self._es_index, body=document, doc_type=TYPE, id=es_key)

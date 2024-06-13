@@ -3,10 +3,11 @@
 ## [0.2.0] - 2024-06-14
 
 ### Changed
+ - fixed `source_solution` resolvers bug #214 - breaking graphql API change
  - upgraded NPM packages
  - updated flask, flask-cors graphene libraries (major verion update)
  - replace superceded `flask_graphql` import with `graphql_server.flask`
- - elasctic search index name is now `toshi_index_mapped`
+ - elastic search index name is now `toshi_index_mapped`
  - fixed index update method
 
 ### Added
