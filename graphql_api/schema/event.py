@@ -1,5 +1,4 @@
-import graphene
-from graphene import Enum, relay
+from graphene import Enum
 
 global db_root
 

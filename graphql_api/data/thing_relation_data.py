@@ -1,6 +1,7 @@
 """
 Object manager for ThingRelation (and subclassed) schema objects
 """
+
 import logging
 from importlib import import_module
 
@@ -45,10 +46,12 @@ class ThingRelationData(BaseDynamoDBData):
             transaction.update(child, actions=[self._db_manager.thing.model.object_content.set(child_content)])
 
         logger.info(
-            f'create add_child_relation transaction OK: added: {child_id} to children {len(parent_content["children"])} of parent {parent_id}'
+            f'create add_child_relation transaction OK: added: {child_id}'
+            f' to children {len(parent_content["children"])} of parent {parent_id}'
         )
         logger.info(
-            f'create parent_relation : added: {parent_id} to parents {len(child_content["parents"])} of child {child_id}'
+            f'create parent_relation : added: {parent_id} to parents'
+            f' {len(child_content["parents"])} of child {child_id}'
         )
 
         # self._db_manager.search_manager.index_document(parent.object_id, parent_content)

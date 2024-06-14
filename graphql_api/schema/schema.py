@@ -1,22 +1,20 @@
 '''
 
 '''
+
 import logging
-import os
 from datetime import datetime as dt
 
 import boto3
 import graphene
-from flask import request
 from graphene import relay
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import from_global_id
 from requests_aws4auth import AWS4Auth
 
+from graphql_api import __version__
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import ES_ENDPOINT, ES_INDEX, ES_REGION, IS_OFFLINE, STACK_NAME, TESTING
-from graphql_api.data import get_data_manager
 from graphql_api.data.data_manager import DataManager
-from graphql_api.schema import event, file, thing
 from graphql_api.schema.custom.aggregate_inversion_solution import (
     AggregateInversionSolution,
     CreateAggregateInversionSolution,
@@ -25,7 +23,6 @@ from graphql_api.schema.custom.inversion_solution import (
     AppendInversionSolutionTables,
     CreateInversionSolution,
     InversionSolution,
-    LabelledTableRelationInput,
 )
 from graphql_api.schema.custom.inversion_solution_nrml import CreateInversionSolutionNrml, InversionSolutionNrml
 from graphql_api.schema.custom.openquake_hazard_config import CreateOpenquakeHazardConfig, OpenquakeHazardConfig
@@ -52,7 +49,7 @@ from .custom.rupture_generation_task import (
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation, StrongMotionStationConnection
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
 from .file import CreateFile, File, FileConnection
-from .file_relation import CreateFileRelation, FileRelation, FileRelationConnection
+from .file_relation import CreateFileRelation
 from .get_datastore_handler import get_datastore_handler
 from .object_identities import (
     ObjectIdentitiesConnection,
@@ -61,7 +58,7 @@ from .object_identities import (
     paginated_object_identities,
 )
 from .search_manager import SearchManager
-from .table import CreateTable, Table
+from .table import CreateTable
 from .task_task_relation import CreateTaskTaskRelation
 
 log = logging.getLogger(__name__)
@@ -146,6 +143,9 @@ class ReindexResult(graphene.ObjectType):
 class QueryRoot(graphene.ObjectType):
     """This is the entry point for all graphql query operations"""
 
+    about = graphene.String(description="About this API ")
+    version = graphene.String(description="API version string")
+
     rupture_generation_tasks = relay.ConnectionField(
         RuptureGenerationTaskConnection, description="List Opensha Rupture Generation tasks."
     )
@@ -173,6 +173,12 @@ class QueryRoot(graphene.ObjectType):
     strong_motion_stations = relay.ConnectionField(
         StrongMotionStationConnection, description="The list of strong motion stations"
     )
+
+    def resolve_about(root, info, **args):
+        return "Hello, I am nshm_toshi_api, version: %s!" % __version__
+
+    def resolve_version(root, info, **args):
+        return __version__
 
     def resolve_strong_motion_stations(root, info):
         t0 = dt.utcnow()
@@ -219,7 +225,7 @@ class QueryRoot(graphene.ObjectType):
     @staticmethod
     def resolve_object_identities(root, info, object_type, **kwargs):
         log.info(f'resolve_object_identities args: {kwargs}')
-        t0 = dt.utcnow()
+        dt.utcnow()
         # search_result = db_root.search_manager.search(kwargs.get('search_term'))
         # db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
         nodes = iterate_dynamodb_nodes(object_type, **kwargs)
@@ -229,7 +235,7 @@ class QueryRoot(graphene.ObjectType):
     def resolve_legacy_object_identities(root, info, store_type, **kwargs):
         assert store_type in ['File', 'Thing', 'Table']
         log.info(f'resolve_object_identities args: {kwargs}')
-        t0 = dt.utcnow()
+        dt.utcnow()
         # search_result = db_root.search_manager.search(kwargs.get('search_term'))
         # db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
         nodes = iterate_legacy_s3_nodes(store_type, **kwargs)
@@ -257,7 +263,6 @@ class QueryRoot(graphene.ObjectType):
     @staticmethod
     def resolve_reindex(root, info, id_in, **kwargs):
         t0 = dt.utcnow()
-        result = []
         log.info(f'resolve_resolve_reindex id_in: {id_in}')
         for gid in id_in:
             object_type, object_id = from_global_id(gid)

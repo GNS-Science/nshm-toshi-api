@@ -6,7 +6,7 @@ from graphql_relay import from_global_id, to_global_id
 
 from graphql_api.data import get_data_manager
 
-from .get_datastore_handler import get_datastore_handler, get_datastore_handler_names, get_datastore_handlers
+from .get_datastore_handler import get_datastore_handler
 
 log = logging.getLogger(__name__)
 
@@ -75,9 +75,9 @@ def paginated_object_identities(node_iterable, **kwargs) -> ObjectIdentitiesConn
     has_next = False if len(edges) < first else True
 
     connection_field.page_info = relay.PageInfo(
-        end_cursor=edges[-1].cursor
-        if edges
-        else None,  # graphql_relay.to_global_id("CompositeRuptureDetail", str(cursor_offset+first)),
+        end_cursor=(
+            edges[-1].cursor if edges else None
+        ),  # graphql_relay.to_global_id("CompositeRuptureDetail", str(cursor_offset+first)),
         has_next_page=has_next,
     )
     connection_field.edges = edges

@@ -16,7 +16,6 @@ from graphql_api.schema.file import File
 from graphql_api.schema.thing import Thing
 
 from .helpers import resolve_node
-from .inversion_solution import InversionSolution
 from .openquake_hazard_config import OpenquakeHazardConfig
 
 db_metrics = ServerlessMetricWriter(

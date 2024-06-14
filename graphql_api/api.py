@@ -5,13 +5,16 @@ import os
 import yaml
 from flask import Flask
 from flask_cors import CORS
-from flask_graphql import GraphQLView
+from graphql_server.flask import GraphQLView
 
 from graphql_api.config import LOGGING_CFG, TESTING
 from graphql_api.dynamodb.models import migrate
 from graphql_api.schema import root_schema
 
 from .library_version_check import log_library_info
+
+# from flask_graphql import GraphQLView
+
 
 """
 Setup logging configuration

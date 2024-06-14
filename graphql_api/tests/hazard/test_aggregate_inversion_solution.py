@@ -1,14 +1,11 @@
 import datetime as dt
-import json
 import unittest
-from io import BytesIO
 
 import boto3
 from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import from_global_id
 from moto import mock_dynamodb, mock_s3
-from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
 
@@ -46,7 +43,7 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
         ]['id']
 
     def test_create_an_aggregate_solution_task(self):
-        at_id = self.create_automation_task("AGGREGATE_SOLUTION")
+        self.create_automation_task("AGGREGATE_SOLUTION")
 
         self.assertEqual(
             ToshiThingObject.get("100001").object_content['task_type'], TaskSubType.AGGREGATE_SOLUTION.value
@@ -120,7 +117,7 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
         at_id = self.create_automation_task("AGGREGATE_SOLUTION")
         upstream_sid = self.create_source_solution()
         result = self.create_aggregate_solution_with_predecessors([upstream_sid], at_id, self.common_ruptset_id)
-        ss = result['data']['create_aggregate_inversion_solution']['solution']
+        result['data']['create_aggregate_inversion_solution']['solution']
         ss_id = result['data']['create_aggregate_inversion_solution']['solution']['id']
         query = '''
             query get_aggregate_solution($id: ID!) {

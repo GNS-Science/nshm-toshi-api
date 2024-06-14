@@ -1,5 +1,7 @@
-from graphene.types.scalars import MAX_INT, MIN_INT, Scalar
-from graphql.language.ast import IntValue
+from graphene.types.scalars import Scalar
+
+# from graphql.language.ast import IntValue
+from graphql.language import ast
 
 
 class BigInt(Scalar):
@@ -24,6 +26,21 @@ class BigInt(Scalar):
     parse_value = coerce_int
 
     @staticmethod
-    def parse_literal(ast):
-        if isinstance(ast, IntValue):
-            return int(ast.value)
+    def parse_literal(ast_node):
+        print(f'parse_literal; {ast_node}')
+        if isinstance(ast_node, ast.IntValueNode):
+            return int(ast_node.value)
+
+    # @staticmethod
+    # def parse_value(value):
+    #     return int(value)
+
+    # @staticmethod
+    # def serialize(dt):
+    #     return dt.isoformat()
+
+    # @staticmethod
+    # def parse_literal(node, _variables=None):
+    #     if isinstance(node, ast.StringValueNode):
+    #         return datetime.datetime.strptime(
+    #             node.value, "%Y-%m-%dT%H:%M:%S.%f")

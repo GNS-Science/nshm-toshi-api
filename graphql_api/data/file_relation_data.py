@@ -1,6 +1,7 @@
 """
 Object manager for FileRelation (and subclassed) schema objects
 """
+
 import datetime as dt
 import json
 import logging
@@ -33,20 +34,25 @@ class FileRelationData(BaseDynamoDBData):
 
     @backoff.on_exception(backoff.expo, pynamodb.exceptions.TransactWriteError, max_time=25)
     def create(self, clazz_name, thing_id, file_id, role):
+
         logger.debug(f'FileRelationData.create() linking file {file_id} to and thing {thing_id} in role {role}')
 
         thing = self._db_manager.thing.get_object(thing_id)
         thing_content = thing.object_content
         if not thing_content.get('files'):
             thing_content['files'] = []
-        thing_content['files'].append({'file_id': file_id, 'file_role': role})
+
+        logger.info(thing_content['files'])
+        thing_content['files'].append({'file_id': file_id, 'file_role': role.value})
+        logger.info(thing_content['files'])
 
         try:
             file = self._db_manager.file.get_object(file_id)
-        except pynamodb.exceptions.DoesNotExist as err:
+        except pynamodb.exceptions.DoesNotExist:
             body = self._db_manager.file._from_s3(file_id)
             logger.info(
-                f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix}; object_type={body['clazz_name']}"
+                f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix};"
+                f" object_type={body['clazz_name']}"
             )
             file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
             logger.debug(f'ToshiFileObject version {file.version}')
@@ -57,7 +63,7 @@ class FileRelationData(BaseDynamoDBData):
         else:
             file_content['relations'] = ensure_decompressed(file_content['relations'])
 
-        file_content['relations'].append({'id': thing_id, 'role': role})
+        file_content['relations'].append({'id': thing_id, 'role': role.value})
 
         # compress file relations if the list grows large...
         if len(file_content['relations']) > UNCOMPRESSED_LIMIT:

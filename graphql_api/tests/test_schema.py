@@ -14,8 +14,7 @@ from dateutil.tz import tzutc
 from graphene.test import Client
 from moto import mock_dynamodb
 
-from graphql_api import data
-from graphql_api.dynamodb.models import migrate
+from graphql_api import __version__
 from graphql_api.schema import RuptureGenerationTask, root_schema
 
 orig = botocore.client.BaseClient._make_api_call
@@ -42,7 +41,7 @@ class TestBotoMocked(unittest.TestCase):
             # o = client.get_object(Bucket='my-bucket', Key='my-key')
             # Should return mocked exception
             with self.assertRaises(ClientError):
-                e = client.upload_part_copy()
+                client.upload_part_copy()
 
 
 # r0 = {'ResponseMetadata': {
@@ -125,6 +124,32 @@ r3 = {
     'Metadata': {},
     'Body': BytesIO(obj3),
 }
+
+
+class TestSchemaInfo(unittest.TestCase):
+    def setUp(self):
+        self.client = Client(root_schema)
+
+    def test_get_about(self):
+        QUERY = """
+        query {
+            about
+        }
+        """
+        executed = self.client.execute(QUERY)
+        print(executed)
+        assert "nshm_toshi_api" in executed["data"]["about"]
+        assert __version__ in executed["data"]["about"]
+
+    def test_get_version(self):
+        QUERY = """
+        query {
+            version
+        }
+        """
+        executed = self.client.execute(QUERY)
+        print(executed)
+        assert __version__ in executed["data"]["version"]
 
 
 # <botocore.response.StreamingBody object at 0x10c255bd0>}

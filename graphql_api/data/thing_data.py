@@ -1,15 +1,15 @@
 """
 Object manager for Thing schema objects
 """
+
 import datetime as dt
-import json
 import logging
 from importlib import import_module
 
 from benedict import benedict
 
 # from .helpers import get_objectid_from_global
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import from_global_id
 
 from .base_data import BaseDynamoDBData
 
@@ -22,6 +22,7 @@ class ThingData(BaseDynamoDBData):
     """
 
     def create(self, clazz_name, **kwargs):
+        logger.info(f"ThingData.create() kwargs: {kwargs}")
         if not kwargs['created'].tzname():  # must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
         return super().create(clazz_name, **kwargs)
@@ -33,7 +34,7 @@ class ThingData(BaseDynamoDBData):
         NB only handles gitrefs
         """
         if thing.get('clazz_name') == 'RuptureGenerationTask':
-            ##fix gitrefs
+            # fix gitrefs
             env = dict()
             gitrefs = thing.pop('git_refs', None)
             if gitrefs:
@@ -69,6 +70,7 @@ class ThingData(BaseDynamoDBData):
         Returns:
             TYPE: the Thing object
         """
+        logger.info(f"update {clazz_name} {thing_id} {kwargs}")
         _type, this_id = from_global_id(thing_id)
         # print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
         assert _type == clazz_name

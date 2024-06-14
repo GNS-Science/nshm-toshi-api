@@ -1,11 +1,6 @@
 import datetime as dt
 import json
 import unittest
-from copy import copy
-from io import BytesIO
-from re import S
-from unittest import mock
-from unittest.case import skip
 
 import boto3
 from dateutil.tz import tzutc
@@ -13,12 +8,10 @@ from graphene.test import Client
 from moto import mock_dynamodb, mock_s3
 from pynamodb.connection.base import Connection  # for mocking
 
-import graphql_api.data
-from graphql_api import data
 from graphql_api.config import REGION, S3_BUCKET_NAME
 from graphql_api.data import data_manager
 from graphql_api.data.thing_data import ThingData
-from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
+from graphql_api.dynamodb.models import ToshiIdentity, ToshiThingObject
 from graphql_api.schema import root_schema
 from graphql_api.schema.search_manager import SearchManager
 

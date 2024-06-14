@@ -4,23 +4,23 @@ Test API function for SMS
 Mocking our data layer
 
 """
+
 import datetime as dt
 import unittest
-from io import BytesIO
 from unittest import mock
 
 from dateutil.tz import tzutc
 from graphene.test import Client
 
 import graphql_api.data  # for mocking
-from graphql_api import data
 from graphql_api.schema import root_schema
-from graphql_api.schema.custom import StrongMotionStation
 
 CREATE = '''
     mutation ($created: DateTime!) {
         create_strong_motion_station(input: {
             created: $created
+            site_class_basis:SPT
+            site_class:B
             #updated: $updated
             ##EXTRA_INPUT##
             }
@@ -52,6 +52,7 @@ class TestCreateSMS(unittest.TestCase):
             executed['data']['create_strong_motion_station']['strong_motion_station']['id']
             == 'U3Ryb25nTW90aW9uU3RhdGlvbjow'
         )
+        # assert 0
 
     def test_created_date_must_include_timezone(self):
         created = dt.datetime.now()  # no timesone
@@ -75,7 +76,7 @@ class TestCreateSMS(unittest.TestCase):
         startdate = dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
-        assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
+        assert 'September 5th, 1999' in executed['errors'][0]['message']
 
     @unittest.skip("not there yet")
     def test_create_with_metrics(self):

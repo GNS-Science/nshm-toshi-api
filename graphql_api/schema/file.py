@@ -1,7 +1,10 @@
 """
 The NSHM data file graphql schema.
 """
+
+import logging
 from datetime import datetime as dt
+from typing import TYPE_CHECKING
 
 import graphene
 from graphene import relay
@@ -13,6 +16,11 @@ from graphql_api.data.file_relation_data import ensure_decompressed
 from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from graphql_api.schema.custom.scalars import BigInt
 
+if TYPE_CHECKING:
+    from graphql_api.data import FileData
+
+log = logging.getLogger(__name__)
+
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
@@ -21,8 +29,8 @@ db_metrics = ServerlessMetricWriter(
 class FileInterface(graphene.Interface):
     """A File in the NSHM saga"""
 
-    class Meta:
-        interfaces = relay.Node
+    # class Meta:
+    #     interfaces = (relay.Node,)
 
     # TODO consider if this field ought to be enforced here, instead of in subclasses
     # created = graphene.DateTime(description="When the file was created")
@@ -51,8 +59,8 @@ class FileInterface(graphene.Interface):
         root_relations = root_relations or []
 
         if (
-            len(info.field_asts[0].selection_set.selections) == 1
-            and info.field_asts[0].selection_set.selections[0].name.value == 'total_count'
+            len(info.field_nodes[0].selection_set.selections) == 1
+            and info.field_nodes[0].selection_set.selections[0].name.value == 'total_count'
         ):
             from graphql_api.schema.file_relation import FileRelationConnection
 
@@ -130,6 +138,10 @@ class CreateFile(graphene.Mutation):
 
     def mutate(self, info, **kwargs):
         t0 = dt.utcnow()
+        log.info(f"CreateFile mutate {kwargs}")
+
+        t0 = dt.utcnow()
+
         file_result = get_data_manager().file.create('File', **kwargs)
         db_metrics.put_duration(__name__, 'CreateFile.mutate', dt.utcnow() - t0)
         return CreateFile(ok=True, file_result=file_result)

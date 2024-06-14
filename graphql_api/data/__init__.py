@@ -1,6 +1,7 @@
 """
 Module entry point
 """
+
 import base64
 
 from .base_data import BaseData, BaseDynamoDBData

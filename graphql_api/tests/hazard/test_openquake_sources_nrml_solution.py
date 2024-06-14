@@ -1,13 +1,10 @@
 import datetime as dt
-import json
 import unittest
 
 import boto3
-from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import from_global_id
 from moto import mock_dynamodb, mock_s3
-from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
 
@@ -42,7 +39,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.source_solution = self.create_source_solution()
 
     def test_create_and_scaled_solution_task(self):
-        at_id = self.create_automation_task("SCALE_SOLUTION")
+        self.create_automation_task("SCALE_SOLUTION")
 
         self.assertEqual(ToshiThingObject.get("100001").object_content['task_type'], TaskSubType.SCALE_SOLUTION.value)
 
@@ -61,7 +58,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         )
 
     def test_create_opensha_nrml_from_solution(self):
-        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        self.create_automation_task("SOLUTION_TO_NRML")
         upstream_sid = self.create_source_solution()
         result = self.create_inversion_solution_nrml(upstream_sid)
 
@@ -75,7 +72,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(ToshiFileObject.get("100002").object_content['id'], int(from_global_id(ss['id'])[1]))
 
     def test_create_opensha_nrml_from_scaled_solution(self):
-        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        self.create_automation_task("SOLUTION_TO_NRML")
         st_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
         scaled_sid = self.create_scaled_solution(upstream_sid, st_id)['data']['create_scaled_inversion_solution'][
@@ -88,7 +85,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(ss['source_solution']['id'], scaled_sid)
 
     def test_create_opensha_nrml_from_time_dependent_solution(self):
-        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        self.create_automation_task("SOLUTION_TO_NRML")
         st_id = self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
         scaled_sid = self.create_time_dependent_solution(upstream_sid, st_id)['data'][
@@ -101,7 +98,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(ss['source_solution']['id'], scaled_sid)
 
     def test_create_opensha_nrml_from_solution_with_predecessors(self):
-        at_id = self.create_automation_task("SOLUTION_TO_NRML")
+        self.create_automation_task("SOLUTION_TO_NRML")
         upstream_sid = self.create_source_solution()
         result = self.create_inversion_solution_nrml_with_predecessors(upstream_sid)
 
@@ -112,7 +109,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(ss['predecessors'][0]['relationship'], "Parent")
 
     def test_get_inversion_solution_nrml_node(self):
-        at_id = self.create_automation_task("SCALE_SOLUTION")
+        self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
         result = self.create_inversion_solution_nrml(upstream_sid)
 
@@ -136,7 +133,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         self.assertTrue(delta < max_delta)
 
     def test_get_inversion_solution_nrml_with_predecessors_node(self):
-        at_id = self.create_automation_task("SCALE_SOLUTION")
+        self.create_automation_task("SCALE_SOLUTION")
         upstream_sid = self.create_source_solution()
         result = self.create_inversion_solution_nrml_with_predecessors(upstream_sid)
 

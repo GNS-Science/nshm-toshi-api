@@ -1,25 +1,19 @@
 """
 The object manager for File (and subclassed) schema objects
 """
+
 import json
 import logging
-import re
 from datetime import datetime as dt
 from importlib import import_module
 
-from boto3.resources.model import Identifier
-from graphene.relay import connection
-from pynamodb.exceptions import DoesNotExist
-from pynamodb.transactions import Connection, TransactGet, TransactWrite
+from graphql_api.cloudwatch import ServerlessMetricWriter
+from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 
-from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
-
-from .base_data import BaseDynamoDBData, append_uniq
+from .base_data import BaseDynamoDBData
 
 logger = logging.getLogger(__name__)
 
-from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -52,11 +46,12 @@ class FileData(BaseDynamoDBData):
         Returns:
             File: the File object
         """
+        logger.info(f"FileData.create {kwargs}")
         new_instance = super().create(clazz_name, **kwargs)
         data_key = "%s/%s/%s" % (self._prefix, new_instance.id, new_instance.file_name)
 
         t0 = dt.utcnow()
-        response2 = self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
+        self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
         parts = self.s3_client.generate_presigned_post(
             Bucket=self._bucket_name,
             Key=data_key,
@@ -131,11 +126,14 @@ class FileData(BaseDynamoDBData):
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 
-        # Rule based migration
+        # Rule based migration,
+        # this deals with graphql_api/tests/legacy/test_inversion_solution_file_migration_bug.py
         if clazz_name == "File" and (jsondata.get('tables') or jsondata.get('metrics')):
             # this is actually an InversionSolution
             logger.info("from_json migration to InversionSolution of: %s" % str(jsondata))
             clazz = getattr(import_module('graphql_api.schema'), 'InversionSolution')
+
+        logger.debug("from_json clazz: %s" % str(clazz))
 
         ## produced_by_id -> produced_by schema migration
         produced_by_id = jsondata.pop('produced_by_id', None)
@@ -147,5 +145,4 @@ class FileData(BaseDynamoDBData):
             for tbl in jsondata.get('tables'):
                 tbl['created'] = dt.fromisoformat(tbl['created'])
 
-        # print('updated json', jsondata)
         return clazz(**jsondata)

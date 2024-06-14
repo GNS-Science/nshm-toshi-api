@@ -1,15 +1,12 @@
 import datetime as dt
-import json
 import unittest
 from io import BytesIO
 
 import boto3
-import pytest
 from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import from_global_id
 from moto import mock_dynamodb, mock_s3
-from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
 
@@ -44,7 +41,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         self.source_solution = self.create_source_solution()
 
     def test_create_and_scaled_solution_task(self):
-        at_id = self.create_automation_task("SCALE_SOLUTION")
+        self.create_automation_task("SCALE_SOLUTION")
 
         self.assertEqual(ToshiThingObject.get("100001").object_content['task_type'], TaskSubType.SCALE_SOLUTION.value)
 
@@ -100,7 +97,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
                 ... on ScaledInversionSolution {
                     created
                     produced_by { ... on Node {id} }
-                    source_solution { id }
+                    source_solution { ... on Node {id} }
 
                 }
               }
@@ -123,7 +120,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         upstream_sid = self.create_source_solution()
         predecessors = [dict(id=upstream_sid, depth=-1)]
         result = self.create_scaled_solution_with_predecessors(upstream_sid, predecessors, at_id)
-        ss = result['data']['create_scaled_inversion_solution']['solution']
+        result['data']['create_scaled_inversion_solution']['solution']
         ss_id = result['data']['create_scaled_inversion_solution']['solution']['id']
         query = '''
             query get_scaled_solution($id: ID!) {
@@ -179,7 +176,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         predecessors = [dict(id=upstream_sid_1, depth=-1), dict(id=upstream_sid_0, depth=-2)]
         result = self.create_scaled_solution_with_predecessors(upstream_sid_1, predecessors, at_id)
 
-        ss = result['data']['create_scaled_inversion_solution']['solution']
+        result['data']['create_scaled_inversion_solution']['solution']
         ss_id = result['data']['create_scaled_inversion_solution']['solution']['id']
         query = '''
             query get_scaled_solution($id: ID!) {
@@ -234,7 +231,8 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
               {
                 ok
                 solution {
-                    id, file_name, file_size, md5_digest, post_url, source_solution { id },
+                    id, file_name, file_size, md5_digest, post_url
+                    source_solution { ... on Node{id} }
                     produced_by { ... on Node {id} }
                     predecessors {
                         id,

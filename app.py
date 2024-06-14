@@ -1,2 +1,2 @@
 # app.py
-from api import api
+from api import api  # noqa: F401

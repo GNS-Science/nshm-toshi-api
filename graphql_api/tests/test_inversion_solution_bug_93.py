@@ -1,20 +1,12 @@
-import datetime as dt
 import unittest
 from copy import copy
-from io import BytesIO
-from typing import Sized
 from unittest import mock
-from unittest.mock import patch
 
-from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
 
 import graphql_api.data  # for mocking
-from graphql_api import data
 from graphql_api.data.file_relation_data import FileRelationData
 from graphql_api.schema import root_schema
-from graphql_api.schema.custom import inversion_solution
 
 AUTO_TASK = {
     "id": "6040tkPow",
