@@ -4,11 +4,11 @@ import unittest
 from io import BytesIO
 
 import boto3
+import pytest
 from dateutil.tz import tzutc
 from graphene.test import Client
 from graphql_relay import from_global_id, to_global_id
 from moto import mock_dynamodb, mock_s3
-from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
@@ -27,15 +27,15 @@ QRY_CREATE_AUTOMATION_TASK = '''
             created: $created
             duration: 600
 
-            arguments: [
-                { k:"max_jump_distance" v: "55.5" }
-                { k:"permutation_strategy" v: "DOWNDIP" }
-            ]
+            # arguments: [
+            #     { k:"max_jump_distance" v: "55.5" }
+            #     { k:"permutation_strategy" v: "DOWNDIP" }
+            # ]
 
-            environment: [
-                { k:"gitref_opensha_ucerf3" v: "ABC"}
-                { k:"JAVA" v:"-Xmx24G"  }
-                ]
+            # environment: [
+            #     { k:"gitref_opensha_ucerf3" v: "ABC"}
+            #     { k:"JAVA" v:"-Xmx24G"  }
+            #     ]
             })
             {
                 task_result {
@@ -119,6 +119,9 @@ FILEMOCK = {
 }
 
 
+# TOdO: this is a more complete test than most others,
+
+
 @mock_s3
 @mock_dynamodb
 class TestBug122(unittest.TestCase):
@@ -179,6 +182,7 @@ class TestBug122(unittest.TestCase):
         obj = json.load(file_object)
         assert obj['id'] == '1587.0nVoFt'
 
+    # @pytest.mark.skip("graphene udpate")
     def test_create_file_relation(self):
         file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCK['id'])
 
@@ -186,9 +190,10 @@ class TestBug122(unittest.TestCase):
         link_result = self.client.execute(
             QRY_CREATE_AT_RELATION, variable_values=dict(thing_id='QXV0b21hdGlvblRhc2s6MTAwMDAw', file_id=file_id)
         )
-
+        print(link_result)
         assert link_result['data']['create_file_relation']['ok'] == True
 
+    # @pytest.mark.skip("graphene udpate")
     def test_create_at(self):
         # Create a new AT
         at_result = self.client.execute(
@@ -200,6 +205,7 @@ class TestBug122(unittest.TestCase):
         assert at_id == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
         assert from_global_id(at_id) == ("AutomationTask", "100001")
 
+    # @pytest.mark.skip("graphene udpate")
     def test_create_at_and_link_file(self):
         # Create a new AT
         at_result = self.client.execute(

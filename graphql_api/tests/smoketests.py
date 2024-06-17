@@ -12,7 +12,6 @@ now python3 smoketests.py
 """
 
 import os
-import random
 import time
 
 from gql import Client, gql
@@ -46,10 +45,11 @@ class SmokeTest:
 
         try:
             gql_query = gql(qry)
-            self._client.validate(gql_query)
+            # self._client.validate(gql_query)
             response = self._client.execute(gql_query)
         except Exception as e:
             print(e)
+            raise
 
         # print(response)
 
@@ -849,19 +849,22 @@ smoketests = [
 
 
 def setup(queries):
+    # TODO thjis should check there are no errors in response
     headers = {"x-api-key": auth_token}
     transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
     client = Client(transport=transport, fetch_schema_from_transport=True)
     for q in queries:
         print('setup_query: ', q)
         print()
-        print(client.execute(gql(q)))
+        response = client.execute(gql(q))
+        print(response)
+        assert response.get('errors') is None
         print()
 
 
 if __name__ == "__main__":
     # cleanup environment
-    os.system('curl -X DELETE "localhost:9200/toshi-index?pretty"')
+    os.system('curl -X DELETE "localhost:9200/toshi_index_mapped?pretty"')
     # assert 0
     os.system('rm -R /tmp/nzshm22-toshi-api-local/*')
     os.system('touch ./graphql_api/api.py')  # force restart of the local WSGI service

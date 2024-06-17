@@ -17,7 +17,7 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-versions }}
@@ -48,18 +48,18 @@ jobs:
           poetry install --no-interaction --no-root --with dev --all-extras
           # poetry add tox-gh-actions
 
-      # - name: test with tox (uses tox-gh-actions to select correct environment)
-      #   run:
-      #     poetry run tox
+      - name: test with tox (uses tox-gh-actions to select correct environment)
+        run:
+          poetry run tox
 
-      # - name: list files
-      #   run: ls -l .
+      - name: list files
+        run: ls -l .
 
-      # - uses: codecov/codecov-action@v3
-      #   with:
-      #     fail_ci_if_error: false
-      #     files: coverage.xml
+      - uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: false
+          files: coverage.xml
 
-      - name: Run test suite
-        run: |
-          SLS_OFFLINE=1 TESTING=1 poetry run pytest
+      # - name: Run test suite
+      #   run: |
+      #     SLS_OFFLINE=1 TESTING=1 poetry run pytest

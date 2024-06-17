@@ -4,12 +4,13 @@ Test Elastic Serach via SearchManager
 Mocking out ES in requests
 
 """
+
 # from io import BytesIO
 # from unittest import mock
 
 # import datetime as dt
 import unittest
-from unittest import mock, skip
+from unittest import mock
 
 import requests_mock
 from graphene.test import Client

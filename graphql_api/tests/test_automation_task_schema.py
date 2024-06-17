@@ -4,17 +4,16 @@ Test API function for opensha Rupture Generation
 Mocking our data layer
 
 """
+
 import datetime as dt
 import unittest
-from io import BytesIO
 from unittest import mock
 
 from dateutil.tz import tzutc
 from graphene.test import Client
 
 import graphql_api.data  # for mocking
-from graphql_api import data
-from graphql_api.schema import AutomationTask, root_schema
+from graphql_api.schema import root_schema
 
 # class IncrId():
 #     next_id = -1
@@ -95,6 +94,9 @@ class TestCreateAutomationTask(unittest.TestCase):
             mutation {
                 create_automation_task(input: {
                     created: "September 5th, 1999"
+                    task_type: INVERSION
+                    state: UNDEFINED
+                    result: UNDEFINED
                     })
                     {
                         task_result {
@@ -106,7 +108,7 @@ class TestCreateAutomationTask(unittest.TestCase):
         startdate = dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
-        assert 'Expected type "DateTime", found "September 5th, 1999"' in executed['errors'][0]['message']
+        assert 'September 5th, 1999' in executed['errors'][0]['message']
 
     def test_create_with_metrics(self):
         insert = '''

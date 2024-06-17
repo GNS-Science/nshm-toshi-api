@@ -3,6 +3,8 @@
 This module contains the schema definition for a AggregateInversionSolution.
 
 """
+import copy
+import logging
 from datetime import datetime as dt
 
 import graphene
@@ -14,7 +16,6 @@ from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.file import CreateFile, File, FileInterface
 
-from .automation_task import AutomationTask
 from .common import AggregationFn, PredecessorsInterface
 from .helpers import resolve_node
 from .inversion_solution import InversionSolutionInterface
@@ -22,6 +23,8 @@ from .inversion_solution import InversionSolutionInterface
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
+
+log = logging.getLogger(__name__)
 
 
 class AggregateInversionSolution(graphene.ObjectType):
@@ -35,7 +38,7 @@ class AggregateInversionSolution(graphene.ObjectType):
 
     common_rupture_set = graphene.Field(File)
     source_solutions = graphene.List(
-        'graphql_api.schema.custom.inversion_solution_nrml.SourceSolutionUnion',
+        'graphql_api.schema.custom.source_solution_union.SourceSolutionUnion',
         description="The solutions used to build the aggregate",
     )
     aggregation_fn = graphene.Field(AggregationFn, description="aggregation function on rupture rates.")
@@ -88,6 +91,13 @@ class CreateAggregateInversionSolution(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         t0 = dt.utcnow()
-        solution = get_data_manager().file.create('AggregateInversionSolution', **kwargs)
+        log.info(f"CreateAggregateInversionSolution mutate_and_get_payload {kwargs}")
+
+        json_ready_input = copy.copy(kwargs)
+
+        for fld in ['aggregation_fn']:
+            json_ready_input[fld] = json_ready_input[fld].value
+
+        solution = get_data_manager().file.create('AggregateInversionSolution', **json_ready_input)
         db_metrics.put_duration(__name__, 'CreateAggregateInversionSolution.mutate_and_get_payload', dt.utcnow() - t0)
         return CreateAggregateInversionSolution(solution=solution, ok=True)

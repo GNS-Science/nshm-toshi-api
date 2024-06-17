@@ -1,11 +1,10 @@
 """
 BaseData is the base class for AWS_S3 data handlers
 """
+
 import json
 import logging
-import os
 import random
-import traceback
 from collections import namedtuple
 from datetime import datetime as dt
 from importlib import import_module
@@ -14,12 +13,8 @@ from io import BytesIO
 import backoff
 import boto3
 import pynamodb.exceptions
-import requests.exceptions
-from botocore.exceptions import ClientError
-from graphene.relay import connection
-from graphql_relay.node.node import from_global_id, to_global_id
 from pynamodb.connection.base import Connection
-from pynamodb.exceptions import DoesNotExist, PutError, TransactWriteError, VerboseClientError
+from pynamodb.exceptions import DoesNotExist
 from pynamodb.transactions import TransactWrite
 
 import graphql_api.dynamodb
@@ -27,7 +22,6 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import (
     CW_METRICS_RESOLUTION,
     DB_ENDPOINT,
-    DEPLOYMENT_STAGE,
     FIRST_DYNAMO_ID,
     IS_OFFLINE,
     REGION,
@@ -35,7 +29,7 @@ from graphql_api.config import (
     STACK_NAME,
     TESTING,
 )
-from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
+from graphql_api.dynamodb.models import ToshiIdentity
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -111,7 +105,7 @@ class BaseData:
             prefix, result_id, _ = obj_summary.key.split('/')
             assert prefix == self._prefix
             object = self.get_one(result_id)
-            if clazz == None or isinstance(object, clazz):
+            if clazz is None or isinstance(object, clazz):
                 results.append(object)
         db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
         return results
@@ -120,7 +114,8 @@ class BaseData:
         """legacy iterator"""
         count, seen = 0, 0
         after = after or ""
-        # TODO refine this, see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/bucket/objects.html#filter
+        # TODO refine this, see
+        #   https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/bucket/objects.html#filter
         # need to handle multiple versions
         # should use:
         #  - Marker to define start of itertion
@@ -248,7 +243,7 @@ class BaseDynamoDBData(BaseData):
         t0 = dt.utcnow()
         try:
             identity = ToshiIdentity.get(self._prefix)
-        except DoesNotExist as e:
+        except DoesNotExist:
             # very first use of the identity
             logger.debug(f'get_next_id setting initial ID; table_name={self._prefix}, object_id={FIRST_DYNAMO_ID}')
             identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_DYNAMO_ID)
@@ -273,7 +268,7 @@ class BaseDynamoDBData(BaseData):
             obj = self.get_object(object_id)
             db_metrics.put_duration(__name__, '_read_object', dt.utcnow() - t0)
             return obj.object_content
-        except:
+        except Exception:
             obj = self._from_s3(object_id)
             db_metrics.put_duration(__name__, '_read_object', dt.utcnow() - t0)
             return obj
@@ -298,11 +293,17 @@ class BaseDynamoDBData(BaseData):
 
         toshi_object = self._model(object_id=str(object_id), object_type=body['clazz_name'], object_content=body)
 
+        # Note that we won't see any json serialisatoin errors here, body seriaze is called
+        logger.debug(f"toshi_object: {toshi_object}")
+
+        # print(dir(toshi_object))
+        # print(toshi_object.to_json())
+
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(identity, actions=[ToshiIdentity.object_id.add(1)])
             transaction.save(toshi_object)
 
-        logger.debug(f"toshi_object: object_id {object_id} object_type: {body['clazz_name']}")
+        logger.info(f"toshi_object: object_id {object_id} object_type: {body['clazz_name']}")
 
         db_metrics.put_duration(__name__, '_write_object', dt.utcnow() - t0)
         es_key = f"{self._prefix}_{object_id}"
@@ -337,9 +338,15 @@ class BaseDynamoDBData(BaseData):
         Raises:
             ValueError: invalid data exception
         """
+        logger.info(f"create() {clazz_name} {kwargs}")
+
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         next_id = self.get_next_id()
 
+        # TODO: this whole approach sucks !@#%$#
+        # consider the ENUM problem, and datatime serialisatin
+        # mayby graphene o
+        # cant we just use the graphene classes json serialisation ??
         def new_body(next_id, kwargs):
             new = clazz(next_id, **kwargs)
             body = new.__dict__.copy()
@@ -348,8 +355,23 @@ class BaseDynamoDBData(BaseData):
                 body['created'] = body['created'].isoformat()
             return body
 
-        self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
-        return clazz(next_id, **kwargs)
+        object_instance = clazz(next_id, **kwargs)
+
+        # print(object_instance.__class__)
+        # print(type(object_instance))
+        # print(dir(object_instance))
+        # print(f" TODICT: {graphql.utilities.ast_to_dict(object_instance)}")
+        # # print(f" PRINT_TYPE: {graphql.utilities.print_type(object_instance._type.value_from_ast)}")
+        # # print( graphql.utilities.value_from_ast_untyped(object_instance.created) )
+
+        try:
+            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
+        except Exception as err:
+            logger.error(F"faild to write {clazz_name} {kwargs} {err}")
+            raise
+
+        logger.info(f"create() object_instance: {object_instance}")
+        return object_instance
 
     def get_all(self, object_type, limit: int, after: str):
         t0 = dt.utcnow()

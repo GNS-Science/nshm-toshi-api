@@ -1,6 +1,7 @@
 """
 Module entry point
 """
+
 from graphql_api.schema.custom import SmsFile, StrongMotionStation
 from graphql_api.schema.custom.aggregate_inversion_solution import (
     AggregateInversionSolution,

@@ -1,21 +1,18 @@
 """
 Search Manager
 """
+
 import logging
-import json
 from datetime import datetime as dt
 
 import requests
-import boto3
 from elasticsearch import Elasticsearch, RequestsHttpConnection
-from requests_aws4auth import AWS4Auth
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME, ES_REGION, ES_ENDPOINT
+from graphql_api.config import CW_METRICS_RESOLUTION, ES_ENDPOINT, STACK_NAME
 from graphql_api.data.file_data import FileData
 from graphql_api.data.table_data import TableData
 from graphql_api.data.thing_data import ThingData
-
 
 log = logging.getLogger(__name__)
 
@@ -37,23 +34,22 @@ class SearchManager:
         self.es = Elasticsearch(
             hosts=[ES_ENDPOINT],
             http_auth=awsauth,
-            use_ssl=True,
+            # use_ssl=True,
             verify_certs=True,
-            connection_class=RequestsHttpConnection
+            connection_class=RequestsHttpConnection,
         )
-
 
     def index_document(self, key, document):
         # Index the document
         t0 = dt.utcnow()
         es_key = key.replace("/", "_")
-        headers = {"Content-Type": "application/json"}
         try:
-            # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.create
-            # create(index, id, body, doc_type=None, params=None, headers=None)
-            log.debug(f' calling es.create() with {self._es_index}, {es_key}, {document}, {TYPE}')
-            response = self.es.create(self._es_index, es_key, document, TYPE )
-            log.debug(f'es response {response}')
+            # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.index
+            # index(index, body, doc_type=None, id=None, params=None, headers=None)
+            log.info(f' calling es.index() with {self._es_index}, {document}, {TYPE}, {es_key}')
+            response = self.es.index(index=self._es_index, body=document, doc_type=TYPE, id=es_key)
+            log.info(f'es response {response}')
+
         except Exception as err:
             log.warning(f'index_document raised err: {err}')
         db_metrics.put_duration(__name__, 'index_document', dt.utcnow() - t0)
@@ -64,10 +60,11 @@ class SearchManager:
         headers = {}  # "Content-Type": "application/json" }
         result = []
         try:
-            log.debug(f"SearchManager.search({term})")
+            log.info(f"SearchManager.search({term})")
             qurl = self._endpoint + '/' + self._es_index + '/_search?q=' + term
-            log.debug(f"Query URL: {qurl}")
+            log.info(f"Query URL: {qurl}")
             response = requests.get(qurl, auth=self._awsauth, headers=headers).json()
+            log.info(f"Query reponse: {response}")
             # print(response)
             # count = response['hits']['total']
             # print ("count",  count)

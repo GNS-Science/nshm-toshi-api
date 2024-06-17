@@ -5,6 +5,7 @@ This module contains the schema definition for an InversionSolution.
 """
 import copy
 import datetime
+import logging
 import uuid
 
 # from importlib import import_module
@@ -17,7 +18,6 @@ from graphql_relay import from_global_id
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
-from graphql_api.schema.custom.rupture_generation_task import RuptureGenerationTask
 from graphql_api.schema.file import CreateFile, FileInterface
 from graphql_api.schema.table import Table
 
@@ -26,6 +26,8 @@ from .common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from .helpers import resolve_node
 from .labelled_table_relation import LabelledTableRelation, LabelledTableRelationInput
 from .rupture_generation_task import RuptureGenerationTask
+
+log = logging.getLogger(__name__)
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -40,8 +42,8 @@ class AutomationTaskUnion(graphene.Union):
 class InversionSolutionInterface(graphene.Interface):
     """A interface for things like Inversion Solution"""
 
-    class Meta:
-        interfaces = (relay.Node, FileInterface)
+    # class Meta:
+    #     interfaces = (relay.Node, FileInterface)
 
     created = graphene.DateTime(
         description="When the solution was created",
@@ -123,9 +125,13 @@ class CreateInversionSolution(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         t0 = dt.utcnow()
+        log.info(f"CreateInversionSolution mutate_and_get_payload {kwargs}")
         inversion_solution = get_data_manager().file.create('InversionSolution', **kwargs)
         db_metrics.put_duration(__name__, 'CreateInversionSolution.mutate_and_get_payload', dt.utcnow() - t0)
-        return CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
+
+        solution = CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
+        log.info(f"solution: {solution}")
+        return solution
 
 
 class AppendInversionSolutionTables(relay.ClientIDMutation):
@@ -154,11 +160,12 @@ class AppendInversionSolutionTables(relay.ClientIDMutation):
         if not inversion_solution.get('tables'):
             inversion_solution['tables'] = []
 
-        ##do table updates...
+        # table updates...
         for table in kwargs['tables']:
             table_relation = copy.copy(table)
             table_relation['identity'] = str(uuid.uuid4())
             table_relation['created'] = dt.now(datetime.timezone.utc).isoformat()
+            table_relation['table_type'] = table_relation['table_type'].value  # ENUM
             inversion_solution['tables'].append(table_relation)
 
         inversion_solution = get_data_manager().file.update(nid, inversion_solution)

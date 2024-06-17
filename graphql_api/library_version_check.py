@@ -12,7 +12,7 @@ e.g.
 
 Hopefully logging output from this module will aid in diagnosing such issues in the future.
 
-NOTE: if using serverless-python-requirements to deploy to AWS, then make sure that noDeploy covers both boto3 and 
+NOTE: if using serverless-python-requirements to deploy to AWS, then make sure that noDeploy covers both boto3 and
 botocore, since these libraries must be in-sync.
 
 e.g. excerpt from serverless.yml

@@ -16,8 +16,8 @@ class LabelledTableRelation(graphene.ObjectType):
     a unique, labelled table relationship.
 
     This is intended to be used as an internal structure within an InversionSolution (or similar).
-    It must be stored internally in the parent object, so does not implement the node interface. New instances must be mutated via the
-    parent class.
+    It must be stored internally in the parent object, so does not implement the node interface.
+    New instances must be mutated via the parent class.
     """
 
     identity = graphene.String(description="an internal unique UUID to support mutations.")

@@ -1,23 +1,23 @@
 """
 This module contains the schema definitions used by NSHM Automation tasks.
 
-Comments and descriptions defined here will be available to end-users of the API via the graphql schema, which is generated
-automatically by Graphene.
+Comments and descriptions defined here will be available to end-users of the API via the graphql schema,
+which is generated automatically by Graphene.
 
 The core class AutomationTask implements the `graphql_api.schema.task.Task` Interface.
 
 """
-import datetime as dt
+
+import copy
 import logging
 from datetime import datetime as dt
 
 import graphene
-from graphene import Enum, relay
+from graphene import relay
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
-from graphql_api.schema.event import EventResult, EventState
 
 # from .inversion_solution import InversionSolution
 from graphql_api.schema.file_relation import FileRole
@@ -29,13 +29,13 @@ from .automation_task_base import (
     AutomationTaskInterface,
     AutomationTaskUpdateInput,
 )
-from .common import KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
+from .common import ModelType, TaskSubType
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class AutomationTask(graphene.ObjectType, AutomationTaskBase):
@@ -101,8 +101,8 @@ class AutomationTaskConnection(relay.Connection):
 
 
 class NewAutomationTaskInput(AutomationTaskInput):
-    model_type = ModelType(required=False)
-    task_type = TaskSubType(required=True)
+    model_type = graphene.Field(ModelType, required=False)
+    task_type = graphene.Field(TaskSubType, required=True)
 
 
 class CreateAutomationTask(graphene.Mutation):
@@ -114,8 +114,15 @@ class CreateAutomationTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        print("payload: ", input)
-        task_result = get_data_manager().thing.create('AutomationTask', **input)
+        json_ready_input = copy.copy(input)
+
+        for fld in ['result', 'state', 'task_type']:
+            json_ready_input[fld] = json_ready_input[fld].value
+
+        log.info(f"payload: {json_ready_input}")
+        task_result = get_data_manager().thing.create('AutomationTask', **json_ready_input)
+        log.info(f"task_result: {task_result}")
+
         db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.utcnow() - t0)
         return CreateAutomationTask(task_result=task_result)
 
@@ -129,7 +136,7 @@ class UpdateAutomationTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        print("mutate: ", input)
+        log.debug("mutate: ", input)
         thing_id = input.pop('task_id')
         task_result = get_data_manager().thing.update('AutomationTask', thing_id, **input)
         db_metrics.put_duration(__name__, 'UpdateAutomationTask.mutate', dt.utcnow() - t0)

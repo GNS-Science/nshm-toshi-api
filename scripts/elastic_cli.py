@@ -1,4 +1,3 @@
-import os
 import sys
 
 import click
@@ -14,19 +13,10 @@ from graphql_relay import to_global_id
 from graphql_api.config import ES_ENDPOINT, ES_REGION, ES_INDEX
 
 credentials = boto3.Session().get_credentials()
-awsauth = AWS4Auth(
-        credentials.access_key,
-        credentials.secret_key,
-        ES_REGION,
-        'es',
-        session_token=credentials.token)
+awsauth = AWS4Auth(credentials.access_key, credentials.secret_key, ES_REGION, 'es', session_token=credentials.token)
 
 es = Elasticsearch(
-    hosts=[ES_ENDPOINT],
-    http_auth=awsauth,
-    use_ssl=True,
-    verify_certs=True,
-    connection_class=RequestsHttpConnection
+    hosts=[ES_ENDPOINT], http_auth=awsauth, use_ssl=True, verify_certs=True, connection_class=RequestsHttpConnection
 )
 
 connections.add_connection('default', es)
@@ -81,7 +71,7 @@ def cli_OHS(filter, list_ids, verbose):
     # the shortform, just dump the ids to stdout
     if list_ids:
         for hit in s.execute():
-        # for hit in s.scan():
+            # for hit in s.scan():
 
             if verbose:
                 click.echo(f'{to_global_id(hit.clazz_name, hit.id)}, {hit.clazz_name}, {hit.id}')
@@ -111,9 +101,7 @@ def cli_OHS(filter, list_ids, verbose):
 
 
 @main.command(name='nis')
-@click.option(
-    '-f', '--flip', is_flag=True, help='flip 2nd term'
-)
+@click.option('-f', '--flip', is_flag=True, help='flip 2nd term')
 @click.option('-c', '--clazz', default="AutomationTask")
 @click.option('-t', '--task_type', default="inversion")
 @click.option(
@@ -128,14 +116,14 @@ def cli_nis(flip, clazz, task_type, list_ids, verbose):
     qClass = Q("term", clazz_name__keyword=clazz)
     # q2 = Q("term", task_type__keyword=task_type)
 
-    #flip 2nd term
-    expr = qClass #  & ~q2 if flip else qClass & q2
+    # flip 2nd term
+    expr = qClass  # & ~q2 if flip else qClass & q2
 
     s = s.query(expr)
     # explicitly include/exclude fields
     # s = s.source(excludes=["arguments.*", "files.*"])    # "meta.*",
     s = s.extra(track_total_hits=True)
-    #for hit in s.execute():
+    # for hit in s.execute():
 
     hit = None
 
@@ -154,7 +142,6 @@ def cli_nis(flip, clazz, task_type, list_ids, verbose):
         response = s.execute()
         click.echo(f'Total {response.hits.total.value} hits found.')
     return
-
 
 
 """
@@ -197,6 +184,7 @@ def cli_nis(flip, clazz, task_type, list_ids, verbose):
     )
 """
 
+
 @main.command(name='mapping')
 def mapping():
     mappings = dict(
@@ -214,14 +202,15 @@ def mapping():
             # description = {"type": "text"},
             # argument_lists = {"type": "text"},
             # swept_arguments = {"type": "text"},
-            children = {"type": "object"},
-            parents = {"type": "object"},
+            children={"type": "object"},
+            parents={"type": "object"},
         )
     )
 
     es.indices.delete(index=ES_INDEX)
     response = es.indices.create(index=ES_INDEX, body={"mappings": mappings})
     click.echo(response)
+
 
 if __name__ == '__main__':
     main()  # pragma: no cover

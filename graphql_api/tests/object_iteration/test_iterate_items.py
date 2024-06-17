@@ -6,9 +6,10 @@ For API data management we want a way to iterate all the objects in the store.
  - note we're goin to use the pytest (not unit-test) approach
 
 """
+
 import pytest
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import to_global_id
 
 import graphql_api.data
 from graphql_api.schema import root_schema

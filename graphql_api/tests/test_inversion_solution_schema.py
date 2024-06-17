@@ -3,19 +3,15 @@ Test API function for InversionSolution
 Mocking our data layer
 
 """
-import datetime as dt
+
 import json
 import unittest
-from io import BytesIO
 from unittest import mock
 
-from dateutil.tz import tzutc
 from graphene.test import Client
 
 import graphql_api.data  # for mocking
-from graphql_api import data
-from graphql_api.schema import root_schema
-from graphql_api.schema.custom.inversion_solution import CreateInversionSolution, InversionSolution
+from graphql_api.schema import InversionSolution, root_schema
 
 
 class IncrId:
@@ -57,7 +53,10 @@ READ_MOCK = lambda _self, id: dict(
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
-@mock.patch('graphql_api.data.file_data.FileData.create', lambda self, clazz_name, **kwargs: {})
+@mock.patch(
+    'graphql_api.data.file_data.FileData.create',
+    lambda self, clazz_name, **kwargs: InversionSolution(**{"id": "100000"}),
+)
 # TODO: replace above with this deeper test ....
 # @mock.patch('graphql_api.data.BaseS3Data._write_object', lambda self, id, updated_body, **kwargs: {})
 class TestBasicInversionSolutionOperations(unittest.TestCase):
@@ -99,7 +98,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         print(result)
         assert (
             result['data']['create_inversion_solution']['inversion_solution']['id']
-            == 'SW52ZXJzaW9uU29sdXRpb246Tm9uZQ=='
+            == 'SW52ZXJzaW9uU29sdXRpb246MTAwMDAw'
         )
 
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
@@ -147,6 +146,7 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
                 identity
                 table_id
                 table_type
+                label
                 dimensions {k v}
                 table {
                  id
@@ -176,7 +176,9 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         )
 
         result = self.client.execute(qry, variable_values=dict(input=input))
+
         print(result)
+
         assert (
             result['data']['append_inversion_solution_tables']['inversion_solution']['id']
             == 'SW52ZXJzaW9uU29sdXRpb246MGk5M3FL'

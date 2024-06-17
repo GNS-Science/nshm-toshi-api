@@ -14,7 +14,6 @@ def get_data_manager():
 
 
 class DataManager:
-
     """DataManager provides the entry point to the data handlers"""
 
     def __init__(self, search_manager, client_args=None):
