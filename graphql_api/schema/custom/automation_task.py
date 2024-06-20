@@ -8,7 +8,6 @@ The core class AutomationTask implements the `graphql_api.schema.task.Task` Inte
 
 """
 
-import copy
 import logging
 from datetime import datetime as dt
 
@@ -114,15 +113,8 @@ class CreateAutomationTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
-        json_ready_input = copy.copy(input)
-
-        for fld in ['result', 'state', 'task_type']:
-            json_ready_input[fld] = json_ready_input[fld].value
-
-        log.info(f"payload: {json_ready_input}")
-        task_result = get_data_manager().thing.create('AutomationTask', **json_ready_input)
+        task_result = get_data_manager().thing.create('AutomationTask', **input)
         log.info(f"task_result: {task_result}")
-
         db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.utcnow() - t0)
         return CreateAutomationTask(task_result=task_result)
 

@@ -1,6 +1,5 @@
 #! strong_motion_station_file.py
 
-import copy
 
 import graphene
 from graphene import Enum, relay
@@ -38,9 +37,5 @@ class CreateSmsFile(graphene.Mutation):
     file_result = graphene.Field(SmsFile)
 
     def mutate(self, info, **kwargs):
-        # print("CreateFile.mutate: ", file_in, kwargs)
-        json_ready_input = copy.copy(kwargs)
-        for fld in ['file_type']:
-            json_ready_input[fld] = json_ready_input[fld].value
-        file_result = get_data_manager().file.create('SmsFile', **json_ready_input)
+        file_result = get_data_manager().file.create('SmsFile', **kwargs)
         return CreateSmsFile(ok=True, file_result=file_result)

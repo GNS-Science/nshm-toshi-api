@@ -63,13 +63,13 @@ class TestGeneralTaskBug217(unittest.TestCase):
 
         self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
 
-
-
     def test_create_two_gts_and_link_them(self):
         # the first GT
         gt1_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))
         print(gt1_result)
-        assert gt1_result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MA=='
+        assert gt1_result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MTAwMDAw'
+        assert gt1_result['data']['create_general_task']['general_task']['subtask_type'] == 'OPENQUAKE_HAZARD'
+        assert gt1_result['data']['create_general_task']['general_task']['model_type'] == 'COMPOSITE'
 
         # # the second
         # gt2_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))

@@ -8,7 +8,6 @@ The core class RuptureGenerationTask implements the `graphql_api.schema.task.Tas
 
 """
 
-import copy
 import logging
 from datetime import datetime as dt
 
@@ -58,12 +57,12 @@ class RuptureGenerationTaskConnection(relay.Connection):
         return len(root.edges)
 
 
-def json_ready(input):
-    json_ready_input = copy.copy(input)
-    for fld in ['result', 'state']:
-        if json_ready_input.get(fld):
-            json_ready_input[fld] = json_ready_input[fld].value
-    return json_ready_input
+# def json_ready(input):
+#     json_ready_input = copy.copy(input)
+#     for fld in ['result', 'state']:
+#         if json_ready_input.get(fld):
+#             json_ready_input[fld] = json_ready_input[fld].value
+#     return json_ready_input
 
 
 class CreateRuptureGenerationTask(graphene.Mutation):
@@ -76,7 +75,7 @@ class CreateRuptureGenerationTask(graphene.Mutation):
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
         log.info(f"CreateRuptureGenerationTaskmnutate {input}")
-        task_result = get_data_manager().thing.create('RuptureGenerationTask', **json_ready(input))
+        task_result = get_data_manager().thing.create('RuptureGenerationTask', **input)
         db_metrics.put_duration(__name__, 'CreateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
         return CreateRuptureGenerationTask(task_result=task_result)
 
@@ -94,6 +93,6 @@ class UpdateRuptureGenerationTask(graphene.Mutation):
         log.info(f"UpdateRuptureGenerationTask {input}")
         thing_id = input.pop('task_id')
         log.info(f"UpdateRuptureGenerationTask thing_id {thing_id}")
-        task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **json_ready(input))
+        task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **input)
         db_metrics.put_duration(__name__, 'UpdateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
         return UpdateRuptureGenerationTask(task_result=task_result)

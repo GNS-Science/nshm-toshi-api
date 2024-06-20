@@ -128,7 +128,6 @@ class CreateInversionSolution(relay.ClientIDMutation):
         log.info(f"CreateInversionSolution mutate_and_get_payload {kwargs}")
         inversion_solution = get_data_manager().file.create('InversionSolution', **kwargs)
         db_metrics.put_duration(__name__, 'CreateInversionSolution.mutate_and_get_payload', dt.utcnow() - t0)
-
         solution = CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
         log.info(f"solution: {solution}")
         return solution

@@ -3,7 +3,6 @@
 This module contains the schema definition for a AggregateInversionSolution.
 
 """
-import copy
 import logging
 from datetime import datetime as dt
 
@@ -92,12 +91,6 @@ class CreateAggregateInversionSolution(relay.ClientIDMutation):
     def mutate_and_get_payload(cls, root, info, **kwargs):
         t0 = dt.utcnow()
         log.info(f"CreateAggregateInversionSolution mutate_and_get_payload {kwargs}")
-
-        json_ready_input = copy.copy(kwargs)
-
-        for fld in ['aggregation_fn']:
-            json_ready_input[fld] = json_ready_input[fld].value
-
-        solution = get_data_manager().file.create('AggregateInversionSolution', **json_ready_input)
+        solution = get_data_manager().file.create('AggregateInversionSolution', **kwargs)
         db_metrics.put_duration(__name__, 'CreateAggregateInversionSolution.mutate_and_get_payload', dt.utcnow() - t0)
         return CreateAggregateInversionSolution(solution=solution, ok=True)
