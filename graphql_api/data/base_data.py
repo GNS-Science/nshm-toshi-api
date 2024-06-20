@@ -2,6 +2,7 @@
 BaseData is the base class for AWS_S3 data handlers
 """
 
+import enum
 import json
 import logging
 import random
@@ -9,6 +10,7 @@ from collections import namedtuple
 from datetime import datetime as dt
 from importlib import import_module
 from io import BytesIO
+from typing import Dict
 
 import backoff
 import boto3
@@ -46,6 +48,14 @@ ObjectIdentityRecord = namedtuple("ObjectIdentityRecord", "object_type, object_i
 def append_uniq(size):
     uniq = ''.join(random.choice(_ALPHABET) for _ in range(5))
     return str(size) + uniq
+
+
+def replace_enums(kwargs: Dict) -> Dict:
+    new_kwargs = kwargs.copy()
+    for key, value in kwargs.items():
+        if isinstance(value, enum.Enum):
+            new_kwargs[key] = value.value
+    return new_kwargs
 
 
 class BaseData:
@@ -317,7 +327,7 @@ class BaseDynamoDBData(BaseData):
         model = self._model.get(object_id)
         assert model.object_type == body.get('clazz_name')
         with TransactWrite(connection=self._connection) as transaction:
-            transaction.update(model, actions=[self._model.object_content.set(body)])
+            transaction.update(model, actions=[self._model.object_content.set(replace_enums(body))])
 
         es_key = f"{self._prefix}_{object_id}"
         self._db_manager.search_manager.index_document(es_key, body)
@@ -344,9 +354,10 @@ class BaseDynamoDBData(BaseData):
         next_id = self.get_next_id()
 
         # TODO: this whole approach sucks !@#%$#
-        # consider the ENUM problem, and datatime serialisatin
+        # consider the ENUM problem, and datatime serialisation
         # mayby graphene o
         # cant we just use the graphene classes json serialisation ??
+
         def new_body(next_id, kwargs):
             new = clazz(next_id, **kwargs)
             body = new.__dict__.copy()
@@ -365,7 +376,7 @@ class BaseDynamoDBData(BaseData):
         # # print( graphql.utilities.value_from_ast_untyped(object_instance.created) )
 
         try:
-            self._write_object(next_id, self._prefix, new_body(next_id, kwargs))
+            self._write_object(next_id, self._prefix, new_body(next_id, replace_enums(kwargs)))
         except Exception as err:
             logger.error(F"faild to write {clazz_name} {kwargs} {err}")
             raise

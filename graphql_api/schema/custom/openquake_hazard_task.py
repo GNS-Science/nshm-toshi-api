@@ -8,7 +8,6 @@ The core class OpenquakeHazardTask implements the `graphql_api.schema.task.Task`
 
 """
 
-import copy
 import logging
 from datetime import datetime as dt
 
@@ -100,16 +99,11 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
         input_type, nid = from_global_id(input.config)
         assert input_type == "OpenquakeHazardConfig"
 
-        json_ready_input = copy.copy(input)
-
-        for fld in ['task_type', 'model_type', 'state', 'result']:
-            json_ready_input[fld] = json_ready_input[fld].value
-
         ref = get_data_manager().thing.get_one(nid)
         log.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
         if not ref:
             raise Exception("Broken input")
-        openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **json_ready_input)
+        openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
 

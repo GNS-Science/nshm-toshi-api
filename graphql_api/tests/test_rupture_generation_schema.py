@@ -9,14 +9,18 @@ import datetime as dt
 import unittest
 from unittest import mock
 
+import boto3
 from dateutil.tz import tzutc
 from graphene.test import Client
+from moto import mock_dynamodb, mock_s3
+from pynamodb.connection.base import Connection  # for mocking
 
 import graphql_api.data  # for mocking
+from graphql_api.config import REGION, S3_BUCKET_NAME
+from graphql_api.data import data_manager
+from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 from graphql_api.schema import root_schema
-
-# from graphql_api.schema.file_relation import FileRelation
-
+from graphql_api.schema.search_manager import SearchManager
 
 CREATE = '''
     mutation ($created: DateTime!) {
@@ -119,48 +123,60 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
         )
 
 
-TASKZERO = lambda _self, _id: {
-    "id": "0",
-    "clazz_name": "RuptureGenerationTask",
-    "created": "2020-10-30T09:15:00+00:00",
-    "duration": 600.0,
-    "arguments": [
-        {"k": "max_jump_distance", "v": "55.5"},
-        {"k": "max_sub_section_length", "v": "2"},
-        {"k": "max_cumulative_azimuth", "v": "590"},
-        {"k": "min_sub_sections_per_parent", "v": "2"},
-        {"k": "permutation_strategy", "v": "DOWNDIP"},
-    ],
-}
+# TASKZERO = lambda _self, _id: {
+#     "id": "0",
+#     "clazz_name": "RuptureGenerationTask",
+#     "created": "2020-10-30T09:15:00+00:00",
+#     "duration": 600.0,
+#     "arguments": [
+#         {"k": "max_jump_distance", "v": "55.5"},
+#         {"k": "max_sub_section_length", "v": "2"},
+#         {"k": "max_cumulative_azimuth", "v": "590"},
+#         {"k": "min_sub_sections_per_parent", "v": "2"},
+#         {"k": "permutation_strategy", "v": "DOWNDIP"},
+#     ],
+# }
 
 
-@mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)
-@mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
-@mock.patch('graphql_api.data.BaseDynamoDBData.transact_update', lambda self, object_id, object_type, body: None)
+@mock_s3
+@mock_dynamodb
 class TestUpdateRuptureGenerationTask(unittest.TestCase):
-    """
-    All datastore (data) methods are mocked.
-
-    TODO: more coverage please
-    """
-
     def setUp(self):
         self.client = Client(root_schema)
+        self._s3_conn = boto3.resource('s3', region_name=REGION)
+        self._s3_conn.create_bucket(Bucket=S3_BUCKET_NAME)
+        self._bucket = self._s3_conn.Bucket(S3_BUCKET_NAME)
+        self._connection = Connection(region=REGION)
 
-    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', TASKZERO)
+        ToshiThingObject.create_table()
+        ToshiFileObject.create_table()
+        ToshiIdentity.create_table()
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+
     def test_update_with_metrics(self):
+        executed = self.client.execute(CREATE, variable_values=dict(created=dt.datetime.now(tzutc())))
+        print(executed)
+        assert (
+            executed['data']['create_rupture_generation_task']['task_result']['id']
+            == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjEwMDAwMA=='
+        )
+
         qry = '''
             mutation {
                 update_rupture_generation_task(input: {
-                    task_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA="
+                    task_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjEwMDAwMA=="
                     duration: 909,
                     metrics: {k: "rupture_count" v: "20"}
+                    result: FAILURE
+                    state: DONE
                 })
                 {
                     task_result {
                         id
                         duration
                         metrics {k v}
+                        result
+                        state
                     }
                 }
             }
@@ -169,15 +185,12 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
         executed = self.client.execute(qry)
         print(executed)
         result = executed['data']['update_rupture_generation_task']['task_result']
-        assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+        assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjEwMDAwMA=='
         assert result['duration'] == 909
+        assert result['state'] == 'DONE'
+
         assert result['metrics'][0]['k'] == "rupture_count"
         assert result['metrics'][0]['v'] == "20"
-
-    @unittest.skip("TODO")
-    def test_merge_update_is_effective(self):
-        """need to show that the json being saved to S3 is correct"""
-        assert 0
 
 
 TASK_OLD = lambda _self, _id: {
