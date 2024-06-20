@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1] - 2024-06-20
+
+### Changed
+ - fix for issue #217 (from graphe library upgrade)
+ - improve test coverage with moto libary
+ - migrate enum.value fix into base_data
+
 ## [0.2.0] - 2024-06-14
 
 ### Changed
