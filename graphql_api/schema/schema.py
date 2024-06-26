@@ -250,7 +250,9 @@ class QueryRoot(graphene.ObjectType):
             _type, _id = from_global_id(gid)
             if _type in ['RuptureGenerationTask', 'StrongMotionStation', 'GeneralTask', 'AutomationTask']:
                 result.append(db_root.thing.get_one(_id))
-            elif _type in ['File', 'SmsFile', 'InversionSolution']:
+            elif _type in ['File', 'SmsFile']:
+                result.append(db_root.file.get_one(_id))
+            elif "InversionSolution" in _type:
                 result.append(db_root.file.get_one(_id))
             elif _type in ['Table']:
                 result.append(db_root.table.get_one(_id))
