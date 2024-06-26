@@ -63,23 +63,10 @@ class TestGeneralTaskBug217(unittest.TestCase):
 
         self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
 
-    def test_create_two_gts_and_link_them(self):
-        # the first GT
+    def test_create_one_gt(self):
+
         gt1_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))
         print(gt1_result)
         assert gt1_result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MTAwMDAw'
         assert gt1_result['data']['create_general_task']['general_task']['subtask_type'] == 'OPENQUAKE_HAZARD'
         assert gt1_result['data']['create_general_task']['general_task']['model_type'] == 'COMPOSITE'
-
-        # # the second
-        # gt2_result = self.client.execute(CREATE_GT, variable_values=dict(created=dt.datetime.now(tzutc())))
-        # print(gt2_result)
-        # assert gt2_result['data']['create_general_task']['general_task']['id'] == 'R2VuZXJhbFRhc2s6MQ=='
-
-        # # finally the relation
-        # gt_link_result = self.client.execute(
-        #     CREATE_GT_RELATION, variable_values=dict(parent_id='R2VuZXJhbFRhc2s6MA==', child_id='R2VuZXJhbFRhc2s6MQ==')
-        # )
-
-        # print('GTLINK ', gt_link_result)
-        # assert gt_link_result['data']['create_task_relation']['ok'] == True
