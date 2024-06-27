@@ -148,15 +148,19 @@ class TestInversionSolutionRelationBugFix(unittest.TestCase):
                     task_type
                     id
                     inversion_solution {
-                        id
-                        file_name
-                        meta {
-                        k
-                        v
+                        ... on Node { id }
+                        ... on FileInterface {
+                            file_name
+                            meta {
+                            k
+                            v
+                            }
                         }
-                        tables {
-                        table_id
-                        table_type
+                        ... on InversionSolutionInterface {
+                            tables {
+                            table_id
+                            table_type
+                            }
                         }
                     }
                     }
