@@ -46,8 +46,9 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
     model_type = ModelType()
     task_type = TaskSubType()
     inversion_solution = graphene.Field(
-        'graphql_api.schema.custom.inversion_solution.InversionSolution',
-        description="the primary result of this task (only for task_type == INVERSION.",
+        'graphql_api.schema.custom.inversion_solution_union.InversionSolutionUnion',
+        description="the result of this task. NB only available for task_types:"
+        "INVERSION, SCALE_SOLUTION, AGGREGATE_SOLUTION, TIME_DEPENDENT_SOLUTION.",
     )
 
     @staticmethod
@@ -56,16 +57,27 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
 
     @staticmethod
     def resolve_inversion_solution(root, info, **args):
+
+        log.info(f"resolve_inversion_solution {root.task_type}")
+        resolvable_types = [
+            TaskSubType.INVERSION.value,
+            TaskSubType.SCALE_SOLUTION.value,
+            TaskSubType.AGGREGATE_SOLUTION.value,
+            TaskSubType.TIME_DEPENDENT_SOLUTION.value,
+        ]
+
         if not len(root.files):
             return
-        if not root.task_type == TaskSubType.INVERSION.value:
+        if root.task_type not in resolvable_types:
+            log.info(f"Cannot resove inversion_soluton for {root.task_type}")
             return
 
         t0 = dt.utcnow()
         res = None
 
         # TODO this is an ugly hack....
-        #  - It gets the inversion solution by traversing the file_relations until it finds an InversionSolution.
+        #  - It gets the inversion solution by traversing the file_relations until it finds
+        #     an InversionSolution subtype.
         #  - Instead this attribute needs to be a first-class one-to-one relationship
         for file_id in root.files:
             if isinstance(file_id, dict):  # new form, files is list of objects
@@ -79,9 +91,11 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
                 if not file_relation.role == FileRole.WRITE.value:
                     continue
             file = get_data_manager().file.get_one(file_relation.file_id)
-            if file.__class__.__name__ == 'InversionSolution':
+            if 'InversionSolution' in file.__class__.__name__:
                 res = file
+                log.info(f"resolved inversion_solution file {file}")
                 break
+
         db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution', dt.utcnow() - t0)
         return res
 
