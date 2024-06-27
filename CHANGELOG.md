@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.2] - 2024-06-27
+### Changed
+ - Schema.nodes resolver now handles all InversionSolution types
+ - AutomationTask.inversion_solution resolver now handles all InversionSolution types
+
 ## [0.2.1] - 2024-06-20
 
 ### Changed
