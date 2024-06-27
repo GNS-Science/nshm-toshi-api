@@ -115,8 +115,8 @@ class TestGetAutomationTaskFiles(unittest.TestCase):
                     id
                     created
                     inversion_solution {
-                        id
-                        file_name
+                        ... on Node { id }
+                        ... on FileInterface { file_name }
                     }
                     files {
                       total_count
