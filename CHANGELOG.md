@@ -1,9 +1,15 @@
 # Changelog
 
+## [0.2.4] - 2024-07-10
+### Added
+ - new e2e_workflow test package to reproduce end-user workflows
+ - fixed casing for new  mfd_table resolver.
+
 ## [0.2.3] - 2024-07-10
 ### Changed
  - InversionSolutionInterface.mfd_table resolver now uses tables
  - InversionSolutionInterface.produced_by_id is removed (was deprecated)
+
 
 ## [0.2.2] - 2024-06-27
 ### Changed

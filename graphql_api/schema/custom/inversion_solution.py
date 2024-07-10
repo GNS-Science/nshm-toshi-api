@@ -61,9 +61,11 @@ class InversionSolutionInterface(graphene.Interface):
     )
 
     def resolve_mfd_table(root, info, **args):
-        for table in root.tables:
-            if table.get('table_type') == 'MFD_CURVES_V2':
-                return Table.get_node(None, table['table_id'])
+        if root.tables:
+            for table in root.tables:
+                if table.get('table_type').upper() == 'MFD_CURVES_V2':
+                    _clazz, _id = from_global_id(table['table_id'])
+                    return Table.get_node(None, _id)
 
     produced_by = graphene.Field(AutomationTaskUnion)
 
