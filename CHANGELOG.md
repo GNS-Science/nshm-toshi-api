@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.3] - 2024-07-10
+### Changed
+ - InversionSolutionInterface.mfd_table resolver now uses tables
+ - InversionSolutionInterface.produced_by_id is removed (was deprecated)
+
 ## [0.2.2] - 2024-06-27
 ### Changed
  - Schema.nodes resolver now handles all InversionSolution types
