@@ -6,6 +6,7 @@ Mocking our data layer
 
 import json
 import unittest
+from copy import copy
 from unittest import mock
 
 from graphene.test import Client
@@ -46,10 +47,91 @@ READ_MOCK = lambda _self, id: dict(
                 {"k": "tags", "v": ["opensha", "testing"]},
                 {"k": "gmpes", "v": ["ASK_2014"]},
             ],
-            "table_type": "hazard_gridded",
+            "table_type": "MFD_CURVES_V2",
         }
     ],
 )
+
+ISMOCK = {
+    "id": "1544.0vP8Bd",
+    "clazz_name": "InversionSolution",
+    "file_name": "NZSHM22_InversionSolution-UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5.zip",
+    "md5_digest": "8tEaawtixFVlzm4iseWeQA==",
+    "file_size": 2950845,
+    "file_url": None,
+    "post_url": None,
+    "meta": [
+        {"k": "round", "v": "0"},
+        {"k": "config_type", "v": "crustal"},
+        {"k": "rupture_set_file_id", "v": "RmlsZToxMzY1LjBzZzRDeA=="},
+        {
+            "k": "rupture_set",
+            "v": "/tmp/NZSHM/downloads/RmlsZToxMzY1LjBzZzRDeA==/RupSet_Cl_FM(CFM_0_3_SANSTVZ)_noInP(T)_slRtP(0.05)_slInL(F)_cfFr(0.75)_cfRN(2)_cfRTh(0.5)_cfRP(0.01)_fvJm(T)_jmPTh(0.001)_cmRkTh(360)_mxJmD(15)_plCn(T)_adMnD(6)_adScFr(0)_bi(F)_stGrSp(2)_coFr(0.5).zip",
+        },
+        {"k": "completion_energy", "v": "0.0"},
+        {"k": "max_inversion_time", "v": "0.25"},
+        {"k": "mfd_equality_weight", "v": "100.0"},
+        {"k": "mfd_inequality_weight", "v": "100.0"},
+        {"k": "slip_rate_weighting_type", "v": "BOTH"},
+        {"k": "slip_rate_weight", "v": "None"},
+        {"k": "slip_uncertainty_scaling_factor", "v": "None"},
+        {"k": "slip_rate_normalized_weight", "v": "1"},
+        {"k": "slip_rate_unnormalized_weight", "v": "1"},
+        {"k": "seismogenic_min_mag", "v": "6.8"},
+    ],
+    "relations": ["1735iadkQ"],
+    "created": "2021-07-17T04:12:47.122510+00:00",
+    "metrics": [
+        {"k": "total_perturbations", "v": "1889"},
+        {"k": "total_ruptures", "v": "51147"},
+        {"k": "perturbed_ruptures", "v": "1140"},
+        {"k": "final_energy_mfd_inequality", "v": "1.1911481851711869E-4"},
+        {"k": "ruptures_above_water_level_ratio", "v": "0.0222886972842982"},
+        {"k": "final_energy_slip_rate", "v": "516.6160888671875"},
+        {"k": "final_energy_mfd_equality", "v": "130035.234375"},
+        {"k": "avg_perturbs_per_pertubed_rupture", "v": "1.657017543859649"},
+        {"k": "final_energy_rupture_rate_minimization", "v": "495.511474609375"},
+    ],
+    # "produced_by_id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5",
+    "mfd_table_id": "VGFibGU6MG8zZmtm",
+    "hazard_table_id": None,
+    "hazard_table": None,
+    "mfd_table": None,
+    "produced_by": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5",
+    "tables": [
+        {
+            "identity": "table0",
+            "created": "2021-06-11T02:37:26.009506+00:00",
+            "table_type": "MFD_CURVES_V2",
+            "produced_by_id": "VGFibGU6Tm9uZQ==",
+            "label": "MyMFDTable",
+            "table_id": "VGFibGU6MG8zZmtm",
+        }
+    ],
+}
+
+
+TABLEMOCK = {
+    "id": "0o3fkf",
+    "clazz_name": "Table",
+    "created": "2021-06-11T02:37:26.009506+00:00",
+    "object_id": "VGFibGU6MG8zZmtm",
+    "column_headers": ["OK", "DOKEY"],
+    "column_types": ["INT", "DBL"],
+    "rows": [["1", "1.01"], ["2", "2.2"]],
+    "meta": [
+        {"k": "round", "v": "0"},
+        {"k": "config_type", "v": "crustal"},
+        {"k": "rupture_set_file_id", "v": "RmlsZToxMzY1LjBzZzRDeA=="},
+    ],
+    "dimensions": [
+        {"k": "grid_spacings", "v": ["0.1"]},
+        {"k": "IML_periods", "v": ["0, 0.1, etc"]},
+        {"k": "tags", "v": ["opensha", "testing"]},
+        {"k": "gmpes", "v": ["ASK_2014"]},
+    ],
+    "table_type": "hazard_gridded",
+}
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)
@@ -67,8 +149,8 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
-    def test_create_bare_table(self):
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', side_effect=[copy(READ_MOCK), copy(TABLEMOCK)])
+    def test_create_bare_table(self, mocking):
         CREATE_QRY = '''
             mutation ($digest: String!, $file_name: String!, $file_size: BigInt!, $produced_by: ID!, $mfd_table: ID!) {
               create_inversion_solution(input: {
@@ -101,8 +183,8 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
             == 'SW52ZXJzaW9uU29sdXRpb246MTAwMDAw'
         )
 
-    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
-    def test_get_inversion_solution_by_node_id(self):
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', side_effect=[copy(ISMOCK), copy(TABLEMOCK)])
+    def test_get_inversion_solution_by_node_id(self, mocking):
         # the first GT
         qry = '''
         query get_FDT {
@@ -123,11 +205,14 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         '''
         result = self.client.execute(qry, variable_values={})
         print(result)
-        assert result['data']['node']['id'] == 'SW52ZXJzaW9uU29sdXRpb246MGk5M3FL'
-        assert result['data']['node']['file_name'] == "$file_name"
-        assert result['data']['node']['mfd_table']['id'] == "VGFibGU6MA=="
-        assert result['data']['node']['metrics'][0]['k'] == "some_metric"
-        assert result['data']['node']['metrics'][0]['v'] == "20"
+        assert result['data']['node']['id'] == 'SW52ZXJzaW9uU29sdXRpb246MTU0NC4wdlA4QmQ='
+        assert (
+            result['data']['node']['file_name']
+            == "NZSHM22_InversionSolution-UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5.zip"
+        )
+        assert result['data']['node']['mfd_table']['id'] == "VGFibGU6MG8zZmtm"
+        assert result['data']['node']['metrics'][0]['k'] == "total_perturbations"
+        assert result['data']['node']['metrics'][0]['v'] == "1889"
         assert result['data']['node']['tables'][0]['identity'] == "table0"
 
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', READ_MOCK)
@@ -202,35 +287,13 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
         )
 
 
-ISMOCK = lambda _self, id: json.loads(
-    '''{
-"id": "1544.0vP8Bd",
-"file_name": "NZSHM22_InversionSolution-UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5.zip",
-"md5_digest": "8tEaawtixFVlzm4iseWeQA==",
-"file_size": 2950845,
-"file_url": null,
-"post_url": null,
-"meta": [{"k": "round", "v": "0"}, {"k": "config_type", "v": "crustal"}, {"k": "rupture_set_file_id", "v": "RmlsZToxMzY1LjBzZzRDeA=="}, {"k": "rupture_set", "v": "/tmp/NZSHM/downloads/RmlsZToxMzY1LjBzZzRDeA==/RupSet_Cl_FM(CFM_0_3_SANSTVZ)_noInP(T)_slRtP(0.05)_slInL(F)_cfFr(0.75)_cfRN(2)_cfRTh(0.5)_cfRP(0.01)_fvJm(T)_jmPTh(0.001)_cmRkTh(360)_mxJmD(15)_plCn(T)_adMnD(6)_adScFr(0)_bi(F)_stGrSp(2)_coFr(0.5).zip"}, {"k": "completion_energy", "v": "0.0"}, {"k": "max_inversion_time", "v": "0.25"}, {"k": "mfd_equality_weight", "v": "100.0"}, {"k": "mfd_inequality_weight", "v": "100.0"}, {"k": "slip_rate_weighting_type", "v": "BOTH"}, {"k": "slip_rate_weight", "v": "None"}, {"k": "slip_uncertainty_scaling_factor", "v": "None"}, {"k": "slip_rate_normalized_weight", "v": "1"}, {"k": "slip_rate_unnormalized_weight", "v": "1"}, {"k": "seismogenic_min_mag", "v": "6.8"}],
-"relations": ["1735iadkQ"],
-"created": "2021-07-17T04:12:47.122510+00:00",
-"metrics": [{"k": "total_perturbations", "v": "1889"}, {"k": "total_ruptures", "v": "51147"}, {"k": "perturbed_ruptures", "v": "1140"}, {"k": "final_energy_mfd_inequality", "v": "1.1911481851711869E-4"}, {"k": "ruptures_above_water_level_ratio", "v": "0.0222886972842982"}, {"k": "final_energy_slip_rate", "v": "516.6160888671875"}, {"k": "final_energy_mfd_equality", "v": "130035.234375"}, {"k": "avg_perturbs_per_pertubed_rupture", "v": "1.657017543859649"}, {"k": "final_energy_rupture_rate_minimization", "v": "495.511474609375"}],
-"produced_by_id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5",
-"mfd_table_id": "VGFibGU6MG8zZmtm",
-"hazard_table_id": null,
-"hazard_table": null,
-"mfd_table": null,
-"produced_by": null,
-"tables": [{"identity":"table0", "created": "2021-06-11T02:37:26.009506+00:00", "produced_by_id": "VGFibGU6Tm9uZQ==", "label":"MyMFDTable", "table_id": "VGFibGU6MA=="}],
-"clazz_name": "InversionSolution"}'''
-)
-
-
 class TestCustomResolvers(unittest.TestCase):
+
     def setUp(self):
         self.client = Client(root_schema)
 
-    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', ISMOCK)
-    def test_get_inversion_solution_resolved_by_id_fields(self):
+    @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', side_effect=[copy(ISMOCK), copy(TABLEMOCK)])
+    def test_get_inversion_solution_resolved_by_id_fields(self, mock_read_object):
         # the first GT
         qry = '''
         query {
@@ -268,4 +331,4 @@ class TestCustomResolvers(unittest.TestCase):
         assert result['data']['node']['mfd_table']['id'] == 'VGFibGU6MG8zZmtm'
         assert result['data']['node']['hazard_table_id'] == None
         assert result['data']['node']['hazard_table'] == None
-        assert result['data']['node']['tables'][0]['table']['id'] == "VGFibGU6MA=="
+        assert result['data']['node']['tables'][0]['table']['id'] == "VGFibGU6MG8zZmtm"

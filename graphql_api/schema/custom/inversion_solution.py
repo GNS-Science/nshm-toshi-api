@@ -52,22 +52,26 @@ class InversionSolutionInterface(graphene.Interface):
 
     # produced_by_id = graphene.ID(description='deprecated')
     mfd_table_id = graphene.ID(description='deprecated')
-    hazard_table_id = graphene.ID()
 
-    tables = graphene.List(LabelledTableRelation)
-
+    hazard_table_id = graphene.ID(description='deprecated')
     hazard_table = graphene.Field(Table, description='deprecated')
-    mfd_table = graphene.Field(Table, description='deprecated')
-    produced_by = graphene.Field(AutomationTaskUnion)
 
-    def resolve_hazard_table(root, info, **args):
-        return resolve_node(root, info, 'hazard_table_id', 'table')
+    mfd_table = graphene.Field(
+        Table, description='was deprecated, but now returns the V2 MFD curve table if one is found'
+    )
 
     def resolve_mfd_table(root, info, **args):
-        return resolve_node(root, info, 'mfd_table_id', 'table')
+        for table in root.tables:
+            if table.get('table_type') == 'MFD_CURVES_V2':
+                return Table.get_node(None, table['table_id'])
+
+    produced_by = graphene.Field(AutomationTaskUnion)
 
     def resolve_produced_by(root, info, **args):
+        log.info('resolve_produced_by')
         return resolve_node(root, info, 'produced_by', 'thing')
+
+    tables = graphene.List(LabelledTableRelation)
 
     def resolve_tables(root, info, **args):
         if root.tables:
@@ -85,6 +89,7 @@ class InversionSolution(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
+        # log.info(f'InversionSolution.get_node {cls} {info} {_id}' )
         t0 = dt.utcnow()
         node = get_data_manager().file.get_one(_id)
         db_metrics.put_duration(__name__, 'InversionSolution.resolve_node', dt.utcnow() - t0)
