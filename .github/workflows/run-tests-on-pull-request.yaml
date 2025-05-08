@@ -1,6 +1,8 @@
 name: Run Tests On PullRequest
 
 on:
+  schedule:
+    - cron:  '25 4 * * 0' # At 04:25 on Sunday
   pull_request:
     branches: [ deploy-test, main ]
 
@@ -10,4 +12,5 @@ jobs:
     with:
       operating-systems: "['ubuntu-latest']"
       python-versions: "['3.10']"
+      delete-poetry-lock: ${{ github.event_name == 'schedule' }} # the scheduled build tests against newer dependencies
     secrets: inherit
