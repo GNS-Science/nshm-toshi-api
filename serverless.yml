@@ -43,7 +43,7 @@ custom:
     host: localhost
     directory: /tmp
   #dynamodb-local settings
-  dynamodb:
+  serverless-dynamodb:
   # If you only want to use DynamoDB Local in some stages, declare them here
     stages:
       - local
