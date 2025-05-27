@@ -4,7 +4,7 @@ plugins:
   - serverless-python-requirements
   - serverless-wsgi
   - serverless-s3-local
-  - serverless-dynamodb-local
+  - serverless-dynamodb
   - serverless-plugin-warmup
 package:
   individually: false
@@ -43,7 +43,7 @@ custom:
     host: localhost
     directory: /tmp
   #dynamodb-local settings
-  dynamodb:
+  serverless-dynamodb:
   # If you only want to use DynamoDB Local in some stages, declare them here
     stages:
       - local
