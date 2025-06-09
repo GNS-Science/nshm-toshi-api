@@ -303,12 +303,13 @@ class SetupHelpersMixin:
 
         return self.create_openquake_hazard_disagg_task()
 
-    def create_openquake_hazard_task(self):
+    def create_openquake_hazard_task(self, config=None):
         """test helper"""
         query = '''
-            mutation ($created: DateTime!) {
+            mutation ($created: DateTime!, $config: ID) {
               create_openquake_hazard_task(
                   input: {
+                    config: $config
                     created: $created
                     model_type: COMPOSITE
                     state: UNDEFINED
@@ -334,11 +335,11 @@ class SetupHelpersMixin:
               )
               {
                 ok
-                openquake_hazard_task { id, created, arguments {k v}}
+                openquake_hazard_task { id, config { id }, created, arguments {k v}}
               }
             }'''
 
-        variables = dict(created=dt.datetime.now(tzutc()).isoformat())
+        variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat())
         result = self.client.execute(query, variable_values=variables)
         print(result)
         ht_id = result['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']

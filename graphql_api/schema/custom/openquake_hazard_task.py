@@ -83,6 +83,8 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
 
 class OpenquakeHazardTaskInput(AutomationTaskInput):
+    # we're keeping this in here so that we can create old-fashioned entries for tests to ensure we can still read them
+    config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
     model_type = ModelType(required=True)
     task_type = OpenquakeTaskType(default_value=OpenquakeTaskType.HAZARD)
 
