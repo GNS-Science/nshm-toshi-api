@@ -28,7 +28,6 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     Represents a OpenquakeHazardSolution
 
     This has :
-     - config an OpenquakeHazardConfig
      - export_archive File a zip archive containing hazard outputs (`oq engine --export ....)
      - hdf5_archive File a zip archive containing the raw hdf5 compressed
 
@@ -40,7 +39,10 @@ class OpenquakeHazardSolution(graphene.ObjectType):
 
     created = graphene.DateTime(description="When it was created (UTZ)")
     config = graphene.Field(
-        OpenquakeHazardConfig, description="the template configuration used to produce this solution"
+        OpenquakeHazardConfig,
+        description="the template configuration used to produce this solution",
+        required=False,
+        deprecation_reason="We no longer use this field",
     )
     csv_archive = graphene.Field(
         File, description="a zip archive containing hazard csv outputs (`oq engine --export-outputs ....)"
@@ -100,7 +102,6 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation):  # graphene.Mutatio
 
     class Input:
         created = OpenquakeHazardSolution.created
-        config = graphene.ID(required=True)
         produced_by = graphene.ID(required=True)
 
         csv_archive = graphene.ID(required=False)
