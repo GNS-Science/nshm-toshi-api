@@ -76,3 +76,7 @@ jobs:
               STAGE=test npm run-script deploy
           fi
 
+      - name: debug
+        if: ${{ !success() }}
+        run: less requirements.txt
+
