@@ -139,7 +139,7 @@ provider:
 
   apiGateway:
     apiKeys:
-      - name: TempApiKey-${self:custom.stage}
+      - name: TOSHI_API_TempApiKey-${self:custom.stage}
         description: Api key until we have an auth function # Optional
 
 functions:
