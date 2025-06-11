@@ -10,7 +10,7 @@
     "requirements_1": "serverless requirements clean",
     "requirements_2": "serverless requirements cleanCache",
     "dummy_pkg": "serverless package --stage dummy",
-    "deploy": "serverless deploy --stage ${STAGE} --verbose",
+    "deploy": "serverless deploy --stage ${STAGE}",
     "sls_doctor": "serverless doctor"
   },
   "repository": {
