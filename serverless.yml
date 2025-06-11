@@ -6,6 +6,7 @@ plugins:
   - serverless-s3-local
   - serverless-dynamodb
   - serverless-plugin-warmup
+  - serverless-plugin-ifelse
 package:
   individually: false
   exclude:
@@ -91,6 +92,13 @@ custom:
 
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
 
+  serverlessIfElse:
+      - If: '"${self:custom.stage}" == "test"'
+        Exclude:
+          - resourcee.Resources.ElasticSearchInstance
+          - provider.iamrolestatements.1
+          - functions.app.environment.0
+
 provider:
   name: aws
   runtime: python3.10
@@ -102,40 +110,41 @@ provider:
     URL_DEFAULT_TTL: ${self:custom.url_default_ttl}
     DEPLOYMENT_STAGE: ${self:custom.stage}
   iamRoleStatements:
-    # S3 access policy
-    - Effect: Allow
-      Action:
-        - s3:*
-      Resource:
-        - ${self:custom.s3_role_resource}
-        - ${self:custom.s3_role_resource}/*
-    # ES access policy
-    # modelled on https://github.com/serverless/examples/blob/master/aws-golang-dynamo-stream-to-elasticsearch/serverless.yml
-    - Effect: Allow
-      Action:
-        - es:ESHttpPost
-        - es:ESHttpPut
-        - es:ESHttpHead
-        - es:ESHttpGet
-      Resource:
-        - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
-        - { "Fn::Join": ["", ["Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"], "/*"]] }
-    -  Effect: Allow
-       Action:
-         - "cloudwatch:PutMetricData"
-       Resource: "*"
 
-    - Effect: Allow
-      Action:
-         - "dynamodb:Scan"
-         - "dynamodb:Query"
-         - "dynamodb:DescribeTable"
-         - "dynamodb:CreateTable"
-         - "dynamodb:GetItem"
-         - "dynamodb:PutItem"
-         - "dynamodb:ConditionCheckItem"
-         - "dynamodb:UpdateItem"
-      Resource: '*'
+      # S3 access policy
+      - Effect: Allow
+        Action:
+          - s3:*
+        Resource:
+          - ${self:custom.s3_role_resource}
+          - ${self:custom.s3_role_resource}/*
+      # ES access policy
+      # modelled on https://github.com/serverless/examples/blob/master/aws-golang-dynamo-stream-to-elasticsearch/serverless.yml
+      - Effect: Allow
+        Action:
+          - es:ESHttpPost
+          - es:ESHttpPut
+          - es:ESHttpHead
+          - es:ESHttpGet
+        Resource:
+          - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
+          - { "Fn::Join": ["", ["Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"], "/*"]] }
+      -  Effect: Allow
+         Action:
+          - "cloudwatch:PutMetricData"
+         Resource: "*"
+
+      - Effect: Allow
+        Action:
+          - "dynamodb:Scan"
+          - "dynamodb:Query"
+          - "dynamodb:DescribeTable"
+          - "dynamodb:CreateTable"
+          - "dynamodb:GetItem"
+          - "dynamodb:PutItem"
+          - "dynamodb:ConditionCheckItem"
+          - "dynamodb:UpdateItem"
+        Resource: '*'
 
   apiGateway:
     apiKeys:
