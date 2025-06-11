@@ -70,6 +70,7 @@ jobs:
         env:
           ENABLE_METRICS: 1
         run: |
+          poetry self add poetry-plugin-export
           if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == 'refs/heads/main' ]]; then
               STAGE=prod npm run-script deploy
           else
@@ -78,7 +79,9 @@ jobs:
 
       - name: debug
         if: ${{ !success() }}
-        run: less ./.serverless/requirements/requirements.txt
+        run: |
+          ls -la
+          less ./.serverless/requirements/requirements.txt
 
       - name: debug2
         if: ${{ !success() }}
