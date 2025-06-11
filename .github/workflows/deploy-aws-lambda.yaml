@@ -74,17 +74,6 @@ jobs:
           if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == 'refs/heads/main' ]]; then
               STAGE=prod npm run-script deploy
           else
-              STAGE=test npx serverless deploy --stage test --verbose
+              STAGE=test npm run-script deploy
           fi
-
-      - name: debug
-        if: ${{ !success() }}
-        run: |
-          ls -la
-          less ./.serverless/requirements/requirements.txt
-
-      - name: debug2
-        if: ${{ !success() }}
-        run: less ./.serverless/serverless-state.json
-        
 
