@@ -13,6 +13,7 @@ from datetime import datetime as dt
 
 import graphene
 from graphene import relay
+from graphql_relay import from_global_id
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
@@ -100,6 +101,15 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
         log.info(f"CreateOpenquakeHazardTask.mutate payload: {input}")
+        if input.config:
+            # Validation!
+            input_type, nid = from_global_id(input.config)
+            assert input_type == "OpenquakeHazardConfig"
+
+            ref = get_data_manager().thing.get_one(nid)
+            log.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
+            if not ref:
+                raise Exception("Broken input")
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)

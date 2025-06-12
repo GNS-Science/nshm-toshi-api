@@ -28,6 +28,7 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     Represents a OpenquakeHazardSolution
 
     This has :
+     - config an OpenquakeHazardConfig (Deprecated)
      - export_archive File a zip archive containing hazard outputs (`oq engine --export ....)
      - hdf5_archive File a zip archive containing the raw hdf5 compressed
 
