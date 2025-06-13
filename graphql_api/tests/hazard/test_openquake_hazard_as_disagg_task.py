@@ -73,8 +73,8 @@ class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
         haztask = self._build_hazard_task()
 
         print(haztask)
-        self.assertEqual(ToshiThingObject.get("100002").object_content['clazz_name'], "OpenquakeHazardTask")
-        self.assertEqual(ToshiThingObject.get("100002").object_content['task_type'], "disagg")
+        self.assertEqual(ToshiThingObject.get("100001").object_content['clazz_name'], "OpenquakeHazardTask")
+        self.assertEqual(ToshiThingObject.get("100001").object_content['task_type'], "disagg")
 
     def _build_hazard_task(self):
         return super().build_hazard_task(disagg=True)

@@ -2,6 +2,7 @@ import datetime as dt
 import unittest
 
 import boto3
+import base64
 from dateutil.tz import tzutc
 from graphene.test import Client
 from graphql_relay import to_global_id
@@ -43,29 +44,29 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         haztask = self._build_hazard_task()
 
         print(haztask)
-        self.assertEqual(ToshiThingObject.get("100002").object_content['clazz_name'], "OpenquakeHazardTask")
+        self.assertEqual(ToshiThingObject.get("100001").object_content['clazz_name'], "OpenquakeHazardTask")
 
     def _build_hazard_task(self):
         return super().build_hazard_task()
 
     def test_link_tasks(self):
-        haztask = self._build_hazard_task()
+        haztask = self._build_hazard_task() # Thing 100001
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
-        self.create_gt_relation(self.new_gt, ht_id)  # Thing 100003
+        self.create_gt_relation(self.new_gt, ht_id)  # Thing 100002
 
         self.assertEqual(
             ToshiThingObject.get("100000").object_content['children'][0],
-            {'child_clazz': 'OpenquakeHazardTask', 'child_id': '100002'},
+            {'child_clazz': 'OpenquakeHazardTask', 'child_id': '100001'},
         )
 
         self.assertEqual(
-            ToshiThingObject.get("100002").object_content['parents'][0],
+            ToshiThingObject.get("100001").object_content['parents'][0],
             {'parent_clazz': 'GeneralTask', 'parent_id': '100000'},
         )
 
     def test_get_openquake_hazard_task_node(self):
-        haztask = self._build_hazard_task()
+        haztask = self._build_hazard_task() # Thing 100001
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         query = '''
@@ -102,9 +103,6 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta)
 
-        self.assertEqual(haztask['config']['source_models'][0]['file_name'], "alineortwo.zip")
-        self.assertEqual(haztask['config']['source_models'][0]['source_solution']['file_name'], "MyInversion.zip")
-
         self.assertEqual(haztask['task_type'], "HAZARD")
 
     def test_bugfix_148(self):
@@ -128,7 +126,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         config = self.create_openquake_config([nrml_id0, nrml_id1], archive_id)  # Thing 100001
         config_id = config['data']['create_openquake_hazard_config']['config']['id']
 
-        haztask = self.create_openquake_hazard_task(config_id)  # Thing 100002
+        haztask = self.create_openquake_hazard_task(config=config_id)  # Thing 100002
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         query = '''
@@ -205,7 +203,6 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         things = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
-        hazsol = things.create(clazz_name='OpenquakeHazardSolution', created=dt.datetime.now(tzutc()))
 
         qry = '''
             mutation ($task_id: ID!) {

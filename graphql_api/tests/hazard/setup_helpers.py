@@ -5,6 +5,7 @@ The TestCase sub class must setup self.client
 
 """
 
+import base64
 import datetime as dt
 from hashlib import sha256
 from io import BytesIO
@@ -297,24 +298,15 @@ class SetupHelpersMixin:
         return result
 
     def build_hazard_task(self, disagg=False):
-        upstream_sid = self.create_source_solution()  # File 100001
-        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid)  # File 100002
-        nrml_id = inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
-        archive = self.create_file("config_archive.zip")  # File 100003
-        archive_id = archive['data']['create_file']['file_result']['id']
-
-        config = self.create_openquake_config([nrml_id], archive_id)  # Thing 100001
-        config_id = config['data']['create_openquake_hazard_config']['config']['id']
-
         if not disagg:
-            return self.create_openquake_hazard_task(config_id)  # Thing 100002
+            return self.create_openquake_hazard_task()  # Thing 100001
 
-        return self.create_openquake_hazard_disagg_task(config_id)
+        return self.create_openquake_hazard_disagg_task()
 
-    def create_openquake_hazard_task(self, config):
+    def create_openquake_hazard_task(self, config=None):
         """test helper"""
         query = '''
-            mutation ($created: DateTime!, $config: ID!) {
+            mutation ($created: DateTime!, $config: ID) {
               create_openquake_hazard_task(
                   input: {
                     config: $config
@@ -350,15 +342,17 @@ class SetupHelpersMixin:
         variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat())
         result = self.client.execute(query, variable_values=variables)
         print(result)
+        ht_id = result['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
+        # this shows the id to be used with ToshiThingObject.get()
+        print(base64.b64decode(ht_id).decode("ascii"))
         return result
 
-    def create_openquake_hazard_disagg_task(self, config):
+    def create_openquake_hazard_disagg_task(self):
         """test helper"""
         query = '''
-            mutation ($created: DateTime!, $config: ID!) {
+            mutation ($created: DateTime!) {
               create_openquake_hazard_task(
                   input: {
-                    config: $config
                     created: $created
                     model_type: COMPOSITE
                     task_type: DISAGG
@@ -385,13 +379,16 @@ class SetupHelpersMixin:
               )
               {
                 ok
-                openquake_hazard_task { id, config { id }, created, arguments {k v}}
+                openquake_hazard_task { id, created, arguments {k v}}
               }
             }'''
 
-        variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat())
+        variables = dict(created=dt.datetime.now(tzutc()).isoformat())
         result = self.client.execute(query, variable_values=variables)
         print(result)
+        ht_id = result['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
+        # this shows the id to be used with ToshiThingObject.get()
+        print(base64.b64decode(ht_id).decode("ascii"))
         return result
 
     def create_scaled_solution(self, upstream_sid, task_id):
