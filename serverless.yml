@@ -4,8 +4,9 @@ plugins:
   - serverless-python-requirements
   - serverless-wsgi
   - serverless-s3-local
-  - serverless-dynamodb-local
+  - serverless-dynamodb
   - serverless-plugin-warmup
+  - serverless-plugin-ifelse
 package:
   individually: false
   exclude:
@@ -43,7 +44,7 @@ custom:
     host: localhost
     directory: /tmp
   #dynamodb-local settings
-  dynamodb:
+  serverless-dynamodb:
   # If you only want to use DynamoDB Local in some stages, declare them here
     stages:
       - local
@@ -90,6 +91,13 @@ custom:
   esIndex: toshi_index_mapped
 
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
+
+  serverlessIfElse:
+      - If: '"${self:custom.stage}" == "test"'
+        Exclude:
+          - resourcee.Resources.ElasticSearchInstance
+          - provider.iamrolestatements.1
+          - functions.app.environment.0
 
 provider:
   name: aws
@@ -139,7 +147,7 @@ provider:
 
   apiGateway:
     apiKeys:
-      - name: TempApiKey-${self:custom.stage}
+      - name: TempApiKey-${self:custom.stack_name}
         description: Api key until we have an auth function # Optional
 
 functions:
