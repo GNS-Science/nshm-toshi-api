@@ -80,7 +80,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         )
 
         result = self.client.execute(query, variable_values=variables)
-        print(result)
+        # print(result)
         oqs = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']
         self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
         self.assertEqual(oqs['produced_by']['id'], haztask_id)
@@ -131,11 +131,11 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
             csv_archive_id=csv_archive_id,
             produced_by=haztask_id,
             config=config_id,
-            modified_config=config_id
+            modified_config=archive_id
         )
 
         result = self.client.execute(query, variable_values=variables)
-        # print(result)
+        print(result)
         oqs_id = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']['id']
 
         query = '''
@@ -154,10 +154,10 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         }
         '''
         result = self.client.execute(query, variable_values=dict(id=oqs_id))
-        # print(result)
+        print(result)
         oqs = result['data']['node']
         self.assertEqual(oqs['config']['id'], config_id)
-        self.assertEqual(oqs['modified_config']['id'], config_id)
+        self.assertEqual(oqs['modified_config']['id'], archive_id)
 
         return result
 
@@ -176,7 +176,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         }
         '''
         result = self.client.execute(query, variable_values=dict(id=hazout_id))
-        print(result)
+        # print(result)
 
         delta = dt.datetime.now(tzutc()) - dt.datetime.fromisoformat(result['data']['node']['created'])
         max_delta = dt.timedelta(seconds=1)
@@ -216,7 +216,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         task_args_id = archive['data']['create_file']['file_result']['id']
 
         haztask = self.build_hazard_task()
-        print(haztask)
+        # print(haztask)
         haztask_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         predecessors = [dict(id=upstream_sid, depth=-2), dict(id=nrml_id, depth=-1)]
@@ -268,7 +268,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         )
 
         result = self.client.execute(query, variable_values=variables)
-        print(result)
+        # print(result)
         oqs = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']
 
         self.assertEqual(oqs['predecessors'][0]['depth'], -2)
@@ -306,7 +306,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         }
         '''
         result = self.client.execute(query, variable_values=dict(id=hazout_id))
-        print(result)
+        # print(result)
         node = result['data']['node']
         self.assertEqual(node['predecessors'][0]['relationship'], 'Grandparent')
         self.assertEqual(node['predecessors'][1]['relationship'], 'Parent')
