@@ -85,6 +85,81 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
         self.assertEqual(oqs['produced_by']['id'], haztask_id)
         return result
+    
+    def test_create_openquake_hazard_solution_deprecated(self):
+        '''
+        Assert that we can still read deprecated properties
+        '''
+        upstream_sid = self.create_source_solution()  # File 100001
+        inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid)  # File 100002
+        nrml_id = inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
+
+        archive = self.create_file("config_archive.zip")  # File 100003
+        archive_id = archive['data']['create_file']['file_result']['id']
+        config = self.create_openquake_config([nrml_id], archive_id)  # Thing 100000
+        config_id = config['data']['create_openquake_hazard_config']['config']['id']
+
+        csv_archive = self.create_file("csv_archive.zip")  # File 100004
+        csv_archive_id = csv_archive['data']['create_file']['file_result']['id']
+
+        haztask = self.build_hazard_task()
+        haztask_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
+
+        query = '''
+            mutation ($created: DateTime!, $csv_archive_id: ID!, $produced_by:ID!, $config:ID, $modified_config:ID) {
+              create_openquake_hazard_solution(
+                  input: {
+                      created: $created
+                      csv_archive: $csv_archive_id
+                      #hdf5_archive: $hdf5_archive_id
+                      produced_by: $produced_by
+                      config: $config
+                      modified_config: $modified_config
+                  }
+              )
+              {
+                ok
+                openquake_hazard_solution { id
+                    csv_archive { id, file_name }
+                    produced_by { id }
+                }
+              }
+            }'''
+
+        variables = dict(
+            created=dt.datetime.now(tzutc()).isoformat(),
+            csv_archive_id=csv_archive_id,
+            produced_by=haztask_id,
+            config=config_id,
+            modified_config=config_id
+        )
+
+        result = self.client.execute(query, variable_values=variables)
+        # print(result)
+        oqs_id = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']['id']
+
+        query = '''
+        query get_solution($id: ID!) {
+          node(id:$id) {
+            __typename
+            ... on OpenquakeHazardSolution {
+                config {
+                id
+                }
+                modified_config {
+                id
+                }
+            }
+          }
+        }
+        '''
+        result = self.client.execute(query, variable_values=dict(id=oqs_id))
+        # print(result)
+        oqs = result['data']['node']
+        self.assertEqual(oqs['config']['id'], config_id)
+        self.assertEqual(oqs['modified_config']['id'], config_id)
+
+        return result
 
     def test_get_openquake_hazard_solution_node(self):
         result = self.test_create_openquake_hazard_solution()
