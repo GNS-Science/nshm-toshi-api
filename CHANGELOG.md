@@ -1,5 +1,12 @@
 # Changelog
 
+
+
+## [0.2.5] - XXX
+### Changed
+ - Deprecated config and modified_config in OpenquakeHazardSolution and OpenquakeHazardTask
+
+
 ## [0.2.4] - 2024-07-10
 ### Added
  - new e2e_workflow test package to reproduce end-user workflows
