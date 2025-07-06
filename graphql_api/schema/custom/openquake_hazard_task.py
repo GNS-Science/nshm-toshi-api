@@ -44,7 +44,12 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
     class Meta:
         interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
-    config = graphene.Field(OpenquakeHazardConfig, description="The task configuration")
+    config = graphene.Field(
+        OpenquakeHazardConfig,
+        description="The task configuration",
+        required=False,
+        deprecation_reason="We no longer store this value.",
+    )
     hazard_solution = graphene.Field(OpenquakeHazardSolution, description="The openquake solution")
 
     model_type = ModelType()
@@ -79,7 +84,8 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
 
 class OpenquakeHazardTaskInput(AutomationTaskInput):
-    config = graphene.ID(required=True)
+    # we're keeping this in here so that we can create old-fashioned entries for tests to ensure we can still read them
+    config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
     model_type = ModelType(required=True)
     task_type = OpenquakeTaskType(default_value=OpenquakeTaskType.HAZARD)
 
@@ -95,14 +101,15 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
         log.info(f"CreateOpenquakeHazardTask.mutate payload: {input}")
-        # Validation!
-        input_type, nid = from_global_id(input.config)
-        assert input_type == "OpenquakeHazardConfig"
+        if input.config:
+            # Validation!
+            input_type, nid = from_global_id(input.config)
+            assert input_type == "OpenquakeHazardConfig"
 
-        ref = get_data_manager().thing.get_one(nid)
-        log.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
-        if not ref:
-            raise Exception("Broken input")
+            ref = get_data_manager().thing.get_one(nid)
+            log.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
+            if not ref:
+                raise Exception("Broken input")
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
