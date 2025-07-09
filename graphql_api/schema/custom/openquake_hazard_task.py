@@ -54,7 +54,7 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
     model_type = ModelType()
     task_type = OpenquakeTaskType()
-    executor = graphene.String()
+    executor = graphene.Field(graphene.String, description="Executor id, for example ECR digest. Should be prefixed by type, for example 'ECRD:'.")
 
     @staticmethod
     def from_json(jsondata):
