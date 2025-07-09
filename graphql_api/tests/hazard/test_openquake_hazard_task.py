@@ -223,14 +223,16 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         # print(hazsol)
         # print(dir(hazsol))
         ohs_id = to_global_id("OpenquakeHazardSolution", hazsol.id)
+        executor = "ERCD:sha:the-digest"
 
         qry = '''
-            mutation ($task_id: ID!, $hazard_solution_id: ID!) {
+            mutation ($task_id: ID!, $hazard_solution_id: ID!, $executor: String) {
                 update_openquake_hazard_task(input: {
                     task_id: $task_id
                     duration: 909,
                     metrics: {k: "rupture_count" v: "20"}
                     hazard_solution: $hazard_solution_id
+                    executor: $executor
                 })
                 {
                     openquake_hazard_task {
@@ -238,11 +240,12 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
                         duration
                         metrics {k v}
                         hazard_solution {__typename, id}
+                        executor
                     }
                 }
             }
         '''
-        executed = self.client.execute(qry, variable_values=dict(task_id=ht_id, hazard_solution_id=ohs_id))
+        executed = self.client.execute(qry, variable_values=dict(task_id=ht_id, hazard_solution_id=ohs_id, executor=executor))
         print(executed)
         result = executed['data']['update_openquake_hazard_task']['openquake_hazard_task']
         assert result['id'] == ht_id
@@ -251,6 +254,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         assert result['metrics'][0]['v'] == "20"
         assert result['hazard_solution']['__typename'] == "OpenquakeHazardSolution"
         assert result['hazard_solution']['id'] == ohs_id
+        assert result['executor'] == executor
 
     def test_update_task_without_hazard_soln(self):
         haztask = self._build_hazard_task()
