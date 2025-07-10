@@ -54,6 +54,7 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
     model_type = ModelType()
     task_type = OpenquakeTaskType()
+    executor = graphene.Field(graphene.String, description="Executor id, for example ECR digest. Should be prefixed by type, for example 'ECRD:'.")
 
     @staticmethod
     def from_json(jsondata):
@@ -88,6 +89,7 @@ class OpenquakeHazardTaskInput(AutomationTaskInput):
     config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
     model_type = ModelType(required=True)
     task_type = OpenquakeTaskType(default_value=OpenquakeTaskType.HAZARD)
+    executor = graphene.String()
 
 
 class CreateOpenquakeHazardTask(graphene.Mutation):
@@ -117,6 +119,7 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
 
 class OpenquakeHazardTaskUpdateInput(AutomationTaskUpdateInput):
     hazard_solution = graphene.ID()
+    executor = graphene.String()
 
 
 class UpdateOpenquakeHazardTask(graphene.Mutation):
