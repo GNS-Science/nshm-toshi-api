@@ -54,7 +54,9 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
     model_type = ModelType()
     task_type = OpenquakeTaskType()
-    executor = graphene.Field(graphene.String, description="Executor id, for example ECR digest. Should be prefixed by type, for example 'ECRD:'.")
+    executor = graphene.Field(graphene.String, description=("Executor id. The identifier for a reproducible task execution environment. "
+                                                            "E.g for Docker images, we use the image ID (ECR digest) from AWS ECR. "
+                                                            "Should be prefixed by type, for example 'ECRD:'."))
 
     @staticmethod
     def from_json(jsondata):
