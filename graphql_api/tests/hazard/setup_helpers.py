@@ -6,6 +6,7 @@ The TestCase sub class must setup self.client
 """
 
 import base64
+import json
 import datetime as dt
 from hashlib import sha256
 from io import BytesIO
@@ -306,7 +307,7 @@ class SetupHelpersMixin:
     def create_openquake_hazard_task(self, config=None, executor=None):
         """test helper"""
         query = '''
-            mutation ($created: DateTime!, $config: ID, $executor: String, $srm_logic_tree: JSONString, $gmcm_logic_tree: JSONString) {
+            mutation ($created: DateTime!, $config: ID, $executor: String, $srm_logic_tree: JSONString, $gmcm_logic_tree: JSONString, $openquake_config: JSONString) {
               create_openquake_hazard_task(
                   input: {
                     config: $config
@@ -317,6 +318,7 @@ class SetupHelpersMixin:
                     result: UNDEFINED
                     srm_logic_tree: $srm_logic_tree
                     gmcm_logic_tree: $gmcm_logic_tree
+                    openquake_config: $openquake_config
 
                     arguments: [
                         { k:"max_jump_distance" v: "55.5" }
@@ -342,7 +344,11 @@ class SetupHelpersMixin:
               }
             }'''
 
-        variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat(), executor=executor, srm_logic_tree="{\"tree\": 42}", gmcm_logic_tree="{\"gmcm\": 37}")
+        variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat(), executor=executor, 
+                         srm_logic_tree=json.dumps({"srm": "tree"}),
+                         gmcm_logic_tree=json.dumps({"gmcm": "tree"}),
+                         openquake_config=json.dumps({"openquake": "config"}),
+                         )
         result = self.client.execute(query, variable_values=variables)
         print(result)
         ht_id = result['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']

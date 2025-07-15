@@ -83,6 +83,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
               task_type
               srm_logic_tree
               gmcm_logic_tree
+              openquake_config
               config {
                 id
                 created
@@ -111,8 +112,9 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertTrue(delta < max_delta)
 
         self.assertEqual(haztask['task_type'], "HAZARD")
-        self.assertEqual(json.loads(haztask["srm_logic_tree"]), {"tree": 42})
-        self.assertEqual(json.loads(haztask["gmcm_logic_tree"]), {"gmcm": 37})
+        self.assertEqual(json.loads(haztask["srm_logic_tree"]), {"srm": "tree"})
+        self.assertEqual(json.loads(haztask["gmcm_logic_tree"]), {"gmcm": "tree"})
+        self.assertEqual(json.loads(haztask["openquake_config"]), {"openquake": "config"})
 
     def test_bugfix_148(self):
         '''
