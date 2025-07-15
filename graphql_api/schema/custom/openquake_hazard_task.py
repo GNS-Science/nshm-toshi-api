@@ -129,7 +129,7 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
         input_dict = dict(input)
         if input.config: 
             # Validation!
-            input_type, nid = from_global_id(input_dict.config)
+            input_type, nid = from_global_id(input.config)
             assert input_type == "OpenquakeHazardConfig"
 
             ref = get_data_manager().thing.get_one(nid)
@@ -137,11 +137,11 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
             if not ref:
                 raise Exception("Broken input")
         if input.srm_logic_tree:
-            input_dict['srm_logic_tree'] = compress_string(json.dumps(input_dict['srm_logic_tree']))
+            input_dict['srm_logic_tree'] = compress_string(json.dumps(input.srm_logic_tree))
         if input.gmcm_logic_tree:
-            input_dict['gmcm_logic_tree'] = compress_string(json.dumps(input_dict['gmcm_logic_tree']))
+            input_dict['gmcm_logic_tree'] = compress_string(json.dumps(input.gmcm_logic_tree))
         if input.openquake_config:
-            input_dict['openquake_config'] = compress_string(json.dumps(input_dict['openquake_config']))
+            input_dict['openquake_config'] = compress_string(json.dumps(input.openquake_config))
         
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input_dict)
         # raise Exception("what")
