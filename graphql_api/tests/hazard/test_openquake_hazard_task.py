@@ -49,6 +49,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         hazard_thing = ToshiThingObject.get("100001")
         self.assertEqual(hazard_thing.object_content['clazz_name'], "OpenquakeHazardTask")
         self.assertEqual(json.loads(decompress_string(hazard_thing.object_content['srm_logic_tree'])), {'tree': 42})
+        self.assertEqual(json.loads(decompress_string(hazard_thing.object_content['gmcm_logic_tree'])), {'gmcm': 37})
 
     def _build_hazard_task(self):
         return super().build_hazard_task()
@@ -81,6 +82,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
               created
               task_type
               srm_logic_tree
+              gmcm_logic_tree
               config {
                 id
                 created
@@ -110,6 +112,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
 
         self.assertEqual(haztask['task_type'], "HAZARD")
         self.assertEqual(json.loads(haztask["srm_logic_tree"]), {"tree": 42})
+        self.assertEqual(json.loads(haztask["gmcm_logic_tree"]), {"gmcm": 37})
 
     def test_bugfix_148(self):
         '''
