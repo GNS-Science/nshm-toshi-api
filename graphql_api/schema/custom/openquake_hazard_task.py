@@ -144,7 +144,6 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
             input_dict['openquake_config'] = compress_string(json.dumps(input.openquake_config))
         
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input_dict)
-        # raise Exception("what")
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
 

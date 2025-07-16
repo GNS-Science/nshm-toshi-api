@@ -9,7 +9,7 @@ from graphql_relay import to_global_id
 from moto import mock_dynamodb, mock_s3
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
-from nzshm_common.util import compress_string, decompress_string
+from nzshm_common.util import decompress_string
 
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
