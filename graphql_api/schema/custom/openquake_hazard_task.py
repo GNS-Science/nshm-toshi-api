@@ -76,7 +76,7 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
         if task_type := root.task_type:
             return task_type
         return OpenquakeTaskType.UNDEFINED
-    
+
     def resolve_srm_logic_tree(root, info, **args):
         if root.srm_logic_tree:
             return json.loads(decompress_string(root.srm_logic_tree))
@@ -142,7 +142,7 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
             input_dict['gmcm_logic_tree'] = compress_string(json.dumps(input.gmcm_logic_tree))
         if input.openquake_config:
             input_dict['openquake_config'] = compress_string(json.dumps(input.openquake_config))
-        
+
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input_dict)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
