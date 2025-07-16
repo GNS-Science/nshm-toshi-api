@@ -79,17 +79,17 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
 
     def resolve_srm_logic_tree(root, info, **args):
         if root.srm_logic_tree:
-            return json.loads(decompress_string(root.srm_logic_tree))
+            return json.loads(root.srm_logic_tree)
         return None
 
     def resolve_gmcm_logic_tree(root, info, **args):
         if root.gmcm_logic_tree:
-            return json.loads(decompress_string(root.gmcm_logic_tree))
+            return json.loads(root.gmcm_logic_tree)
         return None
     
     def resolve_openquake_config(root, info, **args):
         if root.openquake_config:
-            return json.loads(decompress_string(root.openquake_config))
+            return json.loads(root.openquake_config)
         return None
     
 
@@ -137,11 +137,11 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
             if not ref:
                 raise Exception("Broken input")
         if input.srm_logic_tree:
-            input_dict['srm_logic_tree'] = compress_string(json.dumps(input.srm_logic_tree))
+            input_dict['srm_logic_tree'] = json.dumps(input.srm_logic_tree)
         if input.gmcm_logic_tree:
-            input_dict['gmcm_logic_tree'] = compress_string(json.dumps(input.gmcm_logic_tree))
+            input_dict['gmcm_logic_tree'] = json.dumps(input.gmcm_logic_tree)
         if input.openquake_config:
-            input_dict['openquake_config'] = compress_string(json.dumps(input.openquake_config))
+            input_dict['openquake_config'] = json.dumps(input.openquake_config)
         
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input_dict)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
