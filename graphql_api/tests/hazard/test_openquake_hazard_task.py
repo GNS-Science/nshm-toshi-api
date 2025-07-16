@@ -48,8 +48,8 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         print(haztask)
         hazard_thing = ToshiThingObject.get("100001")
         self.assertEqual(hazard_thing.object_content['clazz_name'], "OpenquakeHazardTask")
-        self.assertEqual(json.loads(decompress_string(hazard_thing.object_content['srm_logic_tree'])), {'tree': 42})
-        self.assertEqual(json.loads(decompress_string(hazard_thing.object_content['gmcm_logic_tree'])), {'gmcm': 37})
+        self.assertEqual(json.loads(decompress_string(hazard_thing.object_content['srm_logic_tree'])), {'srm': "tree"})
+        self.assertEqual(json.loads(decompress_string(hazard_thing.object_content['gmcm_logic_tree'])), {'gmcm': "tree"})
 
     def _build_hazard_task(self):
         return super().build_hazard_task()
