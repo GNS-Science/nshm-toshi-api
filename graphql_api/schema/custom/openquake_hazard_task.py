@@ -86,12 +86,12 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
         if root.gmcm_logic_tree:
             return json.loads(decompress_string(root.gmcm_logic_tree))
         return None
-
+    
     def resolve_openquake_config(root, info, **args):
         if root.openquake_config:
             return json.loads(decompress_string(root.openquake_config))
         return None
-
+    
 
 # class OpenquakeHazardTaskConnection(relay.Connection):
 #     """A list of OpenquakeHazardTask items"""
@@ -142,7 +142,7 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
             input_dict['gmcm_logic_tree'] = compress_string(json.dumps(input.gmcm_logic_tree))
         if input.openquake_config:
             input_dict['openquake_config'] = compress_string(json.dumps(input.openquake_config))
-
+        
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input_dict)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
