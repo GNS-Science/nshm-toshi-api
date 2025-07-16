@@ -19,7 +19,6 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.thing import Thing
-from nzshm_common.util import compress_string, decompress_string
 
 from .automation_task_base import (
     AutomationTaskBase,
