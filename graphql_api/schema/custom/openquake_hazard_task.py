@@ -10,7 +10,7 @@ The core class OpenquakeHazardTask implements the `graphql_api.schema.task.Task`
 
 import logging
 from datetime import datetime as dt
-
+import json
 import graphene
 from graphene import relay
 from graphql_relay import from_global_id
@@ -57,6 +57,9 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
     executor = graphene.Field(graphene.String, description=("Executor id. The identifier for a reproducible task execution environment. "
                                                             "E.g for Docker images, we use the image ID (ECR digest) from AWS ECR. "
                                                             "Should be prefixed by type, for example 'ECRD:'."))
+    srm_logic_tree = graphene.JSONString()
+    gmcm_logic_tree = graphene.JSONString()
+    openquake_config = graphene.JSONString()
 
     @staticmethod
     def from_json(jsondata):
@@ -73,6 +76,21 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
             return task_type
         return OpenquakeTaskType.UNDEFINED
 
+    def resolve_srm_logic_tree(root, info, **args):
+        if root.srm_logic_tree:
+            return json.loads(root.srm_logic_tree)
+        return None
+
+    def resolve_gmcm_logic_tree(root, info, **args):
+        if root.gmcm_logic_tree:
+            return json.loads(root.gmcm_logic_tree)
+        return None
+    
+    def resolve_openquake_config(root, info, **args):
+        if root.openquake_config:
+            return json.loads(root.openquake_config)
+        return None
+    
 
 # class OpenquakeHazardTaskConnection(relay.Connection):
 #     """A list of OpenquakeHazardTask items"""
@@ -92,7 +110,9 @@ class OpenquakeHazardTaskInput(AutomationTaskInput):
     model_type = ModelType(required=True)
     task_type = OpenquakeTaskType(default_value=OpenquakeTaskType.HAZARD)
     executor = graphene.String()
-
+    srm_logic_tree = graphene.JSONString()
+    gmcm_logic_tree = graphene.JSONString()
+    openquake_config = graphene.JSONString()
 
 class CreateOpenquakeHazardTask(graphene.Mutation):
     class Arguments:
@@ -105,7 +125,8 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
     def mutate(cls, root, info, input):
         t0 = dt.utcnow()
         log.info(f"CreateOpenquakeHazardTask.mutate payload: {input}")
-        if input.config:
+        input_dict = dict(input)
+        if input.config: 
             # Validation!
             input_type, nid = from_global_id(input.config)
             assert input_type == "OpenquakeHazardConfig"
@@ -114,7 +135,14 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
             log.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
             if not ref:
                 raise Exception("Broken input")
-        openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input)
+        if input.srm_logic_tree:
+            input_dict['srm_logic_tree'] = json.dumps(input.srm_logic_tree)
+        if input.gmcm_logic_tree:
+            input_dict['gmcm_logic_tree'] = json.dumps(input.gmcm_logic_tree)
+        if input.openquake_config:
+            input_dict['openquake_config'] = json.dumps(input.openquake_config)
+        
+        openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input_dict)
         db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.utcnow() - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
 

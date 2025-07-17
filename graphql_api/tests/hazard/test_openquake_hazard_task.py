@@ -2,12 +2,14 @@ import datetime as dt
 import unittest
 
 import boto3
+import json
 from dateutil.tz import tzutc
 from graphene.test import Client
 from graphql_relay import to_global_id
 from moto import mock_dynamodb, mock_s3
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
+
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
 from graphql_api.data import data_manager
@@ -43,7 +45,10 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         haztask = self._build_hazard_task()
 
         print(haztask)
-        self.assertEqual(ToshiThingObject.get("100001").object_content['clazz_name'], "OpenquakeHazardTask")
+        hazard_thing = ToshiThingObject.get("100001")
+        self.assertEqual(hazard_thing.object_content['clazz_name'], "OpenquakeHazardTask")
+        self.assertEqual(json.loads(hazard_thing.object_content['srm_logic_tree']), {'srm': "tree"})
+        self.assertEqual(json.loads(hazard_thing.object_content['gmcm_logic_tree']), {'gmcm': "tree"})
 
     def _build_hazard_task(self):
         return super().build_hazard_task()
@@ -75,6 +80,9 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
             ... on OpenquakeHazardTask {
               created
               task_type
+              srm_logic_tree
+              gmcm_logic_tree
+              openquake_config
               config {
                 id
                 created
@@ -103,6 +111,9 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertTrue(delta < max_delta)
 
         self.assertEqual(haztask['task_type'], "HAZARD")
+        self.assertEqual(json.loads(haztask["srm_logic_tree"]), {"srm": "tree"})
+        self.assertEqual(json.loads(haztask["gmcm_logic_tree"]), {"gmcm": "tree"})
+        self.assertEqual(json.loads(haztask["openquake_config"]), {"openquake": "config"})
 
     def test_bugfix_148(self):
         '''
