@@ -28,7 +28,7 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     Represents a OpenquakeHazardSolution
 
     This has :
-     - config an OpenquakeHazardConfig
+     - config an OpenquakeHazardConfig (Deprecated)
      - export_archive File a zip archive containing hazard outputs (`oq engine --export ....)
      - hdf5_archive File a zip archive containing the raw hdf5 compressed
 
@@ -39,14 +39,10 @@ class OpenquakeHazardSolution(graphene.ObjectType):
         interfaces = (relay.Node, Thing, PredecessorsInterface)
 
     created = graphene.DateTime(description="When it was created (UTZ)")
-    config = graphene.Field(
-        OpenquakeHazardConfig, description="the template configuration used to produce this solution"
-    )
     csv_archive = graphene.Field(
         File, description="a zip archive containing hazard csv outputs (`oq engine --export-outputs ....)"
     )
     hdf5_archive = graphene.Field(File, description="a zip archive containing containing the raw hdf5")
-    modified_config = graphene.Field(File, description="a zip archive containing modified config files.")
     task_args = graphene.Field(File, description="task arguments json file.")
 
     metrics = graphene.List(KeyValuePair, description="result metrics from the solution, as a list of Key Value pairs.")
@@ -55,6 +51,19 @@ class OpenquakeHazardSolution(graphene.ObjectType):
 
     produced_by = graphene.Field(
         'graphql_api.schema.custom.OpenquakeHazardTask', description="The task that produced this solution"
+    )
+
+    config = graphene.Field(
+        OpenquakeHazardConfig,
+        description="the template configuration used to produce this solution",
+        required=False,
+        deprecation_reason="We no longer use this field",
+    )
+    modified_config = graphene.Field(
+        File, 
+        description="a zip archive containing modified config files.",
+        required=False,
+        deprecation_reason="We no longer use this field",
     )
 
     @classmethod
@@ -100,14 +109,11 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation):  # graphene.Mutatio
 
     class Input:
         created = OpenquakeHazardSolution.created
-        config = graphene.ID(required=True)
         produced_by = graphene.ID(required=True)
 
         csv_archive = graphene.ID(required=False)
         hdf5_archive = graphene.ID(required=False)
-        modified_config = graphene.ID(required=False)
         task_args = graphene.ID(required=False)
-
         meta = graphene.List(
             KeyValuePairInput, required=False, description="additional file meta data, as a list of Key Value pairs."
         )
@@ -121,6 +127,12 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation):  # graphene.Mutatio
         predecessors = graphene.List(
             'graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors"
         )
+
+        # we're keeping these in here so that we can create old-fashioned entries for tests to ensure 
+        # we can still read them
+        config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
+        modified_config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
+
 
     openquake_hazard_solution = graphene.Field(OpenquakeHazardSolution)
     ok = graphene.Boolean()

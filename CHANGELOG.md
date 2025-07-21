@@ -1,5 +1,14 @@
 # Changelog
 
+
+
+## [0.2.5] - 2025-07-21
+### Changed
+ - Deprecated config and modified_config in OpenquakeHazardSolution and OpenquakeHazardTask
+ - OpenquakeHazardTask: add executor field
+ - OpenquakeHazardTask: added srm_logic_tree, gmcm_logic_tree, and openquake_config fields
+
+
 ## [0.2.4] - 2024-07-10
 ### Added
  - new e2e_workflow test package to reproduce end-user workflows
