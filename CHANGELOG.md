@@ -5,6 +5,8 @@
 ## [0.2.5] - XXX
 ### Changed
  - Deprecated config and modified_config in OpenquakeHazardSolution and OpenquakeHazardTask
+ - OpenquakeHazardTask: add executor field
+ - OpenquakeHazardTask: added srm_logic_tree, gmcm_logic_tree, and openquake_config fields
 
 
 ## [0.2.4] - 2024-07-10
