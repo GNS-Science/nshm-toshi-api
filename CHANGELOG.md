@@ -2,7 +2,7 @@
 
 
 
-## [0.2.5] - XXX
+## [0.2.5] - 2025-07-21
 ### Changed
  - Deprecated config and modified_config in OpenquakeHazardSolution and OpenquakeHazardTask
  - OpenquakeHazardTask: add executor field
