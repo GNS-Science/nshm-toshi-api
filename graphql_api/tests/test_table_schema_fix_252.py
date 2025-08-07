@@ -86,7 +86,7 @@ class TestFailingMutation(unittest.TestCase):
 
 @mock_s3
 @mock_dynamodb
-class TestFailingMutatioWithMockedServices(unittest.TestCase):
+class TestFailingMutationWithMockedServices(unittest.TestCase):
 
     def setUp(self):
         self.client = Client(root_schema)

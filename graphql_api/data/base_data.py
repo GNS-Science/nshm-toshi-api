@@ -318,8 +318,8 @@ class BaseDynamoDBData(BaseData):
         # This should make that more obvious if it happens again.
         try:
             json.dumps(body)
-        except Exception as err:
-            logging.error(err)
+        except TypeError as err:
+            logging.error(type(err))
             logging.error(
                 "This object cannot be persisted to a PynamoDB.Model,"
                 " check that all enums and types are json serialisable!"
@@ -378,8 +378,6 @@ class BaseDynamoDBData(BaseData):
         # consider the ENUM problem, and datatime serialisation
         # cant we just use the graphene classes json serialisation ??
         # UPDATE: there is no such support, I guess grpaphe doesn't expect this sort of use case
-        # nornalyy all typote corecion etc would belong inside resolvers etc, rather then apply
-        # to a ocomplete object instance??
         # For now we stick with our helper methods `new_body` and 'replace_enums`
         #  and discuss in code review
 
