@@ -51,6 +51,11 @@ def append_uniq(size):
     return str(size) + uniq
 
 
+def json_serialised(obj):
+    """A simple wrapper to facilitate testing."""
+    return json.dumps(obj)
+
+
 def replace_enums(kwargs: Dict) -> Dict:
     """Replace any Enum members with their values.
 
@@ -317,14 +322,15 @@ class BaseDynamoDBData(BaseData):
         # We've been caught out by Schema classes that are not json-serialisable (the ENUM issue).
         # This should make that more obvious if it happens again.
         try:
-            json.dumps(body)
-        except TypeError as err:
-            logging.error(type(err))
-            logging.error(
+            json_serialised(body)
+        except Exception as exc:
+            # logging.error(repr(exc))
+            msg = (
                 "This object cannot be persisted to a PynamoDB.Model,"
                 " check that all enums and types are json serialisable!"
             )
-            raise err
+            logging.error(msg)
+            raise graphql.GraphQLError(f'{__name__}._write_object() method failed with exception. %s' % msg)
 
         toshi_object = self._model(object_id=str(object_id), object_type=body['clazz_name'], object_content=body)
 

@@ -6,6 +6,7 @@ import unittest
 from unittest import mock
 
 import boto3
+import pytest
 from graphene.test import Client
 from moto import mock_dynamodb, mock_s3
 from pynamodb.connection.base import Connection  # for mocking
@@ -40,6 +41,17 @@ mutation create_table (
     }
 }'''
 
+INPUT_VARIABLES = {
+    'headers': ['series', 'series_name', 'X', 'Y'],
+    'object_id': 'SW52ZXJzaW9uU29sdXRpb246MTAxOTY2',
+    'rows': [['0', 'foo', '1.0', '2.0'], ['1', 'bar', '1.5', '2.5']],
+    'column_types': ['integer', 'string', 'double', 'double'],
+    'table_name': 'Inversion Solution MFD table',
+    'created': '2025-08-06T23:32:58.526823Z',
+    'table_type': 'MFD_CURVES',
+    'dimensions': [],
+}
+
 
 class IncrId:
     next_id = -1
@@ -47,6 +59,11 @@ class IncrId:
     def get_next_id(self, *args):
         self.next_id += 1
         return str(self.next_id) + 'RANDM'
+
+
+def json_dumps_mock(obj):
+    raise RuntimeError(str(obj))
+    return None
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)
@@ -69,17 +86,8 @@ class TestFailingMutation(unittest.TestCase):
         # {'message': 'Object of type EnumMeta is not JSON serializable', 'locations': [{'line': 2, 'column': 3}], 'path': ['create_table']}
 
         print(CREATE_TABLE)
-        input_variables = {
-            'headers': ['series', 'series_name', 'X', 'Y'],
-            'object_id': 'SW52ZXJzaW9uU29sdXRpb246MTAxOTY2',
-            'rows': [['0', 'foo', '1.0', '2.0'], ['1', 'bar', '1.5', '2.5']],
-            'column_types': ['integer', 'string', 'double', 'double'],
-            'table_name': 'Inversion Solution MFD table',
-            'created': '2025-08-06T23:32:58.526823Z',
-            'table_type': 'MFD_CURVES',
-            'dimensions': [],
-        }
-        result = self.client.execute(CREATE_TABLE, variable_values=input_variables)
+
+        result = self.client.execute(CREATE_TABLE, variable_values=INPUT_VARIABLES)
         print(result)
         assert result['data']['create_table']['table']['id'] == 'VGFibGU6MFJBTkRN'
 
@@ -97,7 +105,6 @@ class TestFailingMutationWithMockedServices(unittest.TestCase):
         self._bucket = self._s3_conn.Bucket(S3_BUCKET_NAME)
         self._connection = Connection(region=REGION)
 
-        # ToshiThingObject.create_table()
         ToshiTableObject.create_table()
         ToshiIdentity.create_table()
 
@@ -106,16 +113,14 @@ class TestFailingMutationWithMockedServices(unittest.TestCase):
     def test_create_one_table(self):
 
         print(CREATE_TABLE)
-        input_variables = {
-            'headers': ['series', 'series_name', 'X', 'Y'],
-            'object_id': 'SW52ZXJzaW9uU29sdXRpb246MTAxOTY2',
-            'rows': [['0', 'foo', '1.0', '2.0'], ['1', 'bar', '1.5', '2.5']],
-            'column_types': ['integer', 'string', 'double', 'double'],
-            'table_name': 'Inversion Solution MFD table',
-            'created': '2025-08-06T23:32:58.526823Z',
-            'table_type': 'MFD_CURVES',
-            'dimensions': [],
-        }
-        result = self.client.execute(CREATE_TABLE, variable_values=input_variables)
+
+        result = self.client.execute(CREATE_TABLE, variable_values=INPUT_VARIABLES)
         print(result)
         assert result['data']['create_table']['table']['id'] == 'VGFibGU6MTAwMDAw'
+
+    @mock.patch('graphql_api.data.base_data.json_serialised', json_dumps_mock)
+    def test_new_logging_exception_handing(self):
+        print(CREATE_TABLE)
+        result = self.client.execute(CREATE_TABLE, variable_values=INPUT_VARIABLES)
+        print(result['errors'])
+        assert result['errors'][0]['message'].find("This object cannot be persisted to a PynamoDB.Model") != -1
