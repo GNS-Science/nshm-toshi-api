@@ -85,7 +85,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
         self.assertEqual(oqs['produced_by']['id'], haztask_id)
         return result
-    
+
     def test_create_openquake_hazard_solution_deprecated(self):
         '''
         Assert that we can still read deprecated properties
@@ -131,7 +131,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
             csv_archive_id=csv_archive_id,
             produced_by=haztask_id,
             config=config_id,
-            modified_config=archive_id
+            modified_config=archive_id,
         )
 
         result = self.client.execute(query, variable_values=variables)

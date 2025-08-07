@@ -6,8 +6,8 @@ The TestCase sub class must setup self.client
 """
 
 import base64
-import json
 import datetime as dt
+import json
 from hashlib import sha256
 from io import BytesIO
 
@@ -344,11 +344,14 @@ class SetupHelpersMixin:
               }
             }'''
 
-        variables = dict(config=config, created=dt.datetime.now(tzutc()).isoformat(), executor=executor, 
-                         srm_logic_tree=json.dumps({"srm": "tree"}),
-                         gmcm_logic_tree=json.dumps({"gmcm": "tree"}),
-                         openquake_config=json.dumps({"openquake": "config"}),
-                         )
+        variables = dict(
+            config=config,
+            created=dt.datetime.now(tzutc()).isoformat(),
+            executor=executor,
+            srm_logic_tree=json.dumps({"srm": "tree"}),
+            gmcm_logic_tree=json.dumps({"gmcm": "tree"}),
+            openquake_config=json.dumps({"openquake": "config"}),
+        )
         result = self.client.execute(query, variable_values=variables)
         print(result)
         ht_id = result['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
