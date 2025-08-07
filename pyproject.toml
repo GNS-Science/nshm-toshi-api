@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nshm-toshi-api"
-version = "0.2.5"
+version = "0.2.6"
 description = "the object store used by NZSHM project"
 authors = ["Chris Chamberlain <chrisbc@artisan.co.nz>"]
 license = "AGPL3"

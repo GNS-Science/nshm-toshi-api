@@ -60,7 +60,7 @@ class OpenquakeHazardSolution(graphene.ObjectType):
         deprecation_reason="We no longer use this field",
     )
     modified_config = graphene.Field(
-        File, 
+        File,
         description="a zip archive containing modified config files.",
         required=False,
         deprecation_reason="We no longer use this field",
@@ -128,11 +128,12 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation):  # graphene.Mutatio
             'graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors"
         )
 
-        # we're keeping these in here so that we can create old-fashioned entries for tests to ensure 
+        # we're keeping these in here so that we can create old-fashioned entries for tests to ensure
         # we can still read them
         config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
-        modified_config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
-
+        modified_config = graphene.Field(
+            graphene.ID, required=False, deprecation_reason="We no longer store this config"
+        )
 
     openquake_hazard_solution = graphene.Field(OpenquakeHazardSolution)
     ok = graphene.Boolean()
