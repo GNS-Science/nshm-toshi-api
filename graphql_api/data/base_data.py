@@ -383,7 +383,7 @@ class BaseDynamoDBData(BaseData):
         # TODO: this whole approach sucks !@#%$#
         # consider the ENUM problem, and datatime serialisation
         # cant we just use the graphene classes json serialisation ??
-        # UPDATE: there is no such support, I guess grpaphe doesn't expect this sort of use case
+        # UPDATE: there is no such support, I guess graphene doesn't expect this sort of use case?
         # For now we stick with our helper methods `new_body` and 'replace_enums`
         #  and discuss in code review
 
