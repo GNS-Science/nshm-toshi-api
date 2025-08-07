@@ -1,6 +1,9 @@
 # Changelog
 
+## [0.2.6] - 2025-08-07
 
+### Changed
+ - fix for enum types in list attributes (see issue #252)
 
 ## [0.2.5] - 2025-07-21
 ### Changed
