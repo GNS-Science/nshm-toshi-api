@@ -323,8 +323,7 @@ class BaseDynamoDBData(BaseData):
         # This should make that more obvious if it happens again.
         try:
             json_serialised(body)
-        except Exception as exc:
-            # logging.error(repr(exc))
+        except Exception:
             msg = (
                 "This object cannot be persisted to a PynamoDB.Model,"
                 " check that all enums and types are json serialisable!"
