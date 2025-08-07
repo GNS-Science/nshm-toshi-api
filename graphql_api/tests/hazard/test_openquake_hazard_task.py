@@ -1,15 +1,14 @@
 import datetime as dt
+import json
 import unittest
 
 import boto3
-import json
 from dateutil.tz import tzutc
 from graphene.test import Client
 from graphql_relay import to_global_id
 from moto import mock_dynamodb, mock_s3
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
-
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
 from graphql_api.data import data_manager
@@ -54,7 +53,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         return super().build_hazard_task()
 
     def test_link_tasks(self):
-        haztask = self._build_hazard_task() # Thing 100001
+        haztask = self._build_hazard_task()  # Thing 100001
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         self.create_gt_relation(self.new_gt, ht_id)  # Thing 100002
@@ -70,7 +69,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         )
 
     def test_get_openquake_hazard_task_node(self):
-        haztask = self._build_hazard_task() # Thing 100001
+        haztask = self._build_hazard_task()  # Thing 100001
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         query = '''
@@ -170,7 +169,6 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(haztask['config']['source_models'][0]['id'], nrml_id0)
         self.assertEqual(haztask['config']['source_models'][1]['id'], nrml_id1)
 
-
     def test_deprecated(self):
         '''
         Assert that we can read deprecated properties
@@ -224,7 +222,6 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(haztask['config']['source_models'][0]['id'], nrml_id0)
         self.assertEqual(haztask['config']['source_models'][1]['id'], nrml_id1)
 
-
     def test_update_task_with_metrics(self):
         haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
@@ -256,7 +253,9 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
                 }
             }
         '''
-        executed = self.client.execute(qry, variable_values=dict(task_id=ht_id, hazard_solution_id=ohs_id, executor=executor))
+        executed = self.client.execute(
+            qry, variable_values=dict(task_id=ht_id, hazard_solution_id=ohs_id, executor=executor)
+        )
         print(executed)
         result = executed['data']['update_openquake_hazard_task']['openquake_hazard_task']
         assert result['id'] == ht_id

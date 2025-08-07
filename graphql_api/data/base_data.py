@@ -14,6 +14,7 @@ from typing import Dict
 
 import backoff
 import boto3
+import graphql
 import pynamodb.exceptions
 from pynamodb.connection.base import Connection
 from pynamodb.exceptions import DoesNotExist
@@ -50,11 +51,28 @@ def append_uniq(size):
     return str(size) + uniq
 
 
+def json_serialised(obj):
+    """A simple wrapper to facilitate testing."""
+    return json.dumps(obj)
+
+
 def replace_enums(kwargs: Dict) -> Dict:
+    """Replace any Enum members with their values.
+
+    So that Graphene object instances can be serialised as json.
+    """
     new_kwargs = kwargs.copy()
     for key, value in kwargs.items():
         if isinstance(value, enum.Enum):
             new_kwargs[key] = value.value
+        elif isinstance(value, list):
+            new_list = []
+            for itm in value:
+                if isinstance(itm, enum.Enum):
+                    new_list.append(itm.value)
+                else:
+                    new_list.append(itm)
+            new_kwargs[key] = new_list
     return new_kwargs
 
 
@@ -301,13 +319,21 @@ class BaseDynamoDBData(BaseData):
                 F"object ids are not consistent!) {(identity.object_id, object_id)}"
             )
 
+        # We've been caught out by Schema classes that are not json-serialisable (the ENUM issue).
+        # This should make that more obvious if it happens again.
+        try:
+            json_serialised(body)
+        except Exception:
+            msg = (
+                "This object cannot be persisted to a PynamoDB.Model,"
+                " check that all enums and types are json serialisable!"
+            )
+            logging.error(msg)
+            raise graphql.GraphQLError(f'{__name__}._write_object() method failed with exception. %s' % msg)
+
         toshi_object = self._model(object_id=str(object_id), object_type=body['clazz_name'], object_content=body)
 
-        # Note that we won't see any json serialisatoin errors here, body seriaze is called
         logger.debug(f"toshi_object: {toshi_object}")
-
-        # print(dir(toshi_object))
-        # print(toshi_object.to_json())
 
         with TransactWrite(connection=self._connection) as transaction:
             transaction.update(identity, actions=[ToshiIdentity.object_id.add(1)])
@@ -348,15 +374,17 @@ class BaseDynamoDBData(BaseData):
         Raises:
             ValueError: invalid data exception
         """
-        logger.info(f"create() {clazz_name} {kwargs}")
+        logger.info(f"create() {clazz_name} {kwargs} for model class : {self._model}")
 
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         next_id = self.get_next_id()
 
         # TODO: this whole approach sucks !@#%$#
         # consider the ENUM problem, and datatime serialisation
-        # mayby graphene o
         # cant we just use the graphene classes json serialisation ??
+        # UPDATE: there is no such support, I guess graphene doesn't expect this sort of use case?
+        # For now we stick with our helper methods `new_body` and 'replace_enums`
+        #  and discuss in code review
 
         def new_body(next_id, kwargs):
             new = clazz(next_id, **kwargs)
@@ -368,17 +396,15 @@ class BaseDynamoDBData(BaseData):
 
         object_instance = clazz(next_id, **kwargs)
 
-        # print(object_instance.__class__)
-        # print(type(object_instance))
-        # print(dir(object_instance))
-        # print(f" TODICT: {graphql.utilities.ast_to_dict(object_instance)}")
-        # # print(f" PRINT_TYPE: {graphql.utilities.print_type(object_instance._type.value_from_ast)}")
-        # # print( graphql.utilities.value_from_ast_untyped(object_instance.created) )
+        logger.debug(object_instance.__class__)
+        logger.debug(type(object_instance))
+        logger.debug(dir(object_instance))
+        logger.debug(f" TODICT: {graphql.utilities.ast_to_dict(object_instance)}")
 
         try:
             self._write_object(next_id, self._prefix, new_body(next_id, replace_enums(kwargs)))
         except Exception as err:
-            logger.error(F"faild to write {clazz_name} {kwargs} {err}")
+            logger.error(F"failed to write {clazz_name} {kwargs} {err}")
             raise
 
         logger.info(f"create() object_instance: {object_instance}")
