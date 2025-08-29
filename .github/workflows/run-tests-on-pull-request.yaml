@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ deploy-test, main ]
 
+  # Allows us to call the workflow from another workflow
+  workflow_call:    
+
 jobs:
   call-test-workflow:
     uses: GNS-Science/nshm-github-actions/.github/workflows/python-run-tests.yml@main
