@@ -11,7 +11,7 @@ on:
     
 jobs:
   call-test-workflow:
-    uses: ./github/workflows/run-tests-on-pull-request.yaml
+    uses: ./.github/workflows/run-tests-on-pull-request.yaml
     secrets: inherit
 
   call-deploy-workflow:
