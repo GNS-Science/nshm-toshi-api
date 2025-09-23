@@ -6428,7 +6428,7 @@ __metadata:
     serverless-plugin-warmup: "npm:^8.3.0"
     serverless-python-requirements: "npm:^6.1.2"
     serverless-s3-local: "npm:^0.8.5"
-    serverless-wsgi: "npm:^3.0.5"
+    serverless-wsgi: "npm:^3.1.0"
   languageName: unknown
   linkType: soft
 
@@ -7426,7 +7426,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serverless-wsgi@npm:^3.0.5":
+"serverless-wsgi@npm:^3.1.0":
   version: 3.1.0
   resolution: "serverless-wsgi@npm:3.1.0"
   dependencies:
