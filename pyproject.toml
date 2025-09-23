@@ -31,8 +31,6 @@ elasticsearch-dsl = ">=7.0.0,<8.0"
 elasticsearch = ">=7.0.0,<7.14"
 gql = "^3.5.0"
 requests-toolbelt = "^1.0.0"
-# downgraded as it otherwise causes problems with Ubuntu
-setuptools = "^65.6.3"
 
 [tool.poetry.group.dev.dependencies]
 click = "^8.1.7"
