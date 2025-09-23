@@ -14,7 +14,7 @@ elastic_cli = 'scripts.elastic_cli:main'
 python = "^3.10"
 
 flask = "^3.0.3"
-flask-cors = "^4.0.1"
+flask-cors = "^6.0"
 graphql-server = {extras = ["flask"], version = "^3.0.0b7"}
 graphene = "^3.3"
 
@@ -38,13 +38,13 @@ tox = "^4.2.8"
 black  = { version = "^24.3.0"}
 isort  = { version = "^5.12.0"}
 flake8  = "^7.0.0"
-flake8-docstrings = { version = "^1.6.0", optional = true }
+flake8-docstrings = { version = "^1.6.0"}
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
 moto = "^4.2.7"
 requests-mock = "^1.11.0"
-virtualenv  = { version = "^20.2.2", optional = true}
-pip  = { version = "^23.2.1", optional = true}
+virtualenv  = { version = "^20.2.2"}
+pip  = { version = "^25.0"}
 bump2version = {version = "^1.0.1"}
 mypy = "^1.5.1"
 types-pyyaml = "^6.0.12.20240311"
