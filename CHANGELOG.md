@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.7] - 2025-09-24
+
+### Changed
+ - move to yarn2 for node package management
+ - updated to shared workflows
+ - upgrade serverless components
+ - python advisory patches
+
 ## [0.2.6] - 2025-08-07
 
 ### Changed
