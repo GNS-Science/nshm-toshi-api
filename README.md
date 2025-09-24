@@ -68,6 +68,14 @@ poetry run python3 graphql_api/tests/smoketests.py
 SLS_OFFLINE=1 TESTING=1 poetry run pytest
 ```
 
+## Auditing requirements packages
+
+```
+poetry export --all-groups > audit.txt
+poetry run pip-audit -r audit.txt -s pypi --require-hashes
+poetry run pip-audit -r audit.txt -s osv --require-hashes
+```
+
 ## Test locally with Toshi UI
 
 ```
