@@ -1,7 +1,6 @@
 # Changelog
 
-
-## [0.3.0] - 2025-10-21
+## [0.3.0] - 2025-10-22
 
 ### Changed
  - migrate to serverless 4
@@ -11,9 +10,6 @@
 
 ### Added
  - tox audit step
-
-## Removed
-
 
 ## [0.2.7] - 2025-09-24
 
