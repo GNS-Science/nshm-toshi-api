@@ -35,7 +35,7 @@ class TestScaling(unittest.TestCase, SetupHelpersMixin):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()

@@ -237,7 +237,7 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
         self._client = boto3.client('s3')
         self._bucket_name = S3_BUCKET_NAME
         self._model = ToshiThingObject()
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
         self._connection = Connection(region=REGION)
         self._general_task = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         self._general_task.create(
@@ -317,7 +317,7 @@ class TestGeneralTaskQueriesS3(unittest.TestCase):
         self._s3.create_bucket(Bucket=S3_BUCKET_NAME)
         self._bucket = self._s3.Bucket(S3_BUCKET_NAME)
         self._connection = Connection(region=REGION)
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
         self._gt = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         self._at_1 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         self._at_2 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)

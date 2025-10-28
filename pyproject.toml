@@ -10,11 +10,9 @@ readme = "README.md"
 requires-python = "^3.12"
 license = "AGPL-3.0-or-later"
 
-
 dependencies = [
     "backoff",
     "boto3 (>=1.24.57)",
-    "elasticsearch (>=7.0.0,<8.0)",
     "elasticsearch-dsl",
     "flask (>=3.0.3)",
     "flask-cors (>=6.0)",
@@ -29,6 +27,7 @@ dependencies = [
     "pyyaml",
     "requests-aws4auth",
     "requests-toolbelt",
+    "elasticsearch7-compatible",
 ]
 
 [project.scripts]
@@ -36,9 +35,6 @@ elastic_cli = 'scripts.elastic_cli:main'
 
 [tool.poetry]
 packages = [{include = "graphql_api"}]
-
-[tool.poetry.group.dev]
-optional = true
 
 [dependency-groups]
 dev = [
