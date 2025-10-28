@@ -12,9 +12,6 @@ log = logging.getLogger(__name__)
 
 
 class ObjectIdentity(graphene.ObjectType):
-    class Meta:
-        interfaces = (Node,)
-
     object_type = graphene.String()
     object_id = graphene.String()
     clazz_name = graphene.String()

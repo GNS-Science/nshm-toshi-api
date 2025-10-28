@@ -1,5 +1,9 @@
 # Changelog
+## [0.3.1] - 2025-10-29
 
+### Changed
+ - remove Node interface from ObjectIdentity schema type.
+ 
 ## [0.3.0] - 2025-10-22
 
 ### Changed
