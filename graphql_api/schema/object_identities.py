@@ -1,7 +1,7 @@
 import logging
 
 import graphene
-from graphene import Node, relay
+from graphene import relay
 from graphql_relay import from_global_id, to_global_id
 
 from graphql_api.data import get_data_manager
