@@ -2,7 +2,7 @@
 
 ## [0.3.2] - 2025-10-29
 ### Changed
- - fix index exception caused by ENUM objects. 
+ - fix index exception caused by ENUM objects
  - search_manager will now raise exceptions on Elasticsearch.index failures  
  - add test mocking for Elasticsearch
  - hack for indexing compressed relations in FileData objects
