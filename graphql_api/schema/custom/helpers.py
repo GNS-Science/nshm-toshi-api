@@ -1,6 +1,7 @@
 import copy
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 from importlib import import_module
 
 import graphql.language.ast
@@ -21,7 +22,7 @@ def resolve_node(root, info, id_field, dm_type):
     Optimisation function, looks at the query and avoids a fetch if
     we only want to resolve the id field.
     """
-    t0 = dt.utcnow()
+    t0 = dt.now(timezone.utc)
     assert dm_type in ["table", "thing", 'file']
 
     node_id = getattr(root, id_field)
@@ -64,5 +65,5 @@ def resolve_node(root, info, id_field, dm_type):
 
     log.debug(f"resolve_node() returning  {res}")
 
-    db_metrics.put_duration(__name__, 'resolve_node', dt.utcnow() - t0)
+    db_metrics.put_duration(__name__, 'resolve_node', dt.now(timezone.utc) - t0)
     return res

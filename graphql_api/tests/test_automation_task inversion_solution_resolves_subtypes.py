@@ -5,6 +5,7 @@ using moto mocking re issue #223
 
 import datetime as dt
 import unittest
+from unittest import mock
 
 import boto3
 from dateutil.tz import tzutc
@@ -25,9 +26,9 @@ from .hazard.setup_helpers import SetupHelpersMixin
 @mock_dynamodb
 @mock_s3
 class TestScaledInversionSolution(unittest.TestCase, SetupHelpersMixin):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
-
         # S3
         self._s3 = boto3.resource('s3', region_name=REGION)
         self._s3.create_bucket(Bucket=S3_BUCKET_NAME)

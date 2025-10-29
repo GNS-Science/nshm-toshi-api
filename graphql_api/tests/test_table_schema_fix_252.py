@@ -96,7 +96,8 @@ class TestFailingMutation(unittest.TestCase):
 @mock_dynamodb
 class TestFailingMutationWithMockedServices(unittest.TestCase):
 
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         # migrate()
 

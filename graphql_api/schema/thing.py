@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 from typing import TYPE_CHECKING
 
 import graphene
@@ -39,7 +40,7 @@ class Thing(graphene.Interface):
     )
 
     def resolve_files(root, info, **args):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         if not root.files:
             res = []
 
@@ -49,7 +50,7 @@ class Thing(graphene.Interface):
         ):
             # OPTIMISE return list of Nones, if total count is the ONLY field selection
             res = FileRelationConnection(edges=[None for x in range(len(root.files))])
-            db_metrics.put_duration(__name__, 'resolve_files[total_count]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_files[total_count]', dt.now(timezone.utc) - t0)
 
         elif isinstance(root.files[0], dict):
             # new form, files is list of objects
@@ -57,17 +58,17 @@ class Thing(graphene.Interface):
                 get_data_manager().file_relation.build_one(file['file_id'], root.id, file['file_role'])
                 for file in root.files
             ]
-            db_metrics.put_duration(__name__, 'resolve_files[optimised]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_files[optimised]', dt.now(timezone.utc) - t0)
 
         else:
             # old form, files is list of strings
             res = [get_data_manager().file_relation.get_one(_id) for _id in root.files]
-            db_metrics.put_duration(__name__, 'resolve_files[legacy]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_files[legacy]', dt.now(timezone.utc) - t0)
 
         return res
 
     def resolve_parents(root, info, **args):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
 
         logger.info(f'>> Thing.resolve_parents() ROOT: {root} INFO: {info}')
 
@@ -83,17 +84,17 @@ class Thing(graphene.Interface):
         elif isinstance(root.parents[0], dict):
             # print(f'#new form, parents is list of objects')
             res = [get_data_manager().thing_relation.build_one(parent['parent_id'], root.id) for parent in root.parents]
-            db_metrics.put_duration(__name__, 'resolve_parents[optimised]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_parents[optimised]', dt.now(timezone.utc) - t0)
         else:
             print(f'#old form, parents is list of strings: {root.parents}')
             res = [get_data_manager().thing_relation.get_one(_id) for _id in root.parents]
-            db_metrics.put_duration(__name__, 'resolve_parents[legacy]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_parents[legacy]', dt.now(timezone.utc) - t0)
 
         logger.info(f'>> Thing.resolve_parents() res: {res}')
         return res
 
     def resolve_children(root, info, **args):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         logger.info(f'>> Thing.resolve_children() ROOT: {root}')
         logger.info(f'>> Thing.resolve_children() INFO: {info}')
         # logger.info(f'>> Thing.resolve_children() : {dir(info.field_nodes[0])}')
@@ -112,11 +113,11 @@ class Thing(graphene.Interface):
         elif isinstance(root.children[0], dict):
             # print(f'#new form, children is list of objects')
             res = [get_data_manager().thing_relation.build_one(root.id, child['child_id']) for child in root.children]
-            db_metrics.put_duration(__name__, 'resolve_children[optimised]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_children[optimised]', dt.now(timezone.utc) - t0)
         else:
             # old form, files is list of strings
             res = [get_data_manager().thing_relation.get_one(_id) for _id in root.children]
-            db_metrics.put_duration(__name__, 'resolve_children[legacy]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_children[legacy]', dt.now(timezone.utc) - t0)
 
         logger.info(f'>> Thing.resolve_children() res: {res}')
         return res

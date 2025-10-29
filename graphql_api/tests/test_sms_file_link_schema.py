@@ -71,7 +71,8 @@ class TestCreateSMSFile(unittest.TestCase):
     All datastore (data) methods are mocked.
     """
 
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         s3_conn = boto3.resource('s3', region_name=REGION)
         s3_conn.create_bucket(Bucket=S3_BUCKET_NAME)

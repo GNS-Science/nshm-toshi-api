@@ -4,6 +4,7 @@ Search Manager
 
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 
 import requests
 from elasticsearch7 import Elasticsearch, RequestsHttpConnection
@@ -40,8 +41,20 @@ class SearchManager:
 
     def index_document(self, key, document):
         # Index the document
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         es_key = key.replace("/", "_")
+
+        # >>> BEGIN_HACK
+        # ES cannot handle documents that have different types in one field
+        # recommended solution is to rename the file byt the type.
+        # In our case the `relations`` field on FileData may be a list of strings, or a stringIO
+        # of the compressed list
+        if document['clazz_name'] == 'File':
+            if type(document['relations']) is str:
+                document['relations_compressed'] = document['relations']
+                del document['relations']
+        # >>> END_HACK
+
         try:
             # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.index
             # index(index, body, doc_type=None, id=None, params=None, headers=None)
@@ -51,10 +64,11 @@ class SearchManager:
 
         except Exception as err:
             log.warning(f'index_document raised err: {err}')
-        db_metrics.put_duration(__name__, 'index_document', dt.utcnow() - t0)
+            raise
+        db_metrics.put_duration(__name__, 'index_document', dt.now(timezone.utc) - t0)
 
     def search(self, term):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
 
         headers = {}  # "Content-Type": "application/json" }
         result = []
@@ -87,5 +101,5 @@ class SearchManager:
         except Exception as err:
             log.warning(f"search() raised err: {err}")
 
-        db_metrics.put_duration(__name__, 'search', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'search', dt.now(timezone.utc) - t0)
         return result
