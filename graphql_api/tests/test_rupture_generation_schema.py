@@ -151,7 +151,7 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
         ToshiThingObject.create_table()
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
     def test_update_with_metrics(self):
         executed = self.client.execute(CREATE, variable_values=dict(created=dt.datetime.now(tzutc())))

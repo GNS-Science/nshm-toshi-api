@@ -32,7 +32,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
     def test_create_openquake_hazard_solution(self):
         upstream_sid = self.create_source_solution()  # File 100001

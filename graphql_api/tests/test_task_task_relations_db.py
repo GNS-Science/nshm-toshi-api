@@ -49,7 +49,7 @@ class TestTaskTaskRelations(unittest.TestCase):
         self._client = boto3.client('s3')
         self._bucket_name = S3_BUCKET_NAME
         self._model = ToshiThingObject()
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
         self._connection = Connection(region=REGION)
 
     def test_create_task_task_relations(self):

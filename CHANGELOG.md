@@ -1,5 +1,12 @@
 # Changelog
+## [0.3.1] - 2025-10-29
 
+### Changed
+ - remove Node interface from ObjectIdentity schema type.
+ - replace `elasticsearch` with `elasticsearch7-compatible` for updated urllib3 dependency.
+ - update all search_manager init calls, as auth API changed with urllib3 update.
+ - update dependencies
+ 
 ## [0.3.0] - 2025-10-22
 
 ### Changed

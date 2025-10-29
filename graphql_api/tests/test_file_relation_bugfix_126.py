@@ -152,7 +152,7 @@ class TestBug122(unittest.TestCase):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
         at1 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         at1.create(
             clazz_name='AutomationTask', created=dt.datetime.now(tzutc())

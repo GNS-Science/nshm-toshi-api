@@ -30,7 +30,7 @@ class TestInversionSolutionWithMFDWorkflow(unittest.TestCase):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
     def test_link_inversion_solution_with_mfd_table(self):
 

@@ -64,7 +64,7 @@ class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
@@ -147,7 +147,7 @@ class TestOpenquakeLegacyHazardDisaggTask(unittest.TestCase):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', MOCK_LEGACY_HAZARD_TASK)
     def test_legacy_hazard_task_has_default_task_type(self):

@@ -108,7 +108,7 @@ class TestFailingMutationWithMockedServices(unittest.TestCase):
         ToshiTableObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
     def test_create_one_table(self):
 

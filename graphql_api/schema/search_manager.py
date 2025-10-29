@@ -6,7 +6,7 @@ import logging
 from datetime import datetime as dt
 
 import requests
-from elasticsearch import Elasticsearch, RequestsHttpConnection
+from elasticsearch7 import Elasticsearch, RequestsHttpConnection
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, ES_ENDPOINT, STACK_NAME
@@ -34,9 +34,8 @@ class SearchManager:
         self.es = Elasticsearch(
             hosts=[ES_ENDPOINT],
             http_auth=awsauth,
-            # use_ssl=True,
             verify_certs=True,
-            connection_class=RequestsHttpConnection,
+            connection_class=RequestsHttpConnection
         )
 
     def index_document(self, key, document):
