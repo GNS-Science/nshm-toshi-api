@@ -1,6 +1,6 @@
 {
   "name": "nzshm22-toshi-api",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A graphql API for NZSHM22 shared resources using AWS lambda, S3, Dynamodb and ElasticSearch",
   "directories": {
     "lib": "lib"
