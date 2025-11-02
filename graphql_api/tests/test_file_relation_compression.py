@@ -2,6 +2,7 @@ import datetime as dt
 import json
 import random
 import unittest
+from unittest import mock
 
 import boto3
 from dateutil.tz import tzutc
@@ -94,7 +95,8 @@ FILEMOCKID = '100000'
 @mock_s3
 @mock_dynamodb
 class TestCompressRelations(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
 
         # S3 is used for file object storage

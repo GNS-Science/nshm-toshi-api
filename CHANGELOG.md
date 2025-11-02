@@ -1,4 +1,12 @@
 # Changelog
+
+## [0.3.2] - 2025-11-03
+### Changed
+ - fix index exception caused by ENUM objects
+ - search_manager will now raise exceptions on Elasticsearch.index failures  
+ - add test mocking for Elasticsearch
+ - hack for indexing compressed relations in FileData objects
+
 ## [0.3.1] - 2025-10-29
 
 ### Changed
@@ -6,7 +14,7 @@
  - replace `elasticsearch` with `elasticsearch7-compatible` for updated urllib3 dependency.
  - update all search_manager init calls, as auth API changed with urllib3 update.
  - update dependencies
- 
+
 ## [0.3.0] - 2025-10-22
 
 ### Changed

@@ -5,6 +5,7 @@ The object manager for File (and subclassed) schema objects
 import json
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 from importlib import import_module
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
@@ -50,7 +51,7 @@ class FileData(BaseDynamoDBData):
         new_instance = super().create(clazz_name, **kwargs)
         data_key = "%s/%s/%s" % (self._prefix, new_instance.id, new_instance.file_name)
 
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
         parts = self.s3_client.generate_presigned_post(
             Bucket=self._bucket_name,
@@ -67,7 +68,7 @@ class FileData(BaseDynamoDBData):
             ],
         )
 
-        db_metrics.put_duration(__name__, 'create[placeholder+generate-presigned-post]', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'create[placeholder+generate-presigned-post]', dt.now(timezone.utc) - t0)
 
         new_instance.post_url = json.dumps(parts['fields'])
         return new_instance
@@ -100,7 +101,7 @@ class FileData(BaseDynamoDBData):
         Returns:
             string: a temporary URL that may be used to download the raw file data.
         """
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         file = self.get_one(_id)
         key = "%s/%s/%s" % (self._prefix, _id, file.file_name)
         url = self.s3_client.generate_presigned_url(
@@ -111,7 +112,7 @@ class FileData(BaseDynamoDBData):
             },
             ExpiresIn=3600,
         )
-        db_metrics.put_duration(__name__, 'get_presigned_url', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'get_presigned_url', dt.now(timezone.utc) - t0)
         return url
 
     @staticmethod

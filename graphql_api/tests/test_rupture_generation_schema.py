@@ -70,7 +70,8 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
     All datastore (data) methods are mocked.
     """
 
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
 
     def test_create_minimum_fields_happy_case(self):
@@ -141,7 +142,8 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
 @mock_s3
 @mock_dynamodb
 class TestUpdateRuptureGenerationTask(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         self._s3_conn = boto3.resource('s3', region_name=REGION)
         self._s3_conn.create_bucket(Bucket=S3_BUCKET_NAME)
@@ -215,7 +217,8 @@ class TestMigrateRuptureGenerationTask(unittest.TestCase):
     TypeError: 'git_refs' is an invalid keyword argument for RuptureGenerationTask
     """
 
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
 
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', TASK_OLD)

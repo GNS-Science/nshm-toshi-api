@@ -10,6 +10,7 @@ import uuid
 
 # from importlib import import_module
 from datetime import datetime as dt
+from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -92,9 +93,9 @@ class InversionSolution(graphene.ObjectType):
     @classmethod
     def get_node(cls, info, _id):
         # log.info(f'InversionSolution.get_node {cls} {info} {_id}' )
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         node = get_data_manager().file.get_one(_id)
-        db_metrics.put_duration(__name__, 'InversionSolution.resolve_node', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'InversionSolution.resolve_node', dt.now(timezone.utc) - t0)
         return node
 
 
@@ -131,10 +132,10 @@ class CreateInversionSolution(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         log.info(f"CreateInversionSolution mutate_and_get_payload {kwargs}")
         inversion_solution = get_data_manager().file.create('InversionSolution', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateInversionSolution.mutate_and_get_payload', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'CreateInversionSolution.mutate_and_get_payload', dt.now(timezone.utc) - t0)
         solution = CreateInversionSolution(inversion_solution=inversion_solution, ok=True)
         log.info(f"solution: {solution}")
         return solution
@@ -154,7 +155,7 @@ class AppendInversionSolutionTables(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         type, nid = from_global_id(kwargs.get('id'))
         inversion_solution = get_data_manager().file.get_one_raw(nid)
 
@@ -176,5 +177,7 @@ class AppendInversionSolutionTables(relay.ClientIDMutation):
 
         inversion_solution = get_data_manager().file.update(nid, inversion_solution)
         print('inversion_solution', inversion_solution)
-        db_metrics.put_duration(__name__, 'AppendInversionSolutionTables.mutate_and_get_payload', dt.utcnow() - t0)
+        db_metrics.put_duration(
+            __name__, 'AppendInversionSolutionTables.mutate_and_get_payload', dt.now(timezone.utc) - t0
+        )
         return AppendInversionSolutionTables(inversion_solution, ok=True)

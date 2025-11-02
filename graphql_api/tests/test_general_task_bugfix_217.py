@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import unittest
 from io import BytesIO
+from unittest import mock
 
 import boto3
 import pytest
@@ -48,7 +49,8 @@ CREATE_GT = '''
 @mock_dynamodb
 class TestGeneralTaskBug217(unittest.TestCase):
 
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         # migrate()
 

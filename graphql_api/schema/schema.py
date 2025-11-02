@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 
 import boto3
 import graphene
@@ -179,16 +180,16 @@ class QueryRoot(graphene.ObjectType):
         return __version__
 
     def resolve_strong_motion_stations(root, info):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         sms = db_root.thing.get_all('StrongMotionStation')
-        db_metrics.put_duration(__name__, 'resolve_strong_motion_stations', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'resolve_strong_motion_stations', dt.now(timezone.utc) - t0)
         return sms
 
     def resolve_strong_motion_station(root, info, id):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         _type, _id = from_global_id(id)
         sms = db_root.thing.get_one(_id)
-        db_metrics.put_duration(__name__, 'resolve_strong_motion_station', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'resolve_strong_motion_station', dt.now(timezone.utc) - t0)
         return sms
 
     @staticmethod
@@ -197,9 +198,9 @@ class QueryRoot(graphene.ObjectType):
         Returns:
             list: rupture generation task list
         """
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         tasks = db_root.thing.get_all('RuptureGenerationTask')
-        db_metrics.put_duration(__name__, 'resolve_rupture_generation_tasks', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'resolve_rupture_generation_tasks', dt.now(timezone.utc) - t0)
         return tasks
 
     @staticmethod
@@ -208,24 +209,24 @@ class QueryRoot(graphene.ObjectType):
         Returns:
             list: file list
         """
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         files = db_root.file.get_all()
-        db_metrics.put_duration(__name__, 'resolve_files', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'resolve_files', dt.now(timezone.utc) - t0)
         return files
 
     @staticmethod
     def resolve_search(root, info, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         search_result = db_root.search_manager.search(kwargs.get('search_term'))
-        db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'resolve_search', dt.now(timezone.utc) - t0)
         return Search(ok=True, search_result=search_result)
 
     @staticmethod
     def resolve_object_identities(root, info, object_type, **kwargs):
         log.info(f'resolve_object_identities args: {kwargs}')
-        dt.utcnow()
+        dt.now(timezone.utc)
         # search_result = db_root.search_manager.search(kwargs.get('search_term'))
-        # db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
+        # db_metrics.put_duration(__name__, 'resolve_search', dt.now(timezone.utc) - t0)
         nodes = iterate_dynamodb_nodes(object_type, **kwargs)
         return paginated_object_identities(nodes, **kwargs)
 
@@ -233,16 +234,16 @@ class QueryRoot(graphene.ObjectType):
     def resolve_legacy_object_identities(root, info, store_type, **kwargs):
         assert store_type in ['File', 'Thing', 'Table']
         log.info(f'resolve_object_identities args: {kwargs}')
-        dt.utcnow()
+        dt.now(timezone.utc)
         # search_result = db_root.search_manager.search(kwargs.get('search_term'))
-        # db_metrics.put_duration(__name__, 'resolve_search', dt.utcnow() - t0)
+        # db_metrics.put_duration(__name__, 'resolve_search', dt.now(timezone.utc) - t0)
         nodes = iterate_legacy_s3_nodes(store_type, **kwargs)
         return paginated_object_identities(nodes, **kwargs)
 
     @staticmethod
     def resolve_nodes(root, info, id_in, **kwargs):
         #    print(id_in, kwargs)
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         result = []
         for gid in id_in:
             _type, _id = from_global_id(gid)
@@ -256,13 +257,13 @@ class QueryRoot(graphene.ObjectType):
                 result.append(db_root.table.get_one(_id))
             else:
                 raise ValueError("unable to resolve, object id")
-        db_metrics.put_duration(__name__, 'resolve_nodes', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'resolve_nodes', dt.now(timezone.utc) - t0)
         # result =  = db_root.search_manager.search(kwargs.get('search_term'))
         return NodeFilter(ok=True, result=result)
 
     @staticmethod
     def resolve_reindex(root, info, id_in, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         log.info(f'resolve_resolve_reindex id_in: {id_in}')
         for gid in id_in:
             object_type, object_id = from_global_id(gid)
@@ -271,7 +272,7 @@ class QueryRoot(graphene.ObjectType):
             body = handler.get_one_raw(object_id)
             search_manager.index_document(es_key, body)
 
-        db_metrics.put_duration(__name__, 'resolve_reindex', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'resolve_reindex', dt.now(timezone.utc) - t0)
         # result =  = db_root.search_manager.search(kwargs.get('search_term'))
         return ReindexResult(ok=True)
 

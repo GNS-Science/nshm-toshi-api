@@ -4,6 +4,7 @@ The NSHM data file graphql schema.
 
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 from typing import TYPE_CHECKING
 
 import graphene
@@ -53,7 +54,7 @@ class FileInterface(graphene.Interface):
 
     def resolve_relations(root, info, **args):
         # Transform the instance thing_ids into real instances
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         root_relations = ensure_decompressed(root.relations)
 
         root_relations = root_relations or []
@@ -65,7 +66,7 @@ class FileInterface(graphene.Interface):
             from graphql_api.schema.file_relation import FileRelationConnection
 
             res = FileRelationConnection(edges=[None for x in range(len(root_relations))])
-            db_metrics.put_duration(__name__, 'resolve_relations[total_count]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_relations[total_count]', dt.now(timezone.utc) - t0)
 
         elif isinstance(root_relations[0], dict):
             # new form, files is list of objects
@@ -73,12 +74,12 @@ class FileInterface(graphene.Interface):
                 get_data_manager().file_relation.build_one(root.id, relation['id'], relation['role'])
                 for relation in root_relations
             ]
-            db_metrics.put_duration(__name__, 'resolve_relations[optimised]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_relations[optimised]', dt.now(timezone.utc) - t0)
 
         else:
             # old form, files is list of strings
             res = [get_data_manager().file_relation.get_one(_id) for _id in root_relations]
-            db_metrics.put_duration(__name__, 'resolve_relations[legacy]', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, 'resolve_relations[legacy]', dt.now(timezone.utc) - t0)
 
         return res
 
@@ -97,9 +98,9 @@ class File(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
-        # t0 = dt.utcnow()
+        # t0 = dt.now(timezone.utc)
         node = get_data_manager().file.get_one(_id)
-        # db_metrics.put_duration(__name__, 'CreateFile.mutate' , dt.utcnow()-t0)
+        # db_metrics.put_duration(__name__, 'CreateFile.mutate' , dt.now(timezone.utc)-t0)
         return node
 
     @staticmethod
@@ -137,11 +138,11 @@ class CreateFile(graphene.Mutation):
     file_result = graphene.Field(File)
 
     def mutate(self, info, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         log.info(f"CreateFile mutate {kwargs}")
 
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
 
         file_result = get_data_manager().file.create('File', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateFile.mutate', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'CreateFile.mutate', dt.now(timezone.utc) - t0)
         return CreateFile(ok=True, file_result=file_result)

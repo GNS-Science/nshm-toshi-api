@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import unittest
+from unittest import mock
 
 import boto3
 from dateutil.tz import tzutc
@@ -36,7 +37,8 @@ START_ID = 100000
 
 @mock_dynamodb
 class TestS3FallBackRead(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         ToshiThingObject.create_table()
         ToshiIdentity.create_table()

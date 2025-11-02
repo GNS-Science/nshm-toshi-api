@@ -2,10 +2,12 @@ import datetime as dt
 import json
 import unittest
 from io import BytesIO
+from unittest import mock
 
 import boto3
 import pytest
 from dateutil.tz import tzutc
+from elasticsearch import Elasticsearch
 from graphene.test import Client
 from graphql_relay import from_global_id, to_global_id
 from moto import mock_dynamodb, mock_s3
@@ -137,7 +139,8 @@ class TestBug122(unittest.TestCase):
 
     """
 
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
 
         self._s3_conn = boto3.resource('s3', region_name=REGION)
@@ -147,6 +150,11 @@ class TestBug122(unittest.TestCase):
 
         self._bucket.put_object(Key='FileData/1587.0nVoFt/object.json', Body=json.dumps(FILEMOCK))
         self._bucket.put_object(Key='ThingData/100002/object.json', Body=json.dumps({'id': '100002'}))
+
+        # Configure the mock search method to return a predefined response
+        self.mock_es_instance = mock.MagicMock()
+        mock_es_class.return_value = self.mock_es_instance
+        self.mock_es_instance.index.return_value = {"A": "B"}
 
         ToshiThingObject.create_table()
         ToshiFileObject.create_table()
@@ -196,10 +204,12 @@ class TestBug122(unittest.TestCase):
     # @pytest.mark.skip("graphene udpate")
     def test_create_at(self):
         # Create a new AT
+        setup_calls = len(self.mock_es_instance.index.mock_calls)
         at_result = self.client.execute(
             QRY_CREATE_AUTOMATION_TASK, variable_values=dict(created=dt.datetime.now(tzutc()))
         )
         print(at_result)
+        assert len(self.mock_es_instance.index.mock_calls) == setup_calls + 1
         at_id = at_result['data']['create_automation_task']['task_result']['id']
 
         assert at_id == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
@@ -208,10 +218,12 @@ class TestBug122(unittest.TestCase):
     # @pytest.mark.skip("graphene udpate")
     def test_create_at_and_link_file(self):
         # Create a new AT
+        setup_calls = len(self.mock_es_instance.index.mock_calls)
         at_result = self.client.execute(
             QRY_CREATE_AUTOMATION_TASK, variable_values=dict(created=dt.datetime.now(tzutc()))
         )
         print(at_result)
+        assert len(self.mock_es_instance.index.mock_calls) == setup_calls + 1
         at_id = at_result['data']['create_automation_task']['task_result']['id']
 
         # assert at_id == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
