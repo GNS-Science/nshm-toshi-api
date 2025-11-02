@@ -33,10 +33,7 @@ class SearchManager:
         self._es_index = es_index
         self._url = endpoint + '/' + es_index + '/' + TYPE + '/'
         self.es = Elasticsearch(
-            hosts=[ES_ENDPOINT],
-            http_auth=awsauth,
-            verify_certs=True,
-            connection_class=RequestsHttpConnection
+            hosts=[ES_ENDPOINT], http_auth=awsauth, verify_certs=True, connection_class=RequestsHttpConnection
         )
 
     def index_document(self, key, document):
@@ -45,10 +42,10 @@ class SearchManager:
         es_key = key.replace("/", "_")
 
         # >>> BEGIN_HACK
-        # ES cannot handle documents that have different types in one field
-        # recommended solution is to rename the file byt the type.
+        # ES cannot handle documents that have different types in one field.
+        # The recommended solution is to rename the field by the type.
         # In our case the `relations`` field on FileData may be a list of strings, or a stringIO
-        # of the compressed list
+        # of the compressed list.
         if document['clazz_name'] == 'File':
             if type(document['relations']) is str:
                 document['relations_compressed'] = document['relations']

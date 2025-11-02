@@ -24,20 +24,6 @@ from graphql_api.schema.search_manager import SearchManager
 
 from .hazard.setup_helpers import SetupHelpersMixin
 
-TASKZERO = lambda _self, _id: {
-    "id": "0",
-    "clazz_name": "RuptureGenerationTask",
-    "created": "2020-10-30T09:15:00+00:00",
-    "duration": 600.0,
-    "arguments": [
-        {"k": "max_jump_distance", "v": "55.5"},
-        {"k": "max_sub_section_length", "v": "2"},
-        {"k": "max_cumulative_azimuth", "v": "590"},
-        {"k": "min_sub_sections_per_parent", "v": "2"},
-        {"k": "permutation_strategy", "v": "DOWNDIP"},
-    ],
-}
-
 
 @mock_s3
 @mock_dynamodb
