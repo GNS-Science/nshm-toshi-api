@@ -21,7 +21,7 @@ Java is required.
  ```
 
 
- ```
+```
 poetry install
 poetry lock
 poetry shell
@@ -54,7 +54,7 @@ If `shell` is not available, in `poetry`, it is possible to use `eval $(poetry e
 
 Then in another shell,
 ```bash
-docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
+docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.1.0
 ```
 (to just run locally stop here)
 
@@ -80,8 +80,8 @@ poetry run pip-audit -r audit.txt -s osv --require-hashes
 
 ```
 docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
-sls dynamodb start --stage local &\
-sls s3 start &\
+yarn sls dynamodb start --stage local &\
+yarn sls s3 start &\
 SLS_OFFLINE=1 poetry run yarn sls wsgi serve
 ```
 then in another shell,
