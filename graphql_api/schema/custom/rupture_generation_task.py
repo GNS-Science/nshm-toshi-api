@@ -10,6 +10,7 @@ The core class RuptureGenerationTask implements the `graphql_api.schema.task.Tas
 
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -73,10 +74,12 @@ class CreateRuptureGenerationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         log.info(f"CreateRuptureGenerationTaskmnutate {input}")
         task_result = get_data_manager().thing.create('RuptureGenerationTask', **input)
-        db_metrics.put_duration(__name__, 'CreateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
+        db_metrics.put_duration(
+            __name__, 'CreateRuptureGenerationTask.mutate_and_get_payload', dt.now(timezone.utc) - t0
+        )
         return CreateRuptureGenerationTask(task_result=task_result)
 
 
@@ -88,11 +91,13 @@ class UpdateRuptureGenerationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         print("mutate: ", input)
         log.info(f"UpdateRuptureGenerationTask {input}")
         thing_id = input.pop('task_id')
         log.info(f"UpdateRuptureGenerationTask thing_id {thing_id}")
         task_result = get_data_manager().thing.update('RuptureGenerationTask', thing_id, **input)
-        db_metrics.put_duration(__name__, 'UpdateRuptureGenerationTask.mutate_and_get_payload', dt.utcnow() - t0)
+        db_metrics.put_duration(
+            __name__, 'UpdateRuptureGenerationTask.mutate_and_get_payload', dt.now(timezone.utc) - t0
+        )
         return UpdateRuptureGenerationTask(task_result=task_result)

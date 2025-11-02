@@ -4,6 +4,7 @@ This module contains the schema definition for a TimeDependentInversionSolution.
 
 """
 from datetime import datetime as dt
+from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -69,9 +70,9 @@ class CreateTimeDependentInversionSolution(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         solution = get_data_manager().file.create('TimeDependentInversionSolution', **kwargs)
         db_metrics.put_duration(
-            __name__, 'CreateTimeDependentInversionSolution.mutate_and_get_payload', dt.utcnow() - t0
+            __name__, 'CreateTimeDependentInversionSolution.mutate_and_get_payload', dt.now(timezone.utc) - t0
         )
         return CreateTimeDependentInversionSolution(solution=solution, ok=True)

@@ -2,6 +2,7 @@ import datetime as dt
 import json
 import random
 import unittest
+from unittest import mock
 
 import boto3
 from dateutil.tz import tzutc
@@ -94,7 +95,8 @@ FILEMOCKID = '100000'
 @mock_s3
 @mock_dynamodb
 class TestCompressRelations(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
 
         # S3 is used for file object storage
@@ -107,7 +109,7 @@ class TestCompressRelations(unittest.TestCase):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
         at1 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         at1.create(**ATMOCK)  # will get identity 100000 = 'QXV0b21hdGlvblRhc2s6MTAwMDAw',
         f1 = FileData({}, self._data_manager, ToshiFileObject, self._connection)

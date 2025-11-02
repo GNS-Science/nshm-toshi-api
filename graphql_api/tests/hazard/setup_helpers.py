@@ -165,7 +165,7 @@ class SetupHelpersMixin:
             digest=file_digest(fake_file),
             file_name="alineortwo.zip",
             file_size=file_size(fake_file),
-            created=dt.datetime.utcnow().isoformat(),
+            created=dt.datetime.now(dt.timezone.utc).isoformat(),
         )
         result = self.client.execute(query, variable_values=variables)
         print(result)
@@ -216,7 +216,7 @@ class SetupHelpersMixin:
             digest=file_digest(fake_file),
             file_name="alineortwo.zip",
             file_size=file_size(fake_file),
-            created=dt.datetime.utcnow().isoformat(),
+            created=dt.datetime.now(dt.timezone.utc).isoformat(),
             predecessors=predecessors,
         )
 

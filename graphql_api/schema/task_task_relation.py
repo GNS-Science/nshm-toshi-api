@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -60,7 +61,7 @@ class CreateTaskTaskRelation(graphene.Mutation):
     thing_relation = graphene.Field(TaskTaskRelation)
 
     def mutate(self, info, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         logger.debug(f"CreateTaskTaskRelation.mutate: {kwargs}")
         parent_type, parent_id = from_global_id(kwargs.pop('parent_id'))
         child_type, child_id = from_global_id(kwargs.pop('child_id'))
@@ -70,5 +71,5 @@ class CreateTaskTaskRelation(graphene.Mutation):
         )
         logger.info(f"CreateTaskTaskRelation.mutate: thing_relation {thing_relation}")
 
-        db_metrics.put_duration(__name__, 'CreateTaskTaskRelation.mutate', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'CreateTaskTaskRelation.mutate', dt.now(timezone.utc) - t0)
         return CreateTaskTaskRelation(ok=True, thing_relation=thing_relation)

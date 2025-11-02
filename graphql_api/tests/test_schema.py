@@ -127,7 +127,8 @@ r3 = {
 
 
 class TestSchemaInfo(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
 
     def test_get_about(self):
@@ -196,7 +197,8 @@ class TestRuptureGeneratorResults(unittest.TestCase):
 
 @mock_dynamodb
 class TestCreateDataFile(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         # data.setup()
         # migrate()
         self.client = Client(root_schema)

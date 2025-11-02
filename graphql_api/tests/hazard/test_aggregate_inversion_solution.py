@@ -1,5 +1,6 @@
 import datetime as dt
 import unittest
+from unittest import mock
 
 import boto3
 from dateutil.tz import tzutc
@@ -20,7 +21,9 @@ from graphql_api.schema.search_manager import SearchManager
 @mock_dynamodb
 @mock_s3
 class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
-    def setUp(self):
+
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
 
         # S3
@@ -30,11 +33,16 @@ class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
         # Dynamo
         self._connection = Connection(region=REGION)
 
+        # Configure the mock search method to return a predefined response
+        self.mock_es_instance = mock.MagicMock()
+        mock_es_class.return_value = self.mock_es_instance
+        self.mock_es_instance.index.return_value = {"A": "B"}
+
         ToshiThingObject.create_table()
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()

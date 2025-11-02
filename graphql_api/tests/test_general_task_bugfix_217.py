@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import unittest
 from io import BytesIO
+from unittest import mock
 
 import boto3
 import pytest
@@ -48,7 +49,8 @@ CREATE_GT = '''
 @mock_dynamodb
 class TestGeneralTaskBug217(unittest.TestCase):
 
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         # migrate()
 
@@ -61,7 +63,7 @@ class TestGeneralTaskBug217(unittest.TestCase):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
     def test_create_one_gt(self):
 

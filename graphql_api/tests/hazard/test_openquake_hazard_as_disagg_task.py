@@ -50,9 +50,9 @@ MOCK_LEGACY_HAZARD_TASK = lambda _self, _id: {
 @mock_dynamodb
 @mock_s3
 class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
-
         # S3
         self._s3 = boto3.resource('s3', region_name=REGION)
         self._s3.create_bucket(Bucket=S3_BUCKET_NAME)
@@ -60,11 +60,16 @@ class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
         # Dynamo
         self._connection = Connection(region=REGION)
 
+        # Configure the mock search method to return a predefined response
+        self.mock_es_instance = mock.MagicMock()
+        mock_es_class.return_value = self.mock_es_instance
+        self.mock_es_instance.index.return_value = {"A": "B"}
+
         ToshiThingObject.create_table()
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
@@ -133,9 +138,9 @@ class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
 @mock_dynamodb
 @mock_s3
 class TestOpenquakeLegacyHazardDisaggTask(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
-
         # S3
         self._s3 = boto3.resource('s3', region_name=REGION)
         self._s3.create_bucket(Bucket=S3_BUCKET_NAME)
@@ -143,11 +148,16 @@ class TestOpenquakeLegacyHazardDisaggTask(unittest.TestCase):
         # Dynamo
         self._connection = Connection(region=REGION)
 
+        # Configure the mock search method to return a predefined response
+        self.mock_es_instance = mock.MagicMock()
+        mock_es_class.return_value = self.mock_es_instance
+        self.mock_es_instance.index.return_value = {"A": "B"}
+
         ToshiThingObject.create_table()
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
     @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', MOCK_LEGACY_HAZARD_TASK)
     def test_legacy_hazard_task_has_default_task_type(self):

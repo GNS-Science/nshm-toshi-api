@@ -1,6 +1,7 @@
 import datetime as dt
 import json
 import unittest
+from unittest import mock
 
 import boto3
 from dateutil.tz import tzutc
@@ -36,7 +37,8 @@ START_ID = 100000
 
 @mock_dynamodb
 class TestS3FallBackRead(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         ToshiThingObject.create_table()
         ToshiIdentity.create_table()
@@ -44,7 +46,7 @@ class TestS3FallBackRead(unittest.TestCase):
         self._client = boto3.client('s3')
         self._bucket_name = S3_BUCKET_NAME
         self._model = ToshiThingObject()
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
         self._connection = Connection(region=REGION)
 
     def test_thing_read_dynamodb(self):

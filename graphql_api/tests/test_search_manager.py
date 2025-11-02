@@ -27,7 +27,7 @@ from .fixtures import es_query_response as eqr
 
 FAKE_ENDPOINT = 'http://localhost:9200'  # matches default local setup
 FAKE_INDEX = 'toshi-index-mapped'
-awsauth = None
+awsauth = ""
 
 
 class TestSearchManager(unittest.TestCase):

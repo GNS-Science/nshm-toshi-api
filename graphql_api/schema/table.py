@@ -13,6 +13,7 @@ This module contains the schema definition for an Table
   - dimensions - list of the main table dimensions
 """
 from datetime import datetime as dt
+from datetime import timezone
 from typing import TYPE_CHECKING
 
 import graphene
@@ -86,9 +87,9 @@ class Table(graphene.ObjectType):
 
     @classmethod
     def get_node(cls, info, _id):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         res = get_data_manager().table.get_one(_id)
-        db_metrics.put_duration(__name__, 'Table.get_node', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'Table.get_node', dt.now(timezone.utc) - t0)
         return res
 
     @staticmethod
@@ -116,8 +117,8 @@ class CreateTable(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         print("mutate_and_get_payload: ", kwargs)
         table = get_data_manager().table.create('Table', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateTable.mutate', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'CreateTable.mutate', dt.now(timezone.utc) - t0)
         return CreateTable(table=table)

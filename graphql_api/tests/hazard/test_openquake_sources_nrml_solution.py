@@ -1,5 +1,6 @@
 import datetime as dt
 import unittest
+from unittest import mock
 
 import boto3
 from graphene.test import Client
@@ -19,9 +20,9 @@ from graphql_api.schema.search_manager import SearchManager
 @mock_dynamodb
 @mock_s3
 class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
-
         # S3
         self._s3 = boto3.resource('s3', region_name=REGION)
         self._s3.create_bucket(Bucket=S3_BUCKET_NAME)
@@ -33,7 +34,7 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         ToshiFileObject.create_table()
         ToshiIdentity.create_table()
 
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
         self.new_gt = self.create_general_task()
         self.source_solution = self.create_source_solution()
@@ -128,7 +129,9 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         result = self.client.execute(query, variable_values=dict(id=ss_id))
         print(result)
 
-        delta = dt.datetime.utcnow() - dt.datetime.fromisoformat(result['data']['node']['created'])
+        delta = dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(
+            result['data']['node']['created']
+        ).astimezone(dt.timezone.utc)
         max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta)
 

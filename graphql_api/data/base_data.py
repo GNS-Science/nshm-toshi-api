@@ -8,6 +8,7 @@ import logging
 import random
 from collections import namedtuple
 from datetime import datetime as dt
+from datetime import timezone
 from importlib import import_module
 from io import BytesIO
 from typing import Dict
@@ -122,7 +123,7 @@ class BaseData:
         Returns:
             list: a list containing all the objects materialised from the S3 bucket
         """
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         if clazz_name:
             clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         else:
@@ -135,7 +136,7 @@ class BaseData:
             object = self.get_one(result_id)
             if clazz is None or isinstance(object, clazz):
                 results.append(object)
-        db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'get_all', dt.now(timezone.utc) - t0)
         return results
 
     def get_all_s3_paginated(self, limit, after):
@@ -257,10 +258,10 @@ class BaseDynamoDBData(BaseData):
         Returns:
             pynamodb model object
         """
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         logger.debug('get dynamo key: %s for model %s' % (object_id, self._model))
         obj = self._model.get(str(object_id))
-        db_metrics.put_duration(__name__, 'get_object', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'get_object', dt.now(timezone.utc) - t0)
         return obj
 
     def get_next_id(self) -> str:
@@ -268,7 +269,7 @@ class BaseDynamoDBData(BaseData):
         Returns:
                 int: the next available id
         """
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         try:
             identity = ToshiIdentity.get(self._prefix)
         except DoesNotExist:
@@ -276,7 +277,7 @@ class BaseDynamoDBData(BaseData):
             logger.debug(f'get_next_id setting initial ID; table_name={self._prefix}, object_id={FIRST_DYNAMO_ID}')
             identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_DYNAMO_ID)
             identity.save()
-        db_metrics.put_duration(__name__, 'get_next_id', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'get_next_id', dt.now(timezone.utc) - t0)
         return identity.object_id
 
     def _read_object(self, object_id):
@@ -288,17 +289,17 @@ class BaseDynamoDBData(BaseData):
         Returns:
             dict: object data deserialised from the json object
         """
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         key = "%s/%s" % (self._prefix, object_id)
         logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
 
         try:
             obj = self.get_object(object_id)
-            db_metrics.put_duration(__name__, '_read_object', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, '_read_object', dt.now(timezone.utc) - t0)
             return obj.object_content
         except Exception:
             obj = self._from_s3(object_id)
-            db_metrics.put_duration(__name__, '_read_object', dt.utcnow() - t0)
+            db_metrics.put_duration(__name__, '_read_object', dt.now(timezone.utc) - t0)
             return obj
 
     @backoff.on_exception(backoff.expo, pynamodb.exceptions.TransactWriteError, max_time=60, on_backoff=backoff_hdlr)
@@ -310,7 +311,7 @@ class BaseDynamoDBData(BaseData):
             body (dict): dict to be serialised to JSON
         """
 
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         identity = ToshiIdentity.get(self._prefix)  # first time round is handled in get_next_id()
 
         # TODO: make a transacion conditional check (maybe)
@@ -341,13 +342,13 @@ class BaseDynamoDBData(BaseData):
 
         logger.info(f"toshi_object: object_id {object_id} object_type: {body['clazz_name']}")
 
-        db_metrics.put_duration(__name__, '_write_object', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, '_write_object', dt.now(timezone.utc) - t0)
         es_key = f"{self._prefix}_{object_id}"
         self._db_manager.search_manager.index_document(es_key, body)
 
     @backoff.on_exception(backoff.expo, pynamodb.exceptions.TransactWriteError, max_time=60, on_backoff=backoff_hdlr)
     def transact_update(self, object_id, object_type, body):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         logger.info("%s.update: %s : %s" % (object_type, object_id, str(body)))
 
         model = self._model.get(object_id)
@@ -356,8 +357,8 @@ class BaseDynamoDBData(BaseData):
             transaction.update(model, actions=[self._model.object_content.set(replace_enums(body))])
 
         es_key = f"{self._prefix}_{object_id}"
-        self._db_manager.search_manager.index_document(es_key, body)
-        db_metrics.put_duration(__name__, 'transact_update', dt.utcnow() - t0)
+        self._db_manager.search_manager.index_document(es_key, replace_enums(body))
+        db_metrics.put_duration(__name__, 'transact_update', dt.now(timezone.utc) - t0)
 
     @backoff.on_exception(
         backoff.expo, graphql_api.dynamodb.DynamoWriteConsistencyError, max_time=60, on_backoff=backoff_hdlr
@@ -411,7 +412,7 @@ class BaseDynamoDBData(BaseData):
         return object_instance
 
     def get_all(self, object_type, limit: int, after: str):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         after = after or "-1"
         logger.info(f"get_all, {self._model} {self.prefix} {object_type} after {after}")
         for object_meta in self._model.model_id_index.query(
@@ -419,4 +420,4 @@ class BaseDynamoDBData(BaseData):
         ):
             yield ObjectIdentityRecord(object_meta.object_type, object_meta.object_id)
 
-        db_metrics.put_duration(__name__, 'get_all', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'get_all', dt.now(timezone.utc) - t0)

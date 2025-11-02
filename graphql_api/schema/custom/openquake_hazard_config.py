@@ -6,6 +6,7 @@ This module contains the configuration for openquake hazard job
 # import datetime as dt
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -53,30 +54,18 @@ class OpenquakeHazardConfig(graphene.ObjectType):
         return node
 
     def resolve_source_models(root, info, **args):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         if root.source_models:
             for obj_id in root.source_models:
                 clazz, key = from_global_id(obj_id)
                 logger.info(f'resolve source_model {(clazz, key)} from {obj_id}')
                 yield get_data_manager().file.get_one(key)
-        db_metrics.put_duration(__name__, 'OpenquakeHazardConfig.resolve_source_models', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'OpenquakeHazardConfig.resolve_source_models', dt.now(timezone.utc) - t0)
 
     def resolve_template_archive(root, info, **args):
         logger.debug(f'root {root}, info {info}, args {args}')
         if root.template_archive:
             return resolve_node(root, info, 'template_archive', 'file')
-
-
-# class OpenquakeHazardConfigConnection(relay.Connection):
-#     """A list of OpenquakeHazardConfig items"""
-#     class Meta:
-#         node = OpenquakeHazardConfig
-#
-#     total_count = graphene.Int()
-#
-#     @staticmethod
-#     def resolve_total_count(root, info, *args, **kwargs):
-#         return len(root.edges)
 
 
 class CreateOpenquakeHazardConfig(relay.ClientIDMutation):
@@ -92,24 +81,10 @@ class CreateOpenquakeHazardConfig(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         logger.debug(f"payload: {kwargs}")
         config = get_data_manager().thing.create('OpenquakeHazardConfig', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardConfig.mutate_and_get_payload', dt.utcnow() - t0)
+        db_metrics.put_duration(
+            __name__, 'CreateOpenquakeHazardConfig.mutate_and_get_payload', dt.now(timezone.utc) - t0
+        )
         return CreateOpenquakeHazardConfig(config=config, ok=True)
-
-
-# class UpdateOpenquakeHazardConfig(graphene.Mutation):
-#     class Arguments:
-#         input = AutomationTaskUpdateInput(required=True)
-
-#     task_result = graphene.Field(OpenquakeHazardConfig)
-
-#     @classmethod
-#     def mutate(cls, root, info, input):
-#         t0 = dt.utcnow()
-#         print("mutate: ", input)
-#         thing_id = input.pop('task_id')
-#         task_result = get_data_manager().thing.update('OpenquakeHazardConfig', thing_id, **input)
-#         db_metrics.put_duration(__name__, 'UpdateOpenquakeHazardConfig.mutate_and_get_payload' , dt.utcnow()-t0)
-#         return UpdateOpenquakeHazardConfig(task_result=task_result)

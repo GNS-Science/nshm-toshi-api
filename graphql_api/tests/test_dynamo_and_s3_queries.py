@@ -2,6 +2,7 @@ import datetime as dt
 import json
 import unittest
 from io import BytesIO
+from unittest import mock
 
 import boto3
 from dateutil.tz import tzutc
@@ -229,7 +230,8 @@ START_ID = 100000
 
 @mock_dynamodb
 class TestGeneralTaskQueriesDB(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         ToshiThingObject.create_table()
         ToshiIdentity.create_table()
@@ -237,7 +239,7 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
         self._client = boto3.client('s3')
         self._bucket_name = S3_BUCKET_NAME
         self._model = ToshiThingObject()
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
         self._connection = Connection(region=REGION)
         self._general_task = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         self._general_task.create(
@@ -311,13 +313,14 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
 @mock_s3
 @mock_dynamodb
 class TestGeneralTaskQueriesS3(unittest.TestCase):
-    def setUp(self):
+    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
+    def setUp(self, mock_es_class):
         self.client = Client(root_schema)
         self._s3 = boto3.resource('s3', region_name=REGION)
         self._s3.create_bucket(Bucket=S3_BUCKET_NAME)
         self._bucket = self._s3.Bucket(S3_BUCKET_NAME)
         self._connection = Connection(region=REGION)
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', {'fake': 'auth'}))
+        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
         self._gt = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         self._at_1 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
         self._at_2 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)

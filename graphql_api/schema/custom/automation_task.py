@@ -10,6 +10,7 @@ The core class AutomationTask implements the `graphql_api.schema.task.Task` Inte
 
 import logging
 from datetime import datetime as dt
+from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -72,7 +73,7 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
             log.info(f"Cannot resove inversion_soluton for {root.task_type}")
             return
 
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         res = None
 
         # TODO this is an ugly hack....
@@ -96,7 +97,7 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
                 log.info(f"resolved inversion_solution file {file}")
                 break
 
-        db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution', dt.now(timezone.utc) - t0)
         return res
 
 
@@ -126,10 +127,10 @@ class CreateAutomationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         task_result = get_data_manager().thing.create('AutomationTask', **input)
         log.info(f"task_result: {task_result}")
-        db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.now(timezone.utc) - t0)
         return CreateAutomationTask(task_result=task_result)
 
 
@@ -141,9 +142,9 @@ class UpdateAutomationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.utcnow()
+        t0 = dt.now(timezone.utc)
         log.debug("mutate: ", input)
         thing_id = input.pop('task_id')
         task_result = get_data_manager().thing.update('AutomationTask', thing_id, **input)
-        db_metrics.put_duration(__name__, 'UpdateAutomationTask.mutate', dt.utcnow() - t0)
+        db_metrics.put_duration(__name__, 'UpdateAutomationTask.mutate', dt.now(timezone.utc) - t0)
         return UpdateAutomationTask(task_result=task_result)
