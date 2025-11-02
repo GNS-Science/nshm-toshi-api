@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.2] - 2025-10-29
+## [0.3.2] - 2025-11-03
 ### Changed
  - fix index exception caused by ENUM objects
  - search_manager will now raise exceptions on Elasticsearch.index failures  
