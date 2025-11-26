@@ -1,8 +1,8 @@
 name: Run Tests On PullRequest
 
 on:
-  schedule:
-    - cron:  '25 4 * * 0' # At 04:25 on Sunday
+  # schedule:
+  #  - cron:  '25 4 * * 0' # At 04:25 on Sunday
   pull_request:
     branches: [ deploy-test, main ]
 
