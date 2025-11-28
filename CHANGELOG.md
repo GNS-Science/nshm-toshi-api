@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0] - 2025-11
+
+### Added
+ - setup python-dotenv for local .env config
+
+
 ## [0.3.2] - 2025-11-03
 ### Changed
  - fix index exception caused by ENUM objects

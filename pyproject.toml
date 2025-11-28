@@ -28,6 +28,7 @@ dependencies = [
     "pyyaml",
     "requests-aws4auth",
     "requests-toolbelt",
+    "python-dotenv (>=1.2.1,<2.0.0)",
 ]
 
 [project.scripts]

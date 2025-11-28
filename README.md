@@ -42,12 +42,22 @@ aws_secret_access_key=MockAccessKeyId
 ```
 
 ## Smoketest
+
+in your .env file
+```
+SLS_OFFLINE=1
+TESTING=0
+TOSHI_FIX_RANDOM_SEED=1
+FIRST_DYNAMO_ID=0 
+```
+then 
+
 ```bash
 yarn sls dynamodb start --stage local &\
 yarn sls s3 start &\
 
 ### The serverless wsgi command requires the correct python env, provided via poetry
-SLS_OFFLINE=1 TOSHI_FIX_RANDOM_SEED=1 FIRST_DYNAMO_ID=0 poetry run yarn sls wsgi serve
+poetry run yarn sls wsgi serve
 ```
 
 If `shell` is not available, in `poetry`, it is possible to use `eval $(poetry env activate)`
@@ -64,8 +74,17 @@ poetry run python3 graphql_api/tests/smoketests.py
 ```
 
 ## Unit test
+
+in your .env file
+```
+SLS_OFFLINE=1
+TESTING=1 
+```
+
+then
+
 ```bash
-SLS_OFFLINE=1 TESTING=1 poetry run pytest
+poetry run pytest
 ```
 
 ## Auditing requirements packages
