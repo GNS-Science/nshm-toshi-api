@@ -1,13 +1,16 @@
 name: Run Tests On PullRequest
 
 on:
-  schedule:
-    - cron:  '25 4 * * 0' # At 04:25 on Sunday
+  # schedule:
+  #  - cron:  '25 4 * * 0' # At 04:25 on Sunday
   pull_request:
     branches: [ deploy-test, main ]
 
   # Allows us to call the workflow from another workflow
   workflow_call:    
+
+  # Allows us to run the workflow manually
+  workflow_dispatch:  
 
 jobs:
   call-test-workflow:
