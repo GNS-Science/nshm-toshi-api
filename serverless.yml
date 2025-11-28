@@ -5,7 +5,6 @@ app: nshm-toshi-api
 service: nzshm22-toshi-api
 
 plugins:
-  - serverless-python-requirements
   - serverless-wsgi
   - serverless-s3-local
   - serverless-dynamodb
