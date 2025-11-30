@@ -5,7 +5,7 @@ from unittest import mock
 import boto3
 from dateutil.tz import tzutc
 from graphene.test import Client
-from moto import mock_dynamodb
+from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
@@ -40,7 +40,7 @@ gen_task_body = {
 START_ID = 100000
 
 
-@mock_dynamodb
+@mock_aws
 class TestTaskTaskRelations(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):

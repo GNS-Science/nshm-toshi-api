@@ -4,7 +4,10 @@
 
 ### Added
  - setup python-dotenv for local .env config
-
+ - new package tests/swept_arguments for feature changes
+ 
+### Changed
+ - libary updates - moto 5 API change
 
 ## [0.3.2] - 2025-11-03
 ### Changed

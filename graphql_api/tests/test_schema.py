@@ -12,7 +12,7 @@ import botocore
 from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
 from graphene.test import Client
-from moto import mock_dynamodb
+from moto import mock_aws
 
 from graphql_api import __version__
 from graphql_api.schema import RuptureGenerationTask, root_schema
@@ -195,7 +195,7 @@ class TestRuptureGeneratorResults(unittest.TestCase):
             assert len(executed['data']['rupture_generation_tasks']['edges']) == 2
 
 
-@mock_dynamodb
+@mock_aws
 class TestCreateDataFile(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):

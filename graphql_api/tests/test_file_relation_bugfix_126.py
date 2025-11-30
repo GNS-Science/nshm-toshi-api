@@ -10,7 +10,7 @@ from dateutil.tz import tzutc
 from elasticsearch import Elasticsearch
 from graphene.test import Client
 from graphql_relay import from_global_id, to_global_id
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
@@ -124,8 +124,8 @@ FILEMOCK = {
 # TOdO: this is a more complete test than most others,
 
 
-@mock_s3
-@mock_dynamodb
+@mock_aws
+@mock_aws
 class TestBug122(unittest.TestCase):
     """
     All datastore (data) methods are mocked.
