@@ -71,3 +71,36 @@ def test_fullstack_create_minimum_fields_happy_case(graphql_client, create_gt_mu
     assert executed['data']['create_automation_task']['task_result']['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
     assert executed['data']['create_automation_task']['task_result']['task_type'] == 'INVERSION'
     assert executed['data']['create_automation_task']['task_result']['general_task_id'] == gt_id
+
+
+@mock_aws()
+def test_swept_arguments_are_implied_from_argument_lists(graphql_client, create_gt_mutation, create_at_mutation):
+    """This shows current behaviour where swept_arguments returns a list of
+    keys for variable that match swept args rules i.e. len(v)==1
+
+    """
+    # create the GT to be referenced in the AT
+    gt1 = graphql_client.execute(
+        create_gt_mutation,
+        variable_values=dict(
+            created=datetime.datetime.now(datetime.UTC),
+            argument_lists=[
+                dict(k="swept_arg", v=["A", "B"]),  # this is converted to swept arg
+                dict(k="unswept_arg", v=["A"]),  # this is not converted
+                dict(k="empty_arg", v=[]),  # this is not converted
+            ],
+        ),
+    )
+    print(gt1)
+    general_task = gt1['data']['create_general_task']['general_task']
+    gt_id = general_task['id']
+
+    # argument_lists
+    assert dict(k="unswept_arg", v=["A"]) in general_task['argument_lists']
+    assert dict(k="swept_arg", v=["A", "B"]) in general_task['argument_lists']
+    assert dict(k="empty_arg", v=[]) in general_task['argument_lists']
+
+    # swept_arguments implied
+    assert "empty_arg" not in general_task['swept_arguments']
+    assert "unswept_arg" not in general_task['swept_arguments']
+    assert "swept_arg" in general_task['swept_arguments']

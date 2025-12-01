@@ -57,6 +57,8 @@ def create_gt_mutation():
           id
           subtask_type
           model_type
+          argument_lists {k v}
+          swept_arguments 
         }
       }
     }
