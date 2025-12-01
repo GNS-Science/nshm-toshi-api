@@ -1,13 +1,16 @@
 # Changelog
 
-## [0.4.0] - 2025-11
+## [0.4.0] - 2025-12-02
 
 ### Added
- - setup python-dotenv for local .env config
- - new package tests/swept_arguments for feature changes
- 
+ - setup python-dotenv for .env file based configuration
+ - new package tests/swept_arguments added
+
 ### Changed
- - libary updates - moto 5 API change
+ - AutomationTask create mutation now performs argument validation when a general_task_id is supplied
+ - libary updates - moto 5 API change affects many tests
+ - serverless-python-requirements is no longer a plugin
+
 
 ## [0.3.2] - 2025-11-03
 ### Changed
