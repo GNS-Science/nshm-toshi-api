@@ -14,6 +14,7 @@ from datetime import timezone
 
 import graphene
 from graphene import relay
+from graphql_relay import from_global_id
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
@@ -44,7 +45,7 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
     class Meta:
         interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
-    general_task_id = graphene.ID(required=True)
+    general_task_id = graphene.ID(required=False)
     model_type = ModelType()
     task_type = TaskSubType()
     inversion_solution = graphene.Field(
@@ -130,6 +131,39 @@ class CreateAutomationTask(graphene.Mutation):
     @classmethod
     def mutate(cls, root, info, input):
         t0 = dt.now(timezone.utc)
+
+        # When a gt_id is set, perform validations against the GT
+        gt_id = input.get("general_task_id")
+        if gt_id:
+
+            # Create a temporary AT instance
+            tmp_at_instance: graphene.ObjectType = AutomationTask(0, **input)
+
+            # Get the referenced GT instance
+            _type, _id = from_global_id(gt_id)
+            gt_instance: graphene.ObjectType = get_data_manager().thing.get_one(_id)
+
+            # Create maps from the object argument
+            at_arguments_map = {obj['k']: obj['v'] for obj in tmp_at_instance.arguments}
+            gt_argument_lists_map = {obj['k']: obj['v'] for obj in gt_instance.argument_lists}
+
+            log.debug(f"at_arguments_map: {at_arguments_map}")
+            log.debug(f"gt_argument_lists_map: {gt_argument_lists_map}")
+
+            # Iterate over the GT swept args, validating the AT arguments
+            for swept_key in gt_instance.resolve_swept_arguments(info):
+
+                # ONE: the swept key must exist in our AT arguments
+                assert (
+                    swept_key in at_arguments_map.keys()
+                ), f"swept key {swept_key} from GeneralTask.swept_arguments was not found in new AutomationTask."
+
+                # TWO: value of swept_key in AT much be one defined in GT argument_lists
+                assert at_arguments_map[swept_key] in gt_argument_lists_map[swept_key], (
+                    f"argument `{swept_key}` value: `{at_arguments_map[swept_key]}` in new AutomationTask"
+                    + f" not a member of GeneralTask.swept_arguments values: `{gt_argument_lists_map[swept_key]}`."
+                )
+
         task_result = get_data_manager().thing.create('AutomationTask', **input)
         log.info(f"task_result: {task_result}")
         db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.now(timezone.utc) - t0)

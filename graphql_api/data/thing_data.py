@@ -5,7 +5,9 @@ Object manager for Thing schema objects
 import datetime as dt
 import logging
 from importlib import import_module
+from typing import Dict
 
+import graphene
 from benedict import benedict
 
 # from .helpers import get_objectid_from_global
@@ -27,7 +29,7 @@ class ThingData(BaseDynamoDBData):
             raise ValueError("'created' DateTime() field must have a timezone set.")
         return super().create(clazz_name, **kwargs)
 
-    def migrate_old_thing_object(self, thing):
+    def migrate_old_thing_object(self, thing: Dict) -> Dict:
         """
         Migrate to the new_simplified object from the old form
 
@@ -51,7 +53,7 @@ class ThingData(BaseDynamoDBData):
         # print('Migrated ', thing)
         return thing
 
-    def get_one(self, thing_id):
+    def get_one(self, thing_id) -> graphene.ObjectType:
         """
         Args:
             _id (string): the object id
@@ -99,7 +101,7 @@ class ThingData(BaseDynamoDBData):
         return self.from_json(obj)
 
     @staticmethod
-    def from_json(jsondata):
+    def from_json(jsondata) -> graphene.ObjectType:
         logger.debug("from_json: %s" % str(jsondata))
 
         created = jsondata.get('created')

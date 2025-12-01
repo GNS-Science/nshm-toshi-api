@@ -68,7 +68,7 @@ def create_gt_mutation():
 @pytest.fixture(scope='session')
 def create_at_mutation():
     yield '''
-    mutation ($created: DateTime!, $gt_id: ID!, $arguments: [KeyValuePairInput]! ) {
+    mutation ($created: DateTime!, $gt_id: ID,  $arguments: [KeyValuePairInput]! ) {
         create_automation_task(input: {
             general_task_id: $gt_id
             task_type: INVERSION
