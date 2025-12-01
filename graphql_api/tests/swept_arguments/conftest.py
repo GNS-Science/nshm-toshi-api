@@ -39,7 +39,10 @@ def graphql_client():
 @pytest.fixture(scope='session')
 def create_gt_mutation():
     yield '''
-    mutation new_gt ($created: DateTime!) {
+    mutation new_gt (
+        $created: DateTime!,
+        $argument_lists: [KeyValueListPairInput]!
+        ) {
       create_general_task(input:{
         created: $created
         title: "TEST Build opensha rupture set Coulomb #1"
@@ -47,10 +50,7 @@ def create_gt_mutation():
         agent_name:"chrisbc"
         subtask_type: OPENQUAKE_HAZARD,
         model_type: COMPOSITE
-        argument_lists: [
-            {k: "some_metric", v: ["20", "25"]},
-            {k: "swept", v: ["A", "B", "C"]}
-            ]
+        argument_lists: $argument_lists
       })
       {
         general_task{
@@ -66,7 +66,7 @@ def create_gt_mutation():
 @pytest.fixture(scope='session')
 def create_at_mutation():
     yield '''
-    mutation ($created: DateTime!, $gt_id: ID!) {
+    mutation ($created: DateTime!, $gt_id: ID!, $arguments: [KeyValuePairInput]! ) {
         create_automation_task(input: {
             general_task_id: $gt_id
             task_type: INVERSION
@@ -75,9 +75,7 @@ def create_at_mutation():
             created: $created
             duration: 600
 
-            arguments: [
-                { k:"max_jump_distance" v: "55.5" }
-            ]
+            arguments: $arguments
 
             environment: [
                 { k:"gitref_opensha_ucerf3" v: "ABC"}

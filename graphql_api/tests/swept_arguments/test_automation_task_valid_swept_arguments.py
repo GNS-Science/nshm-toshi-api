@@ -25,7 +25,11 @@ def patch_the_search(monkeypatch):
 def test_create_minimum_fields_happy_case(graphql_client, create_at_mutation):
     executed = graphql_client.execute(
         create_at_mutation,
-        variable_values=dict(created=datetime.datetime.now(datetime.UTC), gt_id=to_global_id("GeneralTask", "555")),
+        variable_values=dict(
+            created=datetime.datetime.now(datetime.UTC),
+            gt_id=to_global_id("GeneralTask", "555"),
+            arguments=dict(k="max_jump_distance", v="55.5"),
+        ),
     )
     print(executed)
     assert executed['data']['create_automation_task']['task_result']['id'] == 'QXV0b21hdGlvblRhc2s6MA=='
@@ -47,14 +51,21 @@ def test_fullstack_create_minimum_fields_happy_case(graphql_client, create_gt_mu
     """
 
     # create the GT to be referenced in the AT
-    gt1 = graphql_client.execute(create_gt_mutation, variable_values=dict(created=datetime.datetime.now(datetime.UTC)))
+    gt1 = graphql_client.execute(
+        create_gt_mutation,
+        variable_values=dict(
+            created=datetime.datetime.now(datetime.UTC), argument_lists=[dict(k="swept_arg", v=["A", "B"])]
+        ),
+    )
     print(gt1)
     gt_id = gt1['data']['create_general_task']['general_task']['id']
 
     # Now create the AT
     executed = graphql_client.execute(
         create_at_mutation,
-        variable_values=dict(created=datetime.datetime.now(datetime.UTC), gt_id=gt_id),
+        variable_values=dict(
+            created=datetime.datetime.now(datetime.UTC), gt_id=gt_id, arguments=dict(k="max_jump_distance", v="55.5")
+        ),
     )
     print(executed)
     assert executed['data']['create_automation_task']['task_result']['id'] == 'QXV0b21hdGlvblRhc2s6MTAwMDAx'
