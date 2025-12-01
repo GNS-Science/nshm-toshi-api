@@ -65,7 +65,6 @@ def mock_make_api_call(self, operation_name, kwarg):
 
 
 @mock_aws
-@mock_aws
 class TestCreateSMSFile(unittest.TestCase):
     """
     All datastore (data) methods are mocked.

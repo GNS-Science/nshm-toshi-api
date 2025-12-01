@@ -93,7 +93,6 @@ class TestFailingMutation(unittest.TestCase):
 
 
 @mock_aws
-@mock_aws
 class TestFailingMutationWithMockedServices(unittest.TestCase):
 
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')

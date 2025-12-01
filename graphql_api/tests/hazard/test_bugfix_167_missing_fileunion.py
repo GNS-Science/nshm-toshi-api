@@ -20,7 +20,6 @@ from graphql_api.schema.search_manager import SearchManager
 
 
 @mock_aws
-@mock_aws
 class TestAutomationTaskFileUnion(unittest.TestCase, SetupHelpersMixin):
 
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')

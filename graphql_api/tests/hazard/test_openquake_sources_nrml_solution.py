@@ -18,7 +18,6 @@ from graphql_api.schema.search_manager import SearchManager
 
 
 @mock_aws
-@mock_aws
 class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):

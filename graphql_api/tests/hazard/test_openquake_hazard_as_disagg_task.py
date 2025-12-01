@@ -48,7 +48,6 @@ MOCK_LEGACY_HAZARD_TASK = lambda _self, _id: {
 
 
 @mock_aws
-@mock_aws
 class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):
@@ -135,7 +134,6 @@ class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(haztask['task_type'], "DISAGG")
 
 
-@mock_aws
 @mock_aws
 class TestOpenquakeLegacyHazardDisaggTask(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')

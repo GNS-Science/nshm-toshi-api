@@ -93,7 +93,6 @@ FILEMOCKID = '100000'
 
 
 @mock_aws
-@mock_aws
 class TestCompressRelations(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):

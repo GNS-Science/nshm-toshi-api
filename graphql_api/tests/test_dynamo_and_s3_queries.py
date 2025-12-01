@@ -311,7 +311,6 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
 
 
 @mock_aws
-@mock_aws
 class TestGeneralTaskQueriesS3(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):

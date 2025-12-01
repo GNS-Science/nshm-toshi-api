@@ -46,7 +46,6 @@ CREATE_GT = '''
 
 
 @mock_aws
-@mock_aws
 class TestGeneralTaskBug217(unittest.TestCase):
 
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')

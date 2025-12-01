@@ -140,7 +140,6 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
 
 
 @mock_aws
-@mock_aws
 class TestUpdateRuptureGenerationTask(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):

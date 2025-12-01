@@ -125,7 +125,6 @@ FILEMOCK = {
 
 
 @mock_aws
-@mock_aws
 class TestBug122(unittest.TestCase):
     """
     All datastore (data) methods are mocked.

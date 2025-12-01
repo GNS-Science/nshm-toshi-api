@@ -26,7 +26,6 @@ from .hazard.setup_helpers import SetupHelpersMixin
 
 
 @mock_aws
-@mock_aws
 class TestUpdateRuptureGenerationTask(unittest.TestCase, SetupHelpersMixin):
     """
     All datastore (data) methods are mocked.
