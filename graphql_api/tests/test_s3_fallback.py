@@ -6,7 +6,7 @@ from unittest import mock
 import boto3
 from dateutil.tz import tzutc
 from graphene.test import Client
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
@@ -35,7 +35,7 @@ body = {
 START_ID = 100000
 
 
-@mock_dynamodb
+@mock_aws
 class TestS3FallBackRead(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):
@@ -57,7 +57,7 @@ class TestS3FallBackRead(unittest.TestCase):
         assert thing._read_object(str(START_ID))['clazz_name'] == 'RuptureGenerationTask'
 
     def test_thing_read_s3(self):
-        with mock_s3():
+        with mock_aws():
             conn = boto3.resource('s3', region_name='us-east-1')
             conn.create_bucket(Bucket=S3_BUCKET_NAME)
             bucket = conn.Bucket(S3_BUCKET_NAME)

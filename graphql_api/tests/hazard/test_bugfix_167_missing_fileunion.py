@@ -5,7 +5,7 @@ import boto3
 from graphene.test import Client
 
 # from graphql_relay import from_global_id, to_global_id
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 
 # from moto.core import patch_client, patch_resource
 from pynamodb.connection.base import Connection  # for mocking
@@ -19,8 +19,7 @@ from graphql_api.schema.custom.common import AggregationFn
 from graphql_api.schema.search_manager import SearchManager
 
 
-@mock_dynamodb
-@mock_s3
+@mock_aws
 class TestAutomationTaskFileUnion(unittest.TestCase, SetupHelpersMixin):
 
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')

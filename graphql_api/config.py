@@ -4,6 +4,10 @@ This module exports comfiguration for the current system
 
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()  # take environment variables from .env
+
 
 def boolean_env(environ_name, default='FALSE'):
     return bool(os.getenv(environ_name, default).upper() in ["1", "Y", "YES", "TRUE"])

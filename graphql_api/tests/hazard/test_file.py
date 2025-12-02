@@ -3,7 +3,7 @@ from unittest import mock
 
 import boto3
 from graphene.test import Client
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
 
@@ -14,8 +14,7 @@ from graphql_api.schema import root_schema
 from graphql_api.schema.search_manager import SearchManager
 
 
-@mock_dynamodb
-@mock_s3
+@mock_aws
 class TestFile(unittest.TestCase, SetupHelpersMixin):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):

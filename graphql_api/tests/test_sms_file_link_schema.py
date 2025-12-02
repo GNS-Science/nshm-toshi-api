@@ -12,7 +12,7 @@ from unittest import mock
 import boto3
 from graphene.test import Client
 from graphql_relay import from_global_id
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 
 import graphql_api.data  # for mocking
 from graphql_api.config import REGION, S3_BUCKET_NAME
@@ -64,8 +64,7 @@ def mock_make_api_call(self, operation_name, kwarg):
 # @mock.patch('botocore.client.BaseClient._make_api_call', new=mock_make_api_call)
 
 
-@mock_s3
-@mock_dynamodb
+@mock_aws
 class TestCreateSMSFile(unittest.TestCase):
     """
     All datastore (data) methods are mocked.
@@ -120,8 +119,8 @@ class TestCreateSMSFile(unittest.TestCase):
 # @mock.patch('graphql_api.data.BaseDynamoDBData._read_object', lambda self, object_id: mock_file_data)
 # @mock.patch('graphql_api.data.thing_data.ThingData._read_object', lambda self, object_id: mock_thing_data)
 
-# @mock_s3
-# @mock_dynamodb
+# @mock_aws
+# @mock_aws
 # class TestCreateSMSFileLink(unittest.TestCase):
 #     """
 #     All datastore (data) methods are mocked.

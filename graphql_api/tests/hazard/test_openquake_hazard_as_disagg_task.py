@@ -4,7 +4,7 @@ from unittest import mock
 import boto3
 from graphene.test import Client
 from graphql_relay import to_global_id
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
 
@@ -47,8 +47,7 @@ MOCK_LEGACY_HAZARD_TASK = lambda _self, _id: {
 }
 
 
-@mock_dynamodb
-@mock_s3
+@mock_aws
 class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):
@@ -135,8 +134,7 @@ class TestOpenquakeHazardDisaggTask(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(haztask['task_type'], "DISAGG")
 
 
-@mock_dynamodb
-@mock_s3
+@mock_aws
 class TestOpenquakeLegacyHazardDisaggTask(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):

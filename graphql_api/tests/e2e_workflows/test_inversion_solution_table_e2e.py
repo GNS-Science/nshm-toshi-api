@@ -3,7 +3,7 @@ from unittest import mock
 
 import boto3
 from graphene.test import Client
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
@@ -13,8 +13,7 @@ from graphql_api.schema import root_schema
 from graphql_api.schema.search_manager import SearchManager
 
 
-@mock_dynamodb
-@mock_s3
+@mock_aws
 class TestInversionSolutionWithMFDWorkflow(unittest.TestCase):
 
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
