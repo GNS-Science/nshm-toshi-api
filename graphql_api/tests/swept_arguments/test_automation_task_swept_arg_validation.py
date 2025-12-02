@@ -6,6 +6,7 @@ import datetime
 from unittest.mock import MagicMock
 
 import pytest
+from graphql_relay import to_global_id
 from moto import mock_aws
 
 import graphql_api.data.data_manager  # for monkeypatching the search manager
@@ -121,5 +122,38 @@ class TestGroup:
         assert len(errors)
         assert message in errors[0]['message']
 
-        # No new Automation Task was creatd
+        # No new Automation Task was created
+        assert executed['data']['create_automation_task'] is None
+
+    @pytest.mark.parametrize(
+        "gt_id, message",
+        [
+            (
+                to_global_id("GeneralTask", "99"),
+                "was not found",
+            ),
+            (
+                to_global_id("FasterTurtle", "1"),
+                f"is not a `GeneralTask`",
+            ),
+        ],
+    )
+    def test_invalid_gt_id_expected_to_FAIL(
+        self, graphql_client, create_gt_mutation, create_at_mutation, gt_id, message
+    ):
+        gt = self.setup_gt(graphql_client, create_gt_mutation)
+
+        # Now attempt to create the AT
+        executed = graphql_client.execute(
+            create_at_mutation,
+            variable_values=dict(created=datetime.datetime.now(datetime.UTC), gt_id=gt_id, arguments=[]),
+        )
+        print(executed)
+
+        # A useful error message is returned
+        errors = executed.get('errors', [])
+        assert len(errors)
+        assert message in errors[0]['message']
+
+        # No new Automation Task was created
         assert executed['data']['create_automation_task'] is None

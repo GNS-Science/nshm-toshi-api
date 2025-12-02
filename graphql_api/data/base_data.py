@@ -297,10 +297,17 @@ class BaseDynamoDBData(BaseData):
             obj = self.get_object(object_id)
             db_metrics.put_duration(__name__, '_read_object', dt.now(timezone.utc) - t0)
             return obj.object_content
-        except Exception:
+        except Exception as exc:
+            logger.info(exc)
+
+        try:
             obj = self._from_s3(object_id)
             db_metrics.put_duration(__name__, '_read_object', dt.now(timezone.utc) - t0)
             return obj
+        except Exception as exc:
+            logger.warning(exc)
+
+        raise ValueError(f"The object id {object_id} was not found in DynamoDB nor in S3.")
 
     @backoff.on_exception(backoff.expo, pynamodb.exceptions.TransactWriteError, max_time=60, on_backoff=backoff_hdlr)
     def _write_object(self, object_id, object_type, body):

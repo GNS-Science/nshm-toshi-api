@@ -136,12 +136,19 @@ class CreateAutomationTask(graphene.Mutation):
         gt_id = input.get("general_task_id")
         if gt_id:
 
+            object_type, _id = from_global_id(gt_id)
+            if not object_type == "GeneralTask":
+                raise ValueError(f"the given id {gt_id} type: {object_type} is not a `GeneralTask`")
+
             # Create a temporary AT instance
             tmp_at_instance: graphene.ObjectType = AutomationTask(0, **input)
 
             # Get the referenced GT instance
-            _type, _id = from_global_id(gt_id)
-            gt_instance: graphene.ObjectType = get_data_manager().thing.get_one(_id)
+            try:
+                gt_instance: graphene.ObjectType = get_data_manager().thing.get_one(_id)
+            except Exception as err:
+                log.info(err)
+                raise err
 
             # Create maps from the object argument
             at_arguments_map = {obj['k']: obj['v'] for obj in tmp_at_instance.arguments}
@@ -154,15 +161,17 @@ class CreateAutomationTask(graphene.Mutation):
             for swept_key in gt_instance.resolve_swept_arguments(info):
 
                 # ONE: the swept key must exist in our AT arguments
-                assert (
-                    swept_key in at_arguments_map.keys()
-                ), f"swept key {swept_key} from GeneralTask.swept_arguments was not found in new AutomationTask."
+                if swept_key not in at_arguments_map.keys():
+                    raise ValueError(
+                        f"swept key {swept_key} from GeneralTask.swept_arguments was not found in new AutomationTask."
+                    )
 
                 # TWO: value of swept_key in AT much be one defined in GT argument_lists
-                assert at_arguments_map[swept_key] in gt_argument_lists_map[swept_key], (
-                    f"argument `{swept_key}` value: `{at_arguments_map[swept_key]}` in new AutomationTask"
-                    + f" not a member of GeneralTask.swept_arguments values: `{gt_argument_lists_map[swept_key]}`."
-                )
+                if at_arguments_map[swept_key] not in gt_argument_lists_map[swept_key]:
+                    raise ValueError(
+                        f"argument `{swept_key}` value: `{at_arguments_map[swept_key]}` in new AutomationTask"
+                        f" not a member of GeneralTask.swept_arguments values: `{gt_argument_lists_map[swept_key]}`."
+                    )
 
         task_result = get_data_manager().thing.create('AutomationTask', **input)
         log.info(f"task_result: {task_result}")
