@@ -16,6 +16,7 @@ from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, Pr
 from graphql_api.schema.file import File
 from graphql_api.schema.thing import Thing
 
+from .common import ModelType, OpenquakeTaskType
 from .helpers import resolve_node
 from .openquake_hazard_config import OpenquakeHazardConfig
 
@@ -45,7 +46,8 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     )
     hdf5_archive = graphene.Field(File, description="a zip archive containing containing the raw hdf5")
     task_args = graphene.Field(File, description="task arguments json file.")
-
+    model_type = ModelType()
+    task_type = OpenquakeTaskType()
     metrics = graphene.List(KeyValuePair, description="result metrics from the solution, as a list of Key Value pairs.")
 
     meta = graphene.List(KeyValuePair, description="result metrics from the solution, as a list of Key Value pairs.")
@@ -89,21 +91,18 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     def resolve_task_args(root, info, **args):
         return resolve_node(root, info, 'task_args', 'file')
 
+    def resolve_model_type(root, info, **args):
+        if model_type := root.model_type:
+            return model_type
+        return ModelType.UNDEFINED
 
-# class OpenquakeHazardSolutionUpdateInput(graphene.InputObjectType):
-#     node_id = graphene.ID(required=True)
-
-#     csv_archive = graphene.ID(required=False)
-#     hdf5_archive = graphene.ID( required=False)
-
-#     arguments = graphene.List(KeyValuePairInput, required=False,
-#         description="input arguments for the rupture generation task, as a list of Key Value pairs.")
-
-#     metrics = graphene.List(KeyValuePairInput, required=False,
-#         description="result metrics from the task, as a list of Key Value pairs.")
+    def resolve_task_type(root, info, **args):
+        if task_type := root.task_type:
+            return task_type
+        return OpenquakeTaskType.UNDEFINED
 
 
-class CreateOpenquakeHazardSolution(relay.ClientIDMutation):  # graphene.Mutation):
+class CreateOpenquakeHazardSolution(relay.ClientIDMutation):
     """
     Create an OpenquakeHazardSolution
     """
@@ -111,7 +110,8 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation):  # graphene.Mutatio
     class Input:
         created = OpenquakeHazardSolution.created
         produced_by = graphene.ID(required=True)
-
+        model_type = ModelType(required=True)
+        task_type = OpenquakeTaskType(required=True)
         csv_archive = graphene.ID(required=False)
         hdf5_archive = graphene.ID(required=False)
         task_args = graphene.ID(required=False)
@@ -127,13 +127,6 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation):  # graphene.Mutatio
 
         predecessors = graphene.List(
             'graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors"
-        )
-
-        # we're keeping these in here so that we can create old-fashioned entries for tests to ensure
-        # we can still read them
-        config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
-        modified_config = graphene.Field(
-            graphene.ID, required=False, deprecation_reason="We no longer store this config"
         )
 
     openquake_hazard_solution = graphene.Field(OpenquakeHazardSolution)
