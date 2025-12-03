@@ -8,7 +8,7 @@ from unittest import mock
 import boto3
 import pytest
 from graphene.test import Client
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
 import graphql_api.data  # for mocking
@@ -92,8 +92,7 @@ class TestFailingMutation(unittest.TestCase):
         assert result['data']['create_table']['table']['id'] == 'VGFibGU6MFJBTkRN'
 
 
-@mock_s3
-@mock_dynamodb
+@mock_aws
 class TestFailingMutationWithMockedServices(unittest.TestCase):
 
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')

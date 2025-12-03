@@ -7,7 +7,7 @@ from unittest import mock
 import boto3
 from dateutil.tz import tzutc
 from graphene.test import Client
-from moto import mock_dynamodb, mock_s3
+from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
 from graphql_api.config import REGION, S3_BUCKET_NAME
@@ -228,7 +228,7 @@ query FindQuery(
 START_ID = 100000
 
 
-@mock_dynamodb
+@mock_aws
 class TestGeneralTaskQueriesDB(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):
@@ -310,8 +310,7 @@ class TestGeneralTaskQueriesDB(unittest.TestCase):
         ToshiIdentity.delete_table()
 
 
-@mock_s3
-@mock_dynamodb
+@mock_aws
 class TestGeneralTaskQueriesS3(unittest.TestCase):
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):
