@@ -38,7 +38,6 @@ def test_get_openquake_hazard_solution_node(db_object, has_modified_config, grap
             csv_archive { id, file_name }
             produced_by { id }
             task_type               # new field defaults to UNDEFINED
-            model_type              # new field defaults to UNDEFINED
             modified_config { id }  # legacy field is not returned on all objects    
         }
         }
@@ -49,5 +48,4 @@ def test_get_openquake_hazard_solution_node(db_object, has_modified_config, grap
 
     node = result['data']['node']
     assert node['task_type'] == "UNDEFINED"
-    assert node['model_type'] == "UNDEFINED"
     assert (node['modified_config'] is not None) == has_modified_config

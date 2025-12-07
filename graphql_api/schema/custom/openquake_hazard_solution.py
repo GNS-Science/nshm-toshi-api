@@ -16,7 +16,7 @@ from graphql_api.schema.custom.common import KeyValuePair, KeyValuePairInput, Pr
 from graphql_api.schema.file import File
 from graphql_api.schema.thing import Thing
 
-from .common import ModelType, OpenquakeTaskType
+from .common import OpenquakeTaskType
 from .helpers import resolve_node
 from .openquake_hazard_config import OpenquakeHazardConfig
 
@@ -46,7 +46,7 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     )
     hdf5_archive = graphene.Field(File, description="a zip archive containing containing the raw hdf5")
     task_args = graphene.Field(File, description="task arguments json file.")
-    model_type = ModelType()
+
     task_type = OpenquakeTaskType()
     metrics = graphene.List(KeyValuePair, description="result metrics from the solution, as a list of Key Value pairs.")
 
@@ -91,11 +91,6 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     def resolve_task_args(root, info, **args):
         return resolve_node(root, info, 'task_args', 'file')
 
-    def resolve_model_type(root, info, **args):
-        if model_type := root.model_type:
-            return model_type
-        return ModelType.UNDEFINED
-
     def resolve_task_type(root, info, **args):
         if task_type := root.task_type:
             return task_type
@@ -110,7 +105,6 @@ class CreateOpenquakeHazardSolution(relay.ClientIDMutation):
     class Input:
         created = OpenquakeHazardSolution.created
         produced_by = graphene.ID(required=True)
-        model_type = ModelType(required=True)
         task_type = OpenquakeTaskType(required=True)
         csv_archive = graphene.ID(required=False)
         hdf5_archive = graphene.ID(required=False)

@@ -59,7 +59,6 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                       #hdf5_archive: $hdf5_archive_id
                       produced_by: $produced_by
                       predecessors: $predecessors
-                      task_type: HAZARD
                   }
               )
               {
@@ -68,7 +67,6 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                     csv_archive { id, file_name }
                     produced_by { id }
                     task_type
-                    model_type
                 }
               }
             }'''
@@ -90,7 +88,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         # A useful error message is returned
         errors = result.get('errors', [])
         assert len(errors)
-        assert "required type 'ModelType!' was not provided." in errors[0]['message']
+        assert "required type 'OpenquakeTaskType!' was not provided." in errors[0]['message']
 
     def test_create_openquake_hazard_solution(self):
         upstream_sid = self.create_source_solution()  # File 100001
@@ -119,7 +117,6 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                       produced_by: $produced_by
                       predecessors: $predecessors
                       task_type: HAZARD
-                      model_type: CRUSTAL
                   }
               )
               {
@@ -128,7 +125,6 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                     csv_archive { id, file_name }
                     produced_by { id }
                     task_type
-                    model_type
                 }
               }
             }'''
@@ -149,7 +145,6 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
         self.assertEqual(oqs['produced_by']['id'], haztask_id)
         self.assertEqual(oqs['task_type'], 'HAZARD')
-        self.assertEqual(oqs['model_type'], 'CRUSTAL')
 
         return result
 
@@ -224,7 +219,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                       predecessors: $predecessors
                       task_args: $task_args_id
                       task_type: HAZARD
-                      model_type: CRUSTAL
+                    #   model_type: CRUSTAL
                   }
 
               )
