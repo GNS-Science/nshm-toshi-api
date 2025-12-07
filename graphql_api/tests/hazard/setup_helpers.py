@@ -314,6 +314,7 @@ class SetupHelpersMixin:
                     created: $created
                     executor: $executor
                     model_type: COMPOSITE
+                    task_type: HAZARD
                     state: UNDEFINED
                     result: UNDEFINED
                     srm_logic_tree: $srm_logic_tree
