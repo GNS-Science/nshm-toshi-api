@@ -97,12 +97,9 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
         hdf5_archive = self.create_file("hdf5_archive.zip")  # File 100003
         hdf5_archive_id = hdf5_archive['data']['create_file']['file_result']['id']
-        # print(hdf5_archive)
-        # assert 0
+
         csv_archive = self.create_file("csv_archive.zip")  # File 100004
         csv_archive_id = csv_archive['data']['create_file']['file_result']['id']
-        # self.assertEqual(
-        #     ToshiThingObject.get("100000").object_content['clazz_name'], 'OpenquakeHazardConfig' )
 
         haztask = self.build_hazard_task()
         haztask_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
@@ -219,14 +216,12 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                       predecessors: $predecessors
                       task_args: $task_args_id
                       task_type: HAZARD
-                    #   model_type: CRUSTAL
                   }
 
               )
               {
                 ok
                 openquake_hazard_solution { id
-                    # modified_config {id, file_name}
                     task_args {id, file_name}
                     csv_archive { id, file_name }
                     produced_by { id }

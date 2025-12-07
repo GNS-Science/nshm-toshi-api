@@ -26,9 +26,6 @@ def test_get_openquake_hazard_solution_node(db_object, has_modified_config, grap
 
     monkeypatch.setattr(graphql_api.data.BaseDynamoDBData, '_read_object', db_object)
 
-    # print(f"example {from_global_id('T3BlbnF1YWtlSGF6YXJkU29sdXRpb246NjkzMjE5OA==')}")
-    # assert 0
-
     query = '''
     query get_solution($id: ID!) {
         node(id:$id) {
