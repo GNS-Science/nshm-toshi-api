@@ -62,7 +62,6 @@ class ModelType(graphene.Enum):
     CRUSTAL = "crustal"
     SUBDUCTION = "subduction"
     COMPOSITE = "composite"
-    UNDEFINED = "undefined"
 
 
 class OpenquakeTaskType(graphene.Enum):
