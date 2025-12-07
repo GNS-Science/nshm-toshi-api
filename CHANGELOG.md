@@ -4,10 +4,8 @@
 
 ### Added
  - add required `task_type` attribute to OpenquakeHazardSolution (breaking change).
-
-### Changed
- - make `task_type` attribute on OpenquakeHazardTask `required` (breaking change).
-
+ - new RuptureSet subclasses File with specific attributes.
+ 
 ## [0.4.0] - 2025-12-02
 
 ### Added
