@@ -47,7 +47,7 @@ class OpenquakeHazardSolution(graphene.ObjectType):
     hdf5_archive = graphene.Field(File, description="a zip archive containing containing the raw hdf5")
     task_args = graphene.Field(File, description="task arguments json file.")
 
-    task_type = OpenquakeTaskType()
+    task_type = OpenquakeTaskType(description="distinguish the openquake task type i.e. hazard vs disaggregation.")
     metrics = graphene.List(KeyValuePair, description="result metrics from the solution, as a list of Key Value pairs.")
 
     meta = graphene.List(KeyValuePair, description="result metrics from the solution, as a list of Key Value pairs.")
