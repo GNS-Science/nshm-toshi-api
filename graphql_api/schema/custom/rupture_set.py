@@ -66,18 +66,18 @@ class CreateRuptureSet(relay.ClientIDMutation):
 
         fault_models = graphene.List(
             graphene.String,
-            description="fasult models used to build the rupture set",
+            description="fault models used to build the rupture set",
         )
         metrics = graphene.List(
             KeyValuePairInput,
             required=False,
-            description="metrics from the rupture set, as a list of Key Value pairs.",
+            description="rupture set metrics.",
         )
 
         arguments = graphene.List(
             KeyValuePairInput,
             required=False,
-            description="arguments used to build the rupture set, as a list of Key Value pairs.",
+            description="rupture set arguments.",
         )
 
     rupture_set = graphene.Field(RuptureSet)
