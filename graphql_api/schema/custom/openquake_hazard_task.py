@@ -115,7 +115,7 @@ class OpenquakeHazardTaskInput(AutomationTaskInput):
     # we're keeping this in here so that we can create old-fashioned entries for tests to ensure we can still read them
     config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
     model_type = ModelType(required=True)
-    task_type = OpenquakeTaskType(default_value=OpenquakeTaskType.HAZARD)
+    task_type = OpenquakeTaskType(required=True)
     executor = graphene.String()
     srm_logic_tree = graphene.JSONString()
     gmcm_logic_tree = graphene.JSONString()

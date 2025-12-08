@@ -39,19 +39,13 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
         self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
 
-    def test_create_openquake_hazard_solution(self):
+    def test_create_openquake_hazard_solution_missing_args_raises(self):
         upstream_sid = self.create_source_solution()  # File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid)  # File 100002
         nrml_id = inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
 
-        archive = self.create_file("config_archive.zip")  # File 100003
-        archive_id = archive['data']['create_file']['file_result']['id']
-        result = self.create_openquake_config([nrml_id], archive_id)  # Thing 100000
-
         csv_archive = self.create_file("csv_archive.zip")  # File 100004
         csv_archive_id = csv_archive['data']['create_file']['file_result']['id']
-        # self.assertEqual(
-        #     ToshiThingObject.get("100000").object_content['clazz_name'], 'OpenquakeHazardConfig' )
 
         haztask = self.build_hazard_task()
         haztask_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
@@ -72,6 +66,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                 openquake_hazard_solution { id
                     csv_archive { id, file_name }
                     produced_by { id }
+                    task_type
                 }
               }
             }'''
@@ -85,24 +80,23 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         )
 
         result = self.client.execute(query, variable_values=variables)
-        # print(result)
-        oqs = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']
-        self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
-        self.assertEqual(oqs['produced_by']['id'], haztask_id)
-        return result
+        print(result)
 
-    def test_create_openquake_hazard_solution_deprecated(self):
-        '''
-        Assert that we can still read deprecated properties
-        '''
+        # the mutation failed
+        assert result.get('data') is None
+
+        # A useful error message is returned
+        errors = result.get('errors', [])
+        assert len(errors)
+        assert "required type 'OpenquakeTaskType!' was not provided." in errors[0]['message']
+
+    def test_create_openquake_hazard_solution(self):
         upstream_sid = self.create_source_solution()  # File 100001
         inversion_solution_nrml = self.create_inversion_solution_nrml(upstream_sid)  # File 100002
         nrml_id = inversion_solution_nrml['data']['create_inversion_solution_nrml']['inversion_solution_nrml']['id']
 
-        archive = self.create_file("config_archive.zip")  # File 100003
-        archive_id = archive['data']['create_file']['file_result']['id']
-        config = self.create_openquake_config([nrml_id], archive_id)  # Thing 100000
-        config_id = config['data']['create_openquake_hazard_config']['config']['id']
+        hdf5_archive = self.create_file("hdf5_archive.zip")  # File 100003
+        hdf5_archive_id = hdf5_archive['data']['create_file']['file_result']['id']
 
         csv_archive = self.create_file("csv_archive.zip")  # File 100004
         csv_archive_id = csv_archive['data']['create_file']['file_result']['id']
@@ -111,15 +105,15 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         haztask_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
         query = '''
-            mutation ($created: DateTime!, $csv_archive_id: ID!, $produced_by:ID!, $config:ID, $modified_config:ID) {
+            mutation ($created: DateTime!, $csv_archive_id: ID!, $hdf5_archive_id: ID!, $produced_by:ID!, $predecessors: [PredecessorInput]) {
               create_openquake_hazard_solution(
                   input: {
                       created: $created
                       csv_archive: $csv_archive_id
-                      #hdf5_archive: $hdf5_archive_id
+                      hdf5_archive: $hdf5_archive_id
                       produced_by: $produced_by
-                      config: $config
-                      modified_config: $modified_config
+                      predecessors: $predecessors
+                      task_type: HAZARD
                   }
               )
               {
@@ -127,42 +121,27 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
                 openquake_hazard_solution { id
                     csv_archive { id, file_name }
                     produced_by { id }
+                    task_type
                 }
               }
             }'''
 
+        predecessors = [dict(id=nrml_id, depth=-1)]
         variables = dict(
             created=dt.datetime.now(tzutc()).isoformat(),
             csv_archive_id=csv_archive_id,
+            hdf5_archive_id=hdf5_archive_id,
             produced_by=haztask_id,
-            config=config_id,
-            modified_config=archive_id,
+            predecessors=predecessors,
         )
 
         result = self.client.execute(query, variable_values=variables)
         print(result)
-        oqs_id = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']['id']
 
-        query = '''
-        query get_solution($id: ID!) {
-          node(id:$id) {
-            __typename
-            ... on OpenquakeHazardSolution {
-                config {
-                id
-                }
-                modified_config {
-                id
-                }
-            }
-          }
-        }
-        '''
-        result = self.client.execute(query, variable_values=dict(id=oqs_id))
-        print(result)
-        oqs = result['data']['node']
-        self.assertEqual(oqs['config']['id'], config_id)
-        self.assertEqual(oqs['modified_config']['id'], archive_id)
+        oqs = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']
+        self.assertEqual(oqs['csv_archive']['file_name'], "csv_archive.zip")
+        self.assertEqual(oqs['produced_by']['id'], haztask_id)
+        self.assertEqual(oqs['task_type'], 'HAZARD')
 
         return result
 
@@ -228,23 +207,21 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
 
         query = '''
             mutation ($created: DateTime!, $csv_archive_id: ID!, $produced_by:ID!, $predecessors: [PredecessorInput],
-                $modified_config_id: ID!, $task_args_id: ID!) {
+                $task_args_id: ID!) {
               create_openquake_hazard_solution(
                   input: {
                       created: $created
                       csv_archive: $csv_archive_id
-                      #hdf5_archive: $hdf5_archive_id
                       produced_by: $produced_by
                       predecessors: $predecessors
-                      modified_config: $modified_config_id
                       task_args: $task_args_id
+                      task_type: HAZARD
                   }
 
               )
               {
                 ok
                 openquake_hazard_solution { id
-                    modified_config {id, file_name}
                     task_args {id, file_name}
                     csv_archive { id, file_name }
                     produced_by { id }
@@ -268,12 +245,11 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
             csv_archive_id=csv_archive_id,
             produced_by=haztask_id,
             predecessors=predecessors,
-            modified_config_id=modconf_id,
             task_args_id=task_args_id,
         )
 
         result = self.client.execute(query, variable_values=variables)
-        # print(result)
+        print(result)
         oqs = result['data']['create_openquake_hazard_solution']['openquake_hazard_solution']
 
         self.assertEqual(oqs['predecessors'][0]['depth'], -2)
