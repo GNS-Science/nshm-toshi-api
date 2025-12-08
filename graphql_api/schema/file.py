@@ -41,6 +41,9 @@ class FileInterface(graphene.Interface):
     file_url = graphene.String(description="A pre-signed URL to download the file from s3")
     post_url = graphene.String(description="A pre-signed URL to post the data to s3")
 
+    post_url_v2 = graphene.String(description="The URL to use with post_data_v2 (replaces post_url).")
+    post_data_v2 = graphene.JSONString(description="data for use with post_url_v2  (version 2).")
+
     meta = graphene.List(
         KeyValuePair, required=False, description="additional file meta data, as a list of Key Value pairs."
     )

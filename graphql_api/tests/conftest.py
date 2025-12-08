@@ -31,9 +31,19 @@ def aws_credentials():
 
 @pytest.fixture(scope='module')
 def graphql_client():
-    # ensure data tables exist
     with mock_aws():
+        # ensure mocked pynamodb tables exist
         migrate()
+        # ensure mocked S3 bucket exists
         s3 = boto3.resource('s3', region_name=REGION)
         s3.create_bucket(Bucket=S3_BUCKET_NAME)
         yield Client(root_schema)
+
+
+@pytest.fixture(scope='module')
+def s3_client():
+    with mock_aws():
+        # ensure mocked S3 bucket exists
+        _s3_client = boto3.client('s3', region_name=REGION)
+        _s3_client.create_bucket(Bucket=S3_BUCKET_NAME)
+        yield _s3_client

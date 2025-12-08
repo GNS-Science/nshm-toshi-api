@@ -127,6 +127,9 @@ def create_rupture_set_mutation():
                 produced_by { id __typename, general_task_id}
                 arguments { k v }
                 metrics { k v }
+                post_url
+                post_url_v2
+                post_data_v2
                 }
               }
             }

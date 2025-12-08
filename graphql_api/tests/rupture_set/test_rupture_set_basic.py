@@ -46,6 +46,7 @@ def test_create_rupture_set_happy_case(graphql_client, rupture_generation_task, 
     assert from_global_id(rupture_set['id']) == ("RuptureSet", "100000")
     assert rupture_set["produced_by"]['__typename'] == "RuptureGenerationTask"
     assert rupture_set["fault_models"] == ["ModelA", "ModelB"]
+    assert rupture_set["post_url"] is not None
 
 
 @pytest.fixture
