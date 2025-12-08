@@ -47,6 +47,7 @@ class AutomationTaskInterface(graphene.Interface):
 
     created = graphene.DateTime(description="The time the event was created")
     duration = graphene.Float(description="the final duration of the event in seconds")
+    general_task_id = graphene.ID(required=False)
 
     parents = relay.ConnectionField(
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="parent task(s) of this task"
@@ -73,6 +74,7 @@ class AutomationTaskInput(graphene.InputObjectType):
         description="The time the task was created",
     )
     duration = graphene.Float(description="The final duraton of the task in seconds")
+    general_task_id = graphene.ID(required=False)
 
     arguments = graphene.List(
         KeyValuePairInput,
