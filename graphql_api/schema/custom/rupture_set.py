@@ -24,25 +24,31 @@ db_metrics = ServerlessMetricWriter(
 
 class RuptureSet(graphene.ObjectType):
     """
-    Represents a Scaled Inversion Solution file
-
-    NB the  arguments used to scaling this solution (relatve to the source_solution)
-    should be captured as in meta field.
+    Represents a Rupture Set file
     """
 
     class Meta:
         interfaces = (relay.Node, FileInterface)
 
+    created = graphene.DateTime(
+        description="When the file was created",
+    )
     fault_models = graphene.List(
         graphene.String, description='a list of one or fault models used to create this rupture set.'
     )
-    arguments = graphene.List(KeyValuePair, description="result metrics from the task, as a list of Key Value pairs.")
-    metrics = graphene.List(KeyValuePair, description="result metrics from the task, as a list of Key Value pairs.")
+    arguments = graphene.List(KeyValuePair, description="arguements as a list of Key Value pairs.")
+    metrics = graphene.List(KeyValuePair, description="metrics, as a list of Key Value pairs.")
+    produced_by = graphene.Field(
+        'graphql_api.schema.custom.RuptureGenerationTask', description="The task that produced this solution"
+    )
 
     @classmethod
     def get_node(cls, info, _id):
         node = get_data_manager().file.get_one(_id, "RuptureSet")
         return node
+
+    def resolve_produced_by(root, info, **args):
+        return resolve_node(root, info, 'produced_by', 'thing')
 
 
 class CreateRuptureSet(relay.ClientIDMutation):

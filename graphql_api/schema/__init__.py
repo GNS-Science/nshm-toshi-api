@@ -19,6 +19,7 @@ from graphql_api.schema.custom.rupture_generation_task import (
     RuptureGenerationTask,
     RuptureGenerationTaskConnection,
 )
+from graphql_api.schema.custom.rupture_set import CreateRuptureSet, RuptureSet
 from graphql_api.schema.custom.scaled_inversion_solution import CreateScaledInversionSolution, ScaledInversionSolution
 from graphql_api.schema.custom.time_dependent_inversion_solution import (
     CreateTimeDependentInversionSolution,

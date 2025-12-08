@@ -384,7 +384,16 @@ class BaseDynamoDBData(BaseData):
         """
         logger.info(f"create() {clazz_name} {kwargs} for model class : {self._model}")
 
-        clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+        try:
+            clazz = getattr(import_module('graphql_api.schema'), clazz_name)
+        except AttributeError:
+            # This can happen if you forgot to import you class in `graphql_api.schema.__init__`
+            logger.error(
+                f"The class {clazz_name}` is not found in `graphql_api.schema`."
+                "Check your `graphql_api.schema.__init__.py` !"
+            )
+            raise
+
         next_id = self.get_next_id()
 
         # TODO: this whole approach sucks !@#%$#
