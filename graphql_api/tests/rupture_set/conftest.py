@@ -103,6 +103,7 @@ def create_rupture_set_mutation():
             $arguments: [KeyValuePairInput],
             $metrics: [KeyValuePairInput],
             $created: DateTime!
+            $fault_models: [String]!            
         ) {
               create_rupture_set(
                 input: {
@@ -113,6 +114,7 @@ def create_rupture_set_mutation():
                   arguments: $arguments
                   metrics: $metrics
                   created: $created
+                  fault_models: $fault_models
                   }
               ) {
               rupture_set { 
@@ -121,6 +123,7 @@ def create_rupture_set_mutation():
                 file_size
                 md5_digest
                 created
+                fault_models
                 produced_by { id __typename, general_task_id}
                 arguments { k v }
                 metrics { k v }

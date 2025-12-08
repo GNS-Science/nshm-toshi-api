@@ -36,7 +36,7 @@ class RuptureSet(graphene.ObjectType):
     fault_models = graphene.List(
         graphene.String, description='a list of one or fault models used to create this rupture set.'
     )
-    arguments = graphene.List(KeyValuePair, description="arguements as a list of Key Value pairs.")
+    arguments = graphene.List(KeyValuePair, description="arguments, as a list of Key Value pairs.")
     metrics = graphene.List(KeyValuePair, description="metrics, as a list of Key Value pairs.")
     produced_by = graphene.Field(
         'graphql_api.schema.custom.RuptureGenerationTask', description="The task that produced this solution"

@@ -37,6 +37,7 @@ def test_create_rupture_set_happy_case(graphql_client, rupture_generation_task, 
             produced_by=rupture_generation_task['id'],
             metrics=[{"k": "some_metric", "v": "20"}],
             arguments=[dict(k="random_arg", v="A")],
+            fault_models=["ModelA", "ModelB"],
         ),
     )
     print(executed)
@@ -44,6 +45,7 @@ def test_create_rupture_set_happy_case(graphql_client, rupture_generation_task, 
     rupture_set = executed['data']['create_rupture_set']['rupture_set']
     assert from_global_id(rupture_set['id']) == ("RuptureSet", "100000")
     assert rupture_set["produced_by"]['__typename'] == "RuptureGenerationTask"
+    assert rupture_set["fault_models"] == ["ModelA", "ModelB"]
 
 
 @pytest.fixture
@@ -62,6 +64,7 @@ def create_rupture_set(graphql_client, rupture_generation_task, create_rupture_s
             file_size=1000,
             produced_by=rupture_generation_task['id'],
             metrics=[{"k": "some_shelley_creation", "v": "20"}],
+            fault_models=["ModelA", "ModelB"],
         ),
     )
     yield executed['data']['create_rupture_set']['rupture_set']
