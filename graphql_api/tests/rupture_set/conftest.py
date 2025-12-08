@@ -103,7 +103,7 @@ def create_rupture_set_mutation():
             $arguments: [KeyValuePairInput],
             $metrics: [KeyValuePairInput],
             $created: DateTime!
-            $fault_models: [String]!            
+            $fault_models: [String]!  
         ) {
               create_rupture_set(
                 input: {
