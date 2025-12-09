@@ -10,7 +10,7 @@ from datetime import timezone
 from importlib import import_module
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
+from graphql_api.config import CW_METRICS_RESOLUTION, MIGRATE_FILE_TO_RUPTSET, STACK_NAME
 
 from .base_data import BaseDynamoDBData
 
@@ -160,7 +160,7 @@ class FileData(BaseDynamoDBData):
                 tbl['created'] = dt.fromisoformat(tbl['created'])
 
         # RuptureSet migration from legacy File with compatible metadata
-        if clazz_name == "File" and jsondata.get('meta'):
+        if MIGRATE_FILE_TO_RUPTSET and clazz_name == "File" and jsondata.get('meta'):
             meta_map = {obj['k']: obj['v'] for obj in jsondata.get('meta')}
             if "fault_model" in meta_map.keys():
                 jsondata['fault_models'] = [meta_map['fault_model']]

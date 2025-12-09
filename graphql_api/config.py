@@ -18,7 +18,10 @@ TESTING = boolean_env('TESTING')
 DB_READ_ONLY = boolean_env(
     'DB_READ_ONLY'
 )  # use this if you want to test without fear of accidental writing to datastore.
-CLOUDWATCH_ENABLED = boolean_env('CLOUDWATCH_ENABLED')
+CLOUDWATCH_ENABLED = boolean_env('CLOUDWATCH_ENABLED', 'yes')
+
+# Switch to control dynamic migrations of legacy `File` to `RuptureSet`
+MIGRATE_FILE_TO_RUPTSET = boolean_env('MIGRATE_FILE_TO_RUPTSET', 'no')
 
 if IS_OFFLINE:
     ES_ENDPOINT = "http://localhost:9200"
