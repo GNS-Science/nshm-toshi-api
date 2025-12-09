@@ -1,11 +1,15 @@
 # Changelog
 
-## [0.5.0] - 2025-12
+## [0.5.0] - 2025-12-10
 
 ### Added
  - add required `task_type` attribute to OpenquakeHazardSolution (breaking change).
  - new RuptureSet subclasses File with specific attributes.
- 
+ - new ENV variables:
+    - `DB_READ_ONLY` for safe testing agains LIVE backends, default = False.
+    - `CLOUDWATCH_ENABLED` for disabling cloud metrics, default = True.
+    - `MIGRATE_FILE_TO_RUPTSET` for RuptureSet class migrations, default = False.
+
 ## [0.4.0] - 2025-12-02
 
 ### Added
