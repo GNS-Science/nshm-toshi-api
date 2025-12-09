@@ -26,6 +26,7 @@ from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import (
     CW_METRICS_RESOLUTION,
     DB_ENDPOINT,
+    DB_READ_ONLY,
     FIRST_DYNAMO_ID,
     IS_OFFLINE,
     REGION,
@@ -343,9 +344,12 @@ class BaseDynamoDBData(BaseData):
 
         logger.debug(f"toshi_object: {toshi_object}")
 
-        with TransactWrite(connection=self._connection) as transaction:
-            transaction.update(identity, actions=[ToshiIdentity.object_id.add(1)])
-            transaction.save(toshi_object)
+        if DB_READ_ONLY:
+            raise RuntimeError(f"Aborting write operation, API config has `DB_READ_ONLY` == {DB_READ_ONLY}")
+        else:
+            with TransactWrite(connection=self._connection) as transaction:
+                transaction.update(identity, actions=[ToshiIdentity.object_id.add(1)])
+                transaction.save(toshi_object)
 
         logger.info(f"toshi_object: object_id {object_id} object_type: {body['clazz_name']}")
 

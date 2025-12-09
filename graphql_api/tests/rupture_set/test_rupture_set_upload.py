@@ -65,7 +65,7 @@ def test_create_rupture_set_and_upload_file_using_method(
     rupture_set = executed['data']['create_rupture_set']['rupture_set']
 
     # get the post_url metadata returned by the API mutation, there are two versions
-    # becuase this test needs data that was not return in the orignal `post_url`
+    # because this test needs data that was not return in the orignal `post_url`
     #
     post_url = json.loads(rupture_set["post_url"])
     post_url_v2 = rupture_set["post_url_v2"]
