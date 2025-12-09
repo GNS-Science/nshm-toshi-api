@@ -10,6 +10,7 @@ TO do this we at least need to know the object type (is the ModelName).
 import pytest
 
 from graphql_api.data import FileData, TableData, ThingData
+from graphql_api.schema import root_schema
 from graphql_api.schema.get_datastore_handler import get_datastore_handler, get_datastore_handler_class
 
 # @pytest.mark.parametrize('classname', ['File', 'StrongMotionStation', 'GeneralTask'])
@@ -69,7 +70,25 @@ CLASS_MAPPINGS = [
     ('OpenquakeHazardSolution', ThingData),
     ('OpenquakeHazardTask', ThingData),
     ('InversionSolution', FileData),
+    ('RuptureSet', FileData),
 ]
+
+
+def test_class_mappings_are_complete():
+    class_map = {x[0]: x for x in CLASS_MAPPINGS}
+
+    # for name, _type in root_schema.graphql_schema.type_map.items():
+    #     if name in ["QueryRoot", "PageInfo", "Node", "Thing", "F"]:
+    #         continue
+    #     if "Connection" in name:
+    #         continue
+    #     if name[-4:] == "Edge":
+    #         continue
+    #     if hasattr(_type, "interfaces"):
+    #         assert name in class_map.keys()
+
+    for name in class_map.keys():
+        assert name in root_schema.graphql_schema.type_map.keys()
 
 
 @pytest.mark.parametrize('classname, expected_dataclass_instance', CLASS_MAPPINGS)

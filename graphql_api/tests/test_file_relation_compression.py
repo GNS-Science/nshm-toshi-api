@@ -119,7 +119,7 @@ class TestCompressRelations(unittest.TestCase):
         def fake_relation():
             return {'id': random.randint(int(1e5), int(1e7)), 'role': random.choice(['read'])}
 
-        MAX_RELS = int(80e3)  # 0000
+        MAX_RELS = int(80e3)  # 80,000
         MAX_SIZE = 390e3  # 3000
 
         rels = [fake_relation() for x in range(MAX_RELS)]
@@ -165,7 +165,8 @@ class TestCompressRelations(unittest.TestCase):
             '''
             query get_file {
               node(id: "%s") {
-                ... on File {
+                __typename
+                ... on RuptureSet { # must now use `RuptureSet` for legacy, migrated File objects 
                   file_name
                   file_size
                   relations {
@@ -191,7 +192,8 @@ class TestCompressRelations(unittest.TestCase):
         )
 
         file_result = self.client.execute(query)
-        # print(file_result)
+        print(file_result)
+        self.assertEqual(file_result['data']['node']['__typename'], "RuptureSet")
         self.assertEqual(file_result['data']['node']['relations']['total_count'], UNCOMPRESSED_LIMIT + 1)
         self.assertEqual(
             file_result['data']['node']['relations']['edges'][0]['node']['thing']['id'], 'QXV0b21hdGlvblRhc2s6MTAwMDAw'

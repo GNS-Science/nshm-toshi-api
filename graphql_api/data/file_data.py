@@ -2,6 +2,7 @@
 The object manager for File (and subclassed) schema objects
 """
 
+import copy
 import json
 import logging
 from datetime import datetime as dt
@@ -91,7 +92,7 @@ class FileData(BaseDynamoDBData):
         """
         jsondata = self.get_one_raw(file_id)
 
-        logger.debug(jsondata)
+        logger.debug(f"FileData.get_one(), jsondata: {jsondata}")
 
         # more migration hacks
         if not jsondata['clazz_name'] == expected_class:
@@ -125,6 +126,10 @@ class FileData(BaseDynamoDBData):
 
     @staticmethod
     def from_json(jsondata):
+
+        # we must not mutate the original data
+        jsondata = copy.copy(jsondata)
+
         logger.debug("from_json: %s" % str(jsondata))
 
         # datetime comversions
@@ -153,5 +158,15 @@ class FileData(BaseDynamoDBData):
         if jsondata.get('tables'):
             for tbl in jsondata.get('tables'):
                 tbl['created'] = dt.fromisoformat(tbl['created'])
+
+        # RuptureSet migration from legacy File with compatible metadata
+        if clazz_name == "File" and jsondata.get('meta'):
+            meta_map = {obj['k']: obj['v'] for obj in jsondata.get('meta')}
+            if "fault_model" in meta_map.keys():
+                jsondata['fault_models'] = [meta_map['fault_model']]
+
+                # this can now be cast to a RuptureSet
+                logger.info("from_json migration to RuptureSet: %s" % str(jsondata))
+                clazz = getattr(import_module('graphql_api.schema'), 'RuptureSet')
 
         return clazz(**jsondata)

@@ -16,6 +16,7 @@ from .custom import (
     OpenquakeHazardSolution,
     OpenquakeHazardTask,
     RuptureGenerationTask,
+    RuptureSet,
     ScaledInversionSolution,
     SmsFile,
     StrongMotionStation,
@@ -44,6 +45,7 @@ SCHEMA_STORAGE_HANDLERS = dict(
     OpenquakeHazardConfig=SchemaObjectStorageHandler(OpenquakeHazardConfig, ThingData),
     OpenquakeHazardSolution=SchemaObjectStorageHandler(OpenquakeHazardSolution, ThingData),
     OpenquakeHazardTask=SchemaObjectStorageHandler(OpenquakeHazardTask, ThingData),
+    RuptureSet=SchemaObjectStorageHandler(RuptureSet, FileData),
 )
 
 

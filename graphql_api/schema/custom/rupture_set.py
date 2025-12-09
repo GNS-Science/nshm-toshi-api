@@ -14,7 +14,7 @@ from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.file import CreateFile, FileInterface
 
-from .common import KeyValuePair, KeyValuePairInput
+from .common import KeyValuePair, KeyValuePairInput, PredecessorsInterface
 from .helpers import resolve_node
 
 db_metrics = ServerlessMetricWriter(
@@ -28,7 +28,7 @@ class RuptureSet(graphene.ObjectType):
     """
 
     class Meta:
-        interfaces = (relay.Node, FileInterface)
+        interfaces = (relay.Node, FileInterface, PredecessorsInterface)
 
     created = graphene.DateTime(
         description="When the file was created",
