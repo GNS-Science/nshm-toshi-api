@@ -455,24 +455,41 @@ smoketests = [
         }
       }
     }''',
-      expected={
-          'search': {
-              'search_result': {
-                  'edges': [
-                      {
-                          'node': {'__typename': 'AutomationTask',
-                                   'id': 'QXV0b21hdGlvblRhc2s6MQ==',
-                                   'result': 'SUCCESS',
-                                   'state': 'SCHEDULED',
-                                   'args': None, 
-                                   'files': {
-                                       'edges': [{'node': {'__typename': 'FileRelation', 'role': 'WRITE', 
-                                                           'file': {'id': 'RmlsZTow', 'file_name': 'myfile2.txt', 
-                                                                    'file_size': 2000}}}]}, 
-                                    'created': '2020-10-10T23:00:00+00:00', 
-                                    'task_type': 'RUPTURE_SET',
-                                    'args_at': None}}]}}
-                          },
+        expected={
+            'search': {
+                'search_result': {
+                    'edges': [
+                        {
+                            'node': {
+                                '__typename': 'AutomationTask',
+                                'id': 'QXV0b21hdGlvblRhc2s6MQ==',
+                                'result': 'SUCCESS',
+                                'state': 'SCHEDULED',
+                                'args': None,
+                                'files': {
+                                    'edges': [
+                                        {
+                                            'node': {
+                                                '__typename': 'FileRelation',
+                                                'role': 'WRITE',
+                                                'file': {
+                                                    'id': 'RmlsZTow',
+                                                    'file_name': 'myfile2.txt',
+                                                    'file_size': 2000,
+                                                },
+                                            }
+                                        }
+                                    ]
+                                },
+                                'created': '2020-10-10T23:00:00+00:00',
+                                'task_type': 'RUPTURE_SET',
+                                'args_at': None,
+                            }
+                        }
+                    ]
+                }
+            }
+        },
         query_fragment=search_fragments,
     ),
     SmokeTest(
@@ -631,8 +648,12 @@ smoketests = [
                 'file_size': 2000,
                 'relations': {
                     'edges': [
-                        {'node': {'role': 'WRITE', 'thing': {'__typename': 'AutomationTask',
-                                    'created': '2020-10-10T23:00:00+00:00'}}},
+                        {
+                            'node': {
+                                'role': 'WRITE',
+                                'thing': {'__typename': 'AutomationTask', 'created': '2020-10-10T23:00:00+00:00'},
+                            }
+                        },
                         {'node': {'role': 'READ', 'thing': {'__typename': 'GeneralTask'}}},
                     ]
                 },
@@ -744,14 +765,19 @@ smoketests = [
             "search": {
                 "search_result": {
                     "edges": [
-                      { 'node': {
-                          '__typename': 'AutomationTask', 'id': 'QXV0b21hdGlvblRhc2s6Mw==', 
-                          'result': 'UNDEFINED', 'state': 'UNDEFINED', 'args': [{'k': 'max_jump_distance', 'v': '55.5'}], 
-                          'files': {'edges': []}, 
-                          'created': '2020-10-10T23:00:00+00:00', 
-                          'task_type': 'INVERSION', 
-                          'args_at': [{'k': 'max_jump_distance', 'v': '55.5'}]
-                          }}                      
+                        {
+                            'node': {
+                                '__typename': 'AutomationTask',
+                                'id': 'QXV0b21hdGlvblRhc2s6Mw==',
+                                'result': 'UNDEFINED',
+                                'state': 'UNDEFINED',
+                                'args': [{'k': 'max_jump_distance', 'v': '55.5'}],
+                                'files': {'edges': []},
+                                'created': '2020-10-10T23:00:00+00:00',
+                                'task_type': 'INVERSION',
+                                'args_at': [{'k': 'max_jump_distance', 'v': '55.5'}],
+                            }
+                        }
                     ]
                 }
             }
