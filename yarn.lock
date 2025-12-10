@@ -3366,7 +3366,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "nzshm22-toshi-api@workspace:."
   dependencies:
-    serverless: "npm:^4.26.1"
+    serverless: "npm:^4.27.1"
     serverless-dynamodb: "npm:^0.2.56"
     serverless-plugin-ifelse: "npm:^1.0.7"
     serverless-plugin-warmup: "npm:^8.3.0"
@@ -3767,9 +3767,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serverless@npm:^4.26.1":
-  version: 4.26.1
-  resolution: "serverless@npm:4.26.1"
+"serverless@npm:^4.27.1":
+  version: 4.27.1
+  resolution: "serverless@npm:4.27.1"
   dependencies:
     axios: "npm:^1.12.1"
     axios-proxy-builder: "npm:^0.1.2"
@@ -3778,7 +3778,7 @@ __metadata:
   bin:
     serverless: run.js
     sls: run.js
-  checksum: 10c0/978017321132ac45474710561adf99502d024549f8efb305d4392a9dd754eeedac9dd34f63d00241e4eb28afab328f71d3e8f29f5c4061d40c937c1646f7ebff
+  checksum: 10c0/7f2fed936efa75908be5f5e907b70e6c2196bad742c3318970190615dd99845a278485ce4f9d2d772ba3a983185057078a19cb8288ffb2823a8f37ff6575d325
   languageName: node
   linkType: hard
 
