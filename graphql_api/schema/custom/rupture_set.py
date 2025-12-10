@@ -34,7 +34,7 @@ class RuptureSet(graphene.ObjectType):
         description="When the file was created",
     )
     fault_models = graphene.List(
-        graphene.String, description='a list of one or fault models used to create this rupture set.'
+        graphene.String, description='a list of one or more fault models used to create this rupture set.'
     )
     arguments = graphene.List(KeyValuePair, description="arguments, as a list of Key Value pairs.")
     metrics = graphene.List(KeyValuePair, description="metrics, as a list of Key Value pairs.")
