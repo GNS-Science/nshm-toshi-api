@@ -39,7 +39,7 @@ class RuptureSet(graphene.ObjectType):
     arguments = graphene.List(KeyValuePair, description="arguments, as a list of Key Value pairs.")
     metrics = graphene.List(KeyValuePair, description="metrics, as a list of Key Value pairs.")
     produced_by = graphene.Field(
-        'graphql_api.schema.custom.RuptureGenerationTask', description="The task that produced this solution"
+        'graphql_api.schema.custom.AutomationTask', description="The task that produced this solution"
     )
 
     @classmethod

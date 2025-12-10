@@ -115,14 +115,9 @@ class AutomationTaskConnection(relay.Connection):
         return len(root.edges)
 
 
-class NewAutomationTaskInput(AutomationTaskInput):
-    model_type = graphene.Field(ModelType, required=False)
-    task_type = graphene.Field(TaskSubType, required=True)
-
-
 class CreateAutomationTask(graphene.Mutation):
     class Arguments:
-        input = NewAutomationTaskInput(required=True)
+        input = AutomationTaskInput(required=True)
 
     task_result = graphene.Field(AutomationTask)
 

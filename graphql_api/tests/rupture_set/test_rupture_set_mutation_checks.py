@@ -21,7 +21,7 @@ def patch_the_search(monkeypatch):
 @mock_aws()
 def test_create_rupture_generation_task_happy_case(rupture_generation_task):
     print(rupture_generation_task)
-    assert from_global_id(rupture_generation_task['id']) == ("RuptureGenerationTask", "100001")
+    assert from_global_id(rupture_generation_task['id']) == ("AutomationTask", "100001")
 
 
 def assert_string_in_messages(expected: str, messages):

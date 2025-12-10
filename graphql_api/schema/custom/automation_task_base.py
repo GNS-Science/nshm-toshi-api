@@ -15,7 +15,7 @@ from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.event import EventResult, EventState
 
-from .common import KeyValuePair, KeyValuePairInput
+from .common import KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -87,6 +87,8 @@ class AutomationTaskInput(graphene.InputObjectType):
     metrics = graphene.List(
         KeyValuePairInput, required=False, description="result metrics from the task, as a list of Key Value pairs."
     )
+    task_type = TaskSubType(required=True)
+    model_type = ModelType(required=False)
 
 
 class AutomationTaskUpdateInput(graphene.InputObjectType):

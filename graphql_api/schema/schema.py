@@ -39,12 +39,7 @@ from graphql_api.schema.custom.time_dependent_inversion_solution import (
 
 from .custom.automation_task import AutomationTask, CreateAutomationTask, UpdateAutomationTask
 from .custom.general_task import CreateGeneralTask, GeneralTask, UpdateGeneralTask
-from .custom.rupture_generation_task import (
-    CreateRuptureGenerationTask,
-    RuptureGenerationTask,
-    RuptureGenerationTaskConnection,
-    UpdateRuptureGenerationTask,
-)
+from .custom.rupture_generation_task import RuptureGenerationTask, RuptureGenerationTaskConnection
 from .custom.rupture_set import CreateRuptureSet, RuptureSet
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation, StrongMotionStationConnection
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
@@ -287,7 +282,6 @@ class MutationRoot(graphene.ObjectType):
     create_file_relation = CreateFileRelation.Field()
     create_general_task = CreateGeneralTask.Field()
     create_inversion_solution = CreateInversionSolution.Field()
-    create_rupture_generation_task = CreateRuptureGenerationTask.Field()
     create_rupture_set = CreateRuptureSet.Field()
     create_sms_file = CreateSmsFile.Field()
     create_strong_motion_station = CreateStrongMotionStation.Field()
@@ -295,7 +289,6 @@ class MutationRoot(graphene.ObjectType):
     create_task_relation = CreateTaskTaskRelation.Field()
     update_automation_task = UpdateAutomationTask.Field()
     update_general_task = UpdateGeneralTask.Field()
-    update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_aggregate_inversion_solution = CreateAggregateInversionSolution.Field()
     create_scaled_inversion_solution = CreateScaledInversionSolution.Field()
     create_time_dependent_inversion_solution = CreateTimeDependentInversionSolution.Field()
