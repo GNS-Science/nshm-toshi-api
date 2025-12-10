@@ -8,7 +8,6 @@ from graphql_api.data import FileData, TableData, ThingData
 from graphql_api.schema import root_schema
 from graphql_api.schema.get_datastore_handler import get_datastore_handler, get_datastore_handler_class
 
-
 CLASS_MAPPINGS = [
     ('File', FileData),
     ('Table', TableData),
@@ -31,7 +30,7 @@ CLASS_MAPPINGS = [
 
 def test_class_mappings_are_complete():
     """
-    NB this test only checks one way, it's possible for a class to be 
+    NB this test only checks one way, it's possible for a class to be
     added to the schema without appearing above.
     """
 

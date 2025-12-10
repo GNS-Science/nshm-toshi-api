@@ -15,9 +15,9 @@ def boolean_env(environ_name, default='FALSE'):
 
 IS_OFFLINE = boolean_env('SLS_OFFLINE')  # set by serverless-wsgi plugin
 TESTING = boolean_env('TESTING')
-DB_READ_ONLY = boolean_env( # use this if you want to test without fear of accidental writing to datastore.
+DB_READ_ONLY = boolean_env(  # use this if you want to test without fear of accidental writing to datastore.
     'DB_READ_ONLY'
-)  
+)
 CLOUDWATCH_ENABLED = boolean_env('CLOUDWATCH_ENABLED', 'yes')
 
 # Switch to control dynamic migrations of legacy `File` to `RuptureSet`
