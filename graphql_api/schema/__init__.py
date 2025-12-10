@@ -14,11 +14,8 @@ from graphql_api.schema.custom.inversion_solution_nrml import CreateInversionSol
 from graphql_api.schema.custom.openquake_hazard_config import CreateOpenquakeHazardConfig, OpenquakeHazardConfig
 from graphql_api.schema.custom.openquake_hazard_solution import CreateOpenquakeHazardSolution, OpenquakeHazardSolution
 from graphql_api.schema.custom.openquake_hazard_task import CreateOpenquakeHazardTask, OpenquakeHazardTask
-from graphql_api.schema.custom.rupture_generation_task import (
-    CreateRuptureGenerationTask,
-    RuptureGenerationTask,
-    RuptureGenerationTaskConnection,
-)
+from graphql_api.schema.custom.rupture_generation_task import RuptureGenerationTask, RuptureGenerationTaskConnection
+from graphql_api.schema.custom.rupture_set import CreateRuptureSet, RuptureSet
 from graphql_api.schema.custom.scaled_inversion_solution import CreateScaledInversionSolution, ScaledInversionSolution
 from graphql_api.schema.custom.time_dependent_inversion_solution import (
     CreateTimeDependentInversionSolution,

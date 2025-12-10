@@ -5,7 +5,7 @@ import logging
 
 import boto3
 
-from graphql_api.config import IS_OFFLINE, REGION
+from graphql_api.config import CLOUDWATCH_ENABLED, IS_OFFLINE, REGION
 
 # initialize our Cloudwatch client
 client = boto3.client('cloudwatch', region_name=REGION)
@@ -36,7 +36,7 @@ class ServerlessMetricWriter:
                 }
             ],
         )
-        if IS_OFFLINE:
+        if IS_OFFLINE or not CLOUDWATCH_ENABLED:
             # logger.debug(f"CW: {rec}")
             pass
         else:

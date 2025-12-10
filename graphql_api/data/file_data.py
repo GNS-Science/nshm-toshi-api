@@ -2,6 +2,7 @@
 The object manager for File (and subclassed) schema objects
 """
 
+import copy
 import json
 import logging
 from datetime import datetime as dt
@@ -9,7 +10,7 @@ from datetime import timezone
 from importlib import import_module
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
-from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
+from graphql_api.config import CW_METRICS_RESOLUTION, MIGRATE_FILE_TO_RUPTSET, STACK_NAME
 
 from .base_data import BaseDynamoDBData
 
@@ -53,7 +54,7 @@ class FileData(BaseDynamoDBData):
 
         t0 = dt.now(timezone.utc)
         self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
-        parts = self.s3_client.generate_presigned_post(
+        post_data = self.s3_client.generate_presigned_post(
             Bucket=self._bucket_name,
             Key=data_key,
             Fields={
@@ -70,7 +71,15 @@ class FileData(BaseDynamoDBData):
 
         db_metrics.put_duration(__name__, 'create[placeholder+generate-presigned-post]', dt.now(timezone.utc) - t0)
 
-        new_instance.post_url = json.dumps(parts['fields'])
+        new_instance.post_url = json.dumps(post_data['fields'])
+
+        # These new fields will rename and replace the above once tested.
+        # And `nshm-toshi-client` will need to be in sync with this change.
+        # It can do this automatically using the API version string.
+
+        new_instance.post_url_v2 = post_data['url']
+        new_instance.post_data_v2 = post_data['fields']
+
         return new_instance
 
     def get_one(self, file_id, expected_class="File"):
@@ -83,7 +92,7 @@ class FileData(BaseDynamoDBData):
         """
         jsondata = self.get_one_raw(file_id)
 
-        logger.debug(jsondata)
+        logger.debug(f"FileData.get_one(), jsondata: {jsondata}")
 
         # more migration hacks
         if not jsondata['clazz_name'] == expected_class:
@@ -117,6 +126,10 @@ class FileData(BaseDynamoDBData):
 
     @staticmethod
     def from_json(jsondata):
+
+        # we must not mutate the original data
+        jsondata = copy.copy(jsondata)
+
         logger.debug("from_json: %s" % str(jsondata))
 
         # datetime comversions
@@ -145,5 +158,15 @@ class FileData(BaseDynamoDBData):
         if jsondata.get('tables'):
             for tbl in jsondata.get('tables'):
                 tbl['created'] = dt.fromisoformat(tbl['created'])
+
+        # RuptureSet migration from legacy File with compatible metadata
+        if MIGRATE_FILE_TO_RUPTSET and clazz_name == "File" and jsondata.get('meta'):
+            meta_map = {obj['k']: obj['v'] for obj in jsondata.get('meta')}
+            if "fault_model" in meta_map.keys():
+                jsondata['fault_models'] = [meta_map['fault_model']]
+
+                # this can now be cast to a RuptureSet
+                logger.info("from_json migration to RuptureSet: %s" % str(jsondata))
+                clazz = getattr(import_module('graphql_api.schema'), 'RuptureSet')
 
         return clazz(**jsondata)

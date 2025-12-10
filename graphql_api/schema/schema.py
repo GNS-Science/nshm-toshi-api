@@ -39,12 +39,8 @@ from graphql_api.schema.custom.time_dependent_inversion_solution import (
 
 from .custom.automation_task import AutomationTask, CreateAutomationTask, UpdateAutomationTask
 from .custom.general_task import CreateGeneralTask, GeneralTask, UpdateGeneralTask
-from .custom.rupture_generation_task import (
-    CreateRuptureGenerationTask,
-    RuptureGenerationTask,
-    RuptureGenerationTaskConnection,
-    UpdateRuptureGenerationTask,
-)
+from .custom.rupture_generation_task import RuptureGenerationTask, RuptureGenerationTaskConnection
+from .custom.rupture_set import CreateRuptureSet, RuptureSet
 from .custom.strong_motion_station import CreateStrongMotionStation, StrongMotionStation, StrongMotionStationConnection
 from .custom.strong_motion_station_file import CreateSmsFile, SmsFile
 from .file import CreateFile, File, FileConnection
@@ -91,6 +87,7 @@ class FileUnion(graphene.Union):
             AggregateInversionSolution,
             InversionSolutionNrml,
             TimeDependentInversionSolution,
+            RuptureSet,
         )
 
 
@@ -107,6 +104,7 @@ class SearchResult(graphene.Union):
             OpenquakeHazardSolution,
             OpenquakeHazardTask,
             RuptureGenerationTask,
+            RuptureSet,
             ScaledInversionSolution,
             SmsFile,
             StrongMotionStation,
@@ -249,7 +247,7 @@ class QueryRoot(graphene.ObjectType):
             _type, _id = from_global_id(gid)
             if _type in ['RuptureGenerationTask', 'StrongMotionStation', 'GeneralTask', 'AutomationTask']:
                 result.append(db_root.thing.get_one(_id))
-            elif _type in ['File', 'SmsFile']:
+            elif _type in ['File', 'SmsFile', 'RuptureSet']:
                 result.append(db_root.file.get_one(_id))
             elif "InversionSolution" in _type:
                 result.append(db_root.file.get_one(_id))
@@ -284,14 +282,13 @@ class MutationRoot(graphene.ObjectType):
     create_file_relation = CreateFileRelation.Field()
     create_general_task = CreateGeneralTask.Field()
     create_inversion_solution = CreateInversionSolution.Field()
-    create_rupture_generation_task = CreateRuptureGenerationTask.Field()
+    create_rupture_set = CreateRuptureSet.Field()
     create_sms_file = CreateSmsFile.Field()
     create_strong_motion_station = CreateStrongMotionStation.Field()
     create_table = CreateTable.Field()
     create_task_relation = CreateTaskTaskRelation.Field()
     update_automation_task = UpdateAutomationTask.Field()
     update_general_task = UpdateGeneralTask.Field()
-    update_rupture_generation_task = UpdateRuptureGenerationTask.Field()
     create_aggregate_inversion_solution = CreateAggregateInversionSolution.Field()
     create_scaled_inversion_solution = CreateScaledInversionSolution.Field()
     create_time_dependent_inversion_solution = CreateTimeDependentInversionSolution.Field()

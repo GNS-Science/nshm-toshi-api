@@ -45,7 +45,6 @@ class AutomationTask(graphene.ObjectType, AutomationTaskBase):
     class Meta:
         interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
-    general_task_id = graphene.ID(required=False)
     model_type = ModelType()
     task_type = TaskSubType()
     inversion_solution = graphene.Field(
@@ -116,15 +115,9 @@ class AutomationTaskConnection(relay.Connection):
         return len(root.edges)
 
 
-class NewAutomationTaskInput(AutomationTaskInput):
-    general_task_id = graphene.ID(required=False)
-    model_type = graphene.Field(ModelType, required=False)
-    task_type = graphene.Field(TaskSubType, required=True)
-
-
 class CreateAutomationTask(graphene.Mutation):
     class Arguments:
-        input = NewAutomationTaskInput(required=True)
+        input = AutomationTaskInput(required=True)
 
     task_result = graphene.Field(AutomationTask)
 

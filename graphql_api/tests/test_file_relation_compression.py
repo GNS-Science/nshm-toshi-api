@@ -24,6 +24,7 @@ from graphql_api.schema.search_manager import SearchManager
 # Monkey patch for testing
 UNCOMPRESSED_LIMIT = 25
 graphql_api.data.file_relation_data.UNCOMPRESSED_LIMIT = UNCOMPRESSED_LIMIT
+graphql_api.data.file_data.MIGRATE_FILE_TO_RUPTSET = False  # , 'MIGRATE_FILE_TO_RUPTSET',
 
 QRY_CREATE_AT_RELATION = '''
     mutation ($thing_id: ID!, $file_id: ID!) {
@@ -119,7 +120,7 @@ class TestCompressRelations(unittest.TestCase):
         def fake_relation():
             return {'id': random.randint(int(1e5), int(1e7)), 'role': random.choice(['read'])}
 
-        MAX_RELS = int(80e3)  # 0000
+        MAX_RELS = int(80e3)  # 80,000
         MAX_SIZE = 390e3  # 3000
 
         rels = [fake_relation() for x in range(MAX_RELS)]
@@ -148,6 +149,7 @@ class TestCompressRelations(unittest.TestCase):
         )
 
     def test_round_trip_file_relation_with_compression(self):
+
         file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCKID)
 
         link_result = self.client.execute(
@@ -165,6 +167,7 @@ class TestCompressRelations(unittest.TestCase):
             '''
             query get_file {
               node(id: "%s") {
+                __typename
                 ... on File {
                   file_name
                   file_size
@@ -191,7 +194,8 @@ class TestCompressRelations(unittest.TestCase):
         )
 
         file_result = self.client.execute(query)
-        # print(file_result)
+        print(file_result)
+        self.assertEqual(file_result['data']['node']['__typename'], "File")
         self.assertEqual(file_result['data']['node']['relations']['total_count'], UNCOMPRESSED_LIMIT + 1)
         self.assertEqual(
             file_result['data']['node']['relations']['edges'][0]['node']['thing']['id'], 'QXV0b21hdGlvblRhc2s6MTAwMDAw'

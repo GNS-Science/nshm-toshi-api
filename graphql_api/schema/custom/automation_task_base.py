@@ -15,7 +15,7 @@ from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.event import EventResult, EventState
 
-from .common import KeyValuePair, KeyValuePairInput
+from .common import KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -47,6 +47,7 @@ class AutomationTaskInterface(graphene.Interface):
 
     created = graphene.DateTime(description="The time the event was created")
     duration = graphene.Float(description="the final duration of the event in seconds")
+    general_task_id = graphene.ID(required=False)
 
     parents = relay.ConnectionField(
         'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="parent task(s) of this task"
@@ -73,6 +74,7 @@ class AutomationTaskInput(graphene.InputObjectType):
         description="The time the task was created",
     )
     duration = graphene.Float(description="The final duraton of the task in seconds")
+    general_task_id = graphene.ID(required=False)
 
     arguments = graphene.List(
         KeyValuePairInput,
@@ -85,6 +87,8 @@ class AutomationTaskInput(graphene.InputObjectType):
     metrics = graphene.List(
         KeyValuePairInput, required=False, description="result metrics from the task, as a list of Key Value pairs."
     )
+    task_type = TaskSubType(required=True)
+    model_type = ModelType(required=False)
 
 
 class AutomationTaskUpdateInput(graphene.InputObjectType):
