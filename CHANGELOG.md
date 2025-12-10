@@ -9,7 +9,10 @@
     - `DB_READ_ONLY` for safe testing agains LIVE backends, default = False.
     - `CLOUDWATCH_ENABLED` for disabling cloud metrics, default = True.
     - `MIGRATE_FILE_TO_RUPTSET` for `RuptureSet` class migrations, default = False.
-
+ - new resolvers for FileData objects:`post_url_v2` and `post_data_v2`
+    to make upload testing possible, and to better align with boto3 API. 
+    NB `nshm-toshi-client`should migrate to these, but not required immediately.
+    
 ### Removed
  - deprecated mutation operations for `RuptureGenerationTask`. Use `AutomationTask` instead.
 
