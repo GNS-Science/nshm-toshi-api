@@ -77,26 +77,15 @@ test_setup = [
       }
     }''',
     '''mutation new_ruptgen_task {
-      create_rupture_generation_task(input:{
+      create_automation_task(input:{
         created:"2020-10-10T23:00Z"
         state:SCHEDULED
-        result: UNDEFINED
+        result: SUCCESS
+        task_type: RUPTURE_SET
       }) {
         task_result {
           id
           created
-        }
-      }
-    }''',
-    '''mutation update_ruptgen_task {
-      update_rupture_generation_task(input: {
-        task_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
-        result:SUCCESS
-        state:DONE
-      })
-      {
-        task_result {
-          id
         }
       }
     }''',
@@ -180,7 +169,7 @@ test_setup = [
             ... on GeneralTask {id}
           }
           child {
-            ... on RuptureGenerationTask{id}
+            ... on AutomationTask{id}
           }
       }
       }
@@ -210,11 +199,12 @@ test_setup = [
       }''',
     '''
     mutation new_ruptgen_new_task {
-        create_rupture_generation_task(input: {
+        create_automation_task(input: {
             state: UNDEFINED
             result: UNDEFINED
             created: "2020-10-10T23:00Z"
             duration: 600
+            task_type: RUPTURE_SET
             arguments: [
                 { k:"max_jump_distance" v: "55.5" }
                 { k:"max_sub_section_length" v: "2" }
@@ -261,7 +251,7 @@ fragment sr on SearchResult {
             role
             thing {
               __typename
-              ... on RuptureGenerationTask {
+              ... on AutomationTask {
                 created
 
               }
@@ -292,7 +282,7 @@ fragment sr on SearchResult {
       }
     }
   }
-  ... on RuptureGenerationTask {
+  ... on AutomationTask {
     id
     result
     state
@@ -465,38 +455,24 @@ smoketests = [
         }
       }
     }''',
-        expected={
-            'search': {
-                'search_result': {
-                    'edges': [
-                        {
-                            'node': {
-                                '__typename': 'RuptureGenerationTask',
-                                'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
-                                'result': 'SUCCESS',
-                                'state': 'DONE',
-                                'args': None,
-                                'files': {
-                                    'edges': [
-                                        {
-                                            'node': {
-                                                '__typename': 'FileRelation',
-                                                'role': 'WRITE',
-                                                'file': {
-                                                    'id': 'RmlsZTow',
-                                                    'file_name': 'myfile2.txt',
-                                                    'file_size': 2000,
-                                                },
-                                            }
-                                        }
-                                    ]
-                                },
-                            }
-                        }
-                    ]
-                }
-            }
-        },
+      expected={
+          'search': {
+              'search_result': {
+                  'edges': [
+                      {
+                          'node': {'__typename': 'AutomationTask',
+                                   'id': 'QXV0b21hdGlvblRhc2s6MQ==',
+                                   'result': 'SUCCESS',
+                                   'state': 'SCHEDULED',
+                                   'args': None, 
+                                   'files': {
+                                       'edges': [{'node': {'__typename': 'FileRelation', 'role': 'WRITE', 
+                                                           'file': {'id': 'RmlsZTow', 'file_name': 'myfile2.txt', 
+                                                                    'file_size': 2000}}}]}, 
+                                    'created': '2020-10-10T23:00:00+00:00', 
+                                    'task_type': 'RUPTURE_SET',
+                                    'args_at': None}}]}}
+                          },
         query_fragment=search_fragments,
     ),
     SmokeTest(
@@ -581,11 +557,7 @@ smoketests = [
                                         {
                                             'node': {
                                                 'child': {
-                                                    '__typename': 'RuptureGenerationTask',
-                                                    'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
-                                                    'state': 'DONE',
-                                                    'result': 'SUCCESS',
-                                                    'created': '2020-10-10T23:00:00+00:00',
+                                                    '__typename': 'AutomationTask',
                                                 }
                                             }
                                         }
@@ -641,7 +613,7 @@ smoketests = [
                   role
                   thing {
                     __typename
-                    ... on RuptureGenerationTask {
+                    ... on AutomationTask {
                       created
 
                     }
@@ -659,15 +631,8 @@ smoketests = [
                 'file_size': 2000,
                 'relations': {
                     'edges': [
-                        {
-                            'node': {
-                                'role': 'WRITE',
-                                'thing': {
-                                    '__typename': 'RuptureGenerationTask',
-                                    'created': '2020-10-10T23:00:00+00:00',
-                                },
-                            }
-                        },
+                        {'node': {'role': 'WRITE', 'thing': {'__typename': 'AutomationTask',
+                                    'created': '2020-10-10T23:00:00+00:00'}}},
                         {'node': {'role': 'READ', 'thing': {'__typename': 'GeneralTask'}}},
                     ]
                 },
@@ -678,7 +643,7 @@ smoketests = [
         query='''query get_task {
       node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=") {
           __typename
-        ... on RuptureGenerationTask {
+        ... on AutomationTask {
           id
           created
           duration
@@ -719,11 +684,11 @@ smoketests = [
     }''',
         expected={
             'node': {
-                '__typename': 'RuptureGenerationTask',
-                'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
+                '__typename': 'AutomationTask',
+                'id': 'QXV0b21hdGlvblRhc2s6MQ==',
                 'created': '2020-10-10T23:00:00+00:00',
                 'duration': None,
-                'state': 'DONE',
+                'state': 'SCHEDULED',
                 'result': 'SUCCESS',
                 'parents': {
                     'edges': [
@@ -743,7 +708,7 @@ smoketests = [
       node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=")
       {
         __typename
-        ... on RuptureGenerationTask {
+        ... on AutomationTask {
           state
           created
           result
@@ -754,8 +719,8 @@ smoketests = [
     ''',
         expected={
             'node': {
-                '__typename': 'RuptureGenerationTask',
-                'state': 'DONE',
+                '__typename': 'AutomationTask',
+                'state': 'SCHEDULED',
                 'created': '2020-10-10T23:00:00+00:00',
                 'result': 'SUCCESS',
             }
@@ -779,15 +744,14 @@ smoketests = [
             "search": {
                 "search_result": {
                     "edges": [
-                        {
-                            "node": {
-                                "__typename": "AutomationTask",
-                                "id": "QXV0b21hdGlvblRhc2s6Mw==",
-                                "created": "2020-10-10T23:00:00+00:00",
-                                "task_type": "INVERSION",
-                                "args_at": [{"k": "max_jump_distance", "v": "55.5"}],
-                            }
-                        }
+                      { 'node': {
+                          '__typename': 'AutomationTask', 'id': 'QXV0b21hdGlvblRhc2s6Mw==', 
+                          'result': 'UNDEFINED', 'state': 'UNDEFINED', 'args': [{'k': 'max_jump_distance', 'v': '55.5'}], 
+                          'files': {'edges': []}, 
+                          'created': '2020-10-10T23:00:00+00:00', 
+                          'task_type': 'INVERSION', 
+                          'args_at': [{'k': 'max_jump_distance', 'v': '55.5'}]
+                          }}                      
                     ]
                 }
             }
@@ -797,9 +761,9 @@ smoketests = [
     SmokeTest(
         query='''
       query get_new_task {
-        node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=") {
+        node(id:"QXV0b21hdGlvblRhc2s6NA==") {
             __typename
-          ... on RuptureGenerationTask {
+          ... on AutomationTask {
             id
             created
             arguments {k v}
@@ -808,8 +772,8 @@ smoketests = [
       }''',
         expected={
             "node": {
-                "__typename": "RuptureGenerationTask",
-                "id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=",
+                "__typename": "AutomationTask",
+                "id": "QXV0b21hdGlvblRhc2s6NA==",
                 "created": "2020-10-10T23:00:00+00:00",
                 "arguments": [
                     {"k": "max_jump_distance", "v": "55.5"},
@@ -863,7 +827,7 @@ def setup(queries):
 
 
 if __name__ == "__main__":
-    # cleanup environment
+    # # cleanup environment
     os.system('curl -X DELETE "localhost:9200/toshi_index_mapped?pretty"')
     # assert 0
     os.system('rm -R /tmp/nzshm22-toshi-api-local/*')
