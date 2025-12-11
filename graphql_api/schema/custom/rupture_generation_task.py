@@ -41,10 +41,6 @@ class RuptureGenerationTask(AutomationTask):
             return task_type
         return TaskSubType.RUPTURE_SET
 
-    @staticmethod
-    def from_json(jsondata):
-        return RuptureGenerationTask(**AutomationTask.from_json(jsondata))
-
 
 class RuptureGenerationTaskConnection(relay.Connection):
     """A list of RuptureGenerationTask items"""
