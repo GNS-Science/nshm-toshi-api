@@ -49,7 +49,6 @@ class OpenquakeHazardTask(AutomationTask):
     )
     hazard_solution = graphene.Field(OpenquakeHazardSolution, description="The openquake solution")
     model_type = ModelType()
-    # task_type = OpenquakeTaskType()
     executor = graphene.Field(
         graphene.String,
         description=(
