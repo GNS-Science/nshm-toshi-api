@@ -77,15 +77,27 @@ test_setup = [
       }
     }''',
     '''mutation new_ruptgen_task {
-      create_automation_task(input:{
+      create_rupture_generation_task(input:{
         created:"2020-10-10T23:00Z"
         state:SCHEDULED
-        result: SUCCESS
-        task_type: RUPTURE_SET
+        result: UNDEFINED
+        task_type: RUPTURE_SET        
       }) {
         task_result {
           id
           created
+        }
+      }
+    }''',
+    '''mutation update_ruptgen_task {
+      update_rupture_generation_task(input: {
+        task_id: "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE="
+        result:SUCCESS
+        state:DONE
+      })
+      {
+        task_result {
+          id
         }
       }
     }''',
@@ -169,7 +181,7 @@ test_setup = [
             ... on GeneralTask {id}
           }
           child {
-            ... on AutomationTask{id}
+            ... on RuptureGenerationTask{id}
           }
       }
       }
@@ -199,12 +211,12 @@ test_setup = [
       }''',
     '''
     mutation new_ruptgen_new_task {
-        create_automation_task(input: {
+        create_rupture_generation_task(input: {
             state: UNDEFINED
             result: UNDEFINED
+            task_type: RUPTURE_SET
             created: "2020-10-10T23:00Z"
             duration: 600
-            task_type: RUPTURE_SET
             arguments: [
                 { k:"max_jump_distance" v: "55.5" }
                 { k:"max_sub_section_length" v: "2" }
@@ -251,7 +263,7 @@ fragment sr on SearchResult {
             role
             thing {
               __typename
-              ... on AutomationTask {
+              ... on RuptureGenerationTask {
                 created
 
               }
@@ -282,7 +294,7 @@ fragment sr on SearchResult {
       }
     }
   }
-  ... on AutomationTask {
+  ... on RuptureGenerationTask {
     id
     result
     state
@@ -461,10 +473,10 @@ smoketests = [
                     'edges': [
                         {
                             'node': {
-                                '__typename': 'AutomationTask',
-                                'id': 'QXV0b21hdGlvblRhc2s6MQ==',
+                                '__typename': 'RuptureGenerationTask',
+                                'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
                                 'result': 'SUCCESS',
-                                'state': 'SCHEDULED',
+                                'state': 'DONE',
                                 'args': None,
                                 'files': {
                                     'edges': [
@@ -481,9 +493,6 @@ smoketests = [
                                         }
                                     ]
                                 },
-                                'created': '2020-10-10T23:00:00+00:00',
-                                'task_type': 'RUPTURE_SET',
-                                'args_at': None,
                             }
                         }
                     ]
@@ -574,7 +583,11 @@ smoketests = [
                                         {
                                             'node': {
                                                 'child': {
-                                                    '__typename': 'AutomationTask',
+                                                    '__typename': 'RuptureGenerationTask',
+                                                    'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
+                                                    'state': 'DONE',
+                                                    'result': 'SUCCESS',
+                                                    'created': '2020-10-10T23:00:00+00:00',
                                                 }
                                             }
                                         }
@@ -630,7 +643,7 @@ smoketests = [
                   role
                   thing {
                     __typename
-                    ... on AutomationTask {
+                    ... on RuptureGenerationTask {
                       created
 
                     }
@@ -651,7 +664,10 @@ smoketests = [
                         {
                             'node': {
                                 'role': 'WRITE',
-                                'thing': {'__typename': 'AutomationTask', 'created': '2020-10-10T23:00:00+00:00'},
+                                'thing': {
+                                    '__typename': 'RuptureGenerationTask',
+                                    'created': '2020-10-10T23:00:00+00:00',
+                                },
                             }
                         },
                         {'node': {'role': 'READ', 'thing': {'__typename': 'GeneralTask'}}},
@@ -664,7 +680,7 @@ smoketests = [
         query='''query get_task {
       node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=") {
           __typename
-        ... on AutomationTask {
+        ... on RuptureGenerationTask {
           id
           created
           duration
@@ -705,11 +721,11 @@ smoketests = [
     }''',
         expected={
             'node': {
-                '__typename': 'AutomationTask',
-                'id': 'QXV0b21hdGlvblRhc2s6MQ==',
+                '__typename': 'RuptureGenerationTask',
+                'id': 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=',
                 'created': '2020-10-10T23:00:00+00:00',
                 'duration': None,
-                'state': 'SCHEDULED',
+                'state': 'DONE',
                 'result': 'SUCCESS',
                 'parents': {
                     'edges': [
@@ -729,7 +745,7 @@ smoketests = [
       node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=")
       {
         __typename
-        ... on AutomationTask {
+        ... on RuptureGenerationTask {
           state
           created
           result
@@ -740,8 +756,8 @@ smoketests = [
     ''',
         expected={
             'node': {
-                '__typename': 'AutomationTask',
-                'state': 'SCHEDULED',
+                '__typename': 'RuptureGenerationTask',
+                'state': 'DONE',
                 'created': '2020-10-10T23:00:00+00:00',
                 'result': 'SUCCESS',
             }
@@ -766,16 +782,12 @@ smoketests = [
                 "search_result": {
                     "edges": [
                         {
-                            'node': {
-                                '__typename': 'AutomationTask',
-                                'id': 'QXV0b21hdGlvblRhc2s6Mw==',
-                                'result': 'UNDEFINED',
-                                'state': 'UNDEFINED',
-                                'args': [{'k': 'max_jump_distance', 'v': '55.5'}],
-                                'files': {'edges': []},
-                                'created': '2020-10-10T23:00:00+00:00',
-                                'task_type': 'INVERSION',
-                                'args_at': [{'k': 'max_jump_distance', 'v': '55.5'}],
+                            "node": {
+                                "__typename": "AutomationTask",
+                                "id": "QXV0b21hdGlvblRhc2s6Mw==",
+                                "created": "2020-10-10T23:00:00+00:00",
+                                "task_type": "INVERSION",
+                                "args_at": [{"k": "max_jump_distance", "v": "55.5"}],
                             }
                         }
                     ]
@@ -787,9 +799,9 @@ smoketests = [
     SmokeTest(
         query='''
       query get_new_task {
-        node(id:"QXV0b21hdGlvblRhc2s6NA==") {
+        node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=") {
             __typename
-          ... on AutomationTask {
+          ... on RuptureGenerationTask {
             id
             created
             arguments {k v}
@@ -798,8 +810,8 @@ smoketests = [
       }''',
         expected={
             "node": {
-                "__typename": "AutomationTask",
-                "id": "QXV0b21hdGlvblRhc2s6NA==",
+                "__typename": "RuptureGenerationTask",
+                "id": "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjQ=",
                 "created": "2020-10-10T23:00:00+00:00",
                 "arguments": [
                     {"k": "max_jump_distance", "v": "55.5"},
@@ -853,7 +865,7 @@ def setup(queries):
 
 
 if __name__ == "__main__":
-    # # cleanup environment
+    # cleanup environment
     os.system('curl -X DELETE "localhost:9200/toshi_index_mapped?pretty"')
     # assert 0
     os.system('rm -R /tmp/nzshm22-toshi-api-local/*')
