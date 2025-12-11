@@ -50,12 +50,14 @@ class TaskSubType(graphene.Enum):
     RUPTURE_SET = "rupture_set"
     INVERSION = "inversion"
     HAZARD = "hazard"
+    DISAGG = "disagg"
     REPORT = "report"
     SCALE_SOLUTION = "scale_solution"
     AGGREGATE_SOLUTION = "aggregate_solution"
     SOLUTION_TO_NRML = "solution_to_nrml"
-    OPENQUAKE_HAZARD = "openquake_hazard"
+    OPENQUAKE_HAZARD = "openquake_hazard"  # duplicate??
     TIME_DEPENDENT_SOLUTION = "time_dependent_solution"
+    UNDEFINED = "undefined"
 
 
 class ModelType(graphene.Enum):
