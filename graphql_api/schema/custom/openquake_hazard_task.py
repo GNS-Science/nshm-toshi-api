@@ -22,13 +22,8 @@ from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.thing import Thing
 
-from .automation_task_base import (
-    AutomationTaskBase,
-    AutomationTaskInput,
-    AutomationTaskInterface,
-    AutomationTaskUpdateInput,
-)
-from .common import ModelType, OpenquakeTaskType
+from .automation_task import AutomationTask, AutomationTaskInput, AutomationTaskInterface, AutomationTaskUpdateInput
+from .common import ModelType
 from .helpers import resolve_node
 from .openquake_hazard_config import OpenquakeHazardConfig
 from .openquake_hazard_solution import OpenquakeHazardSolution
@@ -40,7 +35,7 @@ db_metrics = ServerlessMetricWriter(
 log = logging.getLogger(__name__)
 
 
-class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
+class OpenquakeHazardTask(AutomationTask):
     """An OpenquakeHazardTask in the NSHM process"""
 
     class Meta:
@@ -53,9 +48,7 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
         deprecation_reason="We no longer store this value.",
     )
     hazard_solution = graphene.Field(OpenquakeHazardSolution, description="The openquake solution")
-
     model_type = ModelType()
-    task_type = OpenquakeTaskType()
     executor = graphene.Field(
         graphene.String,
         description=(
@@ -68,20 +61,11 @@ class OpenquakeHazardTask(graphene.ObjectType, AutomationTaskBase):
     gmcm_logic_tree = graphene.JSONString()
     openquake_config = graphene.JSONString()
 
-    @staticmethod
-    def from_json(jsondata):
-        return OpenquakeHazardTask(**AutomationTaskBase.from_json(jsondata))
-
     def resolve_config(root, info, **args):
         return resolve_node(root, info, 'config', 'thing')
 
     def resolve_hazard_solution(root, info, **args):
         return resolve_node(root, info, 'hazard_solution', 'thing')
-
-    def resolve_task_type(root, info, **args):
-        if task_type := root.task_type:
-            return task_type
-        return OpenquakeTaskType.UNDEFINED
 
     def resolve_srm_logic_tree(root, info, **args):
         if root.srm_logic_tree:
@@ -115,7 +99,6 @@ class OpenquakeHazardTaskInput(AutomationTaskInput):
     # we're keeping this in here so that we can create old-fashioned entries for tests to ensure we can still read them
     config = graphene.Field(graphene.ID, required=False, deprecation_reason="We no longer store this config")
     model_type = ModelType(required=True)
-    task_type = OpenquakeTaskType(required=True)
     executor = graphene.String()
     srm_logic_tree = graphene.JSONString()
     gmcm_logic_tree = graphene.JSONString()
