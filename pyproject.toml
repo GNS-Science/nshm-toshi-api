@@ -1,6 +1,6 @@
 [project]
 name = "nshm-toshi-api"
-version = "0.5.1"
+version = "0.5.2"
 description = "the object store used by NZSHM project"
 authors = [
     {name = "Chris B Chamberlain",email = "chrisbc@artisan.co.nz"},
