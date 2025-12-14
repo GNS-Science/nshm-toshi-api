@@ -104,7 +104,7 @@ def create_rupture_set_mutation():
             $file_name: String!, 
             $file_size: BigInt!, 
             $produced_by: ID!
-            $arguments: [KeyValuePairInput],
+            $meta: [KeyValuePairInput],
             $metrics: [KeyValuePairInput],
             $created: DateTime!
             $fault_models: [String]!  
@@ -115,7 +115,7 @@ def create_rupture_set_mutation():
                   file_name: $file_name
                   file_size: $file_size
                   produced_by: $produced_by
-                  arguments: $arguments
+                  meta: $meta
                   metrics: $metrics
                   created: $created
                   fault_models: $fault_models
@@ -129,7 +129,7 @@ def create_rupture_set_mutation():
                 created
                 fault_models
                 produced_by { id __typename, general_task_id}
-                arguments { k v }
+                meta { k v }
                 metrics { k v }
                 post_url
                 post_url_v2

@@ -30,13 +30,9 @@ class RuptureSet(graphene.ObjectType):
     class Meta:
         interfaces = (relay.Node, FileInterface, PredecessorsInterface)
 
-    created = graphene.DateTime(
-        description="When the file was created",
-    )
     fault_models = graphene.List(
         graphene.String, description='a list of one or more fault models used to create this rupture set.'
     )
-    arguments = graphene.List(KeyValuePair, description="arguments, as a list of Key Value pairs.")
     metrics = graphene.List(KeyValuePair, description="metrics, as a list of Key Value pairs.")
     produced_by = graphene.Field(
         'graphql_api.schema.custom.AutomationTask', description="The task that produced this solution"
@@ -57,13 +53,15 @@ class CreateRuptureSet(relay.ClientIDMutation):
     """
 
     class Input:
-        file_name = FileInterface.file_name
-        md5_digest = FileInterface.md5_digest
-        file_size = FileInterface.file_size
+        # From the FileInterface schema
+        file_name = CreateFile.Arguments.file_name
+        md5_digest = CreateFile.Arguments.md5_digest
+        file_size = CreateFile.Arguments.file_size
         meta = CreateFile.Arguments.meta
-        produced_by = graphene.ID()
-        created = graphene.DateTime(description="When the file was created")
+        created = CreateFile.Arguments.created
 
+        # from this schema
+        produced_by = graphene.ID(required=True)
         fault_models = graphene.List(
             graphene.String,
             description="fault models used to build the rupture set",
@@ -72,12 +70,6 @@ class CreateRuptureSet(relay.ClientIDMutation):
             KeyValuePairInput,
             required=False,
             description="rupture set metrics.",
-        )
-
-        arguments = graphene.List(
-            KeyValuePairInput,
-            required=False,
-            description="rupture set arguments.",
         )
 
     rupture_set = graphene.Field(RuptureSet)

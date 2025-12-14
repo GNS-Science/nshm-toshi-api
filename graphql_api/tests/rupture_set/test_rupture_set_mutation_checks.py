@@ -34,6 +34,32 @@ def assert_string_in_messages(expected: str, messages):
     assert found
 
 
+@mock_aws()
+def test_create_rupture_set_with_missing_file_attributes_fails(
+    graphql_client, rupture_generation_task, create_rupture_set_mutation
+):
+    query = '''
+            mutation {
+                create_rupture_set(
+                    input: {
+                    created: "2022-03-03T00:17:52.352274+00:00"
+                    }
+              ) {
+              rupture_set {id}
+              }
+              }
+            '''
+    executed = gt1 = graphql_client.execute(query)
+
+    print(executed)
+    assert executed['data'] == None
+    assert len(executed['errors'])
+    messages = [x['message'] for x in executed['errors']]
+    assert_string_in_messages("file_name", messages)
+    assert_string_in_messages("file_size", messages)
+    assert_string_in_messages("md5_digest", messages)
+
+
 @pytest.mark.parametrize(
     "created, valid_created",
     [

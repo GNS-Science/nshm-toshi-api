@@ -65,6 +65,7 @@ def create_rupture_set(graphql_client, rupture_generation_task, create_rupture_s
             file_size=1000,
             produced_by=rupture_generation_task['id'],
             metrics=[{"k": "some_shelley_creation", "v": "20"}],
+            meta=[dict(k="random_meta", v="A")],
             fault_models=["ModelA", "ModelB"],
         ),
     )
@@ -85,7 +86,7 @@ def test_rupture_set_round_trip_happy_case(graphql_client, create_rupture_set):
                 md5_digest
                 file_size
                 produced_by { id, __typename }
-                arguments { k v}
+                meta { k v}
                 metrics { k v}
             }
           }
@@ -99,7 +100,7 @@ def test_rupture_set_round_trip_happy_case(graphql_client, create_rupture_set):
     assert from_global_id(node['id'])[0] == "RuptureSet"
     assert node["__typename"] == "RuptureSet"
     assert node["produced_by"]['__typename'] == "AutomationTask"
-    assert node["arguments"] is None
+    assert node["meta"][0]['k'] == "random_meta"
     assert node["metrics"][0]['k'] == "some_shelley_creation"
 
 
