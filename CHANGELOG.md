@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2] - 2025-12-15
+
+### Changed
+ - added `created` attribute to FileInterface schema.
+ - made `required` explicit for CreateFile input fields.
+ - use CreateFile input types in `create_rupture_set`.
+ - corrected RuptureSet to use `meta` instead of `arguments`.
+
 ## [0.5.1] - 2025-12-12
 
 ### Added
