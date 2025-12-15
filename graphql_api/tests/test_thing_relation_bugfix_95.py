@@ -33,11 +33,12 @@ CREATE_GT = '''
 
 CREATE_RUPTGEN_TASK = '''
     mutation ($created: DateTime!) {
-        create_rupture_generation_task(input: {
+        create_automation_task(input: {
             state: UNDEFINED
             result: UNDEFINED
             created: $created
             duration: 600
+            task_type: RUPTURE_SET
 
             arguments: [
                 { k:"max_jump_distance" v: "55.5" }
@@ -88,7 +89,7 @@ QUERY_RUPTGEN_PARENT = '''
 query get_task {
       node(id:"UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE=") {
           __typename
-        ... on RuptureGenerationTask {
+        ... on AutomationTask {
           id
           created
           duration
@@ -130,7 +131,7 @@ TASKMOCK = lambda _self, _id: {
 
 RUPTMOCK = {
     'id': 0,
-    "clazz_name": "RuptureGenerationTask",
+    "clazz_name": "AutomationTask",
     'created': '2022-10-10T23:00:00+00:00',
     'files': None,
     'parents': [{'parent_id': '1', 'parent_clazz': 'GeneralTask'}],
@@ -204,15 +205,12 @@ class TestGeneralTaskBug29(unittest.TestCase):
             CREATE_RUPTGEN_TASK, variable_values=dict(created=dt.datetime.now(tzutc()))
         )
         print(ruptgen_result)
-        assert (
-            ruptgen_result['data']['create_rupture_generation_task']['task_result']['id']
-            == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE='
-        )
+        assert ruptgen_result['data']['create_automation_task']['task_result']['id'] == 'QXV0b21hdGlvblRhc2s6MQ=='
 
         # finally the relation
         gt_link_result = self.client.execute(
             CREATE_GT_RELATION,
-            variable_values=dict(parent_id='R2VuZXJhbFRhc2s6MA==', child_id='UnVwdHVyZUdlbmVyYXRpb25UYXNrOjE='),
+            variable_values=dict(parent_id='R2VuZXJhbFRhc2s6MA==', child_id='QXV0b21hdGlvblRhc2s6MQ=='),
         )
 
         print('GTLINK ', gt_link_result)
@@ -227,4 +225,4 @@ class TestGeneralTaskBug29(unittest.TestCase):
             assert result['parents']['edges'][0]['node']['parent']['id'] == "R2VuZXJhbFRhc2s6MQ=="
             assert result['parents']['edges'][0]['node']['parent']['title'] == "My Third Manual task"
             assert result['parents']['edges'][0]['node']['parent']['description'] == "##Some notes go here"
-            assert result['id'] == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
+            assert result['id'] == 'QXV0b21hdGlvblRhc2s6MA=='

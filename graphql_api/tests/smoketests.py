@@ -81,6 +81,7 @@ test_setup = [
         created:"2020-10-10T23:00Z"
         state:SCHEDULED
         result: UNDEFINED
+        task_type: RUPTURE_SET        
       }) {
         task_result {
           id
@@ -213,6 +214,7 @@ test_setup = [
         create_rupture_generation_task(input: {
             state: UNDEFINED
             result: UNDEFINED
+            task_type: RUPTURE_SET
             created: "2020-10-10T23:00Z"
             duration: 600
             arguments: [

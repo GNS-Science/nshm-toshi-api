@@ -12,6 +12,7 @@ from unittest import mock
 import boto3
 from dateutil.tz import tzutc
 from graphene.test import Client
+from graphql_relay import from_global_id
 from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
@@ -29,7 +30,7 @@ CREATE = '''
             result: UNDEFINED
             created: $created
             duration: 600
-
+            task_type: RUPTURE_SET
             arguments: [
                 { k:"max_jump_distance" v: "55.5" }
                 { k:"max_sub_section_length" v: "2" }
@@ -81,6 +82,10 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
             executed['data']['create_rupture_generation_task']['task_result']['id']
             == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
         )
+        assert (
+            from_global_id(executed['data']['create_rupture_generation_task']['task_result']['id'])[0]
+            == "RuptureGenerationTask"
+        )
 
     def test_date_must_include_timezone(self):
         startdate = dt.datetime.now()  # no timesone
@@ -94,6 +99,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
                 create_rupture_generation_task(input: {
                     state: UNDEFINED
                     result: UNDEFINED
+                    task_type: RUPTURE_SET
                     created: "September 5th, 1999"
                     })
                     {
@@ -122,21 +128,6 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
             executed['data']['create_rupture_generation_task']['task_result']['id']
             == 'UnVwdHVyZUdlbmVyYXRpb25UYXNrOjA='
         )
-
-
-# TASKZERO = lambda _self, _id: {
-#     "id": "0",
-#     "clazz_name": "RuptureGenerationTask",
-#     "created": "2020-10-30T09:15:00+00:00",
-#     "duration": 600.0,
-#     "arguments": [
-#         {"k": "max_jump_distance", "v": "55.5"},
-#         {"k": "max_sub_section_length", "v": "2"},
-#         {"k": "max_cumulative_azimuth", "v": "590"},
-#         {"k": "min_sub_sections_per_parent", "v": "2"},
-#         {"k": "permutation_strategy", "v": "DOWNDIP"},
-#     ],
-# }
 
 
 @mock_aws

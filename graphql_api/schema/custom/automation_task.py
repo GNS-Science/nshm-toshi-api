@@ -19,18 +19,11 @@ from graphql_relay import from_global_id
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
-
-# from .inversion_solution import InversionSolution
+from graphql_api.schema.event import EventResult, EventState
 from graphql_api.schema.file_relation import FileRole
 from graphql_api.schema.thing import Thing
 
-from .automation_task_base import (
-    AutomationTaskBase,
-    AutomationTaskInput,
-    AutomationTaskInterface,
-    AutomationTaskUpdateInput,
-)
-from .common import ModelType, TaskSubType
+from .common import KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -39,24 +32,99 @@ db_metrics = ServerlessMetricWriter(
 log = logging.getLogger(__name__)
 
 
-class AutomationTask(graphene.ObjectType, AutomationTaskBase):
+class AutomationTaskInterface(graphene.Interface):
     """An AutomationTask in the NSHM process"""
+
+    result = EventResult()
+    state = EventState()
+
+    created = graphene.DateTime(description="The time the event was created")
+    duration = graphene.Float(description="the final duration of the event in seconds")
+    general_task_id = graphene.ID(required=False)
+    task_type = TaskSubType()
+
+    parents = relay.ConnectionField(
+        'graphql_api.schema.task_task_relation.TaskTaskRelationConnection', description="parent task(s) of this task"
+    )
+
+    arguments = graphene.List(
+        KeyValuePair,
+        required=False,
+        description="input arguments for the rupture generation task, as a list of Key Value pairs.",
+    )
+    environment = graphene.List(
+        KeyValuePair, required=False, description="execution environment details, as a list of Key Value pairs."
+    )
+    metrics = graphene.List(
+        KeyValuePair, required=False, description="result metrics from the task, as a list of Key Value pairs."
+    )
+
+
+class AutomationTaskInput(graphene.InputObjectType):
+    result = EventResult(required=True)
+    state = EventState(required=True)
+    created = graphene.DateTime(
+        required=True,
+        description="The time the task was created",
+    )
+    duration = graphene.Float(description="The final duraton of the task in seconds")
+    general_task_id = graphene.ID(required=False)
+
+    arguments = graphene.List(
+        KeyValuePairInput,
+        required=False,
+        description="input arguments for the rupture generation task, as a list of Key Value pairs.",
+    )
+    environment = graphene.List(
+        KeyValuePairInput, required=False, description="execution environment details, as a list of Key Value pairs."
+    )
+    metrics = graphene.List(
+        KeyValuePairInput, required=False, description="result metrics from the task, as a list of Key Value pairs."
+    )
+    task_type = TaskSubType(required=True)
+    model_type = ModelType(required=False)
+
+
+class AutomationTaskUpdateInput(graphene.InputObjectType):
+    task_id = graphene.ID(required=True)
+    result = EventResult()
+    state = EventState()
+    duration = graphene.Float(description="The final duraton of the task in seconds")
+
+    arguments = graphene.List(
+        KeyValuePairInput,
+        required=False,
+        description="input arguments for the rupture generation task, as a list of Key Value pairs.",
+    )
+    environment = graphene.List(
+        KeyValuePairInput, required=False, description="execution environment details, as a list of Key Value pairs."
+    )
+    metrics = graphene.List(
+        KeyValuePairInput, required=False, description="result metrics from the task, as a list of Key Value pairs."
+    )
+
+
+class AutomationTask(graphene.ObjectType):
+    """An AutomationTask in the NSHM process"""
+
+    @classmethod
+    def get_node(cls, info, _id):
+        return get_data_manager().thing.get_one(_id)
 
     class Meta:
         interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
-    general_task_id = graphene.ID(required=False)
     model_type = ModelType()
-    task_type = TaskSubType()
     inversion_solution = graphene.Field(
         'graphql_api.schema.custom.inversion_solution_union.InversionSolutionUnion',
         description="the result of this task. NB only available for task_types:"
         "INVERSION, SCALE_SOLUTION, AGGREGATE_SOLUTION, TIME_DEPENDENT_SOLUTION.",
     )
 
-    @staticmethod
-    def from_json(jsondata):
-        return AutomationTask(**AutomationTaskBase.from_json(jsondata))
+    def resolve_task_type(root, info, **args):
+        if task_type := root.task_type:
+            return task_type
+        return TaskSubType.UNDEFINED
 
     @staticmethod
     def resolve_inversion_solution(root, info, **args):
@@ -116,15 +184,9 @@ class AutomationTaskConnection(relay.Connection):
         return len(root.edges)
 
 
-class NewAutomationTaskInput(AutomationTaskInput):
-    general_task_id = graphene.ID(required=False)
-    model_type = graphene.Field(ModelType, required=False)
-    task_type = graphene.Field(TaskSubType, required=True)
-
-
 class CreateAutomationTask(graphene.Mutation):
     class Arguments:
-        input = NewAutomationTaskInput(required=True)
+        input = AutomationTaskInput(required=True)
 
     task_result = graphene.Field(AutomationTask)
 

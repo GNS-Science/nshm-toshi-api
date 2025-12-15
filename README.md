@@ -41,9 +41,16 @@ aws_access_key_id=MockAccessKeyId
 aws_secret_access_key=MockAccessKeyId
 ```
 
+## System configuration
+
+Configuration is managed by environment variables and `.env` files.
+
+ - Please see `graphql_api\config.py` for all config options
+ - the file `.env.example` includes the commonly used develepment setups  
+
 ## Smoketest
 
-in your .env file
+in your `.env` file
 ```
 SLS_OFFLINE=1
 TESTING=0
@@ -75,7 +82,7 @@ poetry run python3 graphql_api/tests/smoketests.py
 
 ## Unit test
 
-in your .env file
+in your `.env` file
 ```
 SLS_OFFLINE=1
 TESTING=1 

@@ -20,12 +20,8 @@ from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
 from graphql_api.data import get_data_manager
 from graphql_api.schema.thing import Thing
 
-from .automation_task_base import (
-    AutomationTaskBase,
-    AutomationTaskInput,
-    AutomationTaskInterface,
-    AutomationTaskUpdateInput,
-)
+from .automation_task import AutomationTask, AutomationTaskInput, AutomationTaskInterface, AutomationTaskUpdateInput
+from .common import TaskSubType
 
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
@@ -34,15 +30,16 @@ db_metrics = ServerlessMetricWriter(
 log = logging.getLogger(__name__)
 
 
-class RuptureGenerationTask(graphene.ObjectType, AutomationTaskBase):
+class RuptureGenerationTask(AutomationTask):
     """An RuptureGenerationTask in the NSHM process"""
 
     class Meta:
         interfaces = (relay.Node, Thing, AutomationTaskInterface)
 
-    @staticmethod
-    def from_json(jsondata):
-        return RuptureGenerationTask(**AutomationTaskBase.from_json(jsondata))
+    def resolve_task_type(root, info, **args):
+        if task_type := root.task_type:
+            return task_type
+        return TaskSubType.RUPTURE_SET
 
 
 class RuptureGenerationTaskConnection(relay.Connection):
@@ -56,14 +53,6 @@ class RuptureGenerationTaskConnection(relay.Connection):
     @staticmethod
     def resolve_total_count(root, info, *args, **kwargs):
         return len(root.edges)
-
-
-# def json_ready(input):
-#     json_ready_input = copy.copy(input)
-#     for fld in ['result', 'state']:
-#         if json_ready_input.get(fld):
-#             json_ready_input[fld] = json_ready_input[fld].value
-#     return json_ready_input
 
 
 class CreateRuptureGenerationTask(graphene.Mutation):

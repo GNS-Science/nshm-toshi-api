@@ -30,16 +30,15 @@ db_metrics = ServerlessMetricWriter(
 class FileInterface(graphene.Interface):
     """A File in the NSHM saga"""
 
-    # class Meta:
-    #     interfaces = (relay.Node,)
-
-    # TODO consider if this field ought to be enforced here, instead of in subclasses
-    # created = graphene.DateTime(description="When the file was created")
+    created = graphene.DateTime(description="When the file was created")
     file_name = graphene.String(description="The name of the file")
     md5_digest = graphene.String(description='The base64-encoded md5 digest of the file')
     file_size = BigInt(description="The size of the file in bytes")
     file_url = graphene.String(description="A pre-signed URL to download the file from s3")
     post_url = graphene.String(description="A pre-signed URL to post the data to s3")
+
+    post_url_v2 = graphene.String(description="The URL to use with post_data_v2 (replaces post_url).")
+    post_data_v2 = graphene.JSONString(description="data for use with post_url_v2  (version 2).")
 
     meta = graphene.List(
         KeyValuePair, required=False, description="additional file meta data, as a list of Key Value pairs."
@@ -123,13 +122,13 @@ class FileConnection(relay.Connection):
 
 class CreateFile(graphene.Mutation):
     class Arguments:
-        file_name = graphene.String()
-        md5_digest = graphene.String("The base64-encoded md5 digest of the file")
-        file_size = BigInt()
+        file_name = graphene.String(required=True)
+        md5_digest = graphene.String(required=True)
+        file_size = BigInt(required=True)
+        created = graphene.DateTime(required=False)  # TODO: this should become mandatory
         meta = graphene.List(
             KeyValuePairInput, required=False, description="additional file meta data, as a list of Key Value pairs."
         )
-
         predecessors = graphene.List(
             'graphql_api.schema.custom.predecessor.PredecessorInput', required=False, description="list of predecessors"
         )

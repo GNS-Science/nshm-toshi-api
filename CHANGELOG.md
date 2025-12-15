@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.5.2] - 2025-12-15
+
+### Changed
+ - added `created` attribute to FileInterface schema.
+ - made `required` explicit for CreateFile input fields.
+ - use CreateFile input types in `create_rupture_set`.
+ - corrected RuptureSet to use `meta` instead of `arguments`.
+ - corrected type of `RuptureSet.produced_by` to `RuptureGenerationTask`.
+
+## [0.5.1] - 2025-12-12
+
+### Added
+ - add required `task_type` attribute to `OpenquakeHazardSolution` (breaking change).
+ - new `RuptureSet` subclasses File with specific attributes.
+ - new ENV variables:
+    - `DB_READ_ONLY` for safe testing agains LIVE backends, default = False.
+    - `CLOUDWATCH_ENABLED` for disabling cloud metrics, default = True.
+    - `MIGRATE_FILE_TO_RUPTSET` for `RuptureSet` class migrations, default = False.
+ - new resolvers for FileData objects:`post_url_v2` and `post_data_v2`
+    to make upload testing possible, and to better align with boto3 API. 
+    NB `nshm-toshi-client`should migrate to these, but not required immediately.
+
+### Changed
+ - for `AutomationTask` the mutation task_type = Required is now enforced.
+   - make `task_type` consistent acrosss `AutomationTask` and subclasses.
+   - udpate `AutomationTaskInterface` schema type
+
 ## [0.4.0] - 2025-12-02
 
 ### Added

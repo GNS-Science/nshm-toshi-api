@@ -7,6 +7,7 @@ from .openquake_hazard_config import OpenquakeHazardConfig
 from .openquake_hazard_solution import OpenquakeHazardSolution
 from .openquake_hazard_task import OpenquakeHazardTask
 from .rupture_generation_task import RuptureGenerationTask
+from .rupture_set import RuptureSet
 from .scaled_inversion_solution import ScaledInversionSolution
 from .strong_motion_station import StrongMotionStation
 from .strong_motion_station_file import SmsFile
