@@ -3,11 +3,13 @@
 This module contains the schema definition for a RuptureSet.
 
 """
+import logging
 from datetime import datetime as dt
 from datetime import timezone
 
 import graphene
 from graphene import relay
+from graphql_relay import from_global_id
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
 from graphql_api.config import CW_METRICS_RESOLUTION, STACK_NAME
@@ -20,6 +22,7 @@ from .helpers import resolve_node
 db_metrics = ServerlessMetricWriter(
     lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=CW_METRICS_RESOLUTION
 )
+log = logging.getLogger(__name__)
 
 
 class RuptureSet(graphene.ObjectType):
@@ -35,7 +38,7 @@ class RuptureSet(graphene.ObjectType):
     )
     metrics = graphene.List(KeyValuePair, description="metrics, as a list of Key Value pairs.")
     produced_by = graphene.Field(
-        'graphql_api.schema.custom.AutomationTask', description="The task that produced this solution"
+        'graphql_api.schema.custom.RuptureGenerationTask', description="The task that produced this solution"
     )
 
     @classmethod
@@ -78,6 +81,11 @@ class CreateRuptureSet(relay.ClientIDMutation):
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
         t0 = dt.now(timezone.utc)
+
+        log.debug(f'mutate_and_get_payload: {kwargs}')
+        produced_by = kwargs.get('produced_by')
+        assert from_global_id(produced_by)[0] == 'RuptureGenerationTask'
+
         rupture_set = get_data_manager().file.create('RuptureSet', **kwargs)
         db_metrics.put_duration(__name__, 'CreateRuptureSet.mutate_and_get_payload', dt.now(timezone.utc) - t0)
         return CreateRuptureSet(rupture_set=rupture_set, ok=True)
