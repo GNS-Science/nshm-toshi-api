@@ -17,7 +17,7 @@ def patch_the_search(monkeypatch):
 @mock_aws()
 def test_create_rupture_generation_task_happy_case(rupture_generation_task):
     print(rupture_generation_task)
-    assert from_global_id(rupture_generation_task['id']) == ("AutomationTask", "100001")
+    assert from_global_id(rupture_generation_task['id']) == ("RuptureGenerationTask", "100001")
 
 
 @mock_aws()
@@ -44,7 +44,7 @@ def test_create_rupture_set_happy_case(graphql_client, rupture_generation_task, 
 
     rupture_set = executed['data']['create_rupture_set']['rupture_set']
     assert from_global_id(rupture_set['id']) == ("RuptureSet", "100000")
-    assert rupture_set["produced_by"]['__typename'] == "AutomationTask"
+    assert rupture_set["produced_by"]['__typename'] == "RuptureGenerationTask"
     assert rupture_set["fault_models"] == ["ModelA", "ModelB"]
     assert rupture_set["post_url"] is not None
 
@@ -99,7 +99,7 @@ def test_rupture_set_round_trip_happy_case(graphql_client, create_rupture_set):
     node = result['data']['node']
     assert from_global_id(node['id'])[0] == "RuptureSet"
     assert node["__typename"] == "RuptureSet"
-    assert node["produced_by"]['__typename'] == "AutomationTask"
+    assert node["produced_by"]['__typename'] == "RuptureGenerationTask"
     assert node["meta"][0]['k'] == "random_meta"
     assert node["metrics"][0]['k'] == "some_shelley_creation"
 

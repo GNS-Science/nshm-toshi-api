@@ -7,6 +7,7 @@
  - made `required` explicit for CreateFile input fields.
  - use CreateFile input types in `create_rupture_set`.
  - corrected RuptureSet to use `meta` instead of `arguments`.
+ - corrected type of `RuptureSet.produced_by` to `RuptureGenerationTask`.
 
 ## [0.5.1] - 2025-12-12
 

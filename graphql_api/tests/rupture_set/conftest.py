@@ -33,10 +33,10 @@ def create_gt_mutation():
 
 
 @pytest.fixture(scope='session')
-def create_at_mutation():
+def create_rgt_mutation():
     yield '''
     mutation ($created: DateTime!, $gt_id: ID, $arguments: [KeyValuePairInput]!) {
-        create_automation_task(input: {
+        create_rupture_generation_task(input: {
             state: UNDEFINED
             result: UNDEFINED        
             created: $created
@@ -72,7 +72,7 @@ def create_at_mutation():
 
 
 @pytest.fixture()
-def rupture_generation_task(graphql_client, create_gt_mutation, create_at_mutation):
+def rupture_generation_task(graphql_client, create_gt_mutation, create_rgt_mutation):
 
     # create the GT to be referenced in the AT
     gt1 = graphql_client.execute(
@@ -86,13 +86,13 @@ def rupture_generation_task(graphql_client, create_gt_mutation, create_at_mutati
 
     # Now create the Rupture Generation task
     executed = graphql_client.execute(
-        create_at_mutation,
+        create_rgt_mutation,
         variable_values=dict(
             created=datetime.datetime.now(datetime.UTC), gt_id=gt_id, arguments=dict(k="swept_arg", v="A")
         ),
     )
     print(executed)
-    task_result = executed['data']['create_automation_task']['task_result']
+    task_result = executed['data']['create_rupture_generation_task']['task_result']
     yield task_result
 
 
