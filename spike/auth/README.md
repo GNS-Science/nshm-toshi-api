@@ -43,7 +43,7 @@ poetry run python spike/auth/cognito_setup.py --profile AdministratorAccess-5958
 This creates:
 - A User Pool named `toshi-spike`
 - Resource server `toshi` with scopes `read` and `write`
-- App client `toshi-scientist` (Device Authorization Grant, public)
+- App client `toshi-scientist` (USER_PASSWORD_AUTH, public — no client secret)
 - App client `toshi-automation` (Client Credentials, confidential)
 - Test users: `scientist@example.com` / `Scienti5t!` and `readonly@example.com` / `Read0nly!`
 
@@ -67,15 +67,31 @@ poetry run python spike/auth/toshi_auth.py token
 
 ### 3. Automation / M2M Token
 
-```bash
-# Set env vars from cognito_config.json output:
-export TOSHI_CLIENT_ID=<automation_client_id>
-export TOSHI_CLIENT_SECRET=<automation_client_secret>
-export TOSHI_COGNITO_DOMAIN=<domain>.auth.ap-southeast-2.amazoncognito.com
+This flow is for **Runzi and other automated pipelines** that call the Toshi API without a human
+user in the loop. It uses the OAuth 2.0 Client Credentials grant: the `toshi-automation` app
+client authenticates directly with its client secret and receives a short-lived access token.
 
-python spike/auth/toshi_auth.py m2m-token
-# Prints Bearer token for use in Authorization header
+Key differences from the scientist flow:
+- **No user identity** — the JWT `sub` is the client ID, not a person; `username` claim is absent
+- **No refresh token** — tokens cannot be refreshed; just request a new one when it expires
+- **Scopes are fixed** — the client always gets `toshi/read toshi/write` regardless of the caller
+- **Secret must be kept secure** — treat `automation_client_secret` like a password; store it in
+  AWS Secrets Manager or CI/CD secret variables, never in source control
+
+```bash
+poetry run python spike/auth/toshi_auth.py m2m-token
+# Prints Bearer token (reads client_id/secret from cognito_config.json)
+
+# Use the raw token directly in a request:
+TOKEN=$(poetry run python spike/auth/toshi_auth.py m2m-token --raw)
+curl -H "Authorization: Bearer $TOKEN" https://<api-url>/graphql -d '{"query":"{...}"}'
+
+# Override credentials via env vars (preferred for CI/CD):
+TOSHI_CLIENT_ID=<id> TOSHI_CLIENT_SECRET=<secret> poetry run python spike/auth/toshi_auth.py m2m-token
 ```
+
+Token lifetime is 1 hour. Runzi should call `m2m-token` at the start of each job (or check
+expiry before each request) rather than caching a token across jobs.
 
 ### 4. Deploy Authorizer (optional, for API Gateway testing)
 
@@ -137,7 +153,7 @@ GraphQL resolvers / mutations (unchanged)
 
 1. **Latency** — Lambda authorizer cold-start: measure P99 with AWS X-Ray
 2. **Token lifetime** — 1h Cognito tokens: does `m2m-token` auto-refresh mid-job?
-3. **Device Flow UX** — Test from SSH terminal; record steps
+3. **SSH terminal UX** — USER_PASSWORD_AUTH works; no browser required. ✓ Confirmed.
 4. **IAM Identity Center federation** — How hard to add Azure AD SAML IdP to this pool?
 5. **Backward compat** — `x-api-key` still works via authorizer `LEGACY_API_KEY` env var
 
