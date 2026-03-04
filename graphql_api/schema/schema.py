@@ -67,10 +67,10 @@ log = logging.getLogger(__name__)
 
 db_metrics = ServerlessMetricWriter(lambda_name=STACK_NAME, metric_name="MethodDuration", resolution=1)
 
-credentials = boto3.Session().get_credentials() if not IS_OFFLINE else None
+credentials = boto3.Session().get_credentials() if (not IS_OFFLINE and ES_ENDPOINT) else None
 awsauth = (
     AWS4Auth(credentials.access_key, credentials.secret_key, ES_REGION, 'es', session_token=credentials.token)
-    if not IS_OFFLINE
+    if (not IS_OFFLINE and ES_ENDPOINT)
     else None
 )
 

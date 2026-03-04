@@ -31,12 +31,16 @@ class SearchManager:
         self._awsauth = awsauth
         self._endpoint = endpoint
         self._es_index = es_index
-        self._url = endpoint + '/' + es_index + '/' + TYPE + '/'
-        self.es = Elasticsearch(
-            hosts=[ES_ENDPOINT], http_auth=awsauth, verify_certs=True, connection_class=RequestsHttpConnection
-        )
+        self._enabled = bool(endpoint)
+        if self._enabled:
+            self._url = endpoint + '/' + es_index + '/' + TYPE + '/'
+            self.es = Elasticsearch(
+                hosts=[ES_ENDPOINT], http_auth=awsauth, verify_certs=True, connection_class=RequestsHttpConnection
+            )
 
     def index_document(self, key, document):
+        if not self._enabled:
+            return
         # Index the document
         t0 = dt.now(timezone.utc)
         es_key = key.replace("/", "_")
@@ -65,6 +69,8 @@ class SearchManager:
         db_metrics.put_duration(__name__, 'index_document', dt.now(timezone.utc) - t0)
 
     def search(self, term):
+        if not self._enabled:
+            return []
         t0 = dt.now(timezone.utc)
 
         headers = {}  # "Content-Type": "application/json" }

@@ -90,16 +90,16 @@ custom:
   url_default_ttl: 60
 
   #elastic search
-  esDomainName: ${self:custom.app_acronym}-es-${self:custom.stage}
+  esDomainName: ${self:custom.app_acronym}-es-tmp-${self:custom.stage}
   esIndex: toshi_index_mapped
 
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
 
   serverlessIfElse:
-      - If: '"${self:custom.stage}" == "test"'
+      - If: '"${self:custom.stage}" == "test" || "${self:custom.stage}" == "dev"'
         Exclude:
-          - resourcee.Resources.ElasticSearchInstance
-          - provider.iamrolestatements.1
+          - Resources.ElasticSearchInstance
+          - provider.iamRoleStatements.1
           - functions.app.environment.0
 
 provider:
@@ -171,8 +171,8 @@ functions:
   app:
     description: The graphql API of ${self:service}
     handler: wsgi_handler.handler
-    memorySize: 8192 # optional, in MB, default is 1024
-    timeout: 30 # optional, in seconds, default is 6
+    memorySize: 2048 # optional, in MB, default is 1024
+    timeout: 25 # optional, in seconds, default is 6
     events:
       - http:
           path: graphql
