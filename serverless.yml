@@ -99,7 +99,7 @@ custom:
       - If: '"${self:custom.stage}" == "test" || "${self:custom.stage}" == "dev"'
         Exclude:
           - Resources.ElasticSearchInstance
-          - provider.iamRoleStatements.1
+          - Resources.EsIamPolicy
           - functions.app.environment.0
 
 provider:
@@ -120,17 +120,6 @@ provider:
       Resource:
         - ${self:custom.s3_role_resource}
         - ${self:custom.s3_role_resource}/*
-    # ES access policy
-    # modelled on https://github.com/serverless/examples/blob/master/aws-golang-dynamo-stream-to-elasticsearch/serverless.yml
-    - Effect: Allow
-      Action:
-        - es:ESHttpPost
-        - es:ESHttpPut
-        - es:ESHttpHead
-        - es:ESHttpGet
-      Resource:
-        - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
-        - { "Fn::Join": ["", ["Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"], "/*"]] }
     -  Effect: Allow
        Action:
          - "cloudwatch:PutMetricData"
@@ -216,6 +205,26 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:custom.s3_bucket}
+
+    # ES IAM policy — excluded for dev/test stages via serverlessIfElse
+    EsIamPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName: ${self:custom.stack_name}-es-policy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - es:ESHttpPost
+                - es:ESHttpPut
+                - es:ESHttpHead
+                - es:ESHttpGet
+              Resource:
+                - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
+                - { "Fn::Join": ["", [{ "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }, "/*"]] }
+        Roles:
+          - !Ref IamRoleLambdaExecution
 
     # following on from
     #   https://www.serverless.com/blog/build-geosearch-graphql-api-aws-appsync-elasticsearch
