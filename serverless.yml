@@ -1,7 +1,7 @@
 # "org" ensures this Service is used with the correct Serverless Framework Access Key.
 org: dailyscience
 # "app" enables Serverless Framework Dashboard features and sharing them with other Services.
-app: nshm-toshi-api
+app: spike-toshi-api
 service: nzshm22-toshi-api
 
 plugins:
@@ -75,7 +75,7 @@ custom:
 # --stage               test
 # --deletion_policy     delete
 
-  app_acronym: ${opt:acronym, self:service}
+  app_acronym: ${opt:acronym, 'spike-toshi-api'}
   default_stage: local
   stage: ${opt:stage, self:custom.default_stage}
   stack_name: ${self:custom.app_acronym}-${self:custom.stage}
