@@ -51,6 +51,7 @@ dev = [
     "pre-commit",
     "pytest-cov",
     "pytest",
+    "PyJWT[crypto] (>=2.8.0)",
     "requests-mock (>=1.12.1,<2.0.0)",
     "safety",
     "sgqlc",

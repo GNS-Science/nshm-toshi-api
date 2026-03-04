@@ -154,6 +154,20 @@ provider:
         description: Api key until we have an auth function # Optional
 
 functions:
+  # JWT Lambda Authorizer (spike/auth — replace x-api-key with Cognito JWTs)
+  # To activate: set COGNITO_USER_POOL_ID, COGNITO_REGION, COGNITO_CLIENT_ID env vars
+  # and replace `private: true` below with the `authorizer:` block shown in comments.
+  jwtAuthorizer:
+    handler: spike/auth/authorizer/handler.handler
+    description: Validates Cognito JWTs; accepts legacy x-api-key for backward compat
+    memorySize: 256
+    timeout: 10
+    environment:
+      COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, ''}
+      COGNITO_REGION: ${self:provider.region}
+      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, ''}
+      LEGACY_API_KEY: ${env:LEGACY_API_KEY, ''}
+
   app:
     description: The graphql API of ${self:service}
     handler: wsgi_handler.handler
@@ -167,10 +181,22 @@ functions:
           path: graphql
           method: POST
           private: true
+          # SPIKE AUTH: replace `private: true` with the block below once Cognito is provisioned:
+          # authorizer:
+          #   name: jwtAuthorizer
+          #   resultTtlInSeconds: 300
+          #   identitySource: method.request.header.Authorization
+          #   type: token
       - http:
           path: graphql
           method: GET
           private: true
+          # SPIKE AUTH: replace `private: true` with the block below once Cognito is provisioned:
+          # authorizer:
+          #   name: jwtAuthorizer
+          #   resultTtlInSeconds: 300
+          #   identitySource: method.request.header.Authorization
+          #   type: token
     environment:
       ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
       ES_INDEX: ${self:custom.esIndex}
