@@ -9,7 +9,6 @@ plugins:
   - serverless-s3-local
   - serverless-dynamodb
   - serverless-plugin-warmup
-  - serverless-plugin-ifelse
 package:
   individually: false
   exclude:
@@ -89,18 +88,7 @@ custom:
   # presigned URL TTL
   url_default_ttl: 60
 
-  #elastic search
-  esDomainName: ${self:custom.app_acronym}-es-tmp-${self:custom.stage}
-  esIndex: toshi_index_mapped
-
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
-
-  serverlessIfElse:
-      - If: '"${self:custom.stage}" == "test" || "${self:custom.stage}" == "dev"'
-        Exclude:
-          - Resources.ElasticSearchInstance
-          - Resources.EsIamPolicy
-          - functions.app.environment.0
 
 provider:
   name: aws
@@ -187,10 +175,6 @@ functions:
           #   identitySource: method.request.header.Authorization
           #   type: token
     environment:
-      ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
-      ES_INDEX: ${self:custom.esIndex}
-      ES_REGION: ${self:custom.region}
-      ES_DOMAIN_NAME: ${self:custom.esDomainName}
       STACK_NAME: ${self:custom.stack_name}
       FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
     warmup:
@@ -206,39 +190,3 @@ resources:
       Properties:
         BucketName: ${self:custom.s3_bucket}
 
-    # ES IAM policy — excluded for dev/test stages via serverlessIfElse
-    EsIamPolicy:
-      Type: AWS::IAM::Policy
-      Properties:
-        PolicyName: ${self:custom.stack_name}-es-policy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - es:ESHttpPost
-                - es:ESHttpPut
-                - es:ESHttpHead
-                - es:ESHttpGet
-              Resource:
-                - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
-                - { "Fn::Join": ["", [{ "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }, "/*"]] }
-        Roles:
-          - !Ref IamRoleLambdaExecution
-
-    # following on from
-    #   https://www.serverless.com/blog/build-geosearch-graphql-api-aws-appsync-elasticsearch
-    ElasticSearchInstance:
-      Type: AWS::Elasticsearch::Domain
-      Properties:
-        ElasticsearchVersion: 6.2
-        DomainName: "${self:custom.esDomainName}"
-        EBSOptions:
-          EBSEnabled: true
-          VolumeType: gp2
-          VolumeSize: 10
-        ElasticsearchClusterConfig:
-          InstanceType: t2.small.elasticsearch
-          InstanceCount: 1
-          DedicatedMasterEnabled: false
-          ZoneAwarenessEnabled: false
