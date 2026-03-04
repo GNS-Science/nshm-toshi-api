@@ -2,7 +2,7 @@
 org: dailyscience
 # "app" enables Serverless Framework Dashboard features and sharing them with other Services.
 app: spike-toshi-api
-service: nzshm22-toshi-api
+service: spike-toshi-api
 
 plugins:
   - serverless-wsgi
