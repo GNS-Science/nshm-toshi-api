@@ -8,14 +8,35 @@ single shared `x-api-key` in `TempApiKey`.
 - AWS account (second/test account with IAM Identity Center partially set up)
 - Python 3.12 + `poetry install` done
 - `boto3`, `click`, `PyJWT`, `requests` available (`pip install PyJWT requests click`)
-- AWS CLI profile configured: `aws configure --profile test-account`
+- AWS CLI profile configured: `aws configure --profile AdministratorAccess-595842668254`
 
 ## Quick Start
 
-### 1. Provision Cognito
+### 0. 
+
+- configured new subaccount ds-spike
+- granted permission sets in new account to chrisbc user
+- console access YAY
+- created new profile with...
+
+```
+chrisbc@MLX01 nshm-toshi-api % aws configure sso
+SSO session name (Recommended): ds-spike
+SSO start URL [None]: https://d-976795968d.awsapps.com/start/#
+SSO region [None]: ap-southeast-2
+SSO registration scopes [sso:account:access]:
+Attempting to open your default browser.
+If the browser does not open, open the following URL:
+...
+```
+
+new profile: AdministratorAccess-595842668254
+
+
+### 1. Provision Cognito - DONE
 
 ```bash
-python spike/auth/cognito_setup.py --profile test-account
+poetry run python spike/auth/cognito_setup.py --profile AdministratorAccess-595842668254
 # Outputs: spike/auth/cognito_config.json
 ```
 
@@ -24,21 +45,25 @@ This creates:
 - Resource server `toshi` with scopes `read` and `write`
 - App client `toshi-scientist` (Device Authorization Grant, public)
 - App client `toshi-automation` (Client Credentials, confidential)
-- Test users: `scientist@example.com` / `Automati0n!` and `readonly@example.com` / `Read0nly!`
+- Test users: `scientist@example.com` / `Scienti5t!` and `readonly@example.com` / `Read0nly!`
 
-### 2. Scientist Interactive Login
+### 2. Scientist Login
 
 ```bash
-python spike/auth/toshi_auth.py login
-# Prints: Open https://... and enter code XXXX-YYYY
-# After browser auth, saves token to ~/.toshi/credentials
+poetry run python spike/auth/toshi_auth.py login
+# Prompts for email and password, saves token to ~/.toshi/credentials
 
-python spike/auth/toshi_auth.py whoami
+poetry run python spike/auth/toshi_auth.py whoami
 # Shows: user, scopes, expiry
 
-python spike/auth/toshi_auth.py token
+poetry run python spike/auth/toshi_auth.py token
 # Prints raw Bearer token (auto-refreshes if expired)
 ```
+
+> **Note:** AWS Cognito does not support the OAuth 2.0 Device Authorization Grant (RFC 8628).
+> The `login` command uses Cognito's `USER_PASSWORD_AUTH` flow via boto3's `InitiateAuth` API
+> instead. This works from SSH terminals — no browser required. The app client must have
+> `ALLOW_USER_PASSWORD_AUTH` enabled (already set in `cognito_setup.py`).
 
 ### 3. Automation / M2M Token
 
@@ -120,7 +145,8 @@ GraphQL resolvers / mutations (unchanged)
 
 | Date | Finding |
 |------|---------|
-| (TBD) | Record observations here as the spike progresses |
+| 2026-03-05 | AWS Cognito hosted UI does NOT support Device Authorization Grant (RFC 8628). `/oauth2/device_authorization` returns HTTP 400. Replaced with `USER_PASSWORD_AUTH` via `InitiateAuth` boto3 API — works from SSH terminals, no browser needed. |
+| 2026-03-05 | `login`, `whoami`, and `token` commands all working. Token saved to `~/.toshi/credentials`. Auto-refresh via `REFRESH_TOKEN_AUTH` confirmed. |
 
 ---
 

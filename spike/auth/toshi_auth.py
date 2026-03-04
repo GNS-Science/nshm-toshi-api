@@ -2,7 +2,7 @@
 Toshi Auth CLI — scientist and automation token management.
 
 Usage:
-    python toshi_auth.py login         # Device flow: print URL+code, poll, save token
+    python toshi_auth.py login         # Username/password login, saves token to ~/.toshi/credentials
     python toshi_auth.py token         # Print current Bearer token (auto-refresh)
     python toshi_auth.py whoami        # Decode and display JWT claims
     python toshi_auth.py m2m-token     # Client credentials flow for automation/Runzi
@@ -17,20 +17,18 @@ Configuration (reads spike/auth/cognito_config.json OR env vars):
 import base64
 import json
 import os
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+import boto3
 import click
 
 
 CREDENTIALS_PATH = Path.home() / '.toshi' / 'credentials'
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'cognito_config.json')
-DEVICE_POLL_INTERVAL = 5  # seconds
-DEVICE_TIMEOUT = 300  # 5 minutes
 
 
 # ---------------------------------------------------------------------------
@@ -61,7 +59,7 @@ def load_credentials():
 
 def save_credentials(data):
     CREDENTIALS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    CREDENTIALS_PATH.chmod(0o700)
+    CREDENTIALS_PATH.parent.chmod(0o700)
     with open(CREDENTIALS_PATH, 'w') as f:
         json.dump(data, f, indent=2)
     CREDENTIALS_PATH.chmod(0o600)
@@ -108,91 +106,61 @@ def http_post_form(url, data, auth=None):
 
 
 # ---------------------------------------------------------------------------
-# Device Authorization Grant flow (RFC 8628)
+# Username / Password flow (USER_PASSWORD_AUTH via Cognito InitiateAuth API)
 # ---------------------------------------------------------------------------
 
-def device_flow_login(config):
-    """Initiate device authorization and poll for token."""
-    domain = config['cognito_domain']
+def password_flow_login(config):
+    """Authenticate with email + password via Cognito USER_PASSWORD_AUTH."""
+    region = config['region']
     client_id = config['scientist_client_id']
-    scopes = 'openid email profile toshi/read toshi/write'
 
-    # Step 1: Request device code
-    device_auth_url = f'https://{domain}/oauth2/device_authorization'
+    email = click.prompt('Email')
+    password = click.prompt('Password', hide_input=True)
+
+    cognito = boto3.client('cognito-idp', region_name=region)
     try:
-        resp = http_post_form(
-            device_auth_url,
-            {
-                'client_id': client_id,
-                'scope': scopes,
-            },
+        resp = cognito.initiate_auth(
+            AuthFlow='USER_PASSWORD_AUTH',
+            AuthParameters={'USERNAME': email, 'PASSWORD': password},
+            ClientId=client_id,
         )
+    except cognito.exceptions.NotAuthorizedException:
+        raise click.ClickException('Invalid username or password.')
+    except cognito.exceptions.UserNotFoundException:
+        raise click.ClickException('User not found.')
     except Exception as e:
-        raise click.ClickException(
-            f'Device authorization request failed: {e}\n'
-            'Note: Cognito requires HTTPS hosted domain. Ensure the pool domain is active.'
-        )
+        raise click.ClickException(f'Authentication failed: {e}')
 
-    device_code = resp['device_code']
-    user_code = resp['user_code']
-    verification_uri = resp.get('verification_uri_complete', resp.get('verification_uri'))
-    interval = resp.get('interval', DEVICE_POLL_INTERVAL)
-    expires_in = resp.get('expires_in', DEVICE_TIMEOUT)
+    if 'ChallengeName' in resp:
+        raise click.ClickException(f'Unexpected auth challenge: {resp["ChallengeName"]}. Contact your administrator.')
 
-    click.echo('\n=== Toshi Login ===')
-    click.echo(f'Open this URL in your browser:')
-    click.echo(f'\n  {verification_uri}\n')
-    click.echo(f'Or go to {resp.get("verification_uri")} and enter code: {user_code}')
-    click.echo(f'\nWaiting for authentication (expires in {expires_in}s)...')
-
-    token_url = f'https://{domain}/oauth2/token'
-    deadline = time.time() + expires_in
-
-    while time.time() < deadline:
-        time.sleep(interval)
-        try:
-            token_resp = http_post_form(
-                token_url,
-                {
-                    'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
-                    'client_id': client_id,
-                    'device_code': device_code,
-                },
-            )
-            if 'access_token' in token_resp:
-                return token_resp
-            error = token_resp.get('error', '')
-            if error == 'authorization_pending':
-                click.echo('.', nl=False)
-                continue
-            elif error == 'slow_down':
-                interval += 5
-                continue
-            else:
-                raise click.ClickException(f'Token error: {error} — {token_resp.get("error_description", "")}')
-        except Exception as e:
-            if 'authorization_pending' in str(e):
-                click.echo('.', nl=False)
-                continue
-            raise
-
-    raise click.ClickException('Device flow timed out. Please try again.')
+    auth = resp['AuthenticationResult']
+    return {
+        'access_token': auth['AccessToken'],
+        'id_token': auth.get('IdToken', ''),
+        'refresh_token': auth.get('RefreshToken', ''),
+        'token_type': auth.get('TokenType', 'Bearer'),
+        'expires_in': auth.get('ExpiresIn', 3600),
+    }
 
 
 def refresh_token(config, refresh_tok):
-    """Use refresh token to get new access token."""
-    domain = config['cognito_domain']
+    """Use refresh token to get a new access token via Cognito InitiateAuth."""
+    region = config['region']
     client_id = config['scientist_client_id']
-    token_url = f'https://{domain}/oauth2/token'
 
-    return http_post_form(
-        token_url,
-        {
-            'grant_type': 'refresh_token',
-            'client_id': client_id,
-            'refresh_token': refresh_tok,
-        },
+    cognito = boto3.client('cognito-idp', region_name=region)
+    resp = cognito.initiate_auth(
+        AuthFlow='REFRESH_TOKEN_AUTH',
+        AuthParameters={'REFRESH_TOKEN': refresh_tok},
+        ClientId=client_id,
     )
+    auth = resp['AuthenticationResult']
+    return {
+        'access_token': auth['AccessToken'],
+        'id_token': auth.get('IdToken', ''),
+        'expires_in': auth.get('ExpiresIn', 3600),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -240,9 +208,9 @@ def cli():
 
 @cli.command()
 def login():
-    """Interactive login via Device Authorization Grant (works from SSH terminals)."""
+    """Login with email and password (works from SSH terminals and local machines)."""
     config = load_cognito_config()
-    token_resp = device_flow_login(config)
+    token_resp = password_flow_login(config)
 
     creds = load_credentials()
     creds['access_token'] = token_resp['access_token']
