@@ -81,7 +81,7 @@ custom:
   region: ${opt:region, self:provider.region}
   deletion_policy: Delete
   # Default to using app_acronym as bucket name
-  s3_bucket: ${opt:s3_bucket, self:custom.app_acronym}-${self:custom.stage}
+  s3_bucket: ${opt:s3_bucket, self:custom.app_acronym}-${self:custom.stage}-v2
   # default to using ${stage} as key base path, keeps stages from namespace collisions
   s3_bucket_arn: arn:aws:s3:::${self:custom.s3_bucket}
   s3_role_resource: ${self:custom.s3_bucket_arn}
