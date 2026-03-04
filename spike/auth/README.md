@@ -93,25 +93,47 @@ TOSHI_CLIENT_ID=<id> TOSHI_CLIENT_SECRET=<secret> poetry run python spike/auth/t
 Token lifetime is 1 hour. Runzi should call `m2m-token` at the start of each job (or check
 expiry before each request) rather than caching a token across jobs.
 
-### 4. Deploy Authorizer (optional, for API Gateway testing)
+### 4. Deploy to AWS (spike stack)
 
-The Lambda authorizer is in `spike/auth/authorizer/`. To test against a real API Gateway:
+The spike deploys via Serverless Framework directly from the repo root.  Elasticsearch is
+excluded — it is not needed to prove auth and was removed to keep deploy times short.
 
 ```bash
-# Copy authorizer into a temp deploy location
-cp -r spike/auth/authorizer /tmp/toshi-authorizer
-cd /tmp/toshi-authorizer
-pip install -r requirements.txt -t .
-zip -r function.zip .
-aws lambda create-function --function-name toshi-jwt-authorizer \
-  --runtime python3.12 --handler handler.handler \
-  --zip-file fileb://function.zip \
-  --role arn:aws:iam::<account>:role/<lambda-execution-role> \
-  --environment Variables="{COGNITO_USER_POOL_ID=<pool_id>,COGNITO_REGION=ap-southeast-2,LEGACY_API_KEY=<key>}"
+# Ensure SSO session is active
+aws sso login --profile AdministratorAccess-595842668254
+
+# Deploy (≈2 min)
+AWS_PROFILE=AdministratorAccess-595842668254 poetry run serverless deploy --stage dev
 ```
 
-Then in `serverless.yml`, replace `private: true` with the `authorizer:` block shown in the comments
-at the bottom of this file.
+**Live endpoints (ap-southeast-2, account 595842668254):**
+
+| Method | URL |
+|--------|-----|
+| OPTIONS | `https://97udko2406.execute-api.ap-southeast-2.amazonaws.com/dev/graphql` |
+| POST   | `https://97udko2406.execute-api.ap-southeast-2.amazonaws.com/dev/graphql` |
+| GET    | `https://97udko2406.execute-api.ap-southeast-2.amazonaws.com/dev/graphql` |
+
+API key (for `x-api-key` header): see AWS Console → API Gateway → API Keys → `TempApiKey-spike-toshi-api-dev`.
+
+**CloudFormation stack:** `spike-toshi-api-dev-v2` (note `-v2` suffix — see Deployment Gotchas below).
+
+#### Deployment Gotchas
+
+- **Wrong AWS account**: Serverless Framework uses the default AWS provider on the org if no
+  profile is set. Always pass `AWS_PROFILE=AdministratorAccess-595842668254` explicitly, and
+  remove any default provider on the Serverless Dashboard org.
+
+- **Stuck ES stack deletion**: The original stack included an `AWS::Elasticsearch::Domain` resource.
+  ES domains take 20–30 min to delete in CloudFormation. ES has been removed entirely from the
+  spike (`serverless-plugin-ifelse` also dropped). If the old stack is stuck deleting and blocks
+  resource creation (S3 bucket name clash, etc.), append `-v2` (or similar) to `provider.stackName`
+  and `custom.s3_bucket` in `serverless.yml` to deploy a fresh stack in parallel.
+
+- **`serverless-plugin-ifelse` array exclusion**: The plugin nulls array entries rather than
+  splicing them, producing `null` values in CloudFormation IAM statements that CF rejects. Avoid
+  excluding `provider.iamRoleStatements` array indices with this plugin; use `Resources` entries
+  instead, or just remove the conditional resource entirely.
 
 ### 5. Local Stack Smoke Test
 
@@ -163,6 +185,7 @@ GraphQL resolvers / mutations (unchanged)
 |------|---------|
 | 2026-03-05 | AWS Cognito hosted UI does NOT support Device Authorization Grant (RFC 8628). `/oauth2/device_authorization` returns HTTP 400. Replaced with `USER_PASSWORD_AUTH` via `InitiateAuth` boto3 API — works from SSH terminals, no browser needed. |
 | 2026-03-05 | `login`, `whoami`, and `token` commands all working. Token saved to `~/.toshi/credentials`. Auto-refresh via `REFRESH_TOKEN_AUTH` confirmed. |
+| 2026-03-05 | Spike stack deployed to AWS (account 595842668254, ap-southeast-2). Elasticsearch removed entirely — not needed for auth proof. Stack named `spike-toshi-api-dev-v2` to sidestep stuck ES deletion from prior stack. `serverless-plugin-ifelse` dropped. |
 
 ---
 
