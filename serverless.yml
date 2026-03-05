@@ -141,7 +141,7 @@ functions:
     memorySize: 256
     timeout: 10
     environment:
-      COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, ''}
+      COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, 'ap-southeast-2_ww852jFvi'}
       COGNITO_REGION: ${self:provider.region}
       COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, ''}
       LEGACY_API_KEY: ${env:LEGACY_API_KEY, ''}
