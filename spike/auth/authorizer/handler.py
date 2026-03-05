@@ -134,6 +134,17 @@ def validate_cognito_token(token):
     principal_id = payload.get('username') or payload.get('sub', 'unknown')
     scopes = payload.get('scope', '')
 
+    # USER_PASSWORD_AUTH tokens carry aws.cognito.signin.user.admin instead of
+    # custom resource server scopes. Derive toshi scopes from Cognito group membership.
+    if 'aws.cognito.signin.user.admin' in scopes:
+        groups = payload.get('cognito:groups', [])
+        toshi_scopes = []
+        if 'toshi-readers' in groups or 'toshi-writers' in groups:
+            toshi_scopes.append('toshi/read')
+        if 'toshi-writers' in groups:
+            toshi_scopes.append('toshi/write')
+        scopes = ' '.join(toshi_scopes) if toshi_scopes else scopes
+
     return principal_id, scopes, payload
 
 
