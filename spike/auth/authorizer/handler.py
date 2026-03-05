@@ -41,8 +41,8 @@ from urllib.request import urlopen
 import jwt  # PyJWT
 from jwt import PyJWKClient
 
+logging.getLogger().setLevel(logging.INFO)  # ensure Lambda root logger captures INFO
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 # ---------------------------------------------------------------------------
 # JWKS cache — reused across warm Lambda invocations
@@ -161,8 +161,10 @@ def handler(event, context):
     """
     method_arn = event.get('methodArn', '*')
     auth_header = event.get('authorizationToken', '')
+    scheme = (auth_header.split(' ', 1)[0].lower()) if auth_header else '(none)'
 
-    logger.info(f'Authorizing request for: {method_arn}')
+    print(f'[jwtAuthorizer] INVOKED scheme={scheme} arn={method_arn}')
+    logger.info(f'[jwtAuthorizer] INVOKED scheme={scheme} arn={method_arn}')
 
     if not auth_header:
         logger.warning('No authorization token provided')
