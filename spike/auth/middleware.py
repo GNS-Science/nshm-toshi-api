@@ -80,28 +80,25 @@ def _is_mutation(request_body_bytes):
 
 def _get_auth_context():
     """
-    Extract auth context from headers injected by the Lambda Authorizer.
+    Extract auth context set by the Lambda Authorizer.
 
-    API Gateway proxy integration passes authorizer context as:
-        X-Amzn-Requestcontext-Authorizer-Userid: <value>
-        X-Amzn-Requestcontext-Authorizer-Scopes: <value>
-
-    For local dev (direct Flask), these headers won't be present; we return
-    anonymous context so the no-op path handles it.
+    serverless-wsgi exposes requestContext.authorizer as request.environ['serverless.authorizer'].
+    Fall back to X-Auth-* headers for local/e2e testing without API Gateway.
     """
-    # API Gateway injects authorizer context under these header names
+    authorizer_ctx = request.environ.get('serverless.authorizer') or {}
+
     user_id = (
-        request.headers.get('X-Amzn-Requestcontext-Authorizer-Userid')
-        or request.headers.get('X-Auth-Userid')  # allow override in tests/e2e
+        authorizer_ctx.get('userId')
+        or request.headers.get('X-Auth-Userid')
         or 'anonymous'
     )
     scopes_str = (
-        request.headers.get('X-Amzn-Requestcontext-Authorizer-Scopes')
-        or request.headers.get('X-Auth-Scopes')  # allow override in tests/e2e
+        authorizer_ctx.get('scopes')
+        or request.headers.get('X-Auth-Scopes')
         or ''
     )
     auth_method = (
-        request.headers.get('X-Amzn-Requestcontext-Authorizer-Authmethod')
+        authorizer_ctx.get('authMethod')
         or request.headers.get('X-Auth-Method')
         or 'none'
     )
