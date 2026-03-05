@@ -132,12 +132,16 @@ def check_auth():
     if request.method == 'OPTIONS':
         return None
 
+    # DEBUG: log all incoming headers so we can verify authorizer context injection
+    auth_headers = {k: v for k, v in request.headers if 'amzn' in k.lower() or 'auth' in k.lower()}
+    logger.info(f'[middleware] auth-related headers: {auth_headers}')
+
     user_id, scopes, auth_method = _get_auth_context()
 
     # Attach to Flask g for use in resolvers / logging
     g.current_user = {'userId': user_id, 'scopes': scopes, 'authMethod': auth_method}
 
-    logger.debug(f'Auth context: userId={user_id} scopes={scopes} method={auth_method}')
+    logger.info(f'[middleware] userId={user_id} scopes={scopes} method={auth_method}')
 
     # Read-only check — every authenticated user needs at least toshi/read
     if SCOPE_READ not in scopes:
