@@ -12,6 +12,8 @@ plugins:
 package:
   individually: false
   exclude:
+    - .env
+    - .env.*
     - .git/**
     - .pytest_cache/**
     - .tox/**
