@@ -247,6 +247,7 @@ GraphQL resolvers / mutations (unchanged)
 | 2026-03-05 | `login`, `whoami`, and `token` commands all working. Token saved to `~/.toshi/credentials`. Auto-refresh via `REFRESH_TOKEN_AUTH` confirmed. |
 | 2026-03-05 | Spike stack deployed to AWS (account 595842668254, ap-southeast-2). Elasticsearch removed entirely — not needed for auth proof. Stack named `spike-toshi-api-dev-v2` to sidestep stuck ES deletion from prior stack. `serverless-plugin-ifelse` dropped. |
 | 2026-03-05 | API live and responding. `x-api-key` auth confirmed working. `{about}` query returns `"Hello, I am nshm_toshi_api, version: 0.5.2! [SPIKE/286-modern-auth]"`. |
+| 2026-03-05 | Full JWT auth flow confirmed end-to-end: M2M token → API Gateway → Lambda Authorizer → Flask middleware. Log shows `userId=7vmevkokn5tuc1p9f40lshi7h5 scopes={'toshi/read', 'toshi/write'} method=jwt`. Key fix: authorizer context is in `request.environ['serverless.authorizer']` (set by serverless-wsgi), not in HTTP headers as originally assumed. |
 
 ---
 
