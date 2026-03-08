@@ -254,14 +254,14 @@ def run_remote_tests(endpoint, config):
     m2m_tok = None
 
     try:
-        writer_user = next(u for u in config['test_users'] if 'toshi-writers' in str(u))
+        writer_user = next(u for u in config['test_users'] if 'toshi-writers' in u.get('groups', []))
         writer_token = get_access_token(config, writer_user['username'], writer_user['password'])
         click.echo(f'    Writer token: OK ({writer_user["username"]})')
     except Exception as e:
         click.echo(f'    Writer token: FAILED ({e})')
 
     try:
-        reader_user = next(u for u in config['test_users'] if 'toshi-writers' not in str(u))
+        reader_user = next(u for u in config['test_users'] if 'toshi-writers' not in u.get('groups', []))
         reader_token = get_access_token(config, reader_user['username'], reader_user['password'])
         click.echo(f'    Reader token: OK ({reader_user["username"]})')
     except Exception as e:
