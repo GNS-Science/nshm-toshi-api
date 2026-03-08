@@ -25,7 +25,9 @@ from urllib.request import Request, urlopen
 
 import boto3
 import click
+from dotenv import load_dotenv
 
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 CREDENTIALS_PATH = Path.home() / '.toshi' / 'credentials'
 DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'cognito_config.json')

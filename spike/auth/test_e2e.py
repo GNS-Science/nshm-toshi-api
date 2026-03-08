@@ -32,6 +32,10 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import click
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+
 
 
 # ---------------------------------------------------------------------------
@@ -387,7 +391,8 @@ def run_remote_tests(endpoint, config):
 @click.command()
 @click.option('--local', 'mode', flag_value='local', default=True, help='Test local stack (default)')
 @click.option('--remote', 'mode', flag_value='remote', help='Test remote API Gateway endpoint')
-@click.option('--endpoint', default='http://localhost:5000/graphql', show_default=True,
+@click.option('--endpoint', default=lambda: os.environ.get('TOSHI_API_ENDPOINT', 'http://localhost:5000/graphql'),
+              show_default='$TOSHI_API_ENDPOINT or http://localhost:5000/graphql',
               help='GraphQL endpoint URL')
 @click.option('--verbose', is_flag=True, default=False)
 def main(mode, endpoint, verbose):
