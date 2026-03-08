@@ -362,7 +362,22 @@ def run_remote_tests(endpoint, config):
             t.fail(f'HTTP {status}: {body}')
         results.append(t)
 
-    # Test 8: Authorizer latency
+    # Test 8: Legacy x-api-key → full access
+    legacy_key = os.environ.get('LEGACY_API_KEY')
+    if legacy_key:
+        t = TestResult('Legacy x-api-key → query succeeds (200)')
+        start = time.perf_counter()
+        status, body = graphql_request(endpoint, GRAPHQL_QUERY, api_key=legacy_key)
+        t.duration_ms = (time.perf_counter() - start) * 1000
+        if status == 200:
+            t.ok('HTTP 200 — legacy x-api-key accepted')
+        else:
+            t.fail(f'Expected 200, got {status}: {body}')
+        results.append(t)
+    else:
+        click.echo('  (Skipping legacy x-api-key test — LEGACY_API_KEY not set)')
+
+    # Test 9: Authorizer latency
     if writer_token:
         t = TestResult('Authorizer warm-path latency (<100ms)')
         times = []

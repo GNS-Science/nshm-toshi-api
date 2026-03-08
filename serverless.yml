@@ -163,16 +163,16 @@ functions:
           authorizer:
             name: jwtAuthorizer
             resultTtlInSeconds: 0
-            identitySource: method.request.header.Authorization
-            type: token
+            identitySource: context.requestId
+            type: request
       - http:
           path: graphql
           method: GET
           authorizer:
             name: jwtAuthorizer
             resultTtlInSeconds: 0
-            identitySource: method.request.header.Authorization
-            type: token
+            identitySource: context.requestId
+            type: request
     environment:
       STACK_NAME: ${self:custom.stack_name}
       FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}

@@ -27,9 +27,12 @@ Deployment:
     And on the graphql POST/GET events:
         authorizer:
           name: jwtAuthorizer
-          resultTtlInSeconds: 300
+          resultTtlInSeconds: 0
           identitySource: method.request.header.Authorization
-          type: token
+          type: request
+          # Note: REQUEST type passes all headers to Lambda. The handler also checks
+          # x-api-key header, but API Gateway only gates on Authorization being present.
+          # Legacy clients sending only x-api-key must use: Authorization: x-api-key <key>
 """
 import json
 import logging
@@ -164,33 +167,27 @@ def handler(event, context):
     """
     Lambda authorizer handler.
 
-    Input event (TOKEN type):
+    Input event (REQUEST type):
         {
-            "authorizationToken": "Bearer <jwt>" | "x-api-key <key>",
+            "headers": {"Authorization": "Bearer <jwt>", "x-api-key": "<key>", ...},
             "methodArn": "arn:aws:execute-api:..."
         }
     """
     method_arn = event.get('methodArn', '*')
-    auth_header = event.get('authorizationToken', '')
+
+    # REQUEST type: headers are in event['headers']
+    headers = event.get('headers') or {}
+    auth_header = headers.get('Authorization') or headers.get('authorization', '')
+    api_key_header = headers.get('x-api-key') or headers.get('X-Api-Key', '')
+
     scheme = (auth_header.split(' ', 1)[0].lower()) if auth_header else '(none)'
+    print(f'[jwtAuthorizer] INVOKED scheme={scheme} api_key_present={bool(api_key_header)} arn={method_arn}')
+    logger.info(f'[jwtAuthorizer] INVOKED scheme={scheme} api_key_present={bool(api_key_header)} arn={method_arn}')
 
-    print(f'[jwtAuthorizer] INVOKED scheme={scheme} arn={method_arn}')
-    logger.info(f'[jwtAuthorizer] INVOKED scheme={scheme} arn={method_arn}')
-
-    if not auth_header:
-        logger.warning('No authorization token provided')
-        raise Exception('Unauthorized')
-
-    # Parse the Authorization header
-    parts = auth_header.split(' ', 1)
-    scheme = parts[0].lower() if parts else ''
-    token = parts[1] if len(parts) > 1 else ''
-
-    # Legacy x-api-key fallback
-    if scheme in ('x-api-key', 'apikey') or (len(parts) == 1 and validate_legacy_api_key(auth_header)):
-        raw_key = token or auth_header
-        if validate_legacy_api_key(raw_key):
-            logger.info('Authorizing via legacy x-api-key')
+    # Priority 1: x-api-key header (legacy clients)
+    if api_key_header:
+        if validate_legacy_api_key(api_key_header):
+            logger.info('Authorizing via legacy x-api-key header')
             return build_policy(
                 'legacy-api-key',
                 'Allow',
@@ -198,10 +195,33 @@ def handler(event, context):
                 context={'userId': 'legacy', 'scopes': 'toshi/read toshi/write', 'authMethod': 'apikey'},
             )
         else:
-            logger.warning('Invalid legacy API key')
+            logger.warning('Invalid legacy API key in x-api-key header')
             raise Exception('Unauthorized')
 
-    # JWT Bearer token
+    if not auth_header:
+        logger.warning('No authorization token provided')
+        raise Exception('Unauthorized')
+
+    # Parse Authorization header
+    parts = auth_header.split(' ', 1)
+    scheme = parts[0].lower() if parts else ''
+    token = parts[1] if len(parts) > 1 else ''
+
+    # Priority 2: Authorization: x-api-key <key> (clients adapted to Authorization header)
+    if scheme in ('x-api-key', 'apikey'):
+        if validate_legacy_api_key(token):
+            logger.info('Authorizing via legacy x-api-key in Authorization header')
+            return build_policy(
+                'legacy-api-key',
+                'Allow',
+                method_arn,
+                context={'userId': 'legacy', 'scopes': 'toshi/read toshi/write', 'authMethod': 'apikey'},
+            )
+        else:
+            logger.warning('Invalid legacy API key in Authorization header')
+            raise Exception('Unauthorized')
+
+    # Priority 3: JWT Bearer token
     if scheme != 'bearer':
         logger.warning(f'Unknown authorization scheme: {scheme}')
         raise Exception('Unauthorized')
