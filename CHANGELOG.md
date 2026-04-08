@@ -15,11 +15,13 @@
 ### Changed
  - Renamed `spike/` to `auth_migration/` to reflect authentication migration path
  - Updated `serverless.yml` JWT authorizer handler path to `auth_migration/auth/authorizer/handler.handler`
- - Test credentials managed exclusively in `auth_migration/auth/cognito_config.json` (gitignored)
+ - Separated test credentials into dedicated `auth_migration/auth/test_users.json` (gitignored)
  - Removed hardcoded test user passwords from source code for security
+ - Migrated public routing config to `auth_migration/auth/auth_config.json` (committed)
 
 ### Security
- - `cognito_config.json` added to `.gitignore` — contains client secrets and test user passwords
+ - Separated M2M `automation_client_secret` into local `.env` instead of config file
+ - `test_users.json` added to `.gitignore` — contains test user passwords
  - Test user credentials moved from source code to local-only config file
 
 ### Future (Phase 2)
