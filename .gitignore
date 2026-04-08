@@ -103,4 +103,4 @@ package-lock.json
 
 #VSCode settings
 .vscode
-spike/auth/cognito_config.json
+auth_migration/auth/cognito_config.json
