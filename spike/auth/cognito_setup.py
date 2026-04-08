@@ -6,6 +6,7 @@ Creates all Cognito resources needed for the spike:
   - Resource server with toshi/read and toshi/write scopes
   - App client for scientists (Device Authorization Grant, public)
   - App client for automation (Client Credentials, confidential)
+  - Identity Pool with IAM role mappings
   - Test users
 
 Usage:
@@ -20,6 +21,9 @@ import time
 
 import boto3
 import click
+
+
+COGNITO_IDENTITY_POOL_NAME = 'toshi-spike-identity-pool'
 
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'cognito_config.json')
@@ -42,6 +46,24 @@ TEST_USERS = [
         'password': 'Read0nly!',
         'scopes': ['toshi/read'],
         'groups': ['toshi-readers'],
+    },
+    {
+        'username': 'runzi-local@example.com',
+        'password': 'RunziL0cal!',
+        'scopes': ['toshi/read', 'toshi/write'],
+        'groups': ['runzi-local'],
+    },
+    {
+        'username': 'runzi-batch@example.com',
+        'password': 'RunziB4tch!',
+        'scopes': ['toshi/read', 'toshi/write'],
+        'groups': ['runzi-batch'],
+    },
+    {
+        'username': 'runzi-admin@example.com',
+        'password': 'RunziAdm1n!',
+        'scopes': ['toshi/read', 'toshi/write'],
+        'groups': ['runzi-admin'],
     },
 ]
 
@@ -163,10 +185,13 @@ def create_automation_client(client, pool_id):
 
 
 def create_groups(client, pool_id):
-    """Create user groups that map to scopes."""
+    """Create user groups that map to scopes and IAM roles."""
     for group_name, description in [
         ('toshi-writers', 'Users with toshi/read + toshi/write access'),
         ('toshi-readers', 'Users with toshi/read access only'),
+        ('runzi-local', 'Runzi users with local workstation AWS access (ECR, S3)'),
+        ('runzi-batch', 'Runzi users with Batch submit access'),
+        ('runzi-admin', 'Runzi users with Batch admin and ECR push access'),
     ]:
         click.echo(f'Creating group: {group_name} ...')
         try:
@@ -211,6 +236,63 @@ def create_test_users(client, pool_id):
             click.echo(f'  User already exists: {username}')
 
 
+def create_identity_pool(pool_name, user_pool_id, user_pool_arn, region, role_arns):
+    """Create Cognito Identity Pool with role mappings by group."""
+    identity_client = boto3.client('cognito-identity', region_name=region)
+
+    click.echo(f'Creating Identity Pool: {pool_name} ...')
+    resp = identity_client.create_identity_pool(
+        IdentityPoolName=pool_name,
+        AllowUnauthenticatedIdentities=False,
+        CognitoIdentityProviders=[
+            {
+                'ProviderName': user_pool_arn,
+                'ClientId': SCIENTIST_CLIENT_NAME,
+            }
+        ],
+    )
+    pool_id = resp['IdentityPoolId']
+    click.echo(f'  Created pool: {pool_id}')
+
+    click.echo('Setting up role mappings by Cognito groups ...')
+    role_mapping = {}
+    for group_name in ['toshi-readers', 'toshi-writers', 'runzi-local', 'runzi-batch', 'runzi-admin']:
+        role_key = group_name.replace('toshi-', '').replace('runzi-', '')
+        if role_key == 'readers':
+            role_key = 'readers'
+        elif role_key == 'writers':
+            role_key = 'writers'
+        role_arn = role_arns.get(role_key)
+        if role_arn:
+            role_mapping[group_name] = {
+                'Type': 'Token',
+                'MatchCriteria': {},
+                'Rules': [
+                    {
+                        'MatchType': 'Contains',
+                        'RuleClaim': 'cognito:groups',
+                        'Value': group_name,
+                    }
+                ],
+                'RoleARN': role_arn,
+            }
+
+    authenticated_role = role_arns.get('authenticated') or role_arns.get('writers')
+    if authenticated_role:
+        identity_client.set_identity_pool_roles(
+            IdentityPoolId=pool_id,
+            Roles={
+                'authenticated': authenticated_role,
+            },
+            RoleMappings=role_mapping,
+        )
+        click.echo(f'  Configured role mappings for groups: {", ".join(role_mapping.keys())}')
+    else:
+        click.echo('  Skipping role mappings (run iam_roles.py first to get role ARNs)')
+
+    return pool_id
+
+
 def save_config(config):
     with open(CONFIG_FILE, 'w') as f:
         json.dump(config, f, indent=2)
@@ -226,9 +308,20 @@ def load_config():
 
 def teardown(client, config):
     pool_id = config['user_pool_id']
+    identity_pool_id = config.get('identity_pool_id')
     domain = config.get('cognito_domain', '').split('.')[0]
+    region = config.get('region', 'ap-southeast-2')
 
     click.echo(f'Tearing down Cognito resources for pool: {pool_id}')
+
+    if identity_pool_id:
+        identity_client = boto3.client('cognito-identity', region_name=region)
+        click.echo(f'Deleting Identity Pool: {identity_pool_id} ...')
+        try:
+            identity_client.delete_identity_pool(IdentityPoolId=identity_pool_id)
+            click.echo('  Deleted Identity Pool')
+        except Exception as e:
+            click.echo(f'  Warning deleting Identity Pool: {e}')
 
     if domain:
         click.echo(f'Deleting domain: {domain} ...')
@@ -237,7 +330,7 @@ def teardown(client, config):
         except Exception as e:
             click.echo(f'  Warning: {e}')
 
-    click.echo(f'Deleting pool: {pool_id} ...')
+    click.echo(f'Deleting User Pool: {pool_id} ...')
     try:
         client.delete_user_pool(UserPoolId=pool_id)
         click.echo('  Done.')
@@ -271,8 +364,43 @@ def main(profile, region, do_teardown):
     create_groups(client, pool_id)
     create_test_users(client, pool_id)
 
+    user_pool_arn = f'cognito-idp.{region}.amazonaws.com/{pool_id}'
+    iam_roles_config_file = os.path.join(os.path.dirname(__file__), 'iam_roles_config.json')
+    if os.path.exists(iam_roles_config_file):
+        with open(iam_roles_config_file) as f:
+            iam_config = json.load(f)
+        role_arns = {
+            'readers': None,
+            'writers': None,
+            'local': iam_config['roles'].get('toshi-runzi-local'),
+            'batch': iam_config['roles'].get('toshi-runzi-batch'),
+            'admin': iam_config['roles'].get('toshi-runzi-admin'),
+            'authenticated': iam_config['roles'].get('toshi-runzi-local'),
+        }
+        click.echo('\nLoaded IAM role ARNs from iam_roles_config.json')
+    else:
+        role_arns = {
+            'readers': None,
+            'writers': None,
+            'local': None,
+            'batch': None,
+            'admin': None,
+            'authenticated': None,
+        }
+        click.echo('\nNote: iam_roles_config.json not found. Identity Pool will be created without IAM role ARNs.')
+        click.echo('Run iam_roles.py first for full setup.')
+
+    identity_pool_id = create_identity_pool(
+        COGNITO_IDENTITY_POOL_NAME,
+        pool_id,
+        user_pool_arn,
+        region,
+        role_arns,
+    )
+
     config = {
         'user_pool_id': pool_id,
+        'identity_pool_id': identity_pool_id,
         'region': region,
         'cognito_domain': cognito_domain,
         'issuer': f'https://cognito-idp.{region}.amazonaws.com/{pool_id}',
@@ -291,14 +419,16 @@ def main(profile, region, do_teardown):
 
     click.echo('\n=== Cognito Setup Complete ===')
     click.echo(f'Pool ID:            {pool_id}')
+    click.echo(f'Identity Pool ID:   {identity_pool_id}')
     click.echo(f'Region:             {region}')
     click.echo(f'Domain:             {cognito_domain}')
     click.echo(f'Scientist client:   {scientist_client_id}')
     click.echo(f'Automation client:  {automation_client_id}')
     click.echo('\nNext steps:')
-    click.echo('  python spike/auth/toshi_auth.py login')
-    click.echo('  python spike/auth/toshi_auth.py whoami')
-    click.echo('  TOSHI_CLIENT_ID=... TOSHI_CLIENT_SECRET=... python spike/auth/toshi_auth.py m2m-token')
+    click.echo('  1. python spike/auth/iam_roles.py --identity-pool-id {identity_pool_id}')
+    click.echo('  2. Update Identity Pool role mappings with IAM role ARNs')
+    click.echo('  3. python spike/auth/toshi_auth.py login')
+    click.echo('  4. python spike/auth/toshi_auth.py aws-creds')
 
 
 if __name__ == '__main__':

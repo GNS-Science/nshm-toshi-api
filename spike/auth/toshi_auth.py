@@ -6,8 +6,11 @@ Usage:
     python toshi_auth.py token         # Print current Bearer token (auto-refresh)
     python toshi_auth.py whoami        # Decode and display JWT claims
     python toshi_auth.py m2m-token     # Client credentials flow for automation/Runzi
+    python toshi_auth.py aws-creds     # Exchange token for AWS STS credentials
 
-Token storage: ~/.toshi/credentials (JSON)
+Token storage:
+    ~/.toshi/credentials (JSON)
+    ~/.aws/credentials [toshi] (via aws-creds command)
 
 Configuration (reads spike/auth/cognito_config.json OR env vars):
     TOSHI_COGNITO_CONFIG   path to cognito_config.json (default: spike/auth/cognito_config.json)
@@ -200,6 +203,72 @@ def client_credentials_flow(config):
 
 
 # ---------------------------------------------------------------------------
+# AWS Credentials flow (Cognito Identity Pool → STS)
+# ---------------------------------------------------------------------------
+
+def get_aws_credentials(config, access_token, profile='toshi'):
+    """Exchange Cognito token for AWS STS credentials via Identity Pool."""
+    region = config['region']
+    identity_pool_id = config.get('identity_pool_id')
+
+    if not identity_pool_id:
+        raise click.ClickException(
+            'Identity Pool ID not found in config.\n'
+            'Run: python spike/auth/cognito_setup.py'
+        )
+
+    cognito_identity = boto3.client('cognito-identity', region_name=region)
+
+    click.echo(f'Getting Identity ID from pool: {identity_pool_id} ...')
+    resp = cognito_identity.get_id(
+        IdentityPoolId=identity_pool_id,
+        Logins={
+            f'cognito-idp.{region}.amazonaws.com/{config["user_pool_id"]}': access_token,
+        },
+    )
+    identity_id = resp['IdentityId']
+    click.echo(f'  Identity ID: {identity_id}')
+
+    click.echo('Getting temporary AWS credentials ...')
+    resp = cognito_identity.get_credentials_for_identity(
+        IdentityId=identity_id,
+        Logins={
+            f'cognito-idp.{region}.amazonaws.com/{config["user_pool_id"]}': access_token,
+        },
+    )
+
+    creds = resp['Credentials']
+    click.echo(f'  AccessKeyId: {creds["AccessKeyId"]}')
+    click.echo(f'  Expires: {datetime.fromtimestamp(creds["Expiration"] / 1000, tz=timezone.utc).isoformat()}')
+
+    aws_credentials_path = Path.home() / '.aws' / 'credentials'
+    aws_credentials_path.parent.mkdir(parents=True, exist_ok=True)
+
+    config_content = ''
+    if aws_credentials_path.exists():
+        with open(aws_credentials_path) as f:
+            config_content = f.read()
+
+    import configparser
+    parser = configparser.ConfigParser()
+    parser.read_string(config_content)
+
+    if profile not in parser.sections():
+        parser.add_section(profile)
+    parser.set(profile, 'aws_access_key_id', creds['AccessKeyId'])
+    parser.set(profile, 'aws_secret_access_key', creds['SecretKey'])
+    parser.set(profile, 'aws_session_token', creds['SessionToken'])
+    parser.set(profile, 'region', region)
+
+    with open(aws_credentials_path, 'w') as f:
+        parser.write(f)
+
+    aws_credentials_path.chmod(0o600)
+
+    return profile
+
+
+# ---------------------------------------------------------------------------
 # CLI commands
 # ---------------------------------------------------------------------------
 
@@ -315,6 +384,40 @@ def m2m_token(raw):
         click.echo(access_token)
     else:
         click.echo(f'Bearer {access_token}')
+
+
+@cli.command('aws-creds')
+@click.option('--profile', default='toshi', help='AWS credentials profile name', show_default=True)
+def aws_creds(profile):
+    """Exchange Cognito token for AWS STS credentials and write to ~/.aws/credentials."""
+    config = load_cognito_config()
+    creds = load_credentials()
+
+    access_token = creds.get('access_token', '')
+    if not access_token:
+        raise click.ClickException('Not logged in. Run: python toshi_auth.py login')
+
+    if is_token_expired(access_token, buffer_seconds=300):
+        refresh_tok = creds.get('refresh_token', '')
+        if not refresh_tok:
+            raise click.ClickException('Token expired and no refresh token. Run: python toshi_auth.py login')
+        click.echo('Token expired, refreshing...', err=True)
+        try:
+            token_resp = refresh_token(config, refresh_tok)
+            access_token = token_resp['access_token']
+            creds['access_token'] = access_token
+            creds['expires_at'] = time.time() + token_resp.get('expires_in', 3600)
+            if 'refresh_token' in token_resp:
+                creds['refresh_token'] = token_resp['refresh_token']
+            save_credentials(creds)
+        except Exception as e:
+            raise click.ClickException(f'Token refresh failed: {e}. Run: python toshi_auth.py login')
+
+    result_profile = get_aws_credentials(config, access_token, profile)
+
+    click.echo(f'\nAWS credentials saved to profile [{result_profile}] in ~/.aws/credentials')
+    click.echo(f'Use with: export AWS_PROFILE={result_profile}')
+    click.echo(f'Or: aws --profile {result_profile} s3 ls')
 
 
 if __name__ == '__main__':

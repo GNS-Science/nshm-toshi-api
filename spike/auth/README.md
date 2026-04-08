@@ -12,60 +12,102 @@ single shared `x-api-key` in `TempApiKey`.
 
 ## Quick Start
 
-### 0. 
+### Phase 1 — IAM Roles + Cognito Identity Pool (SSO without Entra)
 
-- configured new subaccount ds-spike
-- granted permission sets in new account to chrisbc user
-- console access YAY
-- created new profile with...
+#### 0. AWS Profile Setup
 
-```
-chrisbc@MLX01 nshm-toshi-api % aws configure sso
-SSO session name (Recommended): ds-spike
-SSO start URL [None]: https://d-976795968d.awsapps.com/start/#
-SSO region [None]: ap-southeast-2
-SSO registration scopes [sso:account:access]:
-Attempting to open your default browser.
-If the browser does not open, open the following URL:
-...
+Configure AWS CLI profile with SSO:
+```bash
+aws configure sso
+# SSO session name: ds-spike
+# SSO start URL: https://d-976795968d.awsapps.com/start/#
+# SSO region: ap-southeast-2
 ```
 
-new profile: AdministratorAccess-595842668254
-
-
-### 1. Provision Cognito - DONE
-
+#### 1. Provision Cognito User Pool + Identity Pool
 ```bash
 poetry run python spike/auth/cognito_setup.py --profile AdministratorAccess-595842668254
 # Outputs: spike/auth/cognito_config.json
 ```
 
 This creates:
-- A User Pool named `toshi-spike`
-- Resource server `toshi` with scopes `read` and `write`
-- App client `toshi-scientist` (USER_PASSWORD_AUTH, public — no client secret)
-- App client `toshi-automation` (Client Credentials, confidential)
-- Test users: `scientist@example.com` / `Scienti5t!` and `readonly@example.com` / `Read0nly!`
+- User Pool `toshi-spike` with resource server and scopes
+- App clients for scientists and automation
+- Identity Pool for AWS credential exchange
+- Test users with groups: `toshi-readers`, `toshi-writers`, `runzi-local`, `runzi-batch`, `runzi-admin`
 
-### 2. Scientist Login
-
+#### 2. Create IAM Roles
 ```bash
-poetry run python spike/auth/toshi_auth.py login
-# Prompts for email and password, saves token to ~/.toshi/credentials
-
-poetry run python spike/auth/toshi_auth.py whoami
-# Shows: user, scopes, expiry
-
-poetry run python spike/auth/toshi_auth.py token
-# Prints raw Bearer token (auto-refreshes if expired)
+poetry run python spike/auth/iam_roles.py \
+    --profile AdministratorAccess-595842668254 \
+    --identity-pool-id <identity_pool_id_from_cognito_config.json>
+# Outputs: spike/auth/iam_roles_config.json
 ```
 
-> **Note:** AWS Cognito does not support the OAuth 2.0 Device Authorization Grant (RFC 8628).
-> The `login` command uses Cognito's `USER_PASSWORD_AUTH` flow via boto3's `InitiateAuth` API
-> instead. This works from SSH terminals — no browser required. The app client must have
-> `ALLOW_USER_PASSWORD_AUTH` enabled (already set in `cognito_setup.py`).
+This creates IAM roles:
+- `toshi-runzi-local` — ECR pull, S3 read/write
+- `toshi-runzi-batch` — + Batch submit/describe
+- `toshi-runzi-admin` — + Batch configure, ECR push
 
-### 3. Automation / M2M Token
+#### 3. Update Identity Pool Role Mappings
+
+The Identity Pool was created with placeholder role mappings. Update them manually in AWS Console:
+
+1. Go to Cognito → Identity Pools → `toshi-spike-identity-pool`
+2. Edit → Role mappings
+3. Set each group to its corresponding IAM role:
+   - `toshi-readers` → use default authenticated role
+   - `toshi-writers` → use default authenticated role
+   - `runzi-local` → `toshi-runzi-local`
+   - `runzi-batch` → `toshi-runzi-batch`
+   - `runzi-admin` → `toshi-runzi-admin`
+
+Or use the AWS CLI:
+```bash
+aws cognito-identity set-identity-pool-roles \
+    --identity-pool-id <identity_pool_id> \
+    --role-mappings file://role-mappings.json \
+    --roles authenticated=<role_arn>
+```
+
+#### 4. Test Login + AWS Credentials
+```bash
+# Login with test user
+poetry run python spike/auth/toshi_auth.py login
+# Email: runzi-local@example.com
+# Password: RunziL0cal!
+
+# Get AWS credentials
+poetry run python spike/auth/toshi_auth.py aws-creds
+
+# Use AWS CLI with the credentials
+export AWS_PROFILE=toshi
+aws ecr describe-repositories --region ap-southeast-2
+```
+
+### Phase 2 — Entra OIDC Federation (deferred)
+
+See `IDP_INTEGRATION_PLAN.md` for Entra ID federation setup.
+
+---
+
+### Legacy Quick Start (Original Spike)
+
+This section documents the original spike without Identity Pool. Superseded by Phase 1 above.
+
+#### 1. Provision Cognito (legacy)
+```bash
+poetry run python spike/auth/cognito_setup.py --profile AdministratorAccess-595842668254
+```
+
+#### 2. Scientist Login (legacy)
+```bash
+poetry run python spike/auth/toshi_auth.py login
+poetry run python spike/auth/toshi_auth.py whoami
+poetry run python spike/auth/toshi_auth.py token
+```
+
+#### 3. Automation / M2M Token (legacy)
 
 This flow is for **Runzi and other automated pipelines** that call the Toshi API without a human
 user in the loop. It uses the OAuth 2.0 Client Credentials grant: the `toshi-automation` app
