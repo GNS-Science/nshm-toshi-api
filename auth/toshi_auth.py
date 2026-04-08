@@ -12,8 +12,8 @@ Token storage:
     ~/.toshi/credentials (JSON)
     ~/.aws/credentials [toshi] (via aws-creds command)
 
-Configuration (reads auth_migration/auth/auth_config.json OR env vars):
-    TOSHI_COGNITO_CONFIG   path to auth_config.json (default: auth_migration/auth/auth_config.json)
+Configuration (reads auth/auth_config.json OR env vars):
+    TOSHI_COGNITO_CONFIG   path to auth_config.json (default: auth/auth_config.json)
     TOSHI_CLIENT_ID        override automation client_id (for m2m-token)
     TOSHI_CLIENT_SECRET    override automation client_secret (for m2m-token)
 """
@@ -45,7 +45,7 @@ def load_auth_config():
     if not os.path.exists(config_path):
         raise click.ClickException(
             f'Cognito config not found at {config_path}.\n'
-            'Run: python auth_migration/auth/cognito_setup.py --profile <your-aws-profile>'
+            'Run: python auth/cognito_setup.py --profile <your-aws-profile>'
         )
     with open(config_path) as f:
         return json.load(f)
@@ -214,7 +214,7 @@ def get_aws_credentials(config, access_token, profile='toshi'):
     if not identity_pool_id:
         raise click.ClickException(
             'Identity Pool ID not found in config.\n'
-            'Run: python auth_migration/auth/cognito_setup.py'
+            'Run: python auth/cognito_setup.py'
         )
 
     cognito_identity = boto3.client('cognito-identity', region_name=region)

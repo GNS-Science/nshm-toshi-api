@@ -4,20 +4,20 @@
 
 ### Added
  - **Phase 1 SSO Authentication**: Cognito Identity Pool integration for AWS service credentials
-   - New `auth_migration/auth/` directory with complete SSO implementation
+   - New `auth/` directory with complete SSO implementation
    - IAM roles for Runzi users: `toshi-runzi-local`, `toshi-runzi-batch`, `toshi-runzi-admin`
    - Cognito Identity Pool with role mappings by Cognito groups
    - New CLI command: `toshi_auth.py aws-creds` to exchange JWT for STS credentials
- - IAM roles provisioning script: `auth_migration/auth/iam_roles.py`
- - Extended Cognito setup with Identity Pool creation in `auth_migration/auth/cognito_setup.py`
+ - IAM roles provisioning script: `auth/iam_roles.py`
+ - Extended Cognito setup with Identity Pool creation in `auth/cognito_setup.py`
  - Test users for all Runzi personas: `runzi-local`, `runzi-batch`, `runzi-admin`
 
 ### Changed
  - Renamed `spike/` to `auth_migration/` to reflect authentication migration path
- - Updated `serverless.yml` JWT authorizer handler path to `auth_migration/auth/authorizer/handler.handler`
- - Separated test credentials into dedicated `auth_migration/auth/test_users.json` (gitignored)
+ - Updated `serverless.yml` JWT authorizer handler path to `auth/authorizer/handler.handler`
+ - Separated test credentials into dedicated `auth/test_users.json` (gitignored)
  - Removed hardcoded test user passwords from source code for security
- - Migrated public routing config to `auth_migration/auth/auth_config.json` (committed)
+ - Migrated public routing config to `auth/auth_config.json` (committed)
 
 ### Security
  - Separated M2M `automation_client_secret` into local `.env` instead of config file

@@ -32,8 +32,8 @@ aws configure sso
 
 #### 1. Provision Cognito User Pool + Identity Pool
 ```bash
-poetry run python auth_migration/auth/cognito_setup.py --profile AdministratorAccess-595842668254
-# Outputs: auth_migration/auth/auth_config.json and auth_migration/auth/.env
+poetry run python auth/cognito_setup.py --profile AdministratorAccess-595842668254
+# Outputs: auth/auth_config.json and auth/.env
 ```
 
 This creates:
@@ -44,10 +44,10 @@ This creates:
 
 #### 2. Create IAM Roles
 ```bash
-poetry run python auth_migration/auth/iam_roles.py \
+poetry run python auth/iam_roles.py \
     --profile AdministratorAccess-595842668254 \
     --identity-pool-id <identity_pool_id_from_auth_config.json>
-# Outputs: auth_migration/auth/iam_roles_config.json
+# Outputs: auth/iam_roles_config.json
 ```
 
 This creates IAM roles:
@@ -79,12 +79,12 @@ aws cognito-identity set-identity-pool-roles \
 #### 4. Test Login + AWS Credentials
 ```bash
 # Login with test user
-poetry run python auth_migration/auth/toshi_auth.py login
+poetry run python auth/toshi_auth.py login
 # Email: runzi-local@example.com
 # Password: RunziL0cal!
 
 # Get AWS credentials
-poetry run python auth_migration/auth/toshi_auth.py aws-creds
+poetry run python auth/toshi_auth.py aws-creds
 
 # Use AWS CLI with the credentials
 export AWS_PROFILE=toshi
@@ -103,14 +103,14 @@ This section documents the original spike without Identity Pool. Superseded by P
 
 #### 1. Provision Cognito (legacy)
 ```bash
-poetry run python auth_migration/auth/cognito_setup.py --profile AdministratorAccess-595842668254
+poetry run python auth/cognito_setup.py --profile AdministratorAccess-595842668254
 ```
 
 #### 2. Scientist Login (legacy)
 ```bash
-poetry run python auth_migration/auth/toshi_auth.py login
-poetry run python auth_migration/auth/toshi_auth.py whoami
-poetry run python auth_migration/auth/toshi_auth.py token
+poetry run python auth/toshi_auth.py login
+poetry run python auth/toshi_auth.py whoami
+poetry run python auth/toshi_auth.py token
 ```
 
 #### 3. Automation / M2M Token (legacy)
@@ -127,15 +127,15 @@ Key differences from the scientist flow:
   AWS Secrets Manager or CI/CD secret variables, never in source control
 
 ```bash
-poetry run python auth_migration/auth/toshi_auth.py m2m-token
+poetry run python auth/toshi_auth.py m2m-token
 # Prints Bearer token (reads client_id from auth_config.json and secret from .env)
 
 # Use the raw token directly in a request:
-TOKEN=$(poetry run python auth_migration/auth/toshi_auth.py m2m-token --raw)
+TOKEN=$(poetry run python auth/toshi_auth.py m2m-token --raw)
 curl -H "Authorization: Bearer $TOKEN" https://<api-url>/graphql -d '{"query":"{...}"}'
 
 # Override credentials via env vars (preferred for CI/CD):
-TOSHI_CLIENT_ID=<id> TOSHI_CLIENT_SECRET=<secret> poetry run python auth_migration/auth/toshi_auth.py m2m-token
+TOSHI_CLIENT_ID=<id> TOSHI_CLIENT_SECRET=<secret> poetry run python auth/toshi_auth.py m2m-token
 ```
 
 Token lifetime is 1 hour. Runzi should call `m2m-token` at the start of each job (or check
@@ -219,8 +219,8 @@ const gql = await fetch(API, {
 console.log(await gql.json());
 ```
 
-Fill in `CLIENT_ID` from `auth_migration/auth/auth_config.json`
-and `CLIENT_SECRET` from `auth_migration/auth/.env`.
+Fill in `CLIENT_ID` from `auth/auth_config.json`
+and `CLIENT_SECRET` from `auth/.env`.
 
 > **Note:** the Cognito token endpoint does **not** set CORS headers, so the token fetch in Step 1
 > will be blocked by the browser if run from a normal page origin. Run it from the DevTools console
@@ -250,10 +250,10 @@ yarn sls dynamodb start --stage local &
 yarn sls s3 start &
 poetry run yarn sls wsgi serve &
 
-python auth_migration/auth/test_e2e.py --local
+python auth/test_e2e.py --local
 ```
 
-The Flask middleware (`auth_migration/auth/middleware.py`) is **no-op** when `SLS_OFFLINE=1` or `TESTING=1`,
+The Flask middleware (`auth/middleware.py`) is **no-op** when `SLS_OFFLINE=1` or `TESTING=1`,
 so local dev is unaffected.
 
 ---
@@ -324,7 +324,7 @@ And add the authorizer function:
 ```yaml
 functions:
   jwtAuthorizer:
-    handler: auth_migration/auth/authorizer/handler.handler
+    handler: auth/authorizer/handler.handler
     environment:
       COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
       COGNITO_REGION: ${self:provider.region}

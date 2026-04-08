@@ -114,7 +114,7 @@ There is no urgency — the Cognito path works indefinitely and coexists with IA
 - Federation is configured in the IAM Identity Center console (management account)
 
 **Step 2 — Dev team: hand over Permission Set policy definitions**
-- The IAM role policies already defined in `auth_migration/auth/iam_roles.py` are the exact policies IT team needs — no rework
+- The IAM role policies already defined in `auth/iam_roles.py` are the exact policies IT team needs — no rework
 - Provide IT team with the JSON policy documents for `NSHM-RunziLocal`, `NSHM-RunziBatch`, `NSHM-RunziAdmin`
 - IT team creates these as Permission Sets and assigns the relevant Entra AD groups
 

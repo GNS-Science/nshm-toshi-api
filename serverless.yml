@@ -134,11 +134,11 @@ provider:
         description: Api key until we have an auth function # Optional
 
 functions:
-  # JWT Lambda Authorizer (auth_migration/auth — replace x-api-key with Cognito JWTs)
+  # JWT Lambda Authorizer (auth — replace x-api-key with Cognito JWTs)
   # To activate: set COGNITO_USER_POOL_ID, COGNITO_REGION, COGNITO_CLIENT_ID env vars
   # and replace `private: true` below with the `authorizer:` block shown in comments.
   jwtAuthorizer:
-    handler: auth_migration/auth/authorizer/handler.handler
+    handler: auth/authorizer/handler.handler
     description: Validates Cognito JWTs; accepts legacy x-api-key for backward compat
     memorySize: 256
     timeout: 10

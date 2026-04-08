@@ -84,11 +84,11 @@ The codebase is well-structured at its core but has accumulated technical debt a
 - Fix `common.py` line 58 `# duplicate??` comment on `OPENQUAKE_HAZARD` enum value
 - Check all usages and consolidate
 
-**2.5 Finalize or shelve auth_migration/auth**
-- Decision required: merge auth_migration to main or move to separate branch
+**2.5 Finalize or shelve auth**
+- Decision required: merge auth to main or move to separate branch
 - If shelving: remove `try-import` from `api.py`, remove `PyJWT` from pyproject.toml
 - If merging: write a proper integration plan (separate PR)
-- Phase 1 complete: IAM roles + Cognito Identity Pool implemented in `auth_migration/auth/`
+- Phase 1 complete: IAM roles + Cognito Identity Pool implemented in `auth/`
 
 **2.6 Type hint expansion**
 - Add mypy `strict = false` baseline config to `pyproject.toml`

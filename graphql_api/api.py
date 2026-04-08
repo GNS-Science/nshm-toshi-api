@@ -55,11 +55,11 @@ migrate()
 # SPIKE AUTH: JWT scope enforcement middleware (no-op when TESTING=1 or SLS_OFFLINE=1)
 # Remove this block once the spike is validated and the production auth is implemented.
 try:
-    from spike.auth.middleware import register_auth_middleware
+    from auth.middleware import register_auth_middleware
 
     register_auth_middleware(app)
 except ImportError:
-    logger.debug('spike.auth.middleware not available — skipping auth middleware')
+    logger.debug('auth.middleware not available — skipping auth middleware')
 
 app.add_url_rule(
     '/graphql',

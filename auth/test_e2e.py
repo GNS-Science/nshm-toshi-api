@@ -5,10 +5,10 @@ Verifies all token flows against a running local stack or remote endpoint.
 
 Usage:
     # Against local stack (SLS_OFFLINE=1, no auth enforcement)
-    python auth_migration/auth/test_e2e.py --local
+    python auth/test_e2e.py --local
 
     # Against a deployed API Gateway endpoint with Cognito auth enabled
-    python auth_migration/auth/test_e2e.py --endpoint https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/dev
+    python auth/test_e2e.py --endpoint https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/dev
 
 Prerequisites:
     - auth_config.json present (run cognito_setup.py first)

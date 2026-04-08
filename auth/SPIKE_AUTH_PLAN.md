@@ -60,19 +60,19 @@ When IAM Identity Center + Azure AD is ready: add as SAML/OIDC external IdP to t
 
 ## SPIKE Scope
 
-Self-contained in this `auth_migration/auth/` directory. Uses the user's second AWS account with IAM Identity Center. Proves the end-to-end flow before committing to a production implementation.
+Self-contained in this `auth/` directory. Uses the user's second AWS account with IAM Identity Center. Proves the end-to-end flow before committing to a production implementation.
 
 ### Deliverable 1: Cognito Setup Script
-**`auth_migration/auth/cognito_setup.py`** — boto3 script to create all Cognito resources:
+**`auth/cognito_setup.py`** — boto3 script to create all Cognito resources:
 - User Pool with `toshi` resource server + `read`/`write` scopes
 - App client for scientists (Device Authorization Grant, public client — no secret)
 - App client for automation (Client Credentials, confidential client)
 - 2–3 test users
 
-Run once: `python auth_migration/auth/cognito_setup.py --profile <your-aws-profile>`. Outputs config as JSON for use in subsequent steps.
+Run once: `python auth/cognito_setup.py --profile <your-aws-profile>`. Outputs config as JSON for use in subsequent steps.
 
 ### Deliverable 2: Scientist CLI Tool
-**`auth_migration/auth/toshi_auth.py`** — standalone Python script (uses `click` already in dev deps):
+**`auth/toshi_auth.py`** — standalone Python script (uses `click` already in dev deps):
 
 ```
 python toshi_auth.py login         # Device flow: prints URL+code, polls, saves token
@@ -84,7 +84,7 @@ python toshi_auth.py m2m-token     # Client credentials flow for Runzi/automatio
 Token storage: `~/.toshi/credentials` (JSON). Uses `requests` + `PyJWT` (new dep).
 
 ### Deliverable 3: Lambda Authorizer
-**`auth_migration/auth/authorizer/handler.py`** — standalone Python Lambda function:
+**`auth/authorizer/handler.py`** — standalone Python Lambda function:
 
 - Accepts `Authorization: Bearer <token>` header OR legacy `x-api-key` (backward compat)
 - Fetches Cognito JWKS from `https://cognito-idp.<region>.amazonaws.com/<pool_id>/.well-known/jwks.json` (cached in-process between warm invocations)
@@ -95,7 +95,7 @@ Token storage: `~/.toshi/credentials` (JSON). Uses `requests` + `PyJWT` (new dep
 Also adds to **`serverless.yml`**: an `authorizer:` block on the POST/GET `graphql` events, replacing `private: true`.
 
 ### Deliverable 4: Flask Middleware
-**`auth_migration/auth/middleware.py`** — prototype `before_request` hook for `graphql_api/api.py`:
+**`auth/middleware.py`** — prototype `before_request` hook for `graphql_api/api.py`:
 
 - Reads `userId` and `scopes` from headers injected by the Lambda authorizer
 - Parses raw request body to detect if the GraphQL operation is a query or mutation
@@ -104,7 +104,7 @@ Also adds to **`serverless.yml`**: an `authorizer:` block on the POST/GET `graph
 - **No-op when `TESTING=1` or `SLS_OFFLINE=1`** to preserve local dev workflow
 
 ### Deliverable 5: End-to-End Validation Script
-**`auth_migration/auth/test_e2e.py`** — verifies all flows:
+**`auth/test_e2e.py`** — verifies all flows:
 
 1. Device Flow login → token acquired
 2. `toshi/read` token → GraphQL query succeeds
@@ -119,13 +119,13 @@ Also adds to **`serverless.yml`**: an `authorizer:` block on the POST/GET `graph
 
 | File | Action |
 |------|--------|
-| `auth_migration/auth/README.md` | Setup instructions + findings log |
-| `auth_migration/auth/cognito_setup.py` | boto3 Cognito provisioning script |
-| `auth_migration/auth/toshi_auth.py` | Scientist CLI tool |
-| `auth_migration/auth/authorizer/handler.py` | Lambda authorizer |
-| `auth_migration/auth/authorizer/requirements.txt` | `PyJWT`, `cryptography` (authorizer deps) |
-| `auth_migration/auth/middleware.py` | Flask middleware prototype |
-| `auth_migration/auth/test_e2e.py` | End-to-end validation |
+| `auth/README.md` | Setup instructions + findings log |
+| `auth/cognito_setup.py` | boto3 Cognito provisioning script |
+| `auth/toshi_auth.py` | Scientist CLI tool |
+| `auth/authorizer/handler.py` | Lambda authorizer |
+| `auth/authorizer/requirements.txt` | `PyJWT`, `cryptography` (authorizer deps) |
+| `auth/middleware.py` | Flask middleware prototype |
+| `auth/test_e2e.py` | End-to-end validation |
 | `serverless.yml` | Add `authorizer:` to graphql events; remove `private: true` |
 | `graphql_api/api.py` | Wire in `middleware.py` as `before_request` |
 | `pyproject.toml` | Add `PyJWT` to dev deps |
@@ -157,11 +157,11 @@ Also adds to **`serverless.yml`**: an `authorizer:` block on the POST/GET `graph
 
 ```bash
 # 1. Provision Cognito in the test AWS account
-python auth_migration/auth/cognito_setup.py --profile test-account
+python auth/cognito_setup.py --profile test-account
 
 # 2. Test scientist interactive flow
-python auth_migration/auth/toshi_auth.py login
-python auth_migration/auth/toshi_auth.py whoami
+python auth/toshi_auth.py login
+python auth/toshi_auth.py whoami
 
 # 3. Start local stack
 yarn sls dynamodb start --stage local &
@@ -169,7 +169,7 @@ yarn sls s3 start &
 poetry run yarn sls wsgi serve
 
 # 4. Run end-to-end validation
-python auth_migration/auth/test_e2e.py
+python auth/test_e2e.py
 
 # 5. Manual: test GraphQL playground with Bearer token
 # open http://localhost:5000/graphql, set Authorization header

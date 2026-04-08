@@ -51,7 +51,7 @@ loggers:
     handlers: [console_handler]
     propagate: no
 
-  spike:
+  auth:
     level: DEBUG
     handlers: [console_handler]
     propagate: no

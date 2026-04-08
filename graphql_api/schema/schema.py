@@ -179,7 +179,7 @@ class QueryRoot(graphene.ObjectType):
     )
 
     def resolve_about(root, info, **args):
-        return "Hello, I am nshm_toshi_api, version: %s! [SPIKE/286-modern-auth]" % __version__
+        return "Hello, I am nshm_toshi_api, version: %s! [AUTH]" % __version__
 
     def resolve_version(root, info, **args):
         return __version__

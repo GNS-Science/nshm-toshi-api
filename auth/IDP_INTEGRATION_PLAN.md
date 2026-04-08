@@ -64,7 +64,7 @@ That is the only external dependency.
 
 ## Personas & IAM Permissions
 
-> **Single source of truth:** `auth_migration/auth/iam_roles.py` in this repo is the canonical definition of all runzi user permissions — covering both Toshi API access (via Cognito groups) and AWS service permissions (IAM role policies). The `nzshm-runzi` repo should reference this rather than maintaining its own scattered IAM docs.
+> **Single source of truth:** `auth/iam_roles.py` in this repo is the canonical definition of all runzi user permissions — covering both Toshi API access (via Cognito groups) and AWS service permissions (IAM role policies). The `nzshm-runzi` repo should reference this rather than maintaining its own scattered IAM docs.
 
 | Persona | Cognito Group | Toshi Scope | IAM Role | AWS Permissions summary |
 |---|---|---|---|---|
@@ -122,8 +122,8 @@ This separation of concerns isolates the semi-permanent infrastructure wiring fr
 
 ### Phase 1 — IAM Roles + Cognito Identity Pool
 **Files to create:**
-- `auth_migration/auth/iam_roles.py` — boto3 script: create 3 IAM roles with policies + trust policies
-- Extend `auth_migration/auth/cognito_setup.py` — add Identity Pool, role mappings by Cognito group
+- `auth/iam_roles.py` — boto3 script: create 3 IAM roles with policies + trust policies
+- Extend `auth/cognito_setup.py` — add Identity Pool, role mappings by Cognito group
 
 **Tasks:**
 1. Create IAM roles `toshi-runzi-local`, `toshi-runzi-batch`, `toshi-runzi-admin`
@@ -137,14 +137,14 @@ This separation of concerns isolates the semi-permanent infrastructure wiring fr
 **Prerequisite:** IT team provides Entra App Registration `client_id` + `tenant_id`.
 
 **Files to modify:**
-- `auth_migration/auth/cognito_setup.py` — add Entra as OIDC IdP, attribute mapping, update app client
+- `auth/cognito_setup.py` — add Entra as OIDC IdP, attribute mapping, update app client
 
 **Tasks:**
 1. Add OIDC IdP pointing at Entra discovery URL:
    `https://login.microsoftonline.com/{tenant_id}/v2.0/.well-known/openid-configuration`
 2. Attribute mapping: Entra `email` → Cognito `email`, `groups` → `custom:ad_groups` (capture for future automation)
 3. Update `toshi-scientist` app client: enable PKCE, add `openid email profile` scopes, allow Entra IdP
-4. Create `auth_migration/auth/group_mapping.json` — Entra AD group names → Cognito groups (defines the contract with IT team for future automation)
+4. Create `auth/group_mapping.json` — Entra AD group names → Cognito groups (defines the contract with IT team for future automation)
 
 ### Phase 3 — CLI Updates (`toshi_auth.py`)
 **Replace `login` with PKCE Authorization Code flow:**
@@ -163,9 +163,9 @@ This separation of concerns isolates the semi-permanent infrastructure wiring fr
 
 ### Phase 4 — Documentation + Testing
 **Files:**
-- `auth_migration/auth/README.md` — update: Entra federation setup, IT team checklist, new CLI commands
-- `auth_migration/auth/docs/sso-admin-setup.md` (new) — IT team guide: what to configure in Entra, what to hand over
-- `auth_migration/auth/test_e2e.py` — extend: PKCE flow, `aws-creds` returns valid STS, ECR smoke test, role boundary test (runzi-local cannot push ECR)
+- `auth/README.md` — update: Entra federation setup, IT team checklist, new CLI commands
+- `auth/docs/sso-admin-setup.md` (new) — IT team guide: what to configure in Entra, what to hand over
+- `auth/test_e2e.py` — extend: PKCE flow, `aws-creds` returns valid STS, ECR smoke test, role boundary test (runzi-local cannot push ECR)
 
 ---
 
@@ -185,16 +185,16 @@ This separation of concerns isolates the semi-permanent infrastructure wiring fr
 
 | File | Action |
 |---|---|
-| `auth_migration/auth/cognito_setup.py` | Extend: Identity Pool + Entra OIDC IdP + attribute mapping |
-| `auth_migration/auth/iam_roles.py` | Create: IAM roles + policies (boto3) |
-| `auth_migration/auth/group_mapping.json` | Create: Entra AD group → Cognito group mapping config |
-| `auth_migration/auth/toshi_auth.py` | Modify: PKCE login + `aws-creds` command |
-| `auth_migration/auth/authorizer/handler.py` | No changes |
-| `auth_migration/auth/middleware.py` | No changes |
+| `auth/cognito_setup.py` | Extend: Identity Pool + Entra OIDC IdP + attribute mapping |
+| `auth/iam_roles.py` | Create: IAM roles + policies (boto3) |
+| `auth/group_mapping.json` | Create: Entra AD group → Cognito group mapping config |
+| `auth/toshi_auth.py` | Modify: PKCE login + `aws-creds` command |
+| `auth/authorizer/handler.py` | No changes |
+| `auth/middleware.py` | No changes |
 | `serverless.yml` | No changes |
-| `auth_migration/auth/README.md` | Update: new setup, IT team checklist, CLI usage |
-| `auth_migration/auth/docs/sso-admin-setup.md` | Create: IT team guide |
-| `auth_migration/auth/test_e2e.py` | Extend: PKCE + aws-creds + role boundary tests |
+| `auth/README.md` | Update: new setup, IT team checklist, CLI usage |
+| `auth/docs/sso-admin-setup.md` | Create: IT team guide |
+| `auth/test_e2e.py` | Extend: PKCE + aws-creds + role boundary tests |
 | `nzshm-runzi` (cross-repo) | Add `docs/IAM_PERMISSIONS.md` pointing here; deprecate scattered IAM notes in Docker setup docs |
 
 ---
