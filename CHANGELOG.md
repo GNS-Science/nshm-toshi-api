@@ -15,6 +15,12 @@
 ### Changed
  - Renamed `spike/` to `auth_migration/` to reflect authentication migration path
  - Updated `serverless.yml` JWT authorizer handler path to `auth_migration/auth/authorizer/handler.handler`
+ - Test credentials managed exclusively in `auth_migration/auth/cognito_config.json` (gitignored)
+ - Removed hardcoded test user passwords from source code for security
+
+### Security
+ - `cognito_config.json` added to `.gitignore` — contains client secrets and test user passwords
+ - Test user credentials moved from source code to local-only config file
 
 ### Future (Phase 2)
  - Entra ID (Azure AD) OIDC federation for GNS corporate SSO
