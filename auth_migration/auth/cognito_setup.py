@@ -36,32 +36,20 @@ COGNITO_DOMAIN_PREFIX = 'toshi-spike-auth'
 
 TEST_USERS = [
     {
-        'username': os.environ.get('TOSHI_TEST_USER1_EMAIL', 'scientist@example.com'),
-        'password': os.environ.get('TOSHI_TEST_USER1_PASSWORD', 'Scienti5t!'),
-        'scopes': ['toshi/read', 'toshi/write'],
-        'groups': ['toshi-writers'],
-    },
-    {
-        'username': os.environ.get('TOSHI_TEST_USER2_EMAIL', 'readonly@example.com'),
-        'password': os.environ.get('TOSHI_TEST_USER2_PASSWORD', 'Read0nly!'),
-        'scopes': ['toshi/read'],
-        'groups': ['toshi-readers'],
-    },
-    {
-        'username': os.environ.get('TOSHI_TEST_USER3_EMAIL', 'runzi-local@example.com'),
-        'password': os.environ.get('TOSHI_TEST_USER3_PASSWORD', 'RunziL0cal!'),
+        'username': 'runzi-local@example.com',
+        'password': 'RunziL0cal!',
         'scopes': ['toshi/read', 'toshi/write'],
         'groups': ['runzi-local'],
     },
     {
-        'username': os.environ.get('TOSHI_TEST_USER4_EMAIL', 'runzi-batch@example.com'),
-        'password': os.environ.get('TOSHI_TEST_USER4_PASSWORD', 'RunziB4tch!'),
+        'username': 'runzi-batch@example.com',
+        'password': 'RunziB4tch!',
         'scopes': ['toshi/read', 'toshi/write'],
         'groups': ['runzi-batch'],
     },
     {
-        'username': os.environ.get('TOSHI_TEST_USER5_EMAIL', 'runzi-admin@example.com'),
-        'password': os.environ.get('TOSHI_TEST_USER5_PASSWORD', 'RunziAdm1n!'),
+        'username': 'runzi-admin@example.com',
+        'password': 'RunziAdm1n!',
         'scopes': ['toshi/read', 'toshi/write'],
         'groups': ['runzi-admin'],
     },
@@ -301,7 +289,7 @@ def save_config(config):
 
 def load_config():
     if not os.path.exists(CONFIG_FILE):
-        raise click.ClickException(f'Config file not found: {CONFIG_FILE}. Run setup first.')
+        return None
     with open(CONFIG_FILE) as f:
         return json.load(f)
 
@@ -355,14 +343,60 @@ def main(profile, region, do_teardown):
         teardown(client, config)
         return
 
-    # --- Create resources ---
+    existing_config = load_config()
+    if existing_config:
+        click.echo(f'Existing config found. Reusing test users from {CONFIG_FILE}')
+        test_users_to_create = existing_config.get('test_users', [])
+        for u in test_users_to_create:
+            u['scopes'] = ['toshi/read', 'toshi/write']
+    else:
+        test_users_to_create = TEST_USERS
+
     pool_id = create_user_pool(client, region)
     create_resource_server(client, pool_id)
     cognito_domain = create_user_pool_domain(client, pool_id, region)
     scientist_client_id = create_scientist_client(client, pool_id)
     automation_client_id, automation_client_secret = create_automation_client(client, pool_id)
     create_groups(client, pool_id)
-    create_test_users(client, pool_id)
+
+    if existing_config:
+        for user in test_users_to_create:
+            username = user['username']
+            click.echo(f'Ensuring user exists: {username} ...')
+            try:
+                client.admin_create_user(
+                    UserPoolId=pool_id,
+                    Username=username,
+                    TemporaryPassword=user['password'],
+                    UserAttributes=[{'Name': 'email', 'Value': username}, {'Name': 'email_verified', 'Value': 'true'}],
+                    MessageAction='SUPPRESS',
+                )
+                client.admin_set_user_password(
+                    UserPoolId=pool_id,
+                    Username=username,
+                    Password=user['password'],
+                    Permanent=True,
+                )
+                for group in user.get('groups', []):
+                    client.admin_add_user_to_group(
+                        UserPoolId=pool_id,
+                        Username=username,
+                        GroupName=group,
+                    )
+                click.echo(f'  User {username} ready in groups: {user.get("groups", [])}')
+            except client.exceptions.UsernameExistsException:
+                click.echo(f'  User already exists: {username}')
+                for group in user.get('groups', []):
+                    try:
+                        client.admin_add_user_to_group(
+                            UserPoolId=pool_id,
+                            Username=username,
+                            GroupName=group,
+                        )
+                    except Exception:
+                        pass
+    else:
+        create_test_users(client, pool_id)
 
     user_pool_arn = f'cognito-idp.{region}.amazonaws.com/{pool_id}'
     iam_roles_config_file = os.path.join(os.path.dirname(__file__), 'iam_roles_config.json')
@@ -412,7 +446,7 @@ def main(profile, region, do_teardown):
             'read': f'{RESOURCE_SERVER_IDENTIFIER}/read',
             'write': f'{RESOURCE_SERVER_IDENTIFIER}/write',
         },
-        'test_users': [{'username': u['username'], 'password': u['password']} for u in TEST_USERS],
+        'test_users': [{'username': u['username'], 'password': u['password'], 'groups': u.get('groups', [])} for u in test_users_to_create],
     }
 
     save_config(config)
