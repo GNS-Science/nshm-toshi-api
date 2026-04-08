@@ -10,8 +10,8 @@ Creates all Cognito resources needed for the spike:
   - Test users
 
 Usage:
-    python spike/auth/cognito_setup.py --profile test-account [--region ap-southeast-2]
-    python spike/auth/cognito_setup.py --profile test-account --teardown  # Remove all resources
+    python auth_migration/auth/cognito_setup.py --profile test-account [--region ap-southeast-2]
+    python auth_migration/auth/cognito_setup.py --profile test-account --teardown  # Remove all resources
 
 Outputs cognito_config.json in the same directory.
 """
@@ -425,10 +425,10 @@ def main(profile, region, do_teardown):
     click.echo(f'Scientist client:   {scientist_client_id}')
     click.echo(f'Automation client:  {automation_client_id}')
     click.echo('\nNext steps:')
-    click.echo('  1. python spike/auth/iam_roles.py --identity-pool-id {identity_pool_id}')
+    click.echo('  1. python auth_migration/auth/iam_roles.py --identity-pool-id {identity_pool_id}')
     click.echo('  2. Update Identity Pool role mappings with IAM role ARNs')
-    click.echo('  3. python spike/auth/toshi_auth.py login')
-    click.echo('  4. python spike/auth/toshi_auth.py aws-creds')
+    click.echo('  3. python auth_migration/auth/toshi_auth.py login')
+    click.echo('  4. python auth_migration/auth/toshi_auth.py aws-creds')
 
 
 if __name__ == '__main__':

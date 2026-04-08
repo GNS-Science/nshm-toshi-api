@@ -9,8 +9,8 @@ Creates IAM roles and policies for Runzi users:
 All roles have trust policy for Cognito Identity Pool (AssumeRoleWithWebIdentity).
 
 Usage:
-    python spike/auth/iam_roles.py --profile test-account [--region ap-southeast-2]
-    python spike/auth/iam_roles.py --profile test-account --teardown  # Remove all roles
+    python auth_migration/auth/iam_roles.py --profile test-account [--region ap-southeast-2]
+    python auth_migration/auth/iam_roles.py --profile test-account --teardown  # Remove all roles
 
 Outputs iam_roles_config.json in the same directory.
 
@@ -249,7 +249,7 @@ def main(profile, region, do_teardown):
     if not identity_pool_id:
         raise click.ClickException(
             'Identity Pool ID not found in cognito_config.json.\n'
-            'Run: python spike/auth/cognito_setup.py first'
+            'Run: python auth_migration/auth/cognito_setup.py first'
         )
 
     click.echo(f'Creating IAM roles for Identity Pool: {identity_pool_id} ...')
@@ -279,7 +279,7 @@ def main(profile, region, do_teardown):
     click.echo(f'     Cognito → Identity Pools → {identity_pool_id} → Edit → Role mappings')
     click.echo(f'  2. Or use AWS CLI:')
     click.echo(f'     aws cognito-identity set-identity-pool-roles --identity-pool-id {identity_pool_id} ...')
-    click.echo(f'  3. Test: python spike/auth/toshi_auth.py login && python spike/auth/toshi_auth.py aws-creds')
+    click.echo(f'  3. Test: python auth_migration/auth/toshi_auth.py login && python auth_migration/auth/toshi_auth.py aws-creds')
 
 
 if __name__ == '__main__':

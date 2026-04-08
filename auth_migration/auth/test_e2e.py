@@ -5,10 +5,10 @@ Verifies all token flows against a running local stack or remote endpoint.
 
 Usage:
     # Against local stack (SLS_OFFLINE=1, no auth enforcement)
-    python spike/auth/test_e2e.py --local
+    python auth_migration/auth/test_e2e.py --local
 
     # Against a deployed API Gateway endpoint with Cognito auth enabled
-    python spike/auth/test_e2e.py --endpoint https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/dev
+    python auth_migration/auth/test_e2e.py --endpoint https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/dev
 
 Prerequisites:
     - cognito_config.json present (run cognito_setup.py first)
@@ -125,7 +125,7 @@ def load_config():
     if not os.path.exists(CONFIG_FILE):
         raise click.ClickException(
             f'cognito_config.json not found at {CONFIG_FILE}.\n'
-            'Run: python spike/auth/cognito_setup.py --profile <your-aws-profile>'
+            'Run: python auth_migration/auth/cognito_setup.py --profile <your-aws-profile>'
         )
     with open(CONFIG_FILE) as f:
         return json.load(f)

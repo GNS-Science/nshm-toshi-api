@@ -13,11 +13,11 @@ Environment variables (optional):
     LEGACY_API_KEY         if set, this x-api-key value is also accepted (backward compat)
 
 Deployment:
-    See spike/auth/README.md for Lambda deployment instructions.
+    See auth_migration/auth/README.md for Lambda deployment instructions.
     Add to serverless.yml functions section:
 
         jwtAuthorizer:
-          handler: spike/auth/authorizer/handler.handler
+          handler: auth_migration/auth/authorizer/handler.handler
           environment:
             COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
             COGNITO_REGION: ${self:provider.region}
