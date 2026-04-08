@@ -34,27 +34,6 @@ SCIENTIST_CLIENT_NAME = 'toshi-scientist'
 AUTOMATION_CLIENT_NAME = 'toshi-automation'
 COGNITO_DOMAIN_PREFIX = 'toshi-spike-auth'
 
-TEST_USERS = [
-    {
-        'username': 'runzi-local@example.com',
-        'password': 'RunziL0cal!',
-        'scopes': ['toshi/read', 'toshi/write'],
-        'groups': ['runzi-local'],
-    },
-    {
-        'username': 'runzi-batch@example.com',
-        'password': 'RunziB4tch!',
-        'scopes': ['toshi/read', 'toshi/write'],
-        'groups': ['runzi-batch'],
-    },
-    {
-        'username': 'runzi-admin@example.com',
-        'password': 'RunziAdm1n!',
-        'scopes': ['toshi/read', 'toshi/write'],
-        'groups': ['runzi-admin'],
-    },
-]
-
 
 def get_client(profile, region):
     session = boto3.Session(profile_name=profile, region_name=region)
@@ -192,38 +171,6 @@ def create_groups(client, pool_id):
             click.echo(f'  Group already exists: {group_name}')
 
 
-def create_test_users(client, pool_id):
-    """Create test users and assign to groups."""
-    for user in TEST_USERS:
-        username = user['username']
-        click.echo(f'Creating user: {username} ...')
-        try:
-            client.admin_create_user(
-                UserPoolId=pool_id,
-                Username=username,
-                TemporaryPassword=user['password'],
-                UserAttributes=[{'Name': 'email', 'Value': username}, {'Name': 'email_verified', 'Value': 'true'}],
-                MessageAction='SUPPRESS',  # Don't send welcome email
-            )
-            # Set permanent password (bypass force-change on first login)
-            client.admin_set_user_password(
-                UserPoolId=pool_id,
-                Username=username,
-                Password=user['password'],
-                Permanent=True,
-            )
-            # Add to groups
-            for group in user['groups']:
-                client.admin_add_user_to_group(
-                    UserPoolId=pool_id,
-                    Username=username,
-                    GroupName=group,
-                )
-            click.echo(f'  Created {username} in groups: {user["groups"]}')
-        except client.exceptions.UsernameExistsException:
-            click.echo(f'  User already exists: {username}')
-
-
 def create_identity_pool(pool_name, user_pool_id, user_pool_arn, region, role_arns):
     """Create Cognito Identity Pool with role mappings by group."""
     identity_client = boto3.client('cognito-identity', region_name=region)
@@ -344,13 +291,16 @@ def main(profile, region, do_teardown):
         return
 
     existing_config = load_config()
-    if existing_config:
-        click.echo(f'Existing config found. Reusing test users from {CONFIG_FILE}')
-        test_users_to_create = existing_config.get('test_users', [])
-        for u in test_users_to_create:
-            u['scopes'] = ['toshi/read', 'toshi/write']
-    else:
-        test_users_to_create = TEST_USERS
+    if not existing_config:
+        raise click.ClickException(
+            f'Config file not found: {CONFIG_FILE}.\n'
+            'This script expects cognito_config.json to exist with test_users defined.\n'
+            'Create the config file with test users before running setup.'
+        )
+
+    test_users_to_create = existing_config.get('test_users', [])
+    for u in test_users_to_create:
+        u['scopes'] = ['toshi/read', 'toshi/write']
 
     pool_id = create_user_pool(client, region)
     create_resource_server(client, pool_id)
@@ -359,44 +309,41 @@ def main(profile, region, do_teardown):
     automation_client_id, automation_client_secret = create_automation_client(client, pool_id)
     create_groups(client, pool_id)
 
-    if existing_config:
-        for user in test_users_to_create:
-            username = user['username']
-            click.echo(f'Ensuring user exists: {username} ...')
-            try:
-                client.admin_create_user(
+    for user in test_users_to_create:
+        username = user['username']
+        click.echo(f'Ensuring user exists: {username} ...')
+        try:
+            client.admin_create_user(
+                UserPoolId=pool_id,
+                Username=username,
+                TemporaryPassword=user['password'],
+                UserAttributes=[{'Name': 'email', 'Value': username}, {'Name': 'email_verified', 'Value': 'true'}],
+                MessageAction='SUPPRESS',
+            )
+            client.admin_set_user_password(
+                UserPoolId=pool_id,
+                Username=username,
+                Password=user['password'],
+                Permanent=True,
+            )
+            for group in user.get('groups', []):
+                client.admin_add_user_to_group(
                     UserPoolId=pool_id,
                     Username=username,
-                    TemporaryPassword=user['password'],
-                    UserAttributes=[{'Name': 'email', 'Value': username}, {'Name': 'email_verified', 'Value': 'true'}],
-                    MessageAction='SUPPRESS',
+                    GroupName=group,
                 )
-                client.admin_set_user_password(
-                    UserPoolId=pool_id,
-                    Username=username,
-                    Password=user['password'],
-                    Permanent=True,
-                )
-                for group in user.get('groups', []):
+            click.echo(f'  User {username} ready in groups: {user.get("groups", [])}')
+        except client.exceptions.UsernameExistsException:
+            click.echo(f'  User already exists: {username}')
+            for group in user.get('groups', []):
+                try:
                     client.admin_add_user_to_group(
                         UserPoolId=pool_id,
                         Username=username,
                         GroupName=group,
                     )
-                click.echo(f'  User {username} ready in groups: {user.get("groups", [])}')
-            except client.exceptions.UsernameExistsException:
-                click.echo(f'  User already exists: {username}')
-                for group in user.get('groups', []):
-                    try:
-                        client.admin_add_user_to_group(
-                            UserPoolId=pool_id,
-                            Username=username,
-                            GroupName=group,
-                        )
-                    except Exception:
-                        pass
-    else:
-        create_test_users(client, pool_id)
+                except Exception:
+                    pass
 
     user_pool_arn = f'cognito-idp.{region}.amazonaws.com/{pool_id}'
     iam_roles_config_file = os.path.join(os.path.dirname(__file__), 'iam_roles_config.json')
@@ -446,10 +393,10 @@ def main(profile, region, do_teardown):
             'read': f'{RESOURCE_SERVER_IDENTIFIER}/read',
             'write': f'{RESOURCE_SERVER_IDENTIFIER}/write',
         },
-        'test_users': [{'username': u['username'], 'password': u['password'], 'groups': u.get('groups', [])} for u in test_users_to_create],
     }
 
     save_config(config)
+    click.echo(f'\nConfig saved to: {CONFIG_FILE} (test_users preserved from original config)')
 
     click.echo('\n=== Cognito Setup Complete ===')
     click.echo(f'Pool ID:            {pool_id}')
