@@ -36,32 +36,32 @@ COGNITO_DOMAIN_PREFIX = 'toshi-spike-auth'
 
 TEST_USERS = [
     {
-        'username': 'scientist@example.com',
-        'password': 'Scienti5t!',
+        'username': os.environ.get('TOSHI_TEST_USER1_EMAIL', 'scientist@example.com'),
+        'password': os.environ.get('TOSHI_TEST_USER1_PASSWORD', 'Scienti5t!'),
         'scopes': ['toshi/read', 'toshi/write'],
         'groups': ['toshi-writers'],
     },
     {
-        'username': 'readonly@example.com',
-        'password': 'Read0nly!',
+        'username': os.environ.get('TOSHI_TEST_USER2_EMAIL', 'readonly@example.com'),
+        'password': os.environ.get('TOSHI_TEST_USER2_PASSWORD', 'Read0nly!'),
         'scopes': ['toshi/read'],
         'groups': ['toshi-readers'],
     },
     {
-        'username': 'runzi-local@example.com',
-        'password': 'RunziL0cal!',
+        'username': os.environ.get('TOSHI_TEST_USER3_EMAIL', 'runzi-local@example.com'),
+        'password': os.environ.get('TOSHI_TEST_USER3_PASSWORD', 'RunziL0cal!'),
         'scopes': ['toshi/read', 'toshi/write'],
         'groups': ['runzi-local'],
     },
     {
-        'username': 'runzi-batch@example.com',
-        'password': 'RunziB4tch!',
+        'username': os.environ.get('TOSHI_TEST_USER4_EMAIL', 'runzi-batch@example.com'),
+        'password': os.environ.get('TOSHI_TEST_USER4_PASSWORD', 'RunziB4tch!'),
         'scopes': ['toshi/read', 'toshi/write'],
         'groups': ['runzi-batch'],
     },
     {
-        'username': 'runzi-admin@example.com',
-        'password': 'RunziAdm1n!',
+        'username': os.environ.get('TOSHI_TEST_USER5_EMAIL', 'runzi-admin@example.com'),
+        'password': os.environ.get('TOSHI_TEST_USER5_PASSWORD', 'RunziAdm1n!'),
         'scopes': ['toshi/read', 'toshi/write'],
         'groups': ['runzi-admin'],
     },
