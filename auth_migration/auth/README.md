@@ -12,6 +12,11 @@ single shared `x-api-key` in `TempApiKey`.
 
 ## Quick Start
 
+### Configuration & Secrets Management
+To test the auth integration locally, note the distinction between public config and private test data:
+- **`cognito_config.json`** (Gitignored): Stores generated infrastructure output (e.g., `user_pool_id`, `scientist_client_id`, `automation_client_secret`).
+- **`test_users.json`** (Gitignored): Stores dummy credentials for E2E tests and manual `toshi_auth.py login` validation. A default version with three `runzi` user profiles must be created locally to use the `cognito_setup.py` tool.
+
 ### Phase 1 — IAM Roles + Cognito Identity Pool (SSO without Entra)
 
 #### 0. AWS Profile Setup

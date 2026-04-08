@@ -107,6 +107,17 @@ Runzi currently fetches the Toshi API x-api-key from Secrets Manager (`NZSHM22_T
 
 ---
 
+## Configuration & Secrets Management
+
+To ensure a smooth transition to Entra ID and robust developer workflows, configuration is split into two parts:
+
+1. **`auth_config.json` (Committed to Git)**: Contains the public routing information needed by scientists (e.g., `user_pool_id`, `cognito_domain`, `scientist_client_id`, `region`). This is safe to commit and allows any developer pulling the repo to run `toshi_auth.py login` without additional setup.
+2. **`test_users.json` & `.env` (Gitignored / Secrets)**: Contains M2M automation credentials (`automation_client_secret`) and dummy credentials for testing (`test_users.json`). These must never be committed. In production, M2M secrets reside in AWS Secrets Manager or CI/CD pipelines.
+
+This separation of concerns isolates the semi-permanent infrastructure wiring from ephemeral testing data, remaining completely valid throughout the Entra ID migration (Phase 2).
+
+---
+
 ## Implementation Phases
 
 ### Phase 1 — IAM Roles + Cognito Identity Pool
