@@ -122,13 +122,20 @@ def graphql_request(endpoint, query, token=None, api_key=None, extra_headers=Non
 
 
 def load_config():
-    if not os.path.exists(CONFIG_FILE):
-        raise click.ClickException(
-            f'cognito_config.json not found at {CONFIG_FILE}.\n'
-            'Run: python auth_migration/auth/cognito_setup.py --profile <your-aws-profile>'
-        )
-    with open(CONFIG_FILE) as f:
-        return json.load(f)
+    config_path = os.environ.get('TOSHI_COGNITO_CONFIG', DEFAULT_CONFIG_PATH)
+    if not os.path.exists(config_path):
+        raise click.ClickException(f'Config not found at {config_path}. Run cognito_setup.py first.')
+    with open(config_path) as f:
+        config = json.load(f)
+        
+    test_users_path = os.path.join(os.path.dirname(__file__), 'test_users.json')
+    if os.path.exists(test_users_path):
+        with open(test_users_path) as f:
+            config['test_users'] = json.load(f)
+    else:
+        config['test_users'] = []
+        
+    return config
 
 
 def get_access_token(config, username, password):

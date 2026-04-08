@@ -291,14 +291,18 @@ def main(profile, region, do_teardown):
         return
 
     existing_config = load_config()
-    if not existing_config:
+
+    test_users_file = os.path.join(os.path.dirname(__file__), 'test_users.json')
+    if not os.path.exists(test_users_file):
         raise click.ClickException(
-            f'Config file not found: {CONFIG_FILE}.\n'
-            'This script expects cognito_config.json to exist with test_users defined.\n'
-            'Create the config file with test users before running setup.'
+            f'Test users file not found: {test_users_file}.\n'
+            'This script expects test_users.json to exist with test_users defined.\n'
+            'Create the test users file before running setup.'
         )
 
-    test_users_to_create = existing_config.get('test_users', [])
+    with open(test_users_file) as f:
+        test_users_to_create = json.load(f)
+        
     for u in test_users_to_create:
         u['scopes'] = ['toshi/read', 'toshi/write']
 
@@ -396,7 +400,7 @@ def main(profile, region, do_teardown):
     }
 
     save_config(config)
-    click.echo(f'\nConfig saved to: {CONFIG_FILE} (test_users preserved from original config)')
+    click.echo(f'\nConfig saved to: {CONFIG_FILE}')
 
     click.echo('\n=== Cognito Setup Complete ===')
     click.echo(f'Pool ID:            {pool_id}')
