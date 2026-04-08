@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0] - 2026-04-09
+
+### Added
+ - **Phase 1 SSO Authentication**: Cognito Identity Pool integration for AWS service credentials
+   - New `auth_migration/auth/` directory with complete SSO implementation
+   - IAM roles for Runzi users: `toshi-runzi-local`, `toshi-runzi-batch`, `toshi-runzi-admin`
+   - Cognito Identity Pool with role mappings by Cognito groups
+   - New CLI command: `toshi_auth.py aws-creds` to exchange JWT for STS credentials
+ - IAM roles provisioning script: `auth_migration/auth/iam_roles.py`
+ - Extended Cognito setup with Identity Pool creation in `auth_migration/auth/cognito_setup.py`
+ - Test users for all Runzi personas: `runzi-local`, `runzi-batch`, `runzi-admin`
+
+### Changed
+ - Renamed `spike/` to `auth_migration/` to reflect authentication migration path
+ - Updated `serverless.yml` JWT authorizer handler path to `auth_migration/auth/authorizer/handler.handler`
+
+### Future (Phase 2)
+ - Entra ID (Azure AD) OIDC federation for GNS corporate SSO
+ - PKCE Authorization Code flow for browser-based login
+ - Migration path to IAM Identity Center when IT team ready
+
 ## [0.5.2] - 2025-12-15
 
 ### Changed
