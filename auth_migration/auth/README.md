@@ -14,7 +14,8 @@ single shared `x-api-key` in `TempApiKey`.
 
 ### Configuration & Secrets Management
 To test the auth integration locally, note the distinction between public config and private test data:
-- **`cognito_config.json`** (Gitignored): Stores generated infrastructure output (e.g., `user_pool_id`, `scientist_client_id`, `automation_client_secret`).
+- **`auth_config.json`** (Committed): Stores generated public infrastructure output (e.g., `user_pool_id`, `scientist_client_id`, `cognito_domain`).
+- **`.env`** (Gitignored): Stores the `TOSHI_CLIENT_SECRET` generated during setup for M2M flow.
 - **`test_users.json`** (Gitignored): Stores dummy credentials for E2E tests and manual `toshi_auth.py login` validation. A default version with three `runzi` user profiles must be created locally to use the `cognito_setup.py` tool.
 
 ### Phase 1 — IAM Roles + Cognito Identity Pool (SSO without Entra)
@@ -32,7 +33,7 @@ aws configure sso
 #### 1. Provision Cognito User Pool + Identity Pool
 ```bash
 poetry run python auth_migration/auth/cognito_setup.py --profile AdministratorAccess-595842668254
-# Outputs: auth_migration/auth/cognito_config.json
+# Outputs: auth_migration/auth/auth_config.json and auth_migration/auth/.env
 ```
 
 This creates:
@@ -45,7 +46,7 @@ This creates:
 ```bash
 poetry run python auth_migration/auth/iam_roles.py \
     --profile AdministratorAccess-595842668254 \
-    --identity-pool-id <identity_pool_id_from_cognito_config.json>
+    --identity-pool-id <identity_pool_id_from_auth_config.json>
 # Outputs: auth_migration/auth/iam_roles_config.json
 ```
 
@@ -127,7 +128,7 @@ Key differences from the scientist flow:
 
 ```bash
 poetry run python auth_migration/auth/toshi_auth.py m2m-token
-# Prints Bearer token (reads client_id/secret from cognito_config.json)
+# Prints Bearer token (reads client_id from auth_config.json and secret from .env)
 
 # Use the raw token directly in a request:
 TOKEN=$(poetry run python auth_migration/auth/toshi_auth.py m2m-token --raw)
@@ -190,8 +191,8 @@ Useful for verifying the token and API without any local tooling — open DevToo
 ```js
 // Step 1 — get an M2M token from Cognito
 const COGNITO_DOMAIN = 'https://toshi-spike.auth.ap-southeast-2.amazoncognito.com'; // update if different
-const CLIENT_ID     = '<automation_client_id>';      // from cognito_config.json
-const CLIENT_SECRET = '<automation_client_secret>';  // from cognito_config.json
+const CLIENT_ID     = '<automation_client_id>';      // from auth_config.json
+const CLIENT_SECRET = '<automation_client_secret>';  // from .env
 
 const creds = btoa(`${CLIENT_ID}:${CLIENT_SECRET}`);
 const tokenRes = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
@@ -218,8 +219,8 @@ const gql = await fetch(API, {
 console.log(await gql.json());
 ```
 
-Fill in `CLIENT_ID` and `CLIENT_SECRET` from `auth_migration/auth/cognito_config.json`
-(keys `automation_client_id` / `automation_client_secret`).
+Fill in `CLIENT_ID` from `auth_migration/auth/auth_config.json`
+and `CLIENT_SECRET` from `auth_migration/auth/.env`.
 
 > **Note:** the Cognito token endpoint does **not** set CORS headers, so the token fetch in Step 1
 > will be blocked by the browser if run from a normal page origin. Run it from the DevTools console

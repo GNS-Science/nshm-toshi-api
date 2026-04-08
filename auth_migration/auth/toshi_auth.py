@@ -12,8 +12,8 @@ Token storage:
     ~/.toshi/credentials (JSON)
     ~/.aws/credentials [toshi] (via aws-creds command)
 
-Configuration (reads auth_migration/auth/cognito_config.json OR env vars):
-    TOSHI_COGNITO_CONFIG   path to cognito_config.json (default: auth_migration/auth/cognito_config.json)
+Configuration (reads auth_migration/auth/auth_config.json OR env vars):
+    TOSHI_COGNITO_CONFIG   path to auth_config.json (default: auth_migration/auth/auth_config.json)
     TOSHI_CLIENT_ID        override automation client_id (for m2m-token)
     TOSHI_CLIENT_SECRET    override automation client_secret (for m2m-token)
 """
@@ -33,14 +33,14 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 CREDENTIALS_PATH = Path.home() / '.toshi' / 'credentials'
-DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'cognito_config.json')
+DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'auth_config.json')
 
 
 # ---------------------------------------------------------------------------
 # Config loading
 # ---------------------------------------------------------------------------
 
-def load_cognito_config():
+def load_auth_config():
     config_path = os.environ.get('TOSHI_COGNITO_CONFIG', DEFAULT_CONFIG_PATH)
     if not os.path.exists(config_path):
         raise click.ClickException(
@@ -181,7 +181,7 @@ def client_credentials_flow(config):
     if not client_id or not client_secret:
         raise click.ClickException(
             'Automation client credentials not found.\n'
-            'Set TOSHI_CLIENT_ID and TOSHI_CLIENT_SECRET, or run cognito_setup.py first.'
+            'Set TOSHI_CLIENT_ID and TOSHI_CLIENT_SECRET in .env, or run cognito_setup.py first.'
         )
 
     token_url = f'https://{domain}/oauth2/token'
@@ -280,7 +280,7 @@ def cli():
 @cli.command()
 def login():
     """Login with email and password (works from SSH terminals and local machines)."""
-    config = load_cognito_config()
+    config = load_auth_config()
     token_resp = password_flow_login(config)
 
     creds = load_credentials()
@@ -303,7 +303,7 @@ def login():
 @click.option('--raw', is_flag=True, help='Print just the raw token string')
 def token(raw):
     """Print current Bearer token, auto-refreshing if expired."""
-    config = load_cognito_config()
+    config = load_auth_config()
     creds = load_credentials()
 
     access_token = creds.get('access_token', '')
@@ -370,7 +370,7 @@ def whoami():
 @click.option('--raw', is_flag=True, help='Print just the raw token string (no "Bearer " prefix)')
 def m2m_token(raw):
     """Obtain M2M (machine-to-machine) token via Client Credentials for Runzi/automation."""
-    config = load_cognito_config()
+    config = load_auth_config()
     access_token = client_credentials_flow(config)
 
     payload = decode_jwt_payload(access_token)
@@ -390,7 +390,7 @@ def m2m_token(raw):
 @click.option('--profile', default='toshi', help='AWS credentials profile name', show_default=True)
 def aws_creds(profile):
     """Exchange Cognito token for AWS STS credentials and write to ~/.aws/credentials."""
-    config = load_cognito_config()
+    config = load_auth_config()
     creds = load_credentials()
 
     access_token = creds.get('access_token', '')

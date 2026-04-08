@@ -11,7 +11,7 @@ Usage:
     python auth_migration/auth/test_e2e.py --endpoint https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/dev
 
 Prerequisites:
-    - cognito_config.json present (run cognito_setup.py first)
+    - auth_config.json present (run cognito_setup.py first)
     - For --endpoint mode: Lambda authorizer deployed and wired to API Gateway
     - For --local mode: local stack running (yarn sls dynamodb start, yarn sls wsgi serve)
 
@@ -43,7 +43,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR = os.path.dirname(__file__)
-CONFIG_FILE = os.path.join(SCRIPT_DIR, 'cognito_config.json')
+CONFIG_FILE = os.path.join(SCRIPT_DIR, 'auth_config.json')
 
 GRAPHQL_QUERY = '{ __typename }'
 GRAPHQL_MUTATION = '''
@@ -122,7 +122,7 @@ def graphql_request(endpoint, query, token=None, api_key=None, extra_headers=Non
 
 
 def load_config():
-    config_path = os.environ.get('TOSHI_COGNITO_CONFIG', DEFAULT_CONFIG_PATH)
+    config_path = os.environ.get('TOSHI_COGNITO_CONFIG', CONFIG_FILE)
     if not os.path.exists(config_path):
         raise click.ClickException(f'Config not found at {config_path}. Run cognito_setup.py first.')
     with open(config_path) as f:
@@ -161,8 +161,12 @@ def get_m2m_token(config):
     from urllib.parse import urlencode
 
     domain = config['cognito_domain']
-    client_id = config['automation_client_id']
-    client_secret = config['automation_client_secret']
+    client_id = os.environ.get('TOSHI_CLIENT_ID', config.get('automation_client_id', ''))
+    client_secret = os.environ.get('TOSHI_CLIENT_SECRET', config.get('automation_client_secret', ''))
+    
+    if not client_id or not client_secret:
+        raise ValueError("Missing TOSHI_CLIENT_ID or TOSHI_CLIENT_SECRET in .env for M2M flow.")
+
     token_url = f'https://{domain}/oauth2/token'
 
     body = urlencode({'grant_type': 'client_credentials', 'scope': 'toshi/read toshi/write'}).encode()

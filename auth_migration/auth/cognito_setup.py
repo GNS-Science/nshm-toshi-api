@@ -13,7 +13,7 @@ Usage:
     python auth_migration/auth/cognito_setup.py --profile test-account [--region ap-southeast-2]
     python auth_migration/auth/cognito_setup.py --profile test-account --teardown  # Remove all resources
 
-Outputs cognito_config.json in the same directory.
+Outputs auth_config.json in the same directory.
 """
 import json
 import os
@@ -26,7 +26,7 @@ import click
 COGNITO_IDENTITY_POOL_NAME = 'toshi-spike-identity-pool'
 
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'cognito_config.json')
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'auth_config.json')
 
 POOL_NAME = 'toshi-spike'
 RESOURCE_SERVER_IDENTIFIER = 'toshi'
@@ -392,7 +392,6 @@ def main(profile, region, do_teardown):
         'jwks_uri': f'https://cognito-idp.{region}.amazonaws.com/{pool_id}/.well-known/jwks.json',
         'scientist_client_id': scientist_client_id,
         'automation_client_id': automation_client_id,
-        'automation_client_secret': automation_client_secret,
         'scopes': {
             'read': f'{RESOURCE_SERVER_IDENTIFIER}/read',
             'write': f'{RESOURCE_SERVER_IDENTIFIER}/write',
@@ -401,6 +400,12 @@ def main(profile, region, do_teardown):
 
     save_config(config)
     click.echo(f'\nConfig saved to: {CONFIG_FILE}')
+
+    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    with open(env_file, 'a') as f:
+        f.write(f'\n# Appended by cognito_setup.py\n')
+        f.write(f'TOSHI_CLIENT_SECRET={automation_client_secret}\n')
+    click.echo(f'Automation secret appended to: {env_file} (KEEP THIS SECURE)')
 
     click.echo('\n=== Cognito Setup Complete ===')
     click.echo(f'Pool ID:            {pool_id}')

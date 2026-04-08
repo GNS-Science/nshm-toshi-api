@@ -14,7 +14,7 @@ Usage:
 
 Outputs iam_roles_config.json in the same directory.
 
-The identity pool ID is read from cognito_config.json (created by cognito_setup.py).
+The identity pool ID is read from auth_config.json (created by cognito_setup.py).
 """
 import json
 import os
@@ -24,7 +24,7 @@ import click
 
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'iam_roles_config.json')
-COGNITO_CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'cognito_config.json')
+COGNITO_CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'auth_config.json')
 
 ROLE_NAMES = {
     'local': 'toshi-runzi-local',
@@ -248,7 +248,7 @@ def main(profile, region, do_teardown):
     identity_pool_id = cognito_config.get('identity_pool_id')
     if not identity_pool_id:
         raise click.ClickException(
-            'Identity Pool ID not found in cognito_config.json.\n'
+            'Identity Pool ID not found in auth_config.json.\n'
             'Run: python auth_migration/auth/cognito_setup.py first'
         )
 
