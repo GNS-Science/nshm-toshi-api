@@ -13,8 +13,11 @@
  - Test users for all Runzi personas: `runzi-local`, `runzi-batch`, `runzi-admin`
 
 ### Changed
- - Renamed `spike/` to `auth_migration/` to reflect authentication migration path
+ - Promoted `spike/` (then `auth_migration/`) to a permanent top-level `auth/` module
  - Updated `serverless.yml` JWT authorizer handler path to `auth/authorizer/handler.handler`
+ - Enabled Flask auth middleware in `graphql_api/api.py` (points to `auth.middleware`)
+ - Updated GraphQL `about` query to reflect `[AUTH]` status (was `[SPIKE]`)
+ - Cleaned up `graphql_api/logging_aws.yaml` to include dedicated `auth` logger
  - Separated test credentials into dedicated `auth/test_users.json` (gitignored)
  - Removed hardcoded test user passwords from source code for security
  - Migrated public routing config to `auth/auth_config.json` (committed)
