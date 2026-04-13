@@ -1,5 +1,5 @@
 """
-End-to-end validation script for the nshm-toshi-api auth spike.
+End-to-end validation script for the nshm-toshi-api auth module.
 
 Verifies all token flows against a running local stack or remote endpoint.
 
@@ -35,7 +35,6 @@ import click
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
-
 
 
 # ---------------------------------------------------------------------------
@@ -127,14 +126,14 @@ def load_config():
         raise click.ClickException(f'Config not found at {config_path}. Run cognito_setup.py first.')
     with open(config_path) as f:
         config = json.load(f)
-        
+
     test_users_path = os.path.join(os.path.dirname(__file__), 'test_users.json')
     if os.path.exists(test_users_path):
         with open(test_users_path) as f:
             config['test_users'] = json.load(f)
     else:
         config['test_users'] = []
-        
+
     return config
 
 
@@ -163,7 +162,7 @@ def get_m2m_token(config):
     domain = config['cognito_domain']
     client_id = os.environ.get('TOSHI_CLIENT_ID', config.get('automation_client_id', ''))
     client_secret = os.environ.get('TOSHI_CLIENT_SECRET', config.get('automation_client_secret', ''))
-    
+
     if not client_id or not client_secret:
         raise ValueError("Missing TOSHI_CLIENT_ID or TOSHI_CLIENT_SECRET in .env for M2M flow.")
 
@@ -219,10 +218,10 @@ def run_local_tests(endpoint):
     status, body = graphql_request(endpoint, 'mutation { __typename }')
     t.duration_ms = (time.perf_counter() - start) * 1000
     if status == 200:
-        t.ok(f'HTTP 200 — middleware bypassed as expected in offline mode')
+        t.ok('HTTP 200 — middleware bypassed as expected in offline mode')
     elif status == 400:
         # GraphQL validation error (schema doesn't have root mutation __typename) is fine
-        t.ok(f'HTTP 400 — GraphQL validation, not auth rejection')
+        t.ok('HTTP 400 — GraphQL validation, not auth rejection')
     else:
         t.fail(f'HTTP {status}: {body}')
     results.append(t)
@@ -253,10 +252,10 @@ def run_local_tests(endpoint):
 # Remote endpoint tests (with Cognito auth)
 # ---------------------------------------------------------------------------
 
-def run_remote_tests(endpoint, config):
+def run_remote_tests(endpoint, config):  # noqa: C901
     """Tests against a real API Gateway endpoint with Lambda Authorizer enabled."""
     results = []
-    test_users = {u['username']: u['password'] for u in config['test_users']}
+    test_users = {u['username']: u['password'] for u in config['test_users']}  # noqa: F841
 
     # Get tokens for test users
     click.echo('  Acquiring tokens...')
@@ -423,7 +422,7 @@ def run_remote_tests(endpoint, config):
 @click.option('--verbose', is_flag=True, default=False)
 def main(mode, endpoint, verbose):
     """Run end-to-end auth validation tests."""
-    click.echo(f'\n=== Toshi Auth E2E Tests ===')
+    click.echo('\n=== Toshi Auth E2E Tests ===')
     click.echo(f'Mode:     {mode}')
     click.echo(f'Endpoint: {endpoint}')
     click.echo()
@@ -449,7 +448,7 @@ def main(mode, endpoint, verbose):
 
     if passed < total:
         failed = [r for r in results if not r.passed]
-        click.echo(f'\nFailed tests:')
+        click.echo('\nFailed tests:')
         for r in failed:
             click.echo(f'  - {r.name}: {r.message}')
         sys.exit(1)

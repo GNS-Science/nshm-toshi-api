@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+ - Removed "spike" references from `auth/` module docstrings, comments, and import examples
+ - Renamed `auth/SPIKE_AUTH_PLAN.md` → `auth/AUTH_PLAN.md`
+ - Added `auth` module to tox `[testenv:lint]` flake8 command
+ - Fixed pre-existing flake8 issues in `auth/` (unused imports, f-strings, whitespace)
+
+### Tests
+ - Added `graphql_api/tests/test_api_init.py`: covers auth middleware try/import block in `api.py`
+ - Added `TestSearchManagerDisabled` to `test_search_manager.py`: covers disabled Elasticsearch path
+
 ## [0.6.0] - 2026-04-09
 
 ### Added

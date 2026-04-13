@@ -34,12 +34,9 @@ Deployment:
           # x-api-key header, but API Gateway only gates on Authorization being present.
           # Legacy clients sending only x-api-key must use: Authorization: x-api-key <key>
 """
-import json
 import logging
 import os
 import time
-from functools import lru_cache
-from urllib.request import urlopen
 
 import jwt  # PyJWT
 from jwt import PyJWKClient

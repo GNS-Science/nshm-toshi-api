@@ -275,11 +275,11 @@ def main(profile, region, do_teardown):
         click.echo(f'  {role_name}')
 
     click.echo('\nNext steps:')
-    click.echo(f'  1. Update Identity Pool role mappings in AWS Console:')
+    click.echo('  1. Update Identity Pool role mappings in AWS Console:')
     click.echo(f'     Cognito → Identity Pools → {identity_pool_id} → Edit → Role mappings')
-    click.echo(f'  2. Or use AWS CLI:')
+    click.echo('  2. Or use AWS CLI:')
     click.echo(f'     aws cognito-identity set-identity-pool-roles --identity-pool-id {identity_pool_id} ...')
-    click.echo(f'  3. Test: python auth/toshi_auth.py login && python auth/toshi_auth.py aws-creds')
+    click.echo('  3. Test: python auth/toshi_auth.py login && python auth/toshi_auth.py aws-creds')
 
 
 if __name__ == '__main__':

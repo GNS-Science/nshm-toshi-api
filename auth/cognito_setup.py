@@ -1,7 +1,7 @@
 """
-Cognito Setup Script for nshm-toshi-api auth spike.
+Cognito Setup Script for nshm-toshi-api auth.
 
-Creates all Cognito resources needed for the spike:
+Creates all Cognito resources needed for JWT authentication:
   - User Pool (toshi-spike)
   - Resource server with toshi/read and toshi/write scopes
   - App client for scientists (Device Authorization Grant, public)
@@ -17,7 +17,6 @@ Outputs auth_config.json in the same directory.
 """
 import json
 import os
-import time
 
 import boto3
 import click
@@ -282,7 +281,7 @@ def teardown(client, config):
 @click.option('--region', default='ap-southeast-2', help='AWS region', show_default=True)
 @click.option('--teardown', 'do_teardown', is_flag=True, default=False, help='Remove all Cognito resources')
 def main(profile, region, do_teardown):
-    """Provision (or tear down) Cognito resources for the nshm-toshi-api auth spike."""
+    """Provision (or tear down) Cognito resources for the nshm-toshi-api auth module."""
     client = get_client(profile, region)
 
     if do_teardown:
@@ -290,7 +289,7 @@ def main(profile, region, do_teardown):
         teardown(client, config)
         return
 
-    existing_config = load_config()
+    load_config()
 
     test_users_file = os.path.join(os.path.dirname(__file__), 'test_users.json')
     if not os.path.exists(test_users_file):
@@ -302,7 +301,7 @@ def main(profile, region, do_teardown):
 
     with open(test_users_file) as f:
         test_users_to_create = json.load(f)
-        
+
     for u in test_users_to_create:
         u['scopes'] = ['toshi/read', 'toshi/write']
 
@@ -403,7 +402,7 @@ def main(profile, region, do_teardown):
 
     env_file = os.path.join(os.path.dirname(__file__), '.env')
     with open(env_file, 'a') as f:
-        f.write(f'\n# Appended by cognito_setup.py\n')
+        f.write('\n# Appended by cognito_setup.py\n')
         f.write(f'TOSHI_CLIENT_SECRET={automation_client_secret}\n')
     click.echo(f'Automation secret appended to: {env_file} (KEEP THIS SECURE)')
 

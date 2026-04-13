@@ -9,11 +9,11 @@ then enforces scope-based access control:
 **No-op** when TESTING=1 or SLS_OFFLINE=1 — local dev and tests are unaffected.
 
 Integration in graphql_api/api.py:
-    from spike.auth.middleware import register_auth_middleware
+    from auth.middleware import register_auth_middleware
     register_auth_middleware(app)
 
 Or inline:
-    from spike.auth import middleware as toshi_middleware
+    from auth import middleware as toshi_middleware
     app.before_request(toshi_middleware.check_auth)
 """
 import json
@@ -165,7 +165,7 @@ def register_auth_middleware(app):
 
     Call this from graphql_api/api.py after creating the Flask app:
 
-        from spike.auth.middleware import register_auth_middleware
+        from auth.middleware import register_auth_middleware
         register_auth_middleware(app)
     """
     app.before_request(check_auth)

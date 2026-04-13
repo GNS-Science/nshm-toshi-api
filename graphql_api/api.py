@@ -52,8 +52,7 @@ CORS(app)
 # ensure any tables exist ...
 migrate()
 
-# SPIKE AUTH: JWT scope enforcement middleware (no-op when TESTING=1 or SLS_OFFLINE=1)
-# Remove this block once the spike is validated and the production auth is implemented.
+# JWT scope enforcement middleware (no-op when TESTING=1 or SLS_OFFLINE=1)
 try:
     from auth.middleware import register_auth_middleware
 

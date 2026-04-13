@@ -91,6 +91,27 @@ class TestSchemaSearch(unittest.TestCase):
             assert executed['data']['search']['search_result']['total_count'] == 3
 
 
+class TestSearchManagerDisabled(unittest.TestCase):
+    """Tests for SearchManager when no Elasticsearch endpoint is configured."""
+
+    def setUp(self):
+        self.sm = SearchManager(endpoint=None, es_index='any-index', awsauth='')
+
+    def test_disabled_when_endpoint_is_none(self):
+        assert self.sm._enabled is False
+
+    def test_disabled_has_no_es_attribute(self):
+        assert not hasattr(self.sm, 'es')
+
+    def test_index_document_returns_none_when_disabled(self):
+        result = self.sm.index_document('some/key', {'clazz_name': 'File'})
+        assert result is None
+
+    def test_search_returns_empty_list_when_disabled(self):
+        result = self.sm.search('anything')
+        assert result == []
+
+
 def mock_make_api_call(self, operation_name, kwarg):
     raise ValueError("query fired an (expensive) S3 API operation: ", operation_name)
 
