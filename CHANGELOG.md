@@ -7,6 +7,8 @@
  - Renamed `auth/SPIKE_AUTH_PLAN.md` → `auth/AUTH_PLAN.md`
  - Added `auth` module to tox `[testenv:lint]` flake8 command
  - Fixed pre-existing flake8 issues in `auth/` (unused imports, f-strings, whitespace)
+ - Restored `serverless.yml` to main branch values for `org`, `app`, `service`, Elasticsearch config, memory, and timeout; retained only the `jwtAuthorizer` function and authorizer wiring on GraphQL events
+ - Added `.env` / `.env.*` to `serverless.yml` package excludes
 
 ### Tests
  - Added `graphql_api/tests/test_api_init.py`: covers auth middleware try/import block in `api.py`
