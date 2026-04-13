@@ -1,14 +1,15 @@
 # "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: dailyscience
+org: gnssciencenshm
 # "app" enables Serverless Framework Dashboard features and sharing them with other Services.
-app: spike-toshi-api
-service: spike-toshi-api
+app: nshm-toshi-api
+service: nzshm22-toshi-api
 
 plugins:
   - serverless-wsgi
   - serverless-s3-local
   - serverless-dynamodb
   - serverless-plugin-warmup
+  - serverless-plugin-ifelse
 package:
   individually: false
   exclude:
@@ -76,28 +77,38 @@ custom:
 # --stage               test
 # --deletion_policy     delete
 
-  app_acronym: ${opt:acronym, 'spike-toshi-api'}
+  app_acronym: ${opt:acronym, self:service}
   default_stage: local
   stage: ${opt:stage, self:custom.default_stage}
   stack_name: ${self:custom.app_acronym}-${self:custom.stage}
   region: ${opt:region, self:provider.region}
   deletion_policy: Delete
   # Default to using app_acronym as bucket name
-  s3_bucket: ${opt:s3_bucket, self:custom.app_acronym}-${self:custom.stage}-v2
+  s3_bucket: ${opt:s3_bucket, self:custom.app_acronym}-${self:custom.stage}
   # default to using ${stage} as key base path, keeps stages from namespace collisions
   s3_bucket_arn: arn:aws:s3:::${self:custom.s3_bucket}
   s3_role_resource: ${self:custom.s3_bucket_arn}
   # presigned URL TTL
   url_default_ttl: 60
 
+  #elastic search
+  esDomainName: ${self:custom.app_acronym}-es-${self:custom.stage}
+  esIndex: toshi_index_mapped
+
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
+
+  serverlessIfElse:
+      - If: '"${self:custom.stage}" == "test"'
+        Exclude:
+          - resourcee.Resources.ElasticSearchInstance
+          - provider.iamrolestatements.1
+          - functions.app.environment.0
 
 provider:
   name: aws
   runtime: python3.12
   stage: ${opt:stage, 'dev'}
   region: ap-southeast-2
-  stackName: ${self:custom.stack_name}-v2
   environment:
     REGION: ${self:custom.region}
     S3_BUCKET_NAME: ${self:custom.s3_bucket}
@@ -111,6 +122,17 @@ provider:
       Resource:
         - ${self:custom.s3_role_resource}
         - ${self:custom.s3_role_resource}/*
+    # ES access policy
+    # modelled on https://github.com/serverless/examples/blob/master/aws-golang-dynamo-stream-to-elasticsearch/serverless.yml
+    - Effect: Allow
+      Action:
+        - es:ESHttpPost
+        - es:ESHttpPut
+        - es:ESHttpHead
+        - es:ESHttpGet
+      Resource:
+        - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
+        - { "Fn::Join": ["", ["Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"], "/*"]] }
     -  Effect: Allow
        Action:
          - "cloudwatch:PutMetricData"
@@ -151,8 +173,8 @@ functions:
   app:
     description: The graphql API of ${self:service}
     handler: wsgi_handler.handler
-    memorySize: 2048 # optional, in MB, default is 1024
-    timeout: 25 # optional, in seconds, default is 6
+    memorySize: 8192 # optional, in MB, default is 1024
+    timeout: 30 # optional, in seconds, default is 6
     events:
       - http:
           path: graphql
@@ -174,6 +196,10 @@ functions:
             identitySource: context.requestId
             type: request
     environment:
+      ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
+      ES_INDEX: ${self:custom.esIndex}
+      ES_REGION: ${self:custom.region}
+      ES_DOMAIN_NAME: ${self:custom.esDomainName}
       STACK_NAME: ${self:custom.stack_name}
       FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
     warmup:
@@ -189,3 +215,19 @@ resources:
       Properties:
         BucketName: ${self:custom.s3_bucket}
 
+    # following on from
+    #   https://www.serverless.com/blog/build-geosearch-graphql-api-aws-appsync-elasticsearch
+    ElasticSearchInstance:
+      Type: AWS::Elasticsearch::Domain
+      Properties:
+        ElasticsearchVersion: 6.2
+        DomainName: "${self:custom.esDomainName}"
+        EBSOptions:
+          EBSEnabled: true
+          VolumeType: gp2
+          VolumeSize: 10
+        ElasticsearchClusterConfig:
+          InstanceType: t2.small.elasticsearch
+          InstanceCount: 1
+          DedicatedMasterEnabled: false
+          ZoneAwarenessEnabled: false
