@@ -13,6 +13,12 @@
 ### Tests
  - Added `graphql_api/tests/test_api_init.py`: covers auth middleware try/import block in `api.py`
  - Added `TestSearchManagerDisabled` to `test_search_manager.py`: covers disabled Elasticsearch path
+ - Added `auth/authorizer/test_handler.py`: 26 unit tests covering `build_policy`, `validate_legacy_api_key`, and all `handler()` branches (no credentials, x-api-key header, `Authorization: x-api-key`, unknown scheme, Bearer JWT — valid, expired, invalid)
+ - Added `auth/authorizer/__init__.py` to make authorizer a proper Python package
+
+### Type Checking
+ - Added `mypy auth/authorizer/handler.py` to `[testenv:lint]` in `setup.cfg`
+ - Added type hints to all functions in `auth/authorizer/handler.py`
 
 ## [0.6.0] - 2026-04-09
 
