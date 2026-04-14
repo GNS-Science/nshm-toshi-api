@@ -20,7 +20,7 @@ import json
 import logging
 import re
 
-from flask import g, request
+import flask
 from werkzeug.exceptions import Forbidden
 
 from graphql_api.config import IS_OFFLINE, TESTING
@@ -55,7 +55,7 @@ def _is_mutation(request_body_bytes):
     if not request_body_bytes:
         return False
 
-    content_type = request.content_type or ''
+    content_type = flask.request.content_type or ''
 
     if 'application/json' in content_type:
         try:
@@ -85,21 +85,21 @@ def _get_auth_context():
     serverless-wsgi exposes requestContext.authorizer as request.environ['serverless.authorizer'].
     Fall back to X-Auth-* headers for local/e2e testing without API Gateway.
     """
-    authorizer_ctx = request.environ.get('serverless.authorizer') or {}
+    authorizer_ctx = flask.request.environ.get('serverless.authorizer') or {}
 
     user_id = (
         authorizer_ctx.get('userId')
-        or request.headers.get('X-Auth-Userid')
+        or flask.request.headers.get('X-Auth-Userid')
         or 'anonymous'
     )
     scopes_str = (
         authorizer_ctx.get('scopes')
-        or request.headers.get('X-Auth-Scopes')
+        or flask.request.headers.get('X-Auth-Scopes')
         or ''
     )
     auth_method = (
         authorizer_ctx.get('authMethod')
-        or request.headers.get('X-Auth-Method')
+        or flask.request.headers.get('X-Auth-Method')
         or 'none'
     )
     scopes = set(scopes_str.split()) if scopes_str else set()
@@ -118,25 +118,25 @@ def check_auth():
     """
     # Skip for local dev and tests
     if TESTING or IS_OFFLINE:
-        g.current_user = {'userId': 'local-dev', 'scopes': {SCOPE_READ, SCOPE_WRITE}, 'authMethod': 'bypass'}
+        flask.g.current_user = {'userId': 'local-dev', 'scopes': {SCOPE_READ, SCOPE_WRITE}, 'authMethod': 'bypass'}
         return None
 
     # Only enforce on /graphql path
-    if not request.path.startswith('/graphql'):
+    if not flask.request.path.startswith('/graphql'):
         return None
 
     # OPTIONS preflight — always allow (CORS)
-    if request.method == 'OPTIONS':
+    if flask.request.method == 'OPTIONS':
         return None
 
-    # DEBUG: log all incoming headers so we can verify authorizer context injection
-    auth_headers = {k: v for k, v in request.headers if 'amzn' in k.lower() or 'auth' in k.lower()}
+    # Log auth-related headers to verify authorizer context injection
+    auth_headers = {k: v for k, v in flask.request.headers if 'amzn' in k.lower() or 'auth' in k.lower()}
     logger.info(f'[middleware] auth-related headers: {auth_headers}')
 
     user_id, scopes, auth_method = _get_auth_context()
 
     # Attach to Flask g for use in resolvers / logging
-    g.current_user = {'userId': user_id, 'scopes': scopes, 'authMethod': auth_method}
+    flask.g.current_user = {'userId': user_id, 'scopes': scopes, 'authMethod': auth_method}
 
     logger.info(f'[middleware] userId={user_id} scopes={scopes} method={auth_method}')
 
@@ -146,8 +146,8 @@ def check_auth():
         raise Forbidden(f'Missing required scope: {SCOPE_READ}')
 
     # Mutation check — mutations need toshi/write
-    if request.method == 'POST':
-        body = request.get_data()
+    if flask.request.method == 'POST':
+        body = flask.request.get_data()
         if _is_mutation(body) and SCOPE_WRITE not in scopes:
             logger.warning(f'Mutation blocked for {user_id}: missing {SCOPE_WRITE}')
             raise Forbidden(f'GraphQL mutations require scope: {SCOPE_WRITE}')

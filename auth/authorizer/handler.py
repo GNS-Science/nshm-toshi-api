@@ -37,6 +37,7 @@ Deployment:
 import logging
 import os
 import time
+from typing import Any
 
 import jwt  # PyJWT
 from jwt import PyJWKClient
@@ -51,7 +52,7 @@ logger = logging.getLogger(__name__)
 _jwks_client = None
 
 
-def get_jwks_client():
+def get_jwks_client() -> PyJWKClient:
     """Return a cached PyJWKClient for the Cognito JWKS endpoint."""
     global _jwks_client
     if _jwks_client is None:
@@ -67,7 +68,8 @@ def get_jwks_client():
 # IAM policy builder
 # ---------------------------------------------------------------------------
 
-def build_policy(principal_id, effect, resource, context=None):
+def build_policy(principal_id: str, effect: str, resource: str, context: dict[str, Any] | None = None) -> dict:
+    """Build an IAM policy document for the Lambda authorizer response."""
     policy = {
         'principalId': principal_id,
         'policyDocument': {
@@ -90,11 +92,11 @@ def build_policy(principal_id, effect, resource, context=None):
 # Token validation
 # ---------------------------------------------------------------------------
 
-def validate_cognito_token(token):
+def validate_cognito_token(token: str) -> tuple[str, str, dict]:
     """
     Validate a Cognito JWT.
 
-    Returns (principal_id, scopes_str) on success.
+    Returns (principal_id, scopes_str, payload) on success.
     Raises jwt.exceptions.* on failure.
     """
     pool_id = os.environ['COGNITO_USER_POOL_ID']
@@ -134,8 +136,10 @@ def validate_cognito_token(token):
     principal_id = payload.get('username') or payload.get('sub', 'unknown')
     scopes = payload.get('scope', '')
 
-    # USER_PASSWORD_AUTH tokens carry aws.cognito.signin.user.admin instead of
-    # custom resource server scopes. Derive toshi scopes from Cognito group membership.
+    # USER_PASSWORD_AUTH (boto3 InitiateAuth) issues tokens whose 'scope' claim contains
+    # 'aws.cognito.signin.user.admin' rather than our custom resource-server scopes
+    # (toshi/read, toshi/write). We derive the effective toshi scopes from the user's
+    # Cognito group membership instead.
     if 'aws.cognito.signin.user.admin' in scopes:
         groups = payload.get('cognito:groups', [])
         toshi_scopes = []
@@ -148,7 +152,7 @@ def validate_cognito_token(token):
     return principal_id, scopes, payload
 
 
-def validate_legacy_api_key(token):
+def validate_legacy_api_key(token: str) -> bool:
     """Check if token matches the legacy x-api-key value."""
     legacy_key = os.environ.get('LEGACY_API_KEY', '')
     if not legacy_key:
@@ -160,7 +164,7 @@ def validate_legacy_api_key(token):
 # Lambda handler
 # ---------------------------------------------------------------------------
 
-def handler(event, context):
+def handler(event: dict, _context: object) -> dict:
     """
     Lambda authorizer handler.
 
@@ -204,7 +208,10 @@ def handler(event, context):
     scheme = parts[0].lower() if parts else ''
     token = parts[1] if len(parts) > 1 else ''
 
-    # Priority 2: Authorization: x-api-key <key> (clients adapted to Authorization header)
+    # Priority 2: Authorization: x-api-key <key>
+    # Reached only when no bare x-api-key header was present (Priority 1 skipped).
+    # Handles clients that have adopted the Authorization header but still use the legacy key
+    # format, e.g. `Authorization: x-api-key <key>` or `Authorization: apikey <key>`.
     if scheme in ('x-api-key', 'apikey'):
         if validate_legacy_api_key(token):
             logger.info('Authorizing via legacy x-api-key in Authorization header')

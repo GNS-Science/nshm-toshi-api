@@ -2,7 +2,7 @@
 Cognito Setup Script for nshm-toshi-api auth.
 
 Creates all Cognito resources needed for JWT authentication:
-  - User Pool (toshi-spike)
+  - User Pool (toshi)
   - Resource server with toshi/read and toshi/write scopes
   - App client for scientists (Device Authorization Grant, public)
   - App client for automation (Client Credentials, confidential)
@@ -17,21 +17,21 @@ Outputs auth_config.json in the same directory.
 """
 import json
 import os
+from pathlib import Path
 
 import boto3
 import click
 
 
-COGNITO_IDENTITY_POOL_NAME = 'toshi-spike-identity-pool'
+COGNITO_IDENTITY_POOL_NAME = 'toshi-identity-pool'
 
+CONFIG_FILE = Path(__file__).parent / 'auth_config.json'
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'auth_config.json')
-
-POOL_NAME = 'toshi-spike'
+POOL_NAME = 'toshi'
 RESOURCE_SERVER_IDENTIFIER = 'toshi'
 SCIENTIST_CLIENT_NAME = 'toshi-scientist'
 AUTOMATION_CLIENT_NAME = 'toshi-automation'
-COGNITO_DOMAIN_PREFIX = 'toshi-spike-auth'
+COGNITO_DOMAIN_PREFIX = 'toshi-auth'
 
 
 def get_client(profile, region):
@@ -63,7 +63,7 @@ def create_user_pool(client, region):
             }
         ],
         AdminCreateUserConfig={
-            'AllowAdminCreateUserOnly': True,  # Prevent self-registration in spike
+            'AllowAdminCreateUserOnly': True,  # Prevent self-registration
         },
     )
     pool_id = resp['UserPool']['Id']
@@ -271,8 +271,8 @@ def teardown(client, config):
     except Exception as e:
         click.echo(f'  Error: {e}')
 
-    if os.path.exists(CONFIG_FILE):
-        os.remove(CONFIG_FILE)
+    if CONFIG_FILE.exists():
+        CONFIG_FILE.unlink()
         click.echo(f'Removed: {CONFIG_FILE}')
 
 
@@ -291,19 +291,20 @@ def main(profile, region, do_teardown):
 
     load_config()
 
-    test_users_file = os.path.join(os.path.dirname(__file__), 'test_users.json')
-    if not os.path.exists(test_users_file):
+    users_file = Path(__file__).parent / 'test_users.json'
+    if not users_file.exists():
         raise click.ClickException(
-            f'Test users file not found: {test_users_file}.\n'
-            'This script expects test_users.json to exist with test_users defined.\n'
-            'Create the test users file before running setup.'
+            f'Users file not found: {users_file}.\n'
+            'This script expects test_users.json to exist with users defined.\n'
+            'Create the file before running setup.'
         )
 
-    with open(test_users_file) as f:
-        test_users_to_create = json.load(f)
+    with open(users_file) as f:
+        users_to_create = json.load(f)
 
-    for u in test_users_to_create:
-        u['scopes'] = ['toshi/read', 'toshi/write']
+    # Default to read-only; set 'scopes' explicitly in test_users.json for write access
+    for u in users_to_create:
+        u.setdefault('scopes', ['toshi/read'])
 
     pool_id = create_user_pool(client, region)
     create_resource_server(client, pool_id)
@@ -312,7 +313,7 @@ def main(profile, region, do_teardown):
     automation_client_id, automation_client_secret = create_automation_client(client, pool_id)
     create_groups(client, pool_id)
 
-    for user in test_users_to_create:
+    for user in users_to_create:
         username = user['username']
         click.echo(f'Ensuring user exists: {username} ...')
         try:
@@ -349,8 +350,8 @@ def main(profile, region, do_teardown):
                     pass
 
     user_pool_arn = f'cognito-idp.{region}.amazonaws.com/{pool_id}'
-    iam_roles_config_file = os.path.join(os.path.dirname(__file__), 'iam_roles_config.json')
-    if os.path.exists(iam_roles_config_file):
+    iam_roles_config_file = Path(__file__).parent / 'iam_roles_config.json'
+    if iam_roles_config_file.exists():
         with open(iam_roles_config_file) as f:
             iam_config = json.load(f)
         role_arns = {
@@ -400,7 +401,7 @@ def main(profile, region, do_teardown):
     save_config(config)
     click.echo(f'\nConfig saved to: {CONFIG_FILE}')
 
-    env_file = os.path.join(os.path.dirname(__file__), '.env')
+    env_file = Path(__file__).parent / '.env'
     with open(env_file, 'a') as f:
         f.write('\n# Appended by cognito_setup.py\n')
         f.write(f'TOSHI_CLIENT_SECRET={automation_client_secret}\n')

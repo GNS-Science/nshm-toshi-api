@@ -52,7 +52,6 @@ CORS(app)
 # ensure any tables exist ...
 migrate()
 
-# JWT scope enforcement middleware (no-op when TESTING=1 or SLS_OFFLINE=1)
 try:
     from auth.middleware import register_auth_middleware
 
