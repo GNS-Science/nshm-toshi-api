@@ -2,7 +2,23 @@
 
 ## [Unreleased]
 
+### Added
+ - Cognito User Pool, resource server, domain, app clients (scientist + automation), user groups,
+   Identity Pool, and IAM roles (`toshi-runzi-local/batch/admin`) provisioned directly in
+   `serverless.yml` as CloudFormation resources — `sls deploy` now provisions all auth
+   infrastructure in a single stack with no extra tooling
+ - `resources.Outputs` in `serverless.yml`: `UserPoolId`, `IdentityPoolId`, `ScientistClientId`,
+   `AutomationClientId`, `CognitoDomain`, `Issuer`, `JwksUri`
+ - Provisioning approach decision documented in `auth/IMPLEMENTATION_PLAN.md` (Serverless-native
+   chosen over CDK and raw boto3; CDK reference on branch `spike/cdk-auth-provisioning`)
+
 ### Changed
+ - `jwtAuthorizer` env vars `COGNITO_USER_POOL_ID` and `COGNITO_CLIENT_ID` now resolved via
+   `!Ref ToshiUserPool` / `!Ref ToshiScientistClient` — no more hardcoded pool IDs
+ - Removed `auth/cognito_setup.py` and `auth/iam_roles.py` (replaced by `serverless.yml` resources)
+ - `auth/IMPLEMENTATION_PLAN.md` Phase 1 provisioning steps updated to reflect `sls deploy` workflow
+
+### Changed (previous)
  - Removed "spike" references from `auth/` module docstrings, comments, and import examples
  - Renamed `auth/SPIKE_AUTH_PLAN.md` → `auth/AUTH_PLAN.md`
  - Added `auth` module to tox `[testenv:lint]` flake8 command

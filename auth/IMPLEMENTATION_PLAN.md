@@ -13,12 +13,17 @@ for the single shared `x-api-key` in `TempApiKey`.
 ## Quick Start
 
 ### Configuration & Secrets Management
-To test the auth integration locally, note the distinction between public config and private test data:
-- **`auth_config.json`** (Committed): Stores generated public infrastructure output (e.g., `user_pool_id`, `scientist_client_id`, `cognito_domain`).
-- **`.env`** (Gitignored): Stores the `TOSHI_CLIENT_SECRET` generated during setup for M2M flow.
-- **`test_users.json`** (Gitignored): Stores user credentials for E2E tests and manual `toshi_auth.py login` validation. A version with the required user profiles must be created locally before running `cognito_setup.py`.
+
+Infrastructure outputs (pool IDs, client IDs, domain) come from `sls info --verbose` after deploy.
+Local files used by auth scripts:
+
+- **`auth/.env`** (Gitignored): Stores `TOSHI_CLIENT_SECRET` for M2M flow. Fetch once after deploy (see Phase 1 step 3).
+- **`test_users.json`** (Gitignored): User credentials for E2E tests and `toshi_auth.py login`. Create locally before running `create_users.py`.
 
 ### Phase 1 — IAM Roles + Cognito Identity Pool (SSO without Entra)
+
+All Cognito and IAM resources are now provisioned by `sls deploy` via CloudFormation resources
+in `serverless.yml`. No separate provisioning scripts needed.
 
 #### 0. AWS Profile Setup
 
@@ -29,53 +34,45 @@ aws configure sso
 # SSO region: ap-southeast-2
 ```
 
-#### 1. Provision Cognito User Pool + Identity Pool
+#### 1. Deploy (provisions everything)
 ```bash
-poetry run python auth/cognito_setup.py --profile AdministratorAccess-595842668254
-# Outputs: auth/auth_config.json and auth/.env
+aws sso login --profile AdministratorAccess-595842668254
+AWS_PROFILE=AdministratorAccess-595842668254 poetry run serverless deploy --stage dev
 ```
 
-This creates:
-- User Pool `toshi` with resource server and scopes
-- App clients for scientists and automation
-- Identity Pool for AWS credential exchange
-- Users with groups: `toshi-readers`, `toshi-writers`, `runzi-local`, `runzi-batch`, `runzi-admin`
+This creates in one stack:
+- User Pool `toshi-dev` with resource server (`toshi/read`, `toshi/write` scopes)
+- App clients: `toshi-scientist` (public) and `toshi-automation` (confidential)
+- User groups: `toshi-readers`, `toshi-writers`, `runzi-local`, `runzi-batch`, `runzi-admin`
+- Identity Pool with rules-based role mappings
+- IAM roles: `toshi-runzi-local-dev`, `toshi-runzi-batch-dev`, `toshi-runzi-admin-dev`
 
-#### 2. Create IAM Roles
+#### 2. Retrieve outputs
 ```bash
-poetry run python auth/iam_roles.py \
+AWS_PROFILE=AdministratorAccess-595842668254 poetry run serverless info --stage dev --verbose
+# Shows: UserPoolId, IdentityPoolId, ScientistClientId, AutomationClientId, CognitoDomain, etc.
+```
+
+#### 3. Fetch automation client secret
+
+The client secret cannot be a CloudFormation Output (security). Retrieve it once after deploy:
+```bash
+aws cognito-idp describe-user-pool-client \
+    --user-pool-id <UserPoolId> \
+    --client-id <AutomationClientId> \
     --profile AdministratorAccess-595842668254 \
-    --identity-pool-id <identity_pool_id_from_auth_config.json>
-# Outputs: auth/iam_roles_config.json
+    --query 'UserPoolClient.ClientSecret' --output text
+# Save to auth/.env as: TOSHI_CLIENT_SECRET=<secret>
 ```
 
-This creates IAM roles:
-- `toshi-runzi-local` — ECR pull, S3 read/write
-- `toshi-runzi-batch` — + Batch submit/describe
-- `toshi-runzi-admin` — + Batch configure, ECR push
-
-#### 3. Update Identity Pool Role Mappings
-
-The Identity Pool was created with placeholder role mappings. Update them manually in AWS Console:
-
-1. Go to Cognito → Identity Pools → `toshi-identity-pool`
-2. Edit → Role mappings
-3. Set each group to its corresponding IAM role:
-   - `toshi-readers` → use default authenticated role
-   - `toshi-writers` → use default authenticated role
-   - `runzi-local` → `toshi-runzi-local`
-   - `runzi-batch` → `toshi-runzi-batch`
-   - `runzi-admin` → `toshi-runzi-admin`
-
-Or use the AWS CLI:
+#### 4. Create test users
 ```bash
-aws cognito-identity set-identity-pool-roles \
-    --identity-pool-id <identity_pool_id> \
-    --role-mappings file://role-mappings.json \
-    --roles authenticated=<role_arn>
+# Create auth/test_users.json locally (gitignored) — see auth/.env.example for format
+# Then:
+python auth/create_users.py --profile AdministratorAccess-595842668254
 ```
 
-#### 4. Test Login + AWS Credentials
+#### 5. Test Login + AWS Credentials
 ```bash
 # Login with test user
 poetry run python auth/toshi_auth.py login
@@ -229,6 +226,50 @@ python auth/test_e2e.py --local
 
 The Flask middleware (`auth/middleware.py`) is **no-op** when `SLS_OFFLINE=1` or `TESTING=1`,
 so local dev is unaffected.
+
+---
+
+---
+
+## Provisioning Approach Decision
+
+### Options considered
+
+Three approaches were evaluated for replacing `cognito_setup.py` + `iam_roles.py`:
+
+| Option | Description |
+|--------|-------------|
+| **A — Serverless-native** (chosen) | Add `AWS::Cognito` + `AWS::IAM` resources to `serverless.yml` under `resources.Resources` |
+| **B — AWS CDK Python** | Separate `auth/cdk/` sub-project with `ToshiCognitoStack` + `ToshiIamStack` |
+| **C — Keep raw boto3** | Current state: hand-rolled scripts with custom teardown logic |
+
+CDK implementation exists for reference on branch `spike/cdk-auth-provisioning`.
+
+### Why Serverless-native
+
+- **Single toolchain** — `sls deploy` provisions everything; no `cdk bootstrap`, no `pip install` in a
+  sub-directory, no separate deploy step.
+- **Tight integration** — `jwtAuthorizer` env vars become self-referential (`!Ref ToshiUserPool`)
+  rather than requiring manual wiring from a `post_deploy.py` output file.
+- **Directly answers reviewer feedback** — PR #287 asked "Is the Serverless Framework not able to
+  do this?". The answer is yes.
+- **Same team, same deploy cadence** — auth infra and the API are deployed together by the same
+  CI pipeline; coupling is a feature, not a liability here.
+
+### When CDK would be the better choice
+
+- Auth infra is shared across multiple API stacks (separate lifecycle needed).
+- Auth is managed by a different team or permission boundary from the API.
+- Entra/SSO federation makes the User Pool infra-level (rarely changes, outlives any app stack).
+
+At that point, migrate to `spike/cdk-auth-provisioning` as the foundation.
+
+### Key trade-off: lifecycle coupling
+
+With Serverless-native, `sls remove` destroys the User Pool. This is fine for dev/test but
+requires care in production — either:
+- Use `DeletionPolicy: Retain` on the UserPool resource, or
+- Run prod on a separate long-lived account/stage where teardown is not a normal operation.
 
 ---
 

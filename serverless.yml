@@ -156,18 +156,17 @@ provider:
         description: Api key until we have an auth function # Optional
 
 functions:
-  # JWT Lambda Authorizer (auth — replace x-api-key with Cognito JWTs)
-  # To activate: set COGNITO_USER_POOL_ID, COGNITO_REGION, COGNITO_CLIENT_ID env vars
-  # and replace `private: true` below with the `authorizer:` block shown in comments.
+  # JWT Lambda Authorizer (auth — replaces x-api-key with Cognito JWTs)
+  # COGNITO_USER_POOL_ID and COGNITO_CLIENT_ID are auto-wired from ToshiUserPool / ToshiScientistClient.
   jwtAuthorizer:
     handler: auth/authorizer/handler.handler
     description: Validates Cognito JWTs; accepts legacy x-api-key for backward compat
     memorySize: 256
     timeout: 10
     environment:
-      COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, 'ap-southeast-2_ww852jFvi'}
+      COGNITO_USER_POOL_ID: !Ref ToshiUserPool
       COGNITO_REGION: ${self:provider.region}
-      COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, ''}
+      COGNITO_CLIENT_ID: !Ref ToshiScientistClient
       LEGACY_API_KEY: ${env:LEGACY_API_KEY, ''}
 
   app:
@@ -231,3 +230,393 @@ resources:
           InstanceCount: 1
           DedicatedMasterEnabled: false
           ZoneAwarenessEnabled: false
+
+    # ── Cognito User Pool ──────────────────────────────────────────────────────
+    # DeletionPolicy: Retain  # Uncomment for production to protect users on sls remove
+    ToshiUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: toshi-${self:custom.stage}
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        AdminCreateUserConfig:
+          AllowAdminCreateUserOnly: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireUppercase: true
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: true
+
+    ToshiResourceServer:
+      Type: AWS::Cognito::UserPoolResourceServer
+      Properties:
+        UserPoolId: !Ref ToshiUserPool
+        Identifier: toshi
+        Name: Toshi API
+        Scopes:
+          - ScopeName: read
+            ScopeDescription: Read access to GraphQL queries
+          - ScopeName: write
+            ScopeDescription: Write access to GraphQL mutations
+
+    ToshiUserPoolDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        # Domain prefix must be globally unique: toshi-{accountId}-{stage}
+        Domain:
+          Fn::Join:
+            - '-'
+            - - toshi
+              - !Ref AWS::AccountId
+              - ${self:custom.stage}
+        UserPoolId: !Ref ToshiUserPool
+
+    # Public client: scientists (USER_PASSWORD_AUTH → ~/.toshi/credentials)
+    ToshiScientistClient:
+      Type: AWS::Cognito::UserPoolClient
+      DependsOn: ToshiResourceServer
+      Properties:
+        ClientName: toshi-scientist
+        UserPoolId: !Ref ToshiUserPool
+        GenerateSecret: false
+        ExplicitAuthFlows:
+          - ALLOW_USER_PASSWORD_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        AllowedOAuthFlows:
+          - code
+        AllowedOAuthScopes:
+          - openid
+          - email
+          - profile
+          - toshi/read
+          - toshi/write
+        AllowedOAuthFlowsUserPoolClient: true
+        SupportedIdentityProviders:
+          - COGNITO
+        CallbackURLs:
+          - http://localhost:9999/callback
+        LogoutURLs:
+          - http://localhost:9999/logout
+        RefreshTokenValidity: 30
+        TokenValidityUnits:
+          RefreshToken: days
+
+    # Confidential client: automation / M2M (client_credentials grant)
+    # Secret cannot be a CFn Output (security). Retrieve via:
+    #   aws cognito-idp describe-user-pool-client \
+    #     --user-pool-id <UserPoolId> --client-id <AutomationClientId>
+    ToshiAutomationClient:
+      Type: AWS::Cognito::UserPoolClient
+      DependsOn: ToshiResourceServer
+      Properties:
+        ClientName: toshi-automation
+        UserPoolId: !Ref ToshiUserPool
+        GenerateSecret: true
+        AllowedOAuthFlows:
+          - client_credentials
+        AllowedOAuthScopes:
+          - toshi/read
+          - toshi/write
+        AllowedOAuthFlowsUserPoolClient: true
+
+    # ── Cognito user groups ────────────────────────────────────────────────────
+    ToshiGroupWriters:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        GroupName: toshi-writers
+        Description: Users with toshi/read + toshi/write access
+        UserPoolId: !Ref ToshiUserPool
+
+    ToshiGroupReaders:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        GroupName: toshi-readers
+        Description: Users with toshi/read access only
+        UserPoolId: !Ref ToshiUserPool
+
+    ToshiGroupRunziLocal:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        GroupName: runzi-local
+        Description: Runzi workstation users (ECR pull, S3 read/write)
+        UserPoolId: !Ref ToshiUserPool
+
+    ToshiGroupRunziBatch:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        GroupName: runzi-batch
+        Description: Runzi batch job users (+ Batch submit/describe)
+        UserPoolId: !Ref ToshiUserPool
+
+    ToshiGroupRunziAdmin:
+      Type: AWS::Cognito::UserPoolGroup
+      Properties:
+        GroupName: runzi-admin
+        Description: Runzi admin users (+ Batch configure, ECR push/create)
+        UserPoolId: !Ref ToshiUserPool
+
+    # ── Cognito Identity Pool ──────────────────────────────────────────────────
+    ToshiIdentityPool:
+      Type: AWS::Cognito::IdentityPool
+      Properties:
+        IdentityPoolName: toshi-identity-${self:custom.stage}
+        AllowUnauthenticatedIdentities: false
+        CognitoIdentityProviders:
+          - ProviderName: !GetAtt ToshiUserPool.ProviderName
+            ClientId: !Ref ToshiScientistClient
+            ServerSideTokenCheck: false
+
+    # ── IAM roles (assumed via Identity Pool after Cognito login) ──────────────
+    ToshiRunziLocalRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: toshi-runzi-local-${self:custom.stage}
+        Description: Runzi workstation access (ECR pull, S3 read/write)
+        MaxSessionDuration: 3600
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Federated: cognito-identity.amazonaws.com
+              Action: sts:AssumeRoleWithWebIdentity
+              Condition:
+                StringEquals:
+                  'cognito-identity.amazonaws.com:aud': !Ref ToshiIdentityPool
+                ForAnyValue:StringLike:
+                  'cognito-identity.amazonaws.com:amr': authenticated
+        Policies:
+          - PolicyName: toshi-runzi-local-policy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: ECRRead
+                  Effect: Allow
+                  Action:
+                    - ecr:GetAuthorizationToken
+                    - ecr:BatchGetImage
+                    - ecr:GetDownloadUrlForLayer
+                    - ecr:DescribeRepositories
+                    - ecr:ListImages
+                  Resource: '*'
+                - Sid: S3ReadWrite
+                  Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:PutObject
+                    - s3:ListBucket
+                    - s3:PutObjectAcl
+                  Resource:
+                    - arn:aws:s3:::nshm-runzi-output-*
+                    - arn:aws:s3:::nshm-runzi-output-*/*
+                    - arn:aws:s3:::nshm-runzi-jars
+                    - arn:aws:s3:::nshm-runzi-jars/*
+
+    ToshiRunziBatchRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: toshi-runzi-batch-${self:custom.stage}
+        Description: Runzi batch job access (ECR pull, S3, Batch submit)
+        MaxSessionDuration: 3600
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Federated: cognito-identity.amazonaws.com
+              Action: sts:AssumeRoleWithWebIdentity
+              Condition:
+                StringEquals:
+                  'cognito-identity.amazonaws.com:aud': !Ref ToshiIdentityPool
+                ForAnyValue:StringLike:
+                  'cognito-identity.amazonaws.com:amr': authenticated
+        Policies:
+          - PolicyName: toshi-runzi-batch-policy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: ECRRead
+                  Effect: Allow
+                  Action:
+                    - ecr:GetAuthorizationToken
+                    - ecr:BatchGetImage
+                    - ecr:GetDownloadUrlForLayer
+                    - ecr:DescribeRepositories
+                    - ecr:ListImages
+                  Resource: '*'
+                - Sid: S3ReadWrite
+                  Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:PutObject
+                    - s3:ListBucket
+                    - s3:PutObjectAcl
+                  Resource:
+                    - arn:aws:s3:::nshm-runzi-output-*
+                    - arn:aws:s3:::nshm-runzi-output-*/*
+                    - arn:aws:s3:::nshm-runzi-jars
+                    - arn:aws:s3:::nshm-runzi-jars/*
+                - Sid: BatchSubmit
+                  Effect: Allow
+                  Action:
+                    - batch:SubmitJob
+                    - batch:DescribeJobs
+                    - batch:ListJobs
+                    - batch:TerminateJob
+                    - batch:DescribeJobQueues
+                    - batch:DescribeComputeEnvironments
+                    - batch:DescribeJobDefinitions
+                  Resource: '*'
+
+    ToshiRunziAdminRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: toshi-runzi-admin-${self:custom.stage}
+        Description: Runzi admin access (ECR push/create, Batch configure)
+        MaxSessionDuration: 3600
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Federated: cognito-identity.amazonaws.com
+              Action: sts:AssumeRoleWithWebIdentity
+              Condition:
+                StringEquals:
+                  'cognito-identity.amazonaws.com:aud': !Ref ToshiIdentityPool
+                ForAnyValue:StringLike:
+                  'cognito-identity.amazonaws.com:amr': authenticated
+        Policies:
+          - PolicyName: toshi-runzi-admin-policy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: ECRRead
+                  Effect: Allow
+                  Action:
+                    - ecr:GetAuthorizationToken
+                    - ecr:BatchGetImage
+                    - ecr:GetDownloadUrlForLayer
+                    - ecr:DescribeRepositories
+                    - ecr:ListImages
+                  Resource: '*'
+                - Sid: S3ReadWrite
+                  Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:PutObject
+                    - s3:ListBucket
+                    - s3:PutObjectAcl
+                  Resource:
+                    - arn:aws:s3:::nshm-runzi-output-*
+                    - arn:aws:s3:::nshm-runzi-output-*/*
+                    - arn:aws:s3:::nshm-runzi-jars
+                    - arn:aws:s3:::nshm-runzi-jars/*
+                - Sid: BatchSubmit
+                  Effect: Allow
+                  Action:
+                    - batch:SubmitJob
+                    - batch:DescribeJobs
+                    - batch:ListJobs
+                    - batch:TerminateJob
+                    - batch:DescribeJobQueues
+                    - batch:DescribeComputeEnvironments
+                    - batch:DescribeJobDefinitions
+                  Resource: '*'
+                - Sid: BatchAdmin
+                  Effect: Allow
+                  Action:
+                    - batch:CreateComputeEnvironment
+                    - batch:UpdateComputeEnvironment
+                    - batch:DeleteComputeEnvironment
+                    - batch:RegisterJobDefinition
+                    - batch:DeregisterJobDefinition
+                  Resource: '*'
+                - Sid: ECRAdmin
+                  Effect: Allow
+                  Action:
+                    - ecr:CreateRepository
+                    - ecr:PutImage
+                    - ecr:InitiateLayerUpload
+                    - ecr:UploadLayerPart
+                    - ecr:CompleteLayerUpload
+                    - ecr:BatchDeleteImage
+                  Resource:
+                    - arn:aws:ecr:*:*:repository/nshm-runzi-*
+
+    # ── Identity Pool role attachment (rules-based by Cognito group) ───────────
+    ToshiIdentityPoolRoleAttachment:
+      Type: AWS::Cognito::IdentityPoolRoleAttachment
+      Properties:
+        IdentityPoolId: !Ref ToshiIdentityPool
+        Roles:
+          authenticated: !GetAtt ToshiRunziLocalRole.Arn
+        RoleMappings:
+          ToshiProvider:
+            IdentityProvider:
+              Fn::Join:
+                - ':'
+                - - !GetAtt ToshiUserPool.ProviderName
+                  - !Ref ToshiScientistClient
+            Type: Rules
+            AmbiguousRoleResolution: AuthenticatedRole
+            RulesConfiguration:
+              Rules:
+                - Claim: cognito:groups
+                  MatchType: Contains
+                  Value: runzi-local
+                  RoleARN: !GetAtt ToshiRunziLocalRole.Arn
+                - Claim: cognito:groups
+                  MatchType: Contains
+                  Value: runzi-batch
+                  RoleARN: !GetAtt ToshiRunziBatchRole.Arn
+                - Claim: cognito:groups
+                  MatchType: Contains
+                  Value: runzi-admin
+                  RoleARN: !GetAtt ToshiRunziAdminRole.Arn
+
+  Outputs:
+    UserPoolId:
+      Description: Cognito User Pool ID (set as COGNITO_USER_POOL_ID env var)
+      Value: !Ref ToshiUserPool
+    IdentityPoolId:
+      Description: Cognito Identity Pool ID (for aws-creds exchange)
+      Value: !Ref ToshiIdentityPool
+    ScientistClientId:
+      Description: Public app client for scientist login
+      Value: !Ref ToshiScientistClient
+    AutomationClientId:
+      Description: Confidential app client for M2M (secret fetched separately)
+      Value: !Ref ToshiAutomationClient
+    CognitoDomain:
+      Description: Cognito hosted UI domain (token endpoint base URL)
+      Value:
+        Fn::Join:
+          - ''
+          - - !Ref ToshiUserPoolDomain
+            - .auth.
+            - !Ref AWS::Region
+            - .amazoncognito.com
+    Issuer:
+      Description: JWT issuer URL (for authorizer handler.py COGNITO_USER_POOL_ID verification)
+      Value:
+        Fn::Join:
+          - ''
+          - - 'https://cognito-idp.'
+            - !Ref AWS::Region
+            - .amazonaws.com/
+            - !Ref ToshiUserPool
+    JwksUri:
+      Description: JWKS endpoint for JWT signature verification
+      Value:
+        Fn::Join:
+          - ''
+          - - 'https://cognito-idp.'
+            - !Ref AWS::Region
+            - .amazonaws.com/
+            - !Ref ToshiUserPool
+            - /.well-known/jwks.json
