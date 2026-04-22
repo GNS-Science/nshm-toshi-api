@@ -134,6 +134,15 @@ The remaining ~41 types follow the same patterns shown here:
 - Elasticsearch indexing on write — currently omitted. The existing `ThingData.index_search()`
   / `FileData.index_search()` calls can be added as post-write hooks in `create_thing` and
   `create_file`.
+- **ID allocation transaction guard** — the POC's `create_thing` / `create_file` increment
+  the ToshiIdentity counter and save the object as two separate DynamoDB calls. The production
+  code (`base_data._write_object`, line 350) does both atomically via PynamoDB `TransactWrite`,
+  with an exponential-backoff retry on contention. Three things to restore:
+  1. Replace the two-call pattern with a single `boto3` `transact_write_items` that increments
+     the counter and saves the object together
+  2. Add a `backoff` retry on `ClientError` / `TransactionConflict` error code
+  3. Re-add the pre-write consistency check (`identity.object_id == expected_id`) that raises
+     `DynamoWriteConsistencyError` on mismatch
 
 ### Auth
 
