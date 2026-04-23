@@ -24,6 +24,14 @@ def ids(gql_context):
     Run the full setup mutation sequence and collect returned IDs.
     Mutation strings mirror graphql_api/tests/smoketests.py test_setup.
     """
+    import requests as _requests
+    ep = gql_context.get("es_endpoint", "")
+    idx = gql_context.get("es_index", "toshi-index-mapped")
+    if ep:
+        # Wipe any stale data from previous runs so search results only
+        # contain objects created by this fixture.
+        _requests.delete(f"{ep}/{idx}", timeout=5)
+
     collected = {}
 
     def run(query, variables=None):
@@ -559,3 +567,231 @@ def test_list_automation_tasks(ids, gql_context):
     assert result.errors is None
     nodes = [e["node"] for e in result.data["automation_tasks"]["edges"]]
     assert any(n["id"] == ids["at_id"] and n["task_type"] == "INVERSION" for n in nodes)
+
+
+# ── Integration tests — require live ES (ES_ENDPOINT env var) ─────────────────
+# Run with: ES_ENDPOINT=http://localhost:9200 uv run --extra dev pytest tests/ -m integration -v
+
+SEARCH_FRAGMENT = """
+fragment sr on SearchResult {
+    __typename
+    ... on ToshiFile {
+        id
+        file_name
+        relations {
+            edges {
+                node {
+                    ... on FileRelation {
+                        role
+                        thing {
+                            __typename
+                            ... on RuptureGenerationTask { created }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ... on SmsFile {
+        id
+        file_name
+        file_type
+        relations {
+            edges {
+                node {
+                    ... on FileRelation {
+                        role
+                        thing {
+                            __typename
+                            ... on StrongMotionStation { site_code }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ... on RuptureGenerationTask {
+        id
+        result
+        state
+        arguments { k v }
+        files {
+            edges {
+                node {
+                    ... on FileRelation {
+                        role
+                        file {
+                            ... on ToshiFile { id file_name file_size }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ... on StrongMotionStation {
+        id
+        created
+        site_code
+        site_class
+        site_class_basis
+        liquefiable
+        Vs30_mean
+        files {
+            edges {
+                node {
+                    ... on FileRelation {
+                        role
+                        file {
+                            ... on SmsFile { file_name file_size }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ... on GeneralTask {
+        id
+        created
+        updated
+        title
+        description
+        agent_name
+        children {
+            edges {
+                node {
+                    child {
+                        __typename
+                        ... on RuptureGenerationTask {
+                            id
+                            state
+                            result
+                            created
+                        }
+                    }
+                }
+            }
+        }
+        files {
+            edges {
+                node {
+                    ... on FileRelation {
+                        role
+                        file {
+                            __typename
+                            ... on ToshiFile { file_name file_size }
+                            ... on SmsFile { file_name file_size file_type }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ... on AutomationTask {
+        id
+        created
+        task_type
+        arguments { k v }
+    }
+}
+"""
+
+SEARCH_QUERY = SEARCH_FRAGMENT + """
+query Search($term: String!) {
+    search(search_term: $term) {
+        search_result {
+            edges {
+                node { ...sr }
+            }
+        }
+    }
+}
+"""
+
+
+def _search(gql_context, term):
+    result = schema.execute_sync(
+        SEARCH_QUERY, context_value=gql_context, variable_values={"term": term}
+    )
+    assert result.errors is None, result.errors
+    return result.data["search"]["search_result"]["edges"]
+
+
+@pytest.mark.integration
+def test_search_sms_by_site_class_basis(ids, gql_context):
+    """Mirrors smoketests.py search_sms query."""
+    import time; time.sleep(1)  # allow ES to index
+    edges = _search(gql_context, "site_class_basis:SPT")
+    nodes = [e["node"] for e in edges]
+    sms = next((n for n in nodes if n["__typename"] == "StrongMotionStation"), None)
+    assert sms is not None
+    assert sms["id"] == ids["sms_id"]
+    assert sms["site_code"] == "ABCD"
+    assert sms["site_class"] == "B"
+    assert sms["site_class_basis"] == "SPT"
+    assert sms["Vs30_mean"] == [200.0]
+    # File relation to SmsFile
+    file_nodes = [e["node"]["file"] for e in sms["files"]["edges"]]
+    assert any(f and f.get("file_name") == "my_sms_File2.txt" for f in file_nodes)
+
+
+@pytest.mark.integration
+def test_search_rupture_generation_task_by_result(ids, gql_context):
+    """Mirrors smoketests.py search_rupture query."""
+    edges = _search(gql_context, "result:SUCCESS")
+    nodes = [e["node"] for e in edges]
+    rgt = next((n for n in nodes if n["__typename"] == "RuptureGenerationTask"), None)
+    assert rgt is not None
+    assert rgt["id"] == ids["rgt1_id"]
+    assert rgt["result"] == "SUCCESS"
+    assert rgt["state"] == "DONE"
+    file_nodes = [e["node"] for e in rgt["files"]["edges"]]
+    assert any(
+        e["role"] == "WRITE" and e["file"] and e["file"]["file_name"] == "myfile2.txt"
+        for e in file_nodes
+    )
+
+
+@pytest.mark.integration
+def test_search_sms_file_by_name(ids, gql_context):
+    """Mirrors smoketests.py search_file query."""
+    edges = _search(gql_context, "file_name:my_sms*")
+    nodes = [e["node"] for e in edges]
+    sms_file = next((n for n in nodes if n["__typename"] == "SmsFile"), None)
+    assert sms_file is not None
+    assert sms_file["id"] == ids["sms_file_id"]
+    assert sms_file["file_name"] == "my_sms_File2.txt"
+    assert sms_file["file_type"] == "CPT"
+    things = [e["node"]["thing"] for e in sms_file["relations"]["edges"]]
+    assert any(t["__typename"] == "StrongMotionStation" and t["site_code"] == "ABCD" for t in things)
+
+
+@pytest.mark.integration
+def test_search_general_task_by_agent(ids, gql_context):
+    """Mirrors smoketests.py search_general_task query."""
+    edges = _search(gql_context, "agent_name:chrisbc")
+    nodes = [e["node"] for e in edges]
+    gt = next((n for n in nodes if n["__typename"] == "GeneralTask"), None)
+    assert gt is not None
+    assert gt["id"] == ids["gt_id"]
+    assert gt["title"] == "My First Manual task"
+    assert gt["agent_name"] == "chrisbc"
+    # Child relation
+    children = [e["node"]["child"] for e in gt["children"]["edges"]]
+    assert any(c["__typename"] == "RuptureGenerationTask" and c["state"] == "DONE" for c in children)
+    # File relations
+    file_nodes = [e["node"] for e in gt["files"]["edges"]]
+    roles = {e["role"] for e in file_nodes}
+    assert "READ" in roles
+    assert "UNDEFINED" in roles
+
+
+@pytest.mark.integration
+def test_search_automation_task_by_task_type(ids, gql_context):
+    """Mirrors smoketests.py search_automation_task query."""
+    edges = _search(gql_context, "task_type:inversion")
+    nodes = [e["node"] for e in edges]
+    at = next((n for n in nodes if n["__typename"] == "AutomationTask"), None)
+    assert at is not None
+    assert at["id"] == ids["at_id"]
+    assert at["task_type"] == "INVERSION"
+    assert at["arguments"] == [{"k": "max_jump_distance", "v": "55.5"}]

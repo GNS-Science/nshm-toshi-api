@@ -8,6 +8,7 @@ dependencies = [
     "boto3>=1.26",
     "mangum>=0.17",
     "python-dotenv>=1.0",
+    "requests>=2.28",
 ]
 
 [project.optional-dependencies]
@@ -26,3 +27,6 @@ members = ["."]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "integration: requires a live Elasticsearch instance (ES_ENDPOINT env var)",
+]
