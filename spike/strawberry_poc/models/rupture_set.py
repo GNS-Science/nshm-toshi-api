@@ -4,53 +4,15 @@ RuptureSet — file type with a produced_by relation.
 This is the union-type stress test: produced_by can be a RuptureGenerationTask
 (or other automation task types in future). In Strawberry, unions are explicit
 annotated types — much cleaner than Graphene's dynamic dispatch.
-
-POC simplification: only RuptureGenerationTask stub is included.
-A full migration would add the other AutomationTask subtypes.
 """
-from typing import Annotated, Iterable, Optional
+from typing import Iterable, Optional
 
 import strawberry
 from strawberry import relay
 from strawberry.types import Info
 
+from .automation_task import RuptureGenerationTask  # noqa: F401 — re-exported for schema.py
 from .common import KeyValuePair, KeyValuePairInput
-
-
-# ── Stub for produced_by union type ───────────────────────────────────────────
-# In the full migration this would be a proper relay.Node type with its own resolvers.
-
-@strawberry.type
-class RuptureGenerationTask(relay.Node):
-    """Stub: the task that produced a RuptureSet."""
-
-    pk: relay.NodeID[str]
-    state: Optional[str] = None
-    result: Optional[str] = None
-    created: Optional[str] = None
-
-    @classmethod
-    def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["RuptureGenerationTask"]:
-        from data.dynamo import get_thing
-        data = get_thing(info.context["dynamodb"], node_id)
-        return cls.from_dict(data) if data else None
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "RuptureGenerationTask":
-        return cls(
-            pk=data["object_id"],
-            state=data.get("state"),
-            result=data.get("result"),
-            created=data.get("created"),
-        )
-
-
-# Union type for produced_by — strawberry.union is explicit and type-safe.
-# Feasibility test: does is_type_of dispatch work cleanly?
-AutomationTaskUnion = Annotated[
-    RuptureGenerationTask,
-    strawberry.union(name="AutomationTaskUnion"),
-]
 
 
 # ── RuptureSet ────────────────────────────────────────────────────────────────

@@ -14,6 +14,13 @@ from strawberry import relay
 from strawberry.types import Info
 
 from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
+from .relations import (
+    FileRelation,
+    TaskTaskRelation,
+    build_file_relations_for_thing,
+    build_task_children,
+    build_task_parents,
+)
 
 
 @strawberry.type
@@ -34,6 +41,22 @@ class GeneralTask(relay.Node):
     model_type: Optional[ModelType] = None
     argument_lists: Optional[list[KeyValueListPair]] = None
     meta: Optional[list[KeyValuePair]] = None
+
+    files_raw: strawberry.Private[Optional[list]] = None
+    children_raw: strawberry.Private[Optional[list]] = None
+    parents_raw: strawberry.Private[Optional[list]] = None
+
+    @relay.connection(relay.ListConnection[FileRelation])
+    def files(self, info: Info) -> list[FileRelation]:
+        return build_file_relations_for_thing(self.pk, self.files_raw or [])
+
+    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    def children(self, info: Info) -> list[TaskTaskRelation]:
+        return build_task_children(self.pk, self.children_raw or [])
+
+    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    def parents(self, info: Info) -> list[TaskTaskRelation]:
+        return build_task_parents(self.pk, self.parents_raw or [])
 
     @strawberry.field
     def swept_arguments(self) -> list[str]:
@@ -71,6 +94,9 @@ class GeneralTask(relay.Node):
             model_type=ModelType(data["model_type"]) if data.get("model_type") else None,
             argument_lists=[KeyValueListPair(k=i["k"], v=i["v"]) for i in kvl] if kvl else None,
             meta=[KeyValuePair(k=i["k"], v=i["v"]) for i in meta] if meta else None,
+            files_raw=data.get("files", []),
+            children_raw=data.get("children", []),
+            parents_raw=data.get("parents", []),
         )
 
 

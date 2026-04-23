@@ -153,8 +153,8 @@ def test_produced_by_resolved(created_rupture_set, rupture_gen_task_id):
     produced_by = created_rupture_set["producedBy"]
     assert produced_by is not None
     assert produced_by["id"] == rupture_gen_task_id
-    assert produced_by["state"] == "done"
-    assert produced_by["result"] == "success"
+    assert produced_by["state"] == "DONE"
+    assert produced_by["result"] == "SUCCESS"
 
 
 def test_list_rupture_sets(gql_context, created_rupture_set):
@@ -181,7 +181,7 @@ def test_node_lookup(gql_context, created_rupture_set, rupture_gen_task_id):
     assert node["fileName"] == "rupture_set_v1.zip"
     assert node["md5Digest"] == "abc123"
     assert node["producedBy"]["id"] == rupture_gen_task_id
-    assert node["producedBy"]["state"] == "done"
+    assert node["producedBy"]["state"] == "DONE"
 
 
 def test_relay_ids_are_different_types(created_rupture_set, rupture_gen_task_id):
