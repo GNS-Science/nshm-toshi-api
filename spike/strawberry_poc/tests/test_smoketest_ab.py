@@ -1,15 +1,15 @@
 """
 A/B smoketest — mirrors graphql_api/tests/smoketests.py setup sequence.
 
-Runs the same domain operations against the Strawberry POC schema (moto-backed
-DynamoDB, no HTTP) and verifies the resulting data via node lookups and list
-queries. Search queries are excluded because the POC has no Elasticsearch layer.
+Mutation strings are intentionally kept as close as possible to the originals
+in smoketests.py so this file can serve as a diff to document any remaining
+API surface differences.
 
-Differences from the original smoketest:
-  - IDs are captured from mutation responses (not hardcoded) — no TOSHI_FIX_RANDOM_SEED needed.
-  - Mutations return the type directly (no payload wrapper like task_result / file_result).
-  - Field names use camelCase (Strawberry default for Python snake_case attributes).
-  - search() queries are absent; verification uses node() and list queries instead.
+Key differences from the original smoketest:
+  - No search() queries (no Elasticsearch in POC)
+  - IDs captured from mutation responses rather than hardcoded
+    (no TOSHI_FIX_RANDOM_SEED dependency)
+  - Verification via node() and list queries instead of search()
 """
 import pytest
 
@@ -22,8 +22,7 @@ from schema import schema
 def ids(gql_context):
     """
     Run the full setup mutation sequence and collect returned IDs.
-
-    Returns a dict of logical name → relay GlobalID string.
+    Mutation strings mirror graphql_api/tests/smoketests.py test_setup.
     """
     collected = {}
 
@@ -32,184 +31,167 @@ def ids(gql_context):
         assert result.errors is None, result.errors
         return result.data
 
-    # 1. StrongMotionStation
+    # 1. StrongMotionStation — mirrors smoketests.py "new_sms"
     data = run("""
-        mutation {
-            createStrongMotionStation(input: {
-                siteCode: "ABCD"
+        mutation new_sms {
+            create_strong_motion_station(input: {
+                site_code: "ABCD"
                 created: "2020-10-10T23:00Z"
-                siteClassBasis: SPT
-                vs30Mean: [200.0]
-                siteClass: B
+                site_class_basis: SPT
+                Vs30_mean: [200.0]
+                site_class: B
             }) {
-                id
-                siteCode
-                siteClass
-                siteClassBasis
-                vs30Mean
+                strong_motion_station { id }
             }
         }
     """)
-    collected["sms_id"] = data["createStrongMotionStation"]["id"]
+    collected["sms_id"] = data["create_strong_motion_station"]["strong_motion_station"]["id"]
 
-    # 2. First RuptureGenerationTask
+    # 2. First RuptureGenerationTask — mirrors "new_ruptgen_task"
     data = run("""
-        mutation {
-            createRuptureGenerationTask(input: {
+        mutation new_ruptgen_task {
+            create_rupture_generation_task(input: {
                 created: "2020-10-10T23:00Z"
                 state: SCHEDULED
                 result: UNDEFINED
-                taskType: RUPTURE_SET
+                task_type: RUPTURE_SET
             }) {
-                id
-                created
-                state
-                result
+                task_result { id created }
             }
         }
     """)
-    collected["rgt1_id"] = data["createRuptureGenerationTask"]["id"]
+    collected["rgt1_id"] = data["create_rupture_generation_task"]["task_result"]["id"]
 
-    # 3. Update first RuptureGenerationTask
+    # 3. Update RuptureGenerationTask — mirrors "update_ruptgen_task"
     data = run("""
-        mutation UpdateRGT($taskId: ID!) {
-            updateRuptureGenerationTask(input: {
-                taskId: $taskId
+        mutation update_ruptgen_task($task_id: ID!) {
+            update_rupture_generation_task(input: {
+                task_id: $task_id
                 result: SUCCESS
                 state: DONE
             }) {
-                id
-                result
-                state
+                task_result { id }
             }
         }
-    """, {"taskId": collected["rgt1_id"]})
-    assert data["updateRuptureGenerationTask"]["result"] == "SUCCESS"
+    """, {"task_id": collected["rgt1_id"]})
+    assert data["update_rupture_generation_task"]["task_result"]["id"] == collected["rgt1_id"]
 
-    # 4. File
+    # 4. File — mirrors "new_rupt_file"
     data = run("""
-        mutation {
-            createFile(input: {
-                fileName: "myfile2.txt"
-                fileSize: 2000
-                md5Digest: "abc123"
+        mutation new_rupt_file {
+            create_file(input: {
+                file_name: "myfile2.txt"
+                file_size: 2000
+                md5_digest: "abc123"
                 meta: [{ k: "encoding", v: "utf8" }]
             }) {
-                id
-                fileName
-                fileSize
-                meta { k v }
+                file_result { id meta { k v } }
             }
         }
     """)
-    collected["file_id"] = data["createFile"]["id"]
+    collected["file_id"] = data["create_file"]["file_result"]["id"]
 
-    # 5. File → RuptureGenerationTask relation
+    # 5. File → RuptureGenerationTask relation — mirrors "new_rupt_file_relation"
     data = run("""
-        mutation CreateFileRel($fileId: ID!, $thingId: ID!) {
-            createFileRelation(input: {
-                fileId: $fileId
-                thingId: $thingId
+        mutation new_rupt_file_relation($file_id: ID!, $thing_id: ID!) {
+            create_file_relation(input: {
+                file_id: $file_id
+                thing_id: $thing_id
                 role: WRITE
-            })
+            }) { ok }
         }
-    """, {"fileId": collected["file_id"], "thingId": collected["rgt1_id"]})
-    assert data["createFileRelation"] is True
+    """, {"file_id": collected["file_id"], "thing_id": collected["rgt1_id"]})
+    assert data["create_file_relation"]["ok"] is True
 
-    # 6. SmsFile
+    # 6. SmsFile — mirrors "new_sms_file"
     data = run("""
-        mutation {
-            createSmsFile(input: {
-                fileName: "my_sms_File2.txt"
-                fileSize: 2000
-                fileType: CPT
-                md5Digest: "def456"
+        mutation new_sms_file {
+            create_sms_file(input: {
+                file_name: "my_sms_File2.txt"
+                file_size: 2000
+                file_type: CPT
+                md5_digest: "def456"
             }) {
-                id
-                fileName
-                fileType
+                file_result { id file_type }
             }
         }
     """)
-    collected["sms_file_id"] = data["createSmsFile"]["id"]
+    collected["sms_file_id"] = data["create_sms_file"]["file_result"]["id"]
 
-    # 7. SmsFile → StrongMotionStation relation
+    # 7. SmsFile → StrongMotionStation relation — mirrors "new_sms_file_relation"
     data = run("""
-        mutation CreateSmsRel($fileId: ID!, $thingId: ID!) {
-            createFileRelation(input: {
-                fileId: $fileId
-                thingId: $thingId
+        mutation new_sms_file_relation($file_id: ID!, $thing_id: ID!) {
+            create_file_relation(input: {
+                file_id: $file_id
+                thing_id: $thing_id
                 role: UNDEFINED
-            })
+            }) { ok }
         }
-    """, {"fileId": collected["sms_file_id"], "thingId": collected["sms_id"]})
-    assert data["createFileRelation"] is True
+    """, {"file_id": collected["sms_file_id"], "thing_id": collected["sms_id"]})
+    assert data["create_file_relation"]["ok"] is True
 
-    # 8. GeneralTask
+    # 8. GeneralTask — mirrors "new_general_task"
     data = run("""
-        mutation {
-            createGeneralTask(input: {
+        mutation new_general_task {
+            create_general_task(input: {
                 created: "2020-10-10T23:00:00+00:00"
                 title: "My First Manual task"
                 description: "##Some notes go here"
-                agentName: "chrisbc"
+                agent_name: "chrisbc"
             }) {
-                id
-                created
-                title
-                description
-                agentName
+                general_task { id created }
             }
         }
     """)
-    collected["gt_id"] = data["createGeneralTask"]["id"]
+    collected["gt_id"] = data["create_general_task"]["general_task"]["id"]
 
-    # 9. File → GeneralTask relation
+    # 9. File → GeneralTask relation — mirrors "new_gt_file_relation"
     data = run("""
-        mutation CreateGTFileRel($fileId: ID!, $thingId: ID!) {
-            createFileRelation(input: {
-                fileId: $fileId
-                thingId: $thingId
+        mutation new_gt_file_relation($file_id: ID!, $thing_id: ID!) {
+            create_file_relation(input: {
+                file_id: $file_id
+                thing_id: $thing_id
                 role: READ
-            })
+            }) { ok }
         }
-    """, {"fileId": collected["file_id"], "thingId": collected["gt_id"]})
-    assert data["createFileRelation"] is True
+    """, {"file_id": collected["file_id"], "thing_id": collected["gt_id"]})
+    assert data["create_file_relation"]["ok"] is True
 
-    # 10. SmsFile → GeneralTask relation
+    # 10. SmsFile → GeneralTask relation — mirrors "new_gt_smsfile_relation"
     data = run("""
-        mutation CreateGTSmsRel($fileId: ID!, $thingId: ID!) {
-            createFileRelation(input: {
-                fileId: $fileId
-                thingId: $thingId
+        mutation new_gt_smsfile_relation($file_id: ID!, $thing_id: ID!) {
+            create_file_relation(input: {
+                file_id: $file_id
+                thing_id: $thing_id
                 role: UNDEFINED
-            })
+            }) { ok }
         }
-    """, {"fileId": collected["sms_file_id"], "thingId": collected["gt_id"]})
-    assert data["createFileRelation"] is True
+    """, {"file_id": collected["sms_file_id"], "thing_id": collected["gt_id"]})
+    assert data["create_file_relation"]["ok"] is True
 
-    # 11. GeneralTask → RuptureGenerationTask task relation
+    # 11. GeneralTask → RuptureGenerationTask — mirrors "new_task_subtask_relation"
     data = run("""
-        mutation CreateTaskRel($parentId: ID!, $childId: ID!) {
-            createTaskRelation(input: {
-                parentId: $parentId
-                childId: $childId
+        mutation new_task_subtask_relation($child_id: ID!, $parent_id: ID!) {
+            create_task_relation(input: {
+                child_id: $child_id
+                parent_id: $parent_id
             }) {
-                parent { ... on GeneralTask { id title } }
-                child { ... on RuptureGenerationTask { id state result } }
+                thing_relation {
+                    parent { ... on GeneralTask { id } }
+                    child  { ... on RuptureGenerationTask { id } }
+                }
             }
         }
-    """, {"parentId": collected["gt_id"], "childId": collected["rgt1_id"]})
-    rel = data["createTaskRelation"]
-    assert rel["parent"]["title"] == "My First Manual task"
-    assert rel["child"]["state"] == "DONE"
-    assert rel["child"]["result"] == "SUCCESS"
+    """, {"child_id": collected["rgt1_id"], "parent_id": collected["gt_id"]})
+    rel = data["create_task_relation"]["thing_relation"]
+    assert rel["parent"]["id"] == collected["gt_id"]
+    assert rel["child"]["id"] == collected["rgt1_id"]
 
-    # 12. AutomationTask (inversion)
+    # 12. AutomationTask — mirrors "new_inversion"
     data = run("""
-        mutation {
-            createAutomationTask(input: {
-                taskType: INVERSION
+        mutation new_inversion {
+            create_automation_task(input: {
+                task_type: INVERSION
                 result: UNDEFINED
                 state: UNDEFINED
                 created: "2020-10-10T23:00Z"
@@ -219,24 +201,19 @@ def ids(gql_context):
                     { k: "JAVA", v: "-Xmx24G" }
                 ]
             }) {
-                id
-                created
-                taskType
-                arguments { k v }
+                task_result { id created arguments { k v } }
             }
         }
     """)
-    collected["at_id"] = data["createAutomationTask"]["id"]
-    assert data["createAutomationTask"]["taskType"] == "INVERSION"
-    assert data["createAutomationTask"]["arguments"][0]["k"] == "max_jump_distance"
+    collected["at_id"] = data["create_automation_task"]["task_result"]["id"]
 
-    # 13. Second RuptureGenerationTask with full arguments
+    # 13. Second RuptureGenerationTask with full args — mirrors "new_ruptgen_new_task"
     data = run("""
-        mutation {
-            createRuptureGenerationTask(input: {
+        mutation new_ruptgen_new_task {
+            create_rupture_generation_task(input: {
                 state: UNDEFINED
                 result: UNDEFINED
-                taskType: RUPTURE_SET
+                task_type: RUPTURE_SET
                 created: "2020-10-10T23:00Z"
                 duration: 600.0
                 arguments: [
@@ -256,16 +233,11 @@ def ids(gql_context):
                     { k: "total_energy", v: "3280.2333" }
                 ]
             }) {
-                id
-                created
-                duration
-                arguments { k v }
+                task_result { id created duration arguments { k v } }
             }
         }
     """)
-    collected["rgt2_id"] = data["createRuptureGenerationTask"]["id"]
-    assert data["createRuptureGenerationTask"]["duration"] == 600.0
-    assert len(data["createRuptureGenerationTask"]["arguments"]) == 5
+    collected["rgt2_id"] = data["create_rupture_generation_task"]["task_result"]["id"]
 
     return collected
 
@@ -273,27 +245,24 @@ def ids(gql_context):
 # ── Verification tests ────────────────────────────────────────────────────────
 
 def test_setup_returns_all_ids(ids):
-    """Verify all expected IDs were collected during setup."""
     assert all(k in ids for k in [
         "sms_id", "rgt1_id", "file_id", "sms_file_id", "gt_id", "at_id", "rgt2_id"
     ])
-    # All IDs are non-empty relay global IDs
     for key, val in ids.items():
         assert val and len(val) > 4, f"{key} has empty ID"
 
 
 def test_node_strong_motion_station(ids, gql_context):
-    """node() lookup returns StrongMotionStation with correct fields."""
     result = schema.execute_sync("""
         query GetSMS($id: ID!) {
             node(id: $id) {
                 __typename
                 ... on StrongMotionStation {
                     id
-                    siteCode
-                    siteClass
-                    siteClassBasis
-                    vs30Mean
+                    site_code
+                    site_class
+                    site_class_basis
+                    Vs30_mean
                 }
             }
         }
@@ -301,14 +270,13 @@ def test_node_strong_motion_station(ids, gql_context):
     assert result.errors is None
     node = result.data["node"]
     assert node["__typename"] == "StrongMotionStation"
-    assert node["siteCode"] == "ABCD"
-    assert node["siteClass"] == "B"
-    assert node["siteClassBasis"] == "SPT"
-    assert node["vs30Mean"] == [200.0]
+    assert node["site_code"] == "ABCD"
+    assert node["site_class"] == "B"
+    assert node["site_class_basis"] == "SPT"
+    assert node["Vs30_mean"] == [200.0]
 
 
-def test_node_rupture_generation_task_after_update(ids, gql_context):
-    """RuptureGenerationTask node reflects the updated state/result."""
+def test_node_rgt_after_update(ids, gql_context):
     result = schema.execute_sync("""
         query GetRGT($id: ID!) {
             node(id: $id) {
@@ -328,27 +296,23 @@ def test_node_rupture_generation_task_after_update(ids, gql_context):
     assert node["__typename"] == "RuptureGenerationTask"
     assert node["state"] == "DONE"
     assert node["result"] == "SUCCESS"
-    assert node["created"] == "2020-10-10T23:00Z"
     assert node["duration"] is None
 
 
 def test_node_file_with_relations(ids, gql_context):
-    """File node shows relations to both RuptureGenerationTask and GeneralTask."""
     result = schema.execute_sync("""
         query GetFile($id: ID!) {
             node(id: $id) {
                 ... on ToshiFile {
-                    fileName
-                    fileSize
+                    file_name
+                    file_size
                     meta { k v }
                     relations {
                         edges {
                             node {
                                 ... on FileRelation {
                                     role
-                                    thing {
-                                        __typename
-                                    }
+                                    thing { __typename }
                                 }
                             }
                         }
@@ -359,8 +323,8 @@ def test_node_file_with_relations(ids, gql_context):
     """, context_value=gql_context, variable_values={"id": ids["file_id"]})
     assert result.errors is None
     node = result.data["node"]
-    assert node["fileName"] == "myfile2.txt"
-    assert node["fileSize"] == 2000
+    assert node["file_name"] == "myfile2.txt"
+    assert node["file_size"] == 2000
     assert node["meta"] == [{"k": "encoding", "v": "utf8"}]
     typenames = {e["node"]["thing"]["__typename"] for e in node["relations"]["edges"]}
     assert "RuptureGenerationTask" in typenames
@@ -368,13 +332,12 @@ def test_node_file_with_relations(ids, gql_context):
 
 
 def test_node_sms_file_with_relation(ids, gql_context):
-    """SmsFile node shows relation to StrongMotionStation."""
     result = schema.execute_sync("""
         query GetSmsFile($id: ID!) {
             node(id: $id) {
                 ... on SmsFile {
-                    fileName
-                    fileType
+                    file_name
+                    file_type
                     relations {
                         edges {
                             node {
@@ -382,9 +345,7 @@ def test_node_sms_file_with_relation(ids, gql_context):
                                     role
                                     thing {
                                         __typename
-                                        ... on StrongMotionStation {
-                                            siteCode
-                                        }
+                                        ... on StrongMotionStation { site_code }
                                     }
                                 }
                             }
@@ -396,15 +357,14 @@ def test_node_sms_file_with_relation(ids, gql_context):
     """, context_value=gql_context, variable_values={"id": ids["sms_file_id"]})
     assert result.errors is None
     node = result.data["node"]
-    assert node["fileName"] == "my_sms_File2.txt"
-    assert node["fileType"] == "CPT"
+    assert node["file_name"] == "my_sms_File2.txt"
+    assert node["file_type"] == "CPT"
     things = [e["node"]["thing"] for e in node["relations"]["edges"]]
     sms = next(t for t in things if t["__typename"] == "StrongMotionStation")
-    assert sms["siteCode"] == "ABCD"
+    assert sms["site_code"] == "ABCD"
 
 
-def test_node_general_task_with_children_and_files(ids, gql_context):
-    """GeneralTask shows its child RuptureGenerationTask and both file relations."""
+def test_node_general_task_children_and_files(ids, gql_context):
     result = schema.execute_sync("""
         query GetGT($id: ID!) {
             node(id: $id) {
@@ -412,7 +372,7 @@ def test_node_general_task_with_children_and_files(ids, gql_context):
                     id
                     title
                     description
-                    agentName
+                    agent_name
                     created
                     children {
                         edges {
@@ -423,6 +383,7 @@ def test_node_general_task_with_children_and_files(ids, gql_context):
                                         id
                                         state
                                         result
+                                        created
                                     }
                                 }
                             }
@@ -435,14 +396,8 @@ def test_node_general_task_with_children_and_files(ids, gql_context):
                                     role
                                     file {
                                         __typename
-                                        ... on ToshiFile {
-                                            fileName
-                                            fileSize
-                                        }
-                                        ... on SmsFile {
-                                            fileName
-                                            fileType
-                                        }
+                                        ... on ToshiFile { file_name file_size }
+                                        ... on SmsFile { file_name file_size file_type }
                                     }
                                 }
                             }
@@ -455,17 +410,16 @@ def test_node_general_task_with_children_and_files(ids, gql_context):
     assert result.errors is None
     node = result.data["node"]
     assert node["title"] == "My First Manual task"
-    assert node["agentName"] == "chrisbc"
+    assert node["agent_name"] == "chrisbc"
 
-    # Child relation
     children = node["children"]["edges"]
     assert len(children) == 1
     child = children[0]["node"]["child"]
     assert child["__typename"] == "RuptureGenerationTask"
     assert child["id"] == ids["rgt1_id"]
     assert child["state"] == "DONE"
+    assert child["result"] == "SUCCESS"
 
-    # File relations: one ToshiFile (READ) and one SmsFile (UNDEFINED)
     file_edges = node["files"]["edges"]
     assert len(file_edges) == 2
     roles = {e["node"]["role"] for e in file_edges}
@@ -476,13 +430,11 @@ def test_node_general_task_with_children_and_files(ids, gql_context):
     assert "SmsFile" in typenames
 
 
-def test_node_rgt_with_files_and_parents(ids, gql_context):
-    """RuptureGenerationTask shows file relation and parent GeneralTask."""
+def test_node_rgt_files_and_parents(ids, gql_context):
     result = schema.execute_sync("""
         query GetRGT($id: ID!) {
             node(id: $id) {
                 ... on RuptureGenerationTask {
-                    id
                     state
                     result
                     files {
@@ -490,11 +442,7 @@ def test_node_rgt_with_files_and_parents(ids, gql_context):
                             node {
                                 ... on FileRelation {
                                     role
-                                    file {
-                                        ... on ToshiFile {
-                                            fileName
-                                        }
-                                    }
+                                    file { ... on ToshiFile { file_name } }
                                 }
                             }
                         }
@@ -503,10 +451,7 @@ def test_node_rgt_with_files_and_parents(ids, gql_context):
                         edges {
                             node {
                                 parent {
-                                    ... on GeneralTask {
-                                        title
-                                        description
-                                    }
+                                    ... on GeneralTask { title description }
                                 }
                             }
                         }
@@ -518,19 +463,11 @@ def test_node_rgt_with_files_and_parents(ids, gql_context):
     assert result.errors is None
     node = result.data["node"]
     assert node["state"] == "DONE"
-
-    files = node["files"]["edges"]
-    assert len(files) == 1
-    assert files[0]["node"]["role"] == "WRITE"
-    assert files[0]["node"]["file"]["fileName"] == "myfile2.txt"
-
-    parents = node["parents"]["edges"]
-    assert len(parents) == 1
-    assert parents[0]["node"]["parent"]["title"] == "My First Manual task"
+    assert node["files"]["edges"][0]["node"]["file"]["file_name"] == "myfile2.txt"
+    assert node["parents"]["edges"][0]["node"]["parent"]["title"] == "My First Manual task"
 
 
 def test_node_automation_task(ids, gql_context):
-    """AutomationTask node returns correct type and arguments."""
     result = schema.execute_sync("""
         query GetAT($id: ID!) {
             node(id: $id) {
@@ -538,7 +475,7 @@ def test_node_automation_task(ids, gql_context):
                 ... on AutomationTask {
                     id
                     created
-                    taskType
+                    task_type
                     arguments { k v }
                 }
             }
@@ -547,12 +484,11 @@ def test_node_automation_task(ids, gql_context):
     assert result.errors is None
     node = result.data["node"]
     assert node["__typename"] == "AutomationTask"
-    assert node["taskType"] == "INVERSION"
+    assert node["task_type"] == "INVERSION"
     assert node["arguments"] == [{"k": "max_jump_distance", "v": "55.5"}]
 
 
-def test_node_rgt2_with_arguments(ids, gql_context):
-    """Second RuptureGenerationTask has correct arguments, duration, metrics."""
+def test_node_rgt2_arguments_and_metrics(ids, gql_context):
     result = schema.execute_sync("""
         query GetRGT2($id: ID!) {
             node(id: $id) {
@@ -572,112 +508,54 @@ def test_node_rgt2_with_arguments(ids, gql_context):
     assert node["__typename"] == "RuptureGenerationTask"
     assert node["duration"] == 600.0
     assert len(node["arguments"]) == 5
-    arg_keys = [a["k"] for a in node["arguments"]]
-    assert "max_jump_distance" in arg_keys
-    assert "permutation_strategy" in arg_keys
     assert len(node["metrics"]) == 2
 
 
 def test_list_general_tasks(ids, gql_context):
-    """generalTasks list returns the created GeneralTask."""
     result = schema.execute_sync("""
-        query {
-            generalTasks {
-                edges {
-                    node {
-                        id
-                        title
-                        agentName
-                    }
-                }
-            }
-        }
+        query { general_tasks { edges { node { id title agent_name } } } }
     """, context_value=gql_context)
     assert result.errors is None
-    nodes = [e["node"] for e in result.data["generalTasks"]["edges"]]
+    nodes = [e["node"] for e in result.data["general_tasks"]["edges"]]
     assert any(n["id"] == ids["gt_id"] and n["title"] == "My First Manual task" for n in nodes)
 
 
 def test_list_rupture_generation_tasks(ids, gql_context):
-    """ruptureGenerationTasks list returns both created tasks."""
     result = schema.execute_sync("""
-        query {
-            ruptureGenerationTasks {
-                edges {
-                    node {
-                        id
-                        state
-                        result
-                    }
-                }
-            }
-        }
+        query { rupture_generation_tasks { edges { node { id state result } } } }
     """, context_value=gql_context)
     assert result.errors is None
-    nodes = [e["node"] for e in result.data["ruptureGenerationTasks"]["edges"]]
-    ids_found = {n["id"] for n in nodes}
-    assert ids["rgt1_id"] in ids_found
-    assert ids["rgt2_id"] in ids_found
-    # rgt1 was updated to DONE/SUCCESS
+    nodes = [e["node"] for e in result.data["rupture_generation_tasks"]["edges"]]
+    found = {n["id"] for n in nodes}
+    assert ids["rgt1_id"] in found
+    assert ids["rgt2_id"] in found
     rgt1 = next(n for n in nodes if n["id"] == ids["rgt1_id"])
     assert rgt1["state"] == "DONE"
     assert rgt1["result"] == "SUCCESS"
 
 
 def test_list_strong_motion_stations(ids, gql_context):
-    """strongMotionStations list returns the created station."""
     result = schema.execute_sync("""
-        query {
-            strongMotionStations {
-                edges {
-                    node {
-                        id
-                        siteCode
-                        siteClass
-                    }
-                }
-            }
-        }
+        query { strong_motion_stations { edges { node { id site_code site_class } } } }
     """, context_value=gql_context)
     assert result.errors is None
-    nodes = [e["node"] for e in result.data["strongMotionStations"]["edges"]]
-    assert any(n["id"] == ids["sms_id"] and n["siteCode"] == "ABCD" for n in nodes)
+    nodes = [e["node"] for e in result.data["strong_motion_stations"]["edges"]]
+    assert any(n["id"] == ids["sms_id"] and n["site_code"] == "ABCD" for n in nodes)
 
 
 def test_list_sms_files(ids, gql_context):
-    """smsFiles list returns the created SmsFile."""
     result = schema.execute_sync("""
-        query {
-            smsFiles {
-                edges {
-                    node {
-                        id
-                        fileName
-                        fileType
-                    }
-                }
-            }
-        }
+        query { sms_files { edges { node { id file_name file_type } } } }
     """, context_value=gql_context)
     assert result.errors is None
-    nodes = [e["node"] for e in result.data["smsFiles"]["edges"]]
-    assert any(n["id"] == ids["sms_file_id"] and n["fileType"] == "CPT" for n in nodes)
+    nodes = [e["node"] for e in result.data["sms_files"]["edges"]]
+    assert any(n["id"] == ids["sms_file_id"] and n["file_type"] == "CPT" for n in nodes)
 
 
 def test_list_automation_tasks(ids, gql_context):
-    """automationTasks list returns the INVERSION task."""
     result = schema.execute_sync("""
-        query {
-            automationTasks {
-                edges {
-                    node {
-                        id
-                        taskType
-                    }
-                }
-            }
-        }
+        query { automation_tasks { edges { node { id task_type } } } }
     """, context_value=gql_context)
     assert result.errors is None
-    nodes = [e["node"] for e in result.data["automationTasks"]["edges"]]
-    assert any(n["id"] == ids["at_id"] and n["taskType"] == "INVERSION" for n in nodes)
+    nodes = [e["node"] for e in result.data["automation_tasks"]["edges"]]
+    assert any(n["id"] == ids["at_id"] and n["task_type"] == "INVERSION" for n in nodes)

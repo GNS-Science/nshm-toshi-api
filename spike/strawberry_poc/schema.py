@@ -1,13 +1,19 @@
 """
 Root schema — Query + Mutation.
 
-Compare with graphql_api/schema/schema.py (311 lines, complex wiring).
-This file achieves the same surface area for all POC types in ~120 lines.
+Designed as a drop-in replacement for the Graphene stack:
+  - auto_camel_case=False  → field/mutation names stay snake_case
+  - Payload wrapper types  → mutation return shapes match Graphene's relay
+                             ClientIDMutation pattern exactly
+
+This means all existing client query strings work unchanged against
+either the old (Graphene/Flask) or new (Strawberry/FastAPI) stack.
 """
 from typing import Iterable, Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.schema.config import StrawberryConfig
 
 from models.automation_task import (
     AutomationTask,
@@ -51,9 +57,61 @@ from models.strong_motion_station import (
 )
 
 
+# ── Payload wrapper types (mirrors Graphene's ClientIDMutation Output pattern) ─
+
+@strawberry.type
+class CreateGeneralTaskPayload:
+    general_task: Optional[GeneralTask] = None
+
+@strawberry.type
+class UpdateGeneralTaskPayload:
+    general_task: Optional[GeneralTask] = None
+
+@strawberry.type
+class CreateRuptureGenerationTaskPayload:
+    task_result: Optional[RuptureGenerationTask] = None
+
+@strawberry.type
+class UpdateRuptureGenerationTaskPayload:
+    task_result: Optional[RuptureGenerationTask] = None
+
+@strawberry.type
+class CreateAutomationTaskPayload:
+    task_result: Optional[AutomationTask] = None
+
+@strawberry.type
+class CreateFilePayload:
+    ok: Optional[bool] = None
+    file_result: Optional[ToshiFile] = None
+
+@strawberry.type
+class CreateSmsFilePayload:
+    ok: Optional[bool] = None
+    file_result: Optional[SmsFile] = None
+
+@strawberry.type
+class CreateStrongMotionStationPayload:
+    strong_motion_station: Optional[StrongMotionStation] = None
+
+@strawberry.type
+class CreateRuptureSetPayload:
+    ok: Optional[bool] = None
+    rupture_set: Optional[RuptureSet] = None
+
+@strawberry.type
+class CreateFileRelationPayload:
+    ok: Optional[bool] = None
+
+@strawberry.type
+class CreateTaskRelationPayload:
+    ok: Optional[bool] = None
+    thing_relation: Optional[TaskTaskRelation] = None
+
+
+# ── Query ──────────────────────────────────────────────────────────────────────
+
 @strawberry.type
 class Query:
-    # Relay node lookup by global ID — dispatches to the correct type's resolve_node()
     node: relay.Node = relay.node()
 
     @relay.connection(relay.ListConnection[GeneralTask])
@@ -85,77 +143,87 @@ class Query:
         return resolve_rupture_generation_tasks(info)
 
 
+# ── Mutation ───────────────────────────────────────────────────────────────────
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def create_general_task(
         self, info: strawberry.types.Info, input: CreateGeneralTaskInput
-    ) -> GeneralTask:
-        return mutate_create_general_task(info, input)
+    ) -> CreateGeneralTaskPayload:
+        return CreateGeneralTaskPayload(general_task=mutate_create_general_task(info, input))
 
     @strawberry.mutation
     def update_general_task(
         self, info: strawberry.types.Info, input: UpdateGeneralTaskInput
-    ) -> Optional[GeneralTask]:
-        return mutate_update_general_task(info, input)
+    ) -> UpdateGeneralTaskPayload:
+        return UpdateGeneralTaskPayload(general_task=mutate_update_general_task(info, input))
 
     @strawberry.mutation
     def create_rupture_set(
         self, info: strawberry.types.Info, input: CreateRuptureSetInput
-    ) -> RuptureSet:
-        return mutate_create_rupture_set(info, input)
+    ) -> CreateRuptureSetPayload:
+        return CreateRuptureSetPayload(ok=True, rupture_set=mutate_create_rupture_set(info, input))
 
     @strawberry.mutation
     def create_file(
         self, info: strawberry.types.Info, input: CreateFileInput
-    ) -> ToshiFile:
-        return mutate_create_file(info, input)
+    ) -> CreateFilePayload:
+        return CreateFilePayload(ok=True, file_result=mutate_create_file(info, input))
 
     @strawberry.mutation
     def create_sms_file(
         self, info: strawberry.types.Info, input: CreateSmsFileInput
-    ) -> SmsFile:
-        return mutate_create_sms_file(info, input)
+    ) -> CreateSmsFilePayload:
+        return CreateSmsFilePayload(ok=True, file_result=mutate_create_sms_file(info, input))
 
     @strawberry.mutation
     def create_strong_motion_station(
         self, info: strawberry.types.Info, input: CreateStrongMotionStationInput
-    ) -> StrongMotionStation:
-        return mutate_create_strong_motion_station(info, input)
+    ) -> CreateStrongMotionStationPayload:
+        return CreateStrongMotionStationPayload(
+            strong_motion_station=mutate_create_strong_motion_station(info, input)
+        )
 
     @strawberry.mutation
     def create_automation_task(
         self, info: strawberry.types.Info, input: CreateAutomationTaskInput
-    ) -> AutomationTask:
-        return mutate_create_automation_task(info, input)
+    ) -> CreateAutomationTaskPayload:
+        return CreateAutomationTaskPayload(task_result=mutate_create_automation_task(info, input))
 
     @strawberry.mutation
     def create_rupture_generation_task(
         self, info: strawberry.types.Info, input: CreateAutomationTaskInput
-    ) -> RuptureGenerationTask:
-        return mutate_create_rupture_generation_task(info, input)
+    ) -> CreateRuptureGenerationTaskPayload:
+        return CreateRuptureGenerationTaskPayload(
+            task_result=mutate_create_rupture_generation_task(info, input)
+        )
 
     @strawberry.mutation
     def update_rupture_generation_task(
         self, info: strawberry.types.Info, input: UpdateAutomationTaskInput
-    ) -> Optional[RuptureGenerationTask]:
-        return mutate_update_rupture_generation_task(info, input)
+    ) -> UpdateRuptureGenerationTaskPayload:
+        return UpdateRuptureGenerationTaskPayload(
+            task_result=mutate_update_rupture_generation_task(info, input)
+        )
 
     @strawberry.mutation
     def create_file_relation(
         self, info: strawberry.types.Info, input: CreateFileRelationInput
-    ) -> bool:
-        return mutate_create_file_relation(info, input)
+    ) -> CreateFileRelationPayload:
+        mutate_create_file_relation(info, input)
+        return CreateFileRelationPayload(ok=True)
 
     @strawberry.mutation
     def create_task_relation(
         self, info: strawberry.types.Info, input: CreateTaskRelationInput
-    ) -> TaskTaskRelation:
-        return mutate_create_task_relation(info, input)
+    ) -> CreateTaskRelationPayload:
+        relation = mutate_create_task_relation(info, input)
+        return CreateTaskRelationPayload(ok=True, thing_relation=relation)
 
 
 schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
-    # All relay.Node subtypes auto-discovered from the schema graph
+    config=StrawberryConfig(auto_camel_case=False),
 )
