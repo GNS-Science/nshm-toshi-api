@@ -19,8 +19,8 @@ class StrongMotionStation(relay.Node):
     site_code: Optional[str] = None
     site_class: Optional[SmsSiteClass] = None
     site_class_basis: Optional[SmsSiteClassBasis] = None
-    vs30_mean: Optional[list[float]] = None
-    vs30_std_dev: Optional[list[float]] = None
+    Vs30_mean: Optional[list[float]] = None
+    Vs30_std_dev: Optional[list[float]] = None
     liquefiable: Optional[bool] = None
     bedrock_encountered: Optional[bool] = None
     soft_clay_or_peat: Optional[bool] = None
@@ -46,8 +46,8 @@ class StrongMotionStation(relay.Node):
             site_code=data.get("site_code"),
             site_class=SmsSiteClass(data["site_class"]) if data.get("site_class") else None,
             site_class_basis=SmsSiteClassBasis(data["site_class_basis"]) if data.get("site_class_basis") else None,
-            vs30_mean=data.get("Vs30_mean"),
-            vs30_std_dev=data.get("Vs30_std_dev"),
+            Vs30_mean=data.get("Vs30_mean"),
+            Vs30_std_dev=data.get("Vs30_std_dev"),
             liquefiable=data.get("liquefiable"),
             bedrock_encountered=data.get("bedrock_encountered"),
             soft_clay_or_peat=data.get("soft_clay_or_peat"),
@@ -62,8 +62,8 @@ class CreateStrongMotionStationInput:
     site_code: Optional[str] = None
     site_class: Optional[SmsSiteClass] = None
     site_class_basis: Optional[SmsSiteClassBasis] = None
-    vs30_mean: Optional[list[float]] = None
-    vs30_std_dev: Optional[list[float]] = None
+    Vs30_mean: Optional[list[float]] = None
+    Vs30_std_dev: Optional[list[float]] = None
     liquefiable: Optional[bool] = None
     bedrock_encountered: Optional[bool] = None
     soft_clay_or_peat: Optional[bool] = None
@@ -85,8 +85,8 @@ def mutate_create_strong_motion_station(
         "site_code": input.site_code,
         "site_class": input.site_class.value if input.site_class else None,
         "site_class_basis": input.site_class_basis.value if input.site_class_basis else None,
-        "Vs30_mean": input.vs30_mean,
-        "Vs30_std_dev": input.vs30_std_dev,
+        "Vs30_mean": input.Vs30_mean,
+        "Vs30_std_dev": input.Vs30_std_dev,
         "liquefiable": input.liquefiable,
         "bedrock_encountered": input.bedrock_encountered,
         "soft_clay_or_peat": input.soft_clay_or_peat,
