@@ -124,3 +124,81 @@ def list_files(dynamodb, clazz_name: str, stage: str = STAGE, limit: int = 100) 
         data["object_id"] = item["object_id"]
         results.append(data)
     return results
+
+
+# ── Relation helpers ──────────────────────────────────────────────────────────
+# Relations are stored as embedded arrays within the parent objects, NOT as
+# separate DynamoDB records. This mirrors the production pattern in
+# file_relation_data.py and thing_relation_data.py.
+#
+# NOTE: Unlike production (which uses DynamoDB TransactWrite), these helpers
+# use two separate puts. See README — "ID allocation transaction guard" — for
+# the same caveat and the recommended boto3 fix for production use.
+
+def _patch_thing(dynamodb, object_id: str, patch_fn, stage: str = STAGE) -> None:
+    """Read a thing, apply patch_fn to its data dict, write it back."""
+    table = _thing_table(dynamodb, stage)
+    item = table.get_item(Key={"object_id": object_id}).get("Item")
+    if not item:
+        raise ValueError(f"Thing {object_id} not found")
+    data = json.loads(item["object_content"])
+    patch_fn(data)
+    table.put_item(Item={
+        "object_id": object_id,
+        "object_type": item["object_type"],
+        "object_content": json.dumps(data),
+    })
+
+
+def _patch_file(dynamodb, object_id: str, patch_fn, stage: str = STAGE) -> None:
+    """Read a file, apply patch_fn to its data dict, write it back."""
+    table = _file_table(dynamodb, stage)
+    item = table.get_item(Key={"object_id": object_id}).get("Item")
+    if not item:
+        raise ValueError(f"File {object_id} not found")
+    data = json.loads(item["object_content"])
+    patch_fn(data)
+    table.put_item(Item={
+        "object_id": object_id,
+        "object_type": item["object_type"],
+        "object_content": json.dumps(data),
+    })
+
+
+def create_file_relation(
+    dynamodb, thing_id: str, file_id: str, role: str, stage: str = STAGE
+) -> None:
+    """
+    Append a file↔thing relation to both the Thing and File records.
+
+    Thing.files  → [..., {"file_id": file_id, "file_role": role}]
+    File.relations → [..., {"id": thing_id, "role": role}]
+    """
+    _patch_thing(dynamodb, thing_id, lambda d: d.setdefault("files", []).append(
+        {"file_id": file_id, "file_role": role}
+    ), stage)
+    _patch_file(dynamodb, file_id, lambda d: d.setdefault("relations", []).append(
+        {"id": thing_id, "role": role}
+    ), stage)
+
+
+def create_task_relation(
+    dynamodb,
+    parent_id: str,
+    parent_clazz: str,
+    child_id: str,
+    child_clazz: str,
+    stage: str = STAGE,
+) -> None:
+    """
+    Append a parent↔child task relation to both Thing records.
+
+    Parent.children → [..., {"child_id": child_id, "child_clazz": child_clazz}]
+    Child.parents   → [..., {"parent_id": parent_id, "parent_clazz": parent_clazz}]
+    """
+    _patch_thing(dynamodb, parent_id, lambda d: d.setdefault("children", []).append(
+        {"child_id": child_id, "child_clazz": child_clazz}
+    ), stage)
+    _patch_thing(dynamodb, child_id, lambda d: d.setdefault("parents", []).append(
+        {"parent_id": parent_id, "parent_clazz": parent_clazz}
+    ), stage)
