@@ -48,6 +48,7 @@ def get_thing(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 
 def create_thing(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
+    from .search import index_document
     object_id = next_id(dynamodb, stage)
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
@@ -57,10 +58,12 @@ def create_thing(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -
         "object_content": json.dumps(payload),
     })
     payload["object_id"] = object_id
+    index_document(f"ThingData_{object_id}", payload)
     return payload
 
 
 def update_thing(dynamodb, object_id: str, payload: dict, stage: str = STAGE) -> dict | None:
+    from .search import index_document
     existing = get_thing(dynamodb, object_id, stage)
     if existing is None:
         return None
@@ -70,6 +73,7 @@ def update_thing(dynamodb, object_id: str, payload: dict, stage: str = STAGE) ->
         "object_type": updated.get("clazz_name", ""),
         "object_content": json.dumps({k: v for k, v in updated.items() if k != "object_id"}),
     })
+    index_document(f"ThingData_{object_id}", updated)
     return updated
 
 
@@ -100,6 +104,7 @@ def get_file(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 
 def create_file(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
+    from .search import index_document
     object_id = next_id(dynamodb, stage)
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
@@ -109,6 +114,7 @@ def create_file(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) ->
         "object_content": json.dumps(payload),
     })
     payload["object_id"] = object_id
+    index_document(f"FileData_{object_id}", payload)
     return payload
 
 
@@ -174,12 +180,20 @@ def create_file_relation(
     Thing.files  → [..., {"file_id": file_id, "file_role": role}]
     File.relations → [..., {"id": thing_id, "role": role}]
     """
+    from .search import index_document
     _patch_thing(dynamodb, thing_id, lambda d: d.setdefault("files", []).append(
         {"file_id": file_id, "file_role": role}
     ), stage)
     _patch_file(dynamodb, file_id, lambda d: d.setdefault("relations", []).append(
         {"id": thing_id, "role": role}
     ), stage)
+    # Re-index both sides so ES reflects the updated relation arrays
+    thing_data = get_thing(dynamodb, thing_id, stage)
+    if thing_data:
+        index_document(f"ThingData_{thing_id}", thing_data)
+    file_data = get_file(dynamodb, file_id, stage)
+    if file_data:
+        index_document(f"FileData_{file_id}", file_data)
 
 
 def create_task_relation(
@@ -196,9 +210,17 @@ def create_task_relation(
     Parent.children → [..., {"child_id": child_id, "child_clazz": child_clazz}]
     Child.parents   → [..., {"parent_id": parent_id, "parent_clazz": parent_clazz}]
     """
+    from .search import index_document
     _patch_thing(dynamodb, parent_id, lambda d: d.setdefault("children", []).append(
         {"child_id": child_id, "child_clazz": child_clazz}
     ), stage)
     _patch_thing(dynamodb, child_id, lambda d: d.setdefault("parents", []).append(
         {"parent_id": parent_id, "parent_clazz": parent_clazz}
     ), stage)
+    # Re-index both sides so ES reflects the updated relation arrays
+    parent_data = get_thing(dynamodb, parent_id, stage)
+    if parent_data:
+        index_document(f"ThingData_{parent_id}", parent_data)
+    child_data = get_thing(dynamodb, child_id, stage)
+    if child_data:
+        index_document(f"ThingData_{child_id}", child_data)

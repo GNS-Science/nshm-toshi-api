@@ -9,7 +9,7 @@ Designed as a drop-in replacement for the Graphene stack:
 This means all existing client query strings work unchanged against
 either the old (Graphene/Flask) or new (Strawberry/FastAPI) stack.
 """
-from typing import Iterable, Optional
+from typing import Annotated, Iterable, Optional, Union
 
 import strawberry
 from strawberry import relay
@@ -55,6 +55,59 @@ from models.strong_motion_station import (
     mutate_create_strong_motion_station,
     resolve_strong_motion_stations,
 )
+
+
+# ── SearchResult union + connection ───────────────────────────────────────────
+
+SearchResult = Annotated[
+    Union[
+        GeneralTask,
+        RuptureGenerationTask,
+        AutomationTask,
+        StrongMotionStation,
+        ToshiFile,
+        SmsFile,
+        RuptureSet,
+    ],
+    strawberry.union(name="SearchResult"),
+]
+
+
+@strawberry.type
+class SearchResultEdge:
+    node: Optional[SearchResult] = None
+
+
+@strawberry.type
+class SearchResultConnection:
+    edges: list[SearchResultEdge] = strawberry.field(default_factory=list)
+
+
+@strawberry.type
+class SearchPayload:
+    search_result: Optional[SearchResultConnection] = None
+
+
+def _dispatch_search(hit: dict) -> Optional[SearchResult]:
+    """Instantiate the right Strawberry type from an ES _source dict."""
+    clazz = hit.get("clazz_name", "")
+    try:
+        if clazz == "GeneralTask":
+            return GeneralTask.from_dict(hit)
+        elif clazz == "RuptureGenerationTask":
+            return RuptureGenerationTask.from_dict(hit)
+        elif clazz == "AutomationTask":
+            return AutomationTask.from_dict(hit)
+        elif clazz == "StrongMotionStation":
+            return StrongMotionStation.from_dict(hit)
+        elif clazz == "SmsFile":
+            return SmsFile.from_dict(hit)
+        elif clazz == "RuptureSet":
+            return RuptureSet.from_dict(hit)
+        else:
+            return ToshiFile.from_dict(hit)
+    except Exception:
+        return None
 
 
 # ── Payload wrapper types (mirrors Graphene's ClientIDMutation Output pattern) ─
@@ -141,6 +194,22 @@ class Query:
     @relay.connection(relay.ListConnection[RuptureGenerationTask])
     def rupture_generation_tasks(self, info: strawberry.types.Info) -> Iterable[RuptureGenerationTask]:
         return resolve_rupture_generation_tasks(info)
+
+    @strawberry.field
+    def search(self, info: strawberry.types.Info, search_term: str) -> SearchPayload:
+        from data.search import search as es_search
+        ctx = info.context
+        hits = es_search(
+            search_term,
+            endpoint=ctx.get("es_endpoint", ""),
+            index=ctx.get("es_index", "toshi-index-mapped"),
+        )
+        edges = [
+            SearchResultEdge(node=node)
+            for hit in hits
+            if (node := _dispatch_search(hit)) is not None
+        ]
+        return SearchPayload(search_result=SearchResultConnection(edges=edges))
 
 
 # ── Mutation ───────────────────────────────────────────────────────────────────

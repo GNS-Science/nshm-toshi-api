@@ -56,5 +56,16 @@ def dynamodb():
 
 @pytest.fixture(scope="module")
 def gql_context(dynamodb):
-    """GraphQL context dict injected into schema.execute_sync() calls."""
-    return {"dynamodb": dynamodb}
+    """
+    GraphQL context dict injected into schema.execute_sync() calls.
+
+    es_endpoint defaults to "" (no indexing) so the moto-backed unit tests
+    don't require a running Elasticsearch. Integration tests override this
+    via the ES_ENDPOINT env var on the conftest-level es_endpoint fixture.
+    """
+    import os
+    return {
+        "dynamodb": dynamodb,
+        "es_endpoint": os.environ.get("ES_ENDPOINT", ""),
+        "es_index": os.environ.get("ES_INDEX", "toshi-index-mapped"),
+    }
