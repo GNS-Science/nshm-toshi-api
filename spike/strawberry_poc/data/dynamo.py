@@ -35,6 +35,32 @@ def _file_table(dynamodb, stage: str = STAGE):
     return dynamodb.Table(f"ToshiFileObject-{stage}")
 
 
+# ── Type → table routing ─────────────────────────────────────────────────────
+# Maps Strawberry type names to their DynamoDB table.
+# ToshiFile is the Strawberry name; DynamoDB stores it as clazz_name="File".
+THING_CLASSES: frozenset[str] = frozenset({
+    "GeneralTask", "AutomationTask", "RuptureGenerationTask", "StrongMotionStation",
+})
+FILE_CLASSES: frozenset[str] = frozenset({
+    "ToshiFile", "File", "SmsFile", "RuptureSet",
+})
+
+
+def get_object(dynamodb, type_name: str, object_id: str, stage: str = STAGE) -> dict | None:
+    """Fetch a single object from the correct table by Strawberry type name."""
+    if type_name in THING_CLASSES:
+        return get_thing(dynamodb, object_id, stage)
+    if type_name in FILE_CLASSES:
+        return get_file(dynamodb, object_id, stage)
+    return None
+
+
+def es_key_for(type_name: str, object_id: str) -> str:
+    """Return the Elasticsearch document key used during indexing."""
+    prefix = "ThingData" if type_name in THING_CLASSES else "FileData"
+    return f"{prefix}_{object_id}"
+
+
 # ── Thing table (GeneralTask, AutomationTask, etc.) ──────────────────────────
 
 def get_thing(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
