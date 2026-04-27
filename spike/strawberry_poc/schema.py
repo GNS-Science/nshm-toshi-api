@@ -160,6 +160,11 @@ class CreateTaskRelationPayload:
     ok: Optional[bool] = None
     thing_relation: Optional[TaskTaskRelation] = None
 
+@strawberry.type
+class ReindexPayload:
+    ok: bool
+    reindexed_ids: list[str]
+
 
 # ── Query ──────────────────────────────────────────────────────────────────────
 
@@ -289,6 +294,25 @@ class Mutation:
     ) -> CreateTaskRelationPayload:
         relation = mutate_create_task_relation(info, input)
         return CreateTaskRelationPayload(ok=True, thing_relation=relation)
+
+    @strawberry.mutation
+    def reindex(
+        self, info: strawberry.types.Info, id_in: list[strawberry.ID]
+    ) -> ReindexPayload:
+        from data.dynamo import get_object, es_key_for
+        from data.search import index_document
+        ctx = info.context
+        dynamodb = ctx["dynamodb"]
+        ep = ctx.get("es_endpoint", "")
+        idx = ctx.get("es_index", "toshi-index-mapped")
+        reindexed = []
+        for gid in id_in:
+            global_id = relay.GlobalID.from_id(gid)
+            data = get_object(dynamodb, global_id.type_name, global_id.node_id)
+            if data:
+                index_document(es_key_for(global_id.type_name, global_id.node_id), data, endpoint=ep, index=idx)
+                reindexed.append(str(gid))
+        return ReindexPayload(ok=True, reindexed_ids=reindexed)
 
 
 schema = strawberry.Schema(
