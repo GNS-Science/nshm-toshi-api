@@ -77,17 +77,24 @@ def update_thing(dynamodb, object_id: str, payload: dict, stage: str = STAGE) ->
     return updated
 
 
-def list_things(dynamodb, clazz_name: str, stage: str = STAGE, limit: int = 100) -> list[dict]:
-    resp = _thing_table(dynamodb, stage).scan(
-        FilterExpression="object_type = :t",
-        ExpressionAttributeValues={":t": clazz_name},
-        Limit=limit,
-    )
+def list_things(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
+    """Return all items of clazz_name, exhausting DynamoDB pages."""
+    table = _thing_table(dynamodb, stage)
+    kwargs: dict[str, Any] = {
+        "FilterExpression": "object_type = :t",
+        "ExpressionAttributeValues": {":t": clazz_name},
+    }
     results = []
-    for item in resp.get("Items", []):
-        data = json.loads(item["object_content"])
-        data["object_id"] = item["object_id"]
-        results.append(data)
+    while True:
+        resp = table.scan(**kwargs)
+        for item in resp.get("Items", []):
+            data = json.loads(item["object_content"])
+            data["object_id"] = item["object_id"]
+            results.append(data)
+        last = resp.get("LastEvaluatedKey")
+        if not last:
+            break
+        kwargs["ExclusiveStartKey"] = last
     return results
 
 
@@ -118,17 +125,24 @@ def create_file(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) ->
     return payload
 
 
-def list_files(dynamodb, clazz_name: str, stage: str = STAGE, limit: int = 100) -> list[dict]:
-    resp = _file_table(dynamodb, stage).scan(
-        FilterExpression="object_type = :t",
-        ExpressionAttributeValues={":t": clazz_name},
-        Limit=limit,
-    )
+def list_files(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
+    """Return all items of clazz_name, exhausting DynamoDB pages."""
+    table = _file_table(dynamodb, stage)
+    kwargs: dict[str, Any] = {
+        "FilterExpression": "object_type = :t",
+        "ExpressionAttributeValues": {":t": clazz_name},
+    }
     results = []
-    for item in resp.get("Items", []):
-        data = json.loads(item["object_content"])
-        data["object_id"] = item["object_id"]
-        results.append(data)
+    while True:
+        resp = table.scan(**kwargs)
+        for item in resp.get("Items", []):
+            data = json.loads(item["object_content"])
+            data["object_id"] = item["object_id"]
+            results.append(data)
+        last = resp.get("LastEvaluatedKey")
+        if not last:
+            break
+        kwargs["ExclusiveStartKey"] = last
     return results
 
 
