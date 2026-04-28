@@ -41,6 +41,7 @@ from typing import Any
 
 import jwt  # PyJWT
 from jwt import PyJWKClient
+from jwt.types import Options
 
 logging.getLogger().setLevel(logging.INFO)  # ensure Lambda root logger captures INFO
 logger = logging.getLogger(__name__)
@@ -109,7 +110,7 @@ def validate_cognito_token(token: str) -> tuple[str, str, dict]:
     expected_issuer = f'https://cognito-idp.{region}.amazonaws.com/{pool_id}'
 
     # Access tokens have audience = client_id; id tokens have audience = client_id
-    decode_options = {'verify_exp': True}
+    decode_options: Options = {'verify_exp': True}
     algorithms = ['RS256']
 
     payload = jwt.decode(
