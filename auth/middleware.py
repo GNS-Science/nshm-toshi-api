@@ -18,9 +18,11 @@ Or inline:
 """
 import json
 import logging
-import re
 
 import flask
+from graphql import OperationType
+from graphql import parse as gql_parse
+from graphql.language.ast import OperationDefinitionNode
 from werkzeug.exceptions import Forbidden
 
 from graphql_api.config import IS_OFFLINE, TESTING
@@ -38,40 +40,51 @@ SCOPE_WRITE = 'toshi/write'
 # GraphQL operation detection
 # ---------------------------------------------------------------------------
 
-_MUTATION_RE = re.compile(
-    r'^\s*mutation\b',  # explicit "mutation" keyword
-    re.IGNORECASE | re.MULTILINE,
-)
-
-
-def _is_mutation(request_body_bytes):
+def _is_mutation(query: str, operation_name: str | None = None) -> bool:
     """
-    Return True if the GraphQL request body contains a mutation.
+    Return True if the selected GraphQL operation is a mutation.
 
-    Handles both JSON-encoded bodies (standard) and form data.
-    Does NOT parse the full GraphQL AST — regex on the 'query' field is sufficient
-    for operation-level scope enforcement.
+    Uses the graphql-core AST parser so it correctly handles multi-operation
+    documents, operationName selection, fragments, comments, and arbitrary
+    whitespace — all the things a regex cannot.
+
+    Fails closed: returns True (i.e. treats as mutation) if the document
+    cannot be parsed, so a malformed body never bypasses write-scope enforcement.
+    """
+    if not query:
+        return False
+    try:
+        doc = gql_parse(query)
+    except Exception:
+        return True  # fail closed
+    ops: list[OperationDefinitionNode] = [
+        d for d in doc.definitions if isinstance(d, OperationDefinitionNode)
+    ]
+    if operation_name:
+        ops = [o for o in ops if o.name and o.name.value == operation_name]
+    return any(o.operation == OperationType.MUTATION for o in ops)
+
+
+def _extract_graphql_args(request_body_bytes: bytes) -> tuple[str, str | None]:
+    """
+    Extract (query, operationName) from a GraphQL HTTP request body.
+    Returns ('', None) if the body cannot be parsed.
     """
     if not request_body_bytes:
-        return False
-
+        return '', None
     content_type = flask.request.content_type or ''
-
     if 'application/json' in content_type:
         try:
             body = json.loads(request_body_bytes)
-            query_str = body.get('query', '')
-            return bool(_MUTATION_RE.search(query_str))
+            return body.get('query', ''), body.get('operationName')
         except (json.JSONDecodeError, TypeError):
-            return False
-
+            return '', None
     if 'application/graphql' in content_type:
         try:
-            return bool(_MUTATION_RE.search(request_body_bytes.decode('utf-8', errors='replace')))
+            return request_body_bytes.decode('utf-8', errors='replace'), None
         except Exception:
-            return False
-
-    return False
+            return '', None
+    return '', None
 
 
 # ---------------------------------------------------------------------------
@@ -147,8 +160,8 @@ def check_auth():
 
     # Mutation check — mutations need toshi/write
     if flask.request.method == 'POST':
-        body = flask.request.get_data()
-        if _is_mutation(body) and SCOPE_WRITE not in scopes:
+        query, operation_name = _extract_graphql_args(flask.request.get_data())
+        if _is_mutation(query, operation_name) and SCOPE_WRITE not in scopes:
             logger.warning(f'Mutation blocked for {user_id}: missing {SCOPE_WRITE}')
             raise Forbidden(f'GraphQL mutations require scope: {SCOPE_WRITE}')
 
