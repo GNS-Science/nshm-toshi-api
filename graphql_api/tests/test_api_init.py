@@ -1,6 +1,7 @@
 """
 Tests for graphql_api/api.py — auth middleware registration block.
 """
+
 import importlib
 import os
 import sys

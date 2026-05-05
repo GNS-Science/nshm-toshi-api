@@ -11,9 +11,9 @@ Usage:
     python auth/test_e2e.py --endpoint https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/dev
 
 Prerequisites:
-    - auth_config.json present (run cognito_setup.py first)
-    - For --endpoint mode: Lambda authorizer deployed and wired to API Gateway
     - For --local mode: local stack running (yarn sls dynamodb start, yarn sls wsgi serve)
+    - For --remote mode: auth_config.json present (run cognito_setup.py first)
+                         Lambda authorizer deployed and wired to API Gateway
 
 Test cases:
     1. Device Flow login → token acquired
@@ -193,11 +193,20 @@ def run_local_tests(endpoint):
     """
     Tests against local stack (SLS_OFFLINE=1).
 
-    Auth middleware is bypassed locally, so we test:
-    - Basic connectivity
-    - Query succeeds
-    - Mutation attempt returns valid GraphQL response (not blocked)
-    - Middleware bypass headers work
+    Auth middleware is bypassed locally (check_auth() returns immediately when
+    IS_OFFLINE=1), so these tests verify connectivity and response shape only —
+    not auth enforcement.
+
+    Test coverage:
+    - Basic connectivity: query returns HTTP 200
+    - Mutation bypass: mutation returns 200 or 400 (GraphQL validation), not 403
+    - Middleware header injection: X-Auth-* headers are accepted (but not enforced
+      locally — the middleware no-op fires before _get_auth_context() is reached,
+      so this test confirms the headers don't break anything rather than that they
+      are processed correctly)
+
+    To test actual scope enforcement (read/write blocking), use --remote against a
+    deployed API Gateway endpoint with the Lambda Authorizer wired in.
     """
     results = []
 

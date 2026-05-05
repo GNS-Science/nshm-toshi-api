@@ -121,18 +121,18 @@ def validate_cognito_token(token: str) -> tuple[str, str, dict]:
         options=decode_options,
     )
 
-    # Verify token_use: accept both access and id tokens
+    # Only access tokens are accepted — id tokens carry no scope claims
+    # and are intended for client-side identity, not API authorisation.
     token_use = payload.get('token_use', '')
-    if token_use not in ('access', 'id'):
-        raise jwt.InvalidTokenError(f'Invalid token_use: {token_use}')
+    if token_use != 'access':
+        raise jwt.InvalidTokenError(f'Invalid token_use: {token_use!r} — only access tokens accepted')
 
-    # For access tokens, audience is the client_id claim (not 'aud')
-    if token_use == 'access':
-        token_client_id = payload.get('client_id', '')
-        if client_id and token_client_id != client_id:
-            raise jwt.InvalidAudienceError(
-                f'client_id mismatch: expected {client_id}, got {token_client_id}'
-            )
+    # Cognito access tokens use client_id (not aud) to identify the intended audience.
+    token_client_id = payload.get('client_id', '')
+    if client_id and token_client_id != client_id:
+        raise jwt.InvalidAudienceError(
+            f'client_id mismatch: expected {client_id}, got {token_client_id}'
+        )
 
     principal_id = payload.get('username') or payload.get('sub', 'unknown')
     scopes = payload.get('scope', '')
