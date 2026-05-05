@@ -7,8 +7,6 @@ These cover the cases the old regex could not handle:
   - anonymous vs named operations
   - malformed documents (fail-closed behaviour)
 """
-import pytest
-
 from auth.middleware import _is_mutation
 
 

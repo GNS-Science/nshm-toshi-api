@@ -40,6 +40,7 @@ SCOPE_WRITE = 'toshi/write'
 # GraphQL operation detection
 # ---------------------------------------------------------------------------
 
+
 def _is_mutation(query: str, operation_name: str | None = None) -> bool:
     """
     Return True if the selected GraphQL operation is a mutation.
