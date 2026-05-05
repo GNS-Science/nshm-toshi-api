@@ -88,7 +88,7 @@ Token storage: `~/.toshi/credentials` (JSON). Uses `requests` + `PyJWT` (new dep
 
 - Accepts `Authorization: Bearer <token>` header OR legacy `x-api-key` (backward compat)
 - Fetches Cognito JWKS from `https://cognito-idp.<region>.amazonaws.com/<pool_id>/.well-known/jwks.json` (cached in-process between warm invocations)
-- Validates: signature, expiry, issuer (`iss`), audience (`aud`), token_use
+- Validates: signature, expiry, issuer (`iss`), `client_id` audience, `token_use` (access only)
 - Returns: IAM policy (Allow/Deny) + context `{"userId": "...", "scopes": "toshi/read toshi/write"}`
 - On failure: raises `Exception("Unauthorized")` (API Gateway returns 401)
 
