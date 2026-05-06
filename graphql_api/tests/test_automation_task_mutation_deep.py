@@ -5,13 +5,10 @@ Mocking our data layer
 
 """
 
-import datetime as dt
 import unittest
 from unittest import mock
 
 import boto3
-from dateutil.tz import tzutc
-from elasticsearch import Elasticsearch
 from graphene.test import Client
 from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
@@ -72,29 +69,26 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase, SetupHelpersMixin):
         self.scaled_solution_id = ss['id']
 
     def test_update_with_metrics(self):
-        qry = (
-            '''
-            mutation {
-                update_automation_task(input: {
-                    task_id: "%s"
+        qry = f'''
+            mutation {{
+                update_automation_task(input: {{
+                    task_id: "{self.at_id}"
                     duration: 909,
-                    metrics: {k: "rupture_count" v: "20"}
+                    metrics: {{k: "rupture_count" v: "20"}}
                     state: DONE
                     result: SUCCESS
-                })
-                {
-                    task_result {
+                }})
+                {{
+                    task_result {{
                         id
                         duration
-                        metrics {k v}
+                        metrics {{k v}}
                         result
                         state
-                    }
-                }
-            }
+                    }}
+                }}
+            }}
         '''
-            % self.at_id
-        )
         print(qry)
         executed = self.client.execute(qry)
         print(executed)

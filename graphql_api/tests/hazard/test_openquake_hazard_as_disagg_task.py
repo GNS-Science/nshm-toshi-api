@@ -8,43 +8,44 @@ from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 from setup_helpers import SetupHelpersMixin
 
-import graphql_api.data  # for mocking
 from graphql_api.config import REGION, S3_BUCKET_NAME
 from graphql_api.data import data_manager
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
 from graphql_api.schema import root_schema
 from graphql_api.schema.search_manager import SearchManager
 
-MOCK_LEGACY_HAZARD_TASK = lambda _self, _id: {
-    'id': _id,
-    'created': '2023-03-24T01:52:07.407832+00:00',
-    'files': None,
-    'parents': None,
-    'children': None,
-    'result': 'undefined',
-    'state': 'undefined',
-    'duration': None,
-    'arguments': [
-        {'k': 'max_jump_distance', 'v': '55.5'},
-        {'k': 'max_sub_section_length', 'v': '2'},
-        {'k': 'max_cumulative_azimuth', 'v': '590'},
-        {'k': 'min_sub_sections_per_parent', 'v': '2'},
-        {'k': 'permutation_strategy', 'v': 'DOWNDIP'},
-    ],
-    'environment': [
-        {'k': 'gitref_opensha_ucerf3', 'v': 'ABC'},
-        {'k': 'gitref_opensha_commons', 'v': 'ABC'},
-        {'k': 'gitref_opensha_core', 'v': 'ABC'},
-        {'k': 'nshm_nz_opensha', 'v': 'ABC'},
-        {'k': 'host', 'v': 'tryharder-ubuntu'},
-        {'k': 'JAVA', 'v': '-Xmx24G'},
-    ],
-    'metrics': None,
-    'config': 'T3BlbnF1YWtlSGF6YXJkQ29uZmlnOjEwMDAwMQ==',
-    'hazard_solution': None,
-    'model_type': 'composite',
-    'clazz_name': 'OpenquakeHazardTask',
-}
+
+def MOCK_LEGACY_HAZARD_TASK(_self, _id):
+    return {
+        'id': _id,
+        'created': '2023-03-24T01:52:07.407832+00:00',
+        'files': None,
+        'parents': None,
+        'children': None,
+        'result': 'undefined',
+        'state': 'undefined',
+        'duration': None,
+        'arguments': [
+            {'k': 'max_jump_distance', 'v': '55.5'},
+            {'k': 'max_sub_section_length', 'v': '2'},
+            {'k': 'max_cumulative_azimuth', 'v': '590'},
+            {'k': 'min_sub_sections_per_parent', 'v': '2'},
+            {'k': 'permutation_strategy', 'v': 'DOWNDIP'},
+        ],
+        'environment': [
+            {'k': 'gitref_opensha_ucerf3', 'v': 'ABC'},
+            {'k': 'gitref_opensha_commons', 'v': 'ABC'},
+            {'k': 'gitref_opensha_core', 'v': 'ABC'},
+            {'k': 'nshm_nz_opensha', 'v': 'ABC'},
+            {'k': 'host', 'v': 'tryharder-ubuntu'},
+            {'k': 'JAVA', 'v': '-Xmx24G'},
+        ],
+        'metrics': None,
+        'config': 'T3BlbnF1YWtlSGF6YXJkQ29uZmlnOjEwMDAwMQ==',
+        'hazard_solution': None,
+        'model_type': 'composite',
+        'clazz_name': 'OpenquakeHazardTask',
+    }
 
 
 @mock_aws

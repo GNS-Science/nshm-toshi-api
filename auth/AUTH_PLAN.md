@@ -166,7 +166,7 @@ python auth/toshi_auth.py whoami
 # 3. Start local stack
 yarn sls dynamodb start --stage local &
 yarn sls s3 start &
-poetry run yarn sls wsgi serve
+uv run yarn sls wsgi serve
 
 # 4. Run end-to-end validation
 python auth/test_e2e.py

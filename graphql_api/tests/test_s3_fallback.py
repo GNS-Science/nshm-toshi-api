@@ -65,7 +65,7 @@ class TestS3FallBackRead(unittest.TestCase):
 
             self._prefix = 'ThingData'
             object_id = 0
-            key = "%s/%s/%s" % (self._prefix, object_id, "object.json")
+            key = "{}/{}/{}".format(self._prefix, object_id, "object.json")
 
             bucket.put_object(Key=key, Body=json.dumps(body))
 

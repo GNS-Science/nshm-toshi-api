@@ -5,8 +5,8 @@ This module contains the configuration for openquake hazard job
 
 # import datetime as dt
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -54,16 +54,16 @@ class OpenquakeHazardConfig(graphene.ObjectType):
         return node
 
     def resolve_source_models(root, info, **args):
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         if root.source_models:
             for obj_id in root.source_models:
                 clazz, key = from_global_id(obj_id)
-                logger.info(f'resolve source_model {(clazz, key)} from {obj_id}')
+                logger.info('resolve source_model %s from %s', (clazz, key), obj_id)
                 yield get_data_manager().file.get_one(key)
-        db_metrics.put_duration(__name__, 'OpenquakeHazardConfig.resolve_source_models', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'OpenquakeHazardConfig.resolve_source_models', dt.now(UTC) - t0)
 
     def resolve_template_archive(root, info, **args):
-        logger.debug(f'root {root}, info {info}, args {args}')
+        logger.debug('root %s, info %s, args %s', root, info, args)
         if root.template_archive:
             return resolve_node(root, info, 'template_archive', 'file')
 
@@ -81,10 +81,8 @@ class CreateOpenquakeHazardConfig(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.now(timezone.utc)
-        logger.debug(f"payload: {kwargs}")
+        t0 = dt.now(UTC)
+        logger.debug("payload: %s", kwargs)
         config = get_data_manager().thing.create('OpenquakeHazardConfig', **kwargs)
-        db_metrics.put_duration(
-            __name__, 'CreateOpenquakeHazardConfig.mutate_and_get_payload', dt.now(timezone.utc) - t0
-        )
+        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardConfig.mutate_and_get_payload', dt.now(UTC) - t0)
         return CreateOpenquakeHazardConfig(config=config, ok=True)

@@ -10,16 +10,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Setup
 ```bash
-poetry install        # Install Python dependencies
+uv sync        # Install Python dependencies
 yarn install          # Install Node/Serverless dependencies (requires Node 22, yarn 2/berry)
 yarn sls dynamodb install  # Install DynamoDB local plugin (Java required)
 ```
 
 ### Running Tests
 ```bash
-poetry run pytest                          # Run all tests (requires TESTING=1, SLS_OFFLINE=1 in .env)
-poetry run pytest graphql_api/tests/test_schema.py  # Run a single test file
-poetry run pytest -k "test_name"           # Run tests matching a pattern
+uv run pytest                          # Run all tests (requires TESTING=1, SLS_OFFLINE=1 in .env)
+uv run pytest graphql_api/tests/test_schema.py  # Run a single test file
+uv run pytest -k "test_name"           # Run tests matching a pattern
 ```
 
 Tests use `moto` to mock AWS services. The `.env.tests` file is auto-loaded by `conftest.py`. Ensure your `.env` contains:
@@ -30,16 +30,16 @@ TESTING=1
 
 ### Linting & Formatting
 ```bash
-poetry run black graphql_api               # Format code (120 char line length)
-poetry run isort graphql_api               # Sort imports
-poetry run flake8 graphql_api              # Lint
+uv run ruff format graphql_api         # Format code (120 char line length)
+uv run ruff check graphql_api          # Lint
+uv run ruff check --fix graphql_api    # Lint and auto-fix
 ```
 
 ### Local Development (Smoketest)
 ```bash
 yarn sls dynamodb start --stage local &
 yarn sls s3 start &
-poetry run yarn sls wsgi serve             # Starts Flask on http://localhost:5000/graphql
+uv run yarn sls wsgi serve             # Starts Flask on http://localhost:5000/graphql
 ```
 Requires `.env` with `SLS_OFFLINE=1`, `TESTING=0`, `TOSHI_FIX_RANDOM_SEED=1`, `FIRST_DYNAMO_ID=0`.
 
@@ -50,8 +50,8 @@ docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elas
 
 ### Security Auditing
 ```bash
-poetry export --all-groups > audit.txt
-poetry run pip-audit -r audit.txt -s pypi --require-hashes
+uv export --format requirements-txt --no-emit-project --output-file audit.txt
+uv run pip-audit -r audit.txt -s pypi --require-hashes
 ```
 
 ## Architecture

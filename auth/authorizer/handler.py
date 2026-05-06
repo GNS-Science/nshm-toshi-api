@@ -34,6 +34,7 @@ Deployment:
           # x-api-key header, but API Gateway only gates on Authorization being present.
           # Legacy clients sending only x-api-key must use: Authorization: x-api-key <key>
 """
+
 import logging
 import os
 import time
@@ -60,7 +61,7 @@ def get_jwks_client() -> PyJWKClient:
         pool_id = os.environ['COGNITO_USER_POOL_ID']
         region = os.environ['COGNITO_REGION']
         jwks_url = f'https://cognito-idp.{region}.amazonaws.com/{pool_id}/.well-known/jwks.json'
-        logger.info(f'Initialising JWKS client: {jwks_url}')
+        logger.info('Initialising JWKS client: %s', jwks_url)
         _jwks_client = PyJWKClient(jwks_url, cache_jwk_set=True, lifespan=3600)
     return _jwks_client
 
@@ -68,6 +69,7 @@ def get_jwks_client() -> PyJWKClient:
 # ---------------------------------------------------------------------------
 # IAM policy builder
 # ---------------------------------------------------------------------------
+
 
 def build_policy(principal_id: str, effect: str, resource: str, context: dict[str, Any] | None = None) -> dict:
     """Build an IAM policy document for the Lambda authorizer response."""
@@ -92,6 +94,7 @@ def build_policy(principal_id: str, effect: str, resource: str, context: dict[st
 # ---------------------------------------------------------------------------
 # Token validation
 # ---------------------------------------------------------------------------
+
 
 def validate_cognito_token(token: str) -> tuple[str, str, dict]:
     """
@@ -130,9 +133,7 @@ def validate_cognito_token(token: str) -> tuple[str, str, dict]:
     # Cognito access tokens use client_id (not aud) to identify the intended audience.
     token_client_id = payload.get('client_id', '')
     if client_id and token_client_id != client_id:
-        raise jwt.InvalidAudienceError(
-            f'client_id mismatch: expected {client_id}, got {token_client_id}'
-        )
+        raise jwt.InvalidAudienceError(f'client_id mismatch: expected {client_id}, got {token_client_id}')
 
     principal_id = payload.get('username') or payload.get('sub', 'unknown')
     scopes = payload.get('scope', '')
@@ -165,6 +166,7 @@ def validate_legacy_api_key(token: str) -> bool:
 # Lambda handler
 # ---------------------------------------------------------------------------
 
+
 def handler(event: dict, _context: object) -> dict:
     """
     Lambda authorizer handler.
@@ -184,7 +186,7 @@ def handler(event: dict, _context: object) -> dict:
 
     scheme = (auth_header.split(' ', 1)[0].lower()) if auth_header else '(none)'
     print(f'[jwtAuthorizer] INVOKED scheme={scheme} api_key_present={bool(api_key_header)} arn={method_arn}')
-    logger.info(f'[jwtAuthorizer] INVOKED scheme={scheme} api_key_present={bool(api_key_header)} arn={method_arn}')
+    logger.info('[jwtAuthorizer] INVOKED scheme=%s api_key_present=%s arn=%s', scheme, bool(api_key_header), method_arn)
 
     # Priority 1: x-api-key header (legacy clients)
     if api_key_header:
@@ -228,7 +230,7 @@ def handler(event: dict, _context: object) -> dict:
 
     # Priority 3: JWT Bearer token
     if scheme != 'bearer':
-        logger.warning(f'Unknown authorization scheme: {scheme}')
+        logger.warning('Unknown authorization scheme: %s', scheme)
         raise Exception('Unauthorized')
 
     if not token:
@@ -239,7 +241,7 @@ def handler(event: dict, _context: object) -> dict:
         start = time.perf_counter()
         principal_id, scopes, payload = validate_cognito_token(token)
         elapsed_ms = (time.perf_counter() - start) * 1000
-        logger.info(f'JWT validated in {elapsed_ms:.1f}ms for principal: {principal_id}')
+        logger.info('JWT validated in %.1fms for principal: %s', elapsed_ms, principal_id)
 
         return build_policy(
             principal_id,
@@ -255,10 +257,10 @@ def handler(event: dict, _context: object) -> dict:
 
     except jwt.ExpiredSignatureError:
         logger.warning('Token has expired')
-        raise Exception('Unauthorized')
+        raise Exception('Unauthorized') from None
     except jwt.InvalidTokenError as e:
-        logger.warning(f'Invalid token: {e}')
-        raise Exception('Unauthorized')
+        logger.warning('Invalid token: %s', e)
+        raise Exception('Unauthorized') from None
     except Exception as e:
-        logger.error(f'Authorization error: {e}', exc_info=True)
-        raise Exception('Unauthorized')
+        logger.error('Authorization error: %s', e, exc_info=True)
+        raise Exception('Unauthorized') from None

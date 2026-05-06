@@ -1,6 +1,6 @@
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import graphene
 from graphene import Enum, relay
@@ -65,8 +65,8 @@ class CreateFileRelation(graphene.Mutation):
     file_relation = graphene.Field(FileRelation)
 
     def mutate(self, info, **kwargs):
-        t0 = dt.now(timezone.utc)
-        logger.info(f"CreateFileRelation.mutate: {kwargs}")
+        t0 = dt.now(UTC)
+        logger.info("CreateFileRelation.mutate: %s", kwargs)
         ftype, file_id = from_global_id(kwargs.pop('file_id'))
         # file = db_root.file.get_one(file_id)
         ttype, thing_id = from_global_id(kwargs.pop('thing_id'))
@@ -75,7 +75,7 @@ class CreateFileRelation(graphene.Mutation):
         try:
             file_relation = get_data_manager().file_relation.create('FileRelation', thing_id, file_id, **kwargs)
         except Exception as err:
-            raise GraphQLError('CreateFileRelation.mutate failed with exception: %s' % err)
-        logger.info(f"CreateFileRelation file_relation: {file_relation}")
-        db_metrics.put_duration(__name__, 'CreateFileRelation.mutate', dt.now(timezone.utc) - t0)
+            raise GraphQLError(f'CreateFileRelation.mutate failed with exception: {err}') from None
+        logger.info("CreateFileRelation file_relation: %s", file_relation)
+        db_metrics.put_duration(__name__, 'CreateFileRelation.mutate', dt.now(UTC) - t0)
         return CreateFileRelation(ok=True, file_relation=file_relation)

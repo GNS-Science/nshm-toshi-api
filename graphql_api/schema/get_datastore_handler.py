@@ -1,5 +1,4 @@
 from collections import namedtuple
-from typing import Union
 
 import graphene
 
@@ -64,11 +63,11 @@ def get_datastore_handlers():
     return list(SCHEMA_STORAGE_HANDLERS.values())
 
 
-def get_datastore_handler_class(classname: str) -> Union[File, Table, Thing]:
+def get_datastore_handler_class(classname: str) -> File | Table | Thing:
     return SCHEMA_STORAGE_HANDLERS[classname].handler_class
 
 
-def get_datastore_handler(classname: str) -> Union[File, Table, Thing]:
+def get_datastore_handler(classname: str) -> File | Table | Thing:
     namespace = globals()
     clazz = namespace.get(classname)
     assert clazz._meta.name == classname

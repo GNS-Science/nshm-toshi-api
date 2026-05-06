@@ -18,7 +18,8 @@ class MockS3Client:
 
 
 # custom mock for graphql_api.data.BaseDynamoDBData_read_obect
-mock_db_read = lambda _self, _id: {"id": _id, "clazz_name": "File", "file_size": 123, "file_name": "My fake file"}
+def mock_db_read(_self, _id):
+    return {"id": _id, "clazz_name": "File", "file_size": 123, "file_name": "My fake file"}
 
 
 @pytest.fixture
@@ -30,20 +31,17 @@ def mock_dbdata(monkeypatch):
 
 def test_bug_squashed_coz_we_called_s3_client(graphene_client, mock_dbdata):
     node_id = to_global_id("File", '1001')
-    QRY = (
-        """
-        query {
-		  node(id:"%s") {
-		    ... on File {
-		      file_url
-		      file_name
-		      file_size
-		    }
-		  }
-		}
+    QRY = f"""
+        query {{
+          node(id:"{node_id}") {{
+            ... on File {{
+              file_url
+              file_name
+              file_size
+            }}
+          }}
+		}}
     """
-        % node_id
-    )
 
     print(QRY)
     result = graphene_client.execute(QRY)  # , variable_values=dict(created=dt.datetime.now(tzutc())))

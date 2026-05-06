@@ -7,27 +7,26 @@ authors = [
     {name="NSHM Compute Working Group", email="nshm@gns.cri.nz"}
 ]
 readme = "README.md"
-requires-python = "^3.12"
+requires-python = ">=3.12,<4"
 license = "AGPL-3.0-or-later"
 
 dependencies = [
     "backoff",
-    "boto3 (>=1.24.57)",
+    "boto3>=1.24.57",
     "elasticsearch-dsl",
     "elasticsearch7-compatible",
-    "flask (>=3.0.3)",
-    "flask-cors (>=6.0)",
+    "flask>=3.0.3",
+    "flask-cors>=6.0",
     "gql",
-    "graphene (>=3.3)",
-    "graphql-server (==3.0.0b7)",
+    "graphene>=3.3",
+    "graphql-server==3.0.0b7",
     "nzshm-common",
     "pynamodb",
     "python-benedict",
-    "python-dateutil (>=2.8.2)",
-    "python-dotenv (>=1.2.1)",
-    "pyyaml (>=6.0.1)",
-    "pyyaml",
-    "PyJWT[crypto] (>=2.8.0)",
+    "python-dateutil>=2.8.2",
+    "python-dotenv>=1.2.1",
+    "pyyaml>=6.0.1",
+    "PyJWT[crypto]>=2.8.0",
     "requests-aws4auth",
     "requests-toolbelt",
 ]
@@ -35,64 +34,50 @@ dependencies = [
 [project.scripts]
 elastic_cli = 'scripts.elastic_cli:main'
 
-[tool.poetry]
-packages = [{include = "graphql_api"}]
-
 [dependency-groups]
 dev = [
-    "black",
     "bump2version",
     "click",
-    "flake8-docstrings",
-    "flake8",
-    "isort",
     "moto",
     "mypy",
     "pip-audit",
     "pre-commit",
     "pytest-cov",
     "pytest",
-    "requests-mock (>=1.12.1,<2.0.0)",
+    "requests-mock>=1.12.1,<2.0.0",
+    "ruff",
     "safety",
     "sgqlc",
     "tox",
+    "tox-uv",
     "types-python-dateutil",
     "types-pyyaml",
     "types-requests",
 ]
 
-[tool.poetry.requires-plugins]
-poetry-plugin-export = ">=1.8"
-
-[tool.black]
-line-length = 120
-skip-string-normalization = true
-target-version = ['py39', 'py310']
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
-[tool.isort]
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-ensure_newline_before_comments = true
-line_length = 120
-skip_gitignore = true
-# you can skip files as below
-#skip_glob = docs/conf.py
-
-
 [build-system]
-requires = ["poetry-core>=2.2,<3.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["graphql_api"]
+
+[tool.uv]
+exclude-newer = "1 week"
+exclude-newer-package = { "nzshm-common" = false }
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "G004"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"graphql_api/tests/**" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "preserve"

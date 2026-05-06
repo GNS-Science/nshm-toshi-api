@@ -28,22 +28,22 @@ def main():
     search_manager = SearchManager(endpoint=ES_ENDPOINT, es_index=ES_INDEX, awsauth=None)
     try:
         client.create_bucket(Bucket=bucket_name)
-    except:
+    except Exception:
         print(f'Bucket {bucket_name} Exists!')
     bucket = s3.Bucket(bucket_name, client=client)
 
     def upload_objects(root_path):
         try:
-            for path, subdirs, files in os.walk(root_path):
+            for path, _subdirs, files in os.walk(root_path):
                 directory_name = path.replace(root_path, "")[1:]
                 for file in files:
-                    key = "%s/%s" % (directory_name, file)
+                    key = f"{directory_name}/{file}"
                     print(f'Uploading {key}!')
                     filepath = os.path.join(path, file)
                     bucket.upload_file(filepath, key)
                     if 'object.json' in key:
                         es_key = key.replace("/", "_")
-                        with open(filepath, 'r') as myfile:
+                        with open(filepath) as myfile:
                             data = {'data': myfile.read()}
                             search_manager.index_document(es_key, data)
         except Exception as err:

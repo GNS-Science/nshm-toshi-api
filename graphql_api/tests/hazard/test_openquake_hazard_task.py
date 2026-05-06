@@ -275,7 +275,7 @@ class TestOpenquakeHazardTask(unittest.TestCase, SetupHelpersMixin):
         haztask = self._build_hazard_task()
         ht_id = haztask['data']['create_openquake_hazard_task']['openquake_hazard_task']['id']
 
-        things = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
+        ThingData({}, self._data_manager, ToshiThingObject, self._connection)
 
         qry = '''
             mutation ($task_id: ID!) {

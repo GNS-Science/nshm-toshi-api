@@ -12,7 +12,6 @@ from unittest import mock
 from dateutil.tz import tzutc
 from graphene.test import Client
 
-import graphql_api.data  # for mocking
 from graphql_api.schema import root_schema
 
 # class IncrId():
@@ -22,14 +21,16 @@ from graphql_api.schema import root_schema
 #         self.next_id +=1
 #         return self.next_id
 
-READ_MOCK = lambda _self, id: dict(
-    id="0",
-    clazz_name="AutomationTask",
-    task_type="INVERSION",
-    model_type="SUBDUCTION",
-    created="2021-06-11T02:37:26.009506+00:00",
-    meta=[{"k": "some_metric", "v": "55.5"}],
-)
+
+def READ_MOCK(_self, id):
+    return dict(
+        id="0",
+        clazz_name="AutomationTask",
+        task_type="INVERSION",
+        model_type="SUBDUCTION",
+        created="2021-06-11T02:37:26.009506+00:00",
+        meta=[{"k": "some_metric", "v": "55.5"}],
+    )
 
 
 CREATE = '''
@@ -105,7 +106,7 @@ class TestCreateAutomationTask(unittest.TestCase):
                 }
             }
         '''
-        startdate = dt.datetime.now()  # no timesone
+        dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
         assert 'September 5th, 1999' in executed['errors'][0]['message']
@@ -123,19 +124,20 @@ class TestCreateAutomationTask(unittest.TestCase):
         assert executed['data']['create_automation_task']['task_result']['id'] == 'QXV0b21hdGlvblRhc2s6MA=='
 
 
-TASKZERO = lambda _self, _id: {
-    "id": "0",
-    "clazz_name": "RuptureGenerationTask",
-    "created": "2020-10-30T09:15:00+00:00",
-    "duration": 600.0,
-    "arguments": [
-        {"k": "max_jump_distance", "v": "55.5"},
-        {"k": "max_sub_section_length", "v": "2"},
-        {"k": "max_cumulative_azimuth", "v": "590"},
-        {"k": "min_sub_sections_per_parent", "v": "2"},
-        {"k": "permutation_strategy", "v": "DOWNDIP"},
-    ],
-}
+def TASKZERO(_self, _id):
+    return {
+        "id": "0",
+        "clazz_name": "RuptureGenerationTask",
+        "created": "2020-10-30T09:15:00+00:00",
+        "duration": 600.0,
+        "arguments": [
+            {"k": "max_jump_distance", "v": "55.5"},
+            {"k": "max_sub_section_length", "v": "2"},
+            {"k": "max_cumulative_azimuth", "v": "590"},
+            {"k": "min_sub_sections_per_parent", "v": "2"},
+            {"k": "permutation_strategy", "v": "DOWNDIP"},
+        ],
+    }
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)

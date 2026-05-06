@@ -130,13 +130,13 @@ sequenceDiagram
 
 ```bash
 # Login (once)
-poetry run python auth/toshi_auth.py login
+uv run python auth/toshi_auth.py login
 
 # Inspect your token and group membership
-poetry run python auth/toshi_auth.py whoami
+uv run python auth/toshi_auth.py whoami
 
 # Make an API call
-TOKEN=$(poetry run python auth/toshi_auth.py token --raw)
+TOKEN=$(uv run python auth/toshi_auth.py token --raw)
 curl -H "Authorization: Bearer $TOKEN" \
      -H "Content-Type: application/json" \
      https://<api-url>/graphql \
@@ -234,7 +234,7 @@ The token is valid for 1 hour; re-run if it expires.
 
 ```bash
 TOKEN=$(TOSHI_CLIENT_ID=<id> TOSHI_CLIENT_SECRET=<secret> \
-        poetry run python auth/toshi_auth.py m2m-token --raw)
+        uv run python auth/toshi_auth.py m2m-token --raw)
 
 curl -H "Authorization: Bearer $TOKEN" \
      -H "Content-Type: application/json" \
@@ -308,7 +308,7 @@ sequenceDiagram
 
 ```bash
 # Exchange Cognito token for AWS credentials
-poetry run python auth/toshi_auth.py aws-creds
+uv run python auth/toshi_auth.py aws-creds
 
 # Use the [toshi] profile
 export AWS_PROFILE=toshi
@@ -382,11 +382,11 @@ toshi_auth login --no-browser
 
 ```bash
 # Login — browser opens to GNS SSO
-poetry run python auth/toshi_auth.py login
+uv run python auth/toshi_auth.py login
 
 # Everything else identical to today
-poetry run python auth/toshi_auth.py whoami
-TOKEN=$(poetry run python auth/toshi_auth.py token --raw)
+uv run python auth/toshi_auth.py whoami
+TOKEN=$(uv run python auth/toshi_auth.py token --raw)
 curl -H "Authorization: Bearer $TOKEN" https://<api-url>/graphql -d '{"query":"{ about }"}'
 ```
 
@@ -488,5 +488,5 @@ are unaffected — the middleware sets a synthetic user `{userId: "local-dev", s
 # Local stack — no auth required
 yarn sls dynamodb start --stage local &
 yarn sls s3 start &
-poetry run yarn sls wsgi serve   # Flask on http://localhost:5000/graphql
+uv run yarn sls wsgi serve   # Flask on http://localhost:5000/graphql
 ```

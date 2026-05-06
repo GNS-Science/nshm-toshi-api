@@ -9,7 +9,6 @@ from unittest import mock
 
 from graphene.test import Client
 
-import graphql_api.data  # for mocking
 from graphql_api.schema import root_schema
 
 
@@ -21,27 +20,28 @@ class IncrId:
         return str(self.next_id) + 'RANDM'
 
 
-TABLEMOCK = lambda _self, _id: {
-    "id": "0i93qK",
-    "created": "2021-06-11T02:37:26.009506+00:00",
-    "object_id": "R2VuZXJhbFRhc2s6MjE3Qk1YREw=",
-    "column_headers": ["OK", "DOKEY"],
-    "column_types": ["INT", "DBL"],
-    "rows": [["1", "1.01"], ["2", "2.2"]],
-    "clazz_name": "Table",
-    "meta": [
-        {"k": "round", "v": "0"},
-        {"k": "config_type", "v": "crustal"},
-        {"k": "rupture_set_file_id", "v": "RmlsZToxMzY1LjBzZzRDeA=="},
-    ],
-    "dimensions": [
-        {"k": "grid_spacings", "v": ["0.1"]},
-        {"k": "IML_periods", "v": ["0, 0.1, etc"]},
-        {"k": "tags", "v": ["opensha", "testing"]},
-        {"k": "gmpes", "v": ["ASK_2014"]},
-    ],
-    "table_type": "hazard_gridded",
-}
+def TABLEMOCK(_self, _id):
+    return {
+        "id": "0i93qK",
+        "created": "2021-06-11T02:37:26.009506+00:00",
+        "object_id": "R2VuZXJhbFRhc2s6MjE3Qk1YREw=",
+        "column_headers": ["OK", "DOKEY"],
+        "column_types": ["INT", "DBL"],
+        "rows": [["1", "1.01"], ["2", "2.2"]],
+        "clazz_name": "Table",
+        "meta": [
+            {"k": "round", "v": "0"},
+            {"k": "config_type", "v": "crustal"},
+            {"k": "rupture_set_file_id", "v": "RmlsZToxMzY1LjBzZzRDeA=="},
+        ],
+        "dimensions": [
+            {"k": "grid_spacings", "v": ["0.1"]},
+            {"k": "IML_periods", "v": ["0, 0.1, etc"]},
+            {"k": "tags", "v": ["opensha", "testing"]},
+            {"k": "gmpes", "v": ["ASK_2014"]},
+        ],
+        "table_type": "hazard_gridded",
+    }
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData._write_object', lambda self, object_id, object_type, body: None)

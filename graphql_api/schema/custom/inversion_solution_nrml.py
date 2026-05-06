@@ -3,8 +3,9 @@
 This module contains the schema definition for InversionSolutionNrml.
 
 """
+
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -72,9 +73,7 @@ class CreateInversionSolutionNrml(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         inversion_solution_nrml = get_data_manager().file.create('InversionSolutionNrml', **kwargs)
-        db_metrics.put_duration(
-            __name__, 'CreateInversionSolutionNrml.mutate_and_get_payload', dt.now(timezone.utc) - t0
-        )
+        db_metrics.put_duration(__name__, 'CreateInversionSolutionNrml.mutate_and_get_payload', dt.now(UTC) - t0)
         return CreateInversionSolutionNrml(inversion_solution_nrml=inversion_solution_nrml, ok=True)

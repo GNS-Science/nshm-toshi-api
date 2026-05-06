@@ -6,7 +6,7 @@ for the single shared `x-api-key` in `TempApiKey`.
 ## Prerequisites
 
 - AWS account with IAM Identity Center partially set up
-- Python 3.12 + `poetry install` done
+- Python 3.12 + `uv sync` done
 - `boto3`, `click`, `PyJWT`, `requests` available (`pip install PyJWT requests click`)
 - AWS CLI profile configured: `aws configure --profile AdministratorAccess-595842668254`
 
@@ -37,7 +37,7 @@ aws configure sso
 #### 1. Deploy (provisions everything)
 ```bash
 aws sso login --profile AdministratorAccess-595842668254
-AWS_PROFILE=AdministratorAccess-595842668254 poetry run serverless deploy --stage dev
+AWS_PROFILE=AdministratorAccess-595842668254 uv run serverless deploy --stage dev
 ```
 
 This creates in one stack:
@@ -49,7 +49,7 @@ This creates in one stack:
 
 #### 2. Retrieve outputs
 ```bash
-AWS_PROFILE=AdministratorAccess-595842668254 poetry run serverless info --stage dev --verbose
+AWS_PROFILE=AdministratorAccess-595842668254 uv run serverless info --stage dev --verbose
 # Shows: UserPoolId, IdentityPoolId, ScientistClientId, AutomationClientId, CognitoDomain, etc.
 ```
 
@@ -75,10 +75,10 @@ python auth/create_users.py --profile AdministratorAccess-595842668254
 #### 5. Test Login + AWS Credentials
 ```bash
 # Login with test user
-poetry run python auth/toshi_auth.py login
+uv run python auth/toshi_auth.py login
 
 # Get AWS credentials
-poetry run python auth/toshi_auth.py aws-creds
+uv run python auth/toshi_auth.py aws-creds
 
 # Use AWS CLI with the credentials
 export AWS_PROFILE=toshi
@@ -97,14 +97,14 @@ This section documents the original setup without Identity Pool. Superseded by P
 
 #### 1. Provision Cognito
 ```bash
-poetry run python auth/cognito_setup.py --profile AdministratorAccess-595842668254
+uv run python auth/cognito_setup.py --profile AdministratorAccess-595842668254
 ```
 
 #### 2. Scientist Login
 ```bash
-poetry run python auth/toshi_auth.py login
-poetry run python auth/toshi_auth.py whoami
-poetry run python auth/toshi_auth.py token
+uv run python auth/toshi_auth.py login
+uv run python auth/toshi_auth.py whoami
+uv run python auth/toshi_auth.py token
 ```
 
 #### 3. Automation / M2M Token
@@ -121,15 +121,15 @@ Key differences from the scientist flow:
   AWS Secrets Manager or CI/CD secret variables, never in source control
 
 ```bash
-poetry run python auth/toshi_auth.py m2m-token
+uv run python auth/toshi_auth.py m2m-token
 # Prints Bearer token (reads client_id from auth_config.json and secret from .env)
 
 # Use the raw token directly in a request:
-TOKEN=$(poetry run python auth/toshi_auth.py m2m-token --raw)
+TOKEN=$(uv run python auth/toshi_auth.py m2m-token --raw)
 curl -H "Authorization: Bearer $TOKEN" https://<api-url>/graphql -d '{"query":"{...}"}'
 
 # Override credentials via env vars (preferred for CI/CD):
-TOSHI_CLIENT_ID=<id> TOSHI_CLIENT_SECRET=<secret> poetry run python auth/toshi_auth.py m2m-token
+TOSHI_CLIENT_ID=<id> TOSHI_CLIENT_SECRET=<secret> uv run python auth/toshi_auth.py m2m-token
 ```
 
 Token lifetime is 1 hour. Runzi should call `m2m-token` at the start of each job (or check
@@ -142,7 +142,7 @@ expiry before each request) rather than caching a token across jobs.
 aws sso login --profile AdministratorAccess-595842668254
 
 # Deploy (≈2 min)
-AWS_PROFILE=AdministratorAccess-595842668254 poetry run serverless deploy --stage dev
+AWS_PROFILE=AdministratorAccess-595842668254 uv run serverless deploy --stage dev
 ```
 
 **Live endpoints (ap-southeast-2, account 595842668254):**
@@ -219,7 +219,7 @@ and `CLIENT_SECRET` from `auth/.env`.
 ```bash
 yarn sls dynamodb start --stage local &
 yarn sls s3 start &
-poetry run yarn sls wsgi serve &
+uv run yarn sls wsgi serve &
 
 python auth/test_e2e.py --local
 ```

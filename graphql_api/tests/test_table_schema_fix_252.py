@@ -6,12 +6,10 @@ import unittest
 from unittest import mock
 
 import boto3
-import pytest
 from graphene.test import Client
 from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
-import graphql_api.data  # for mocking
 from graphql_api.config import REGION, S3_BUCKET_NAME
 from graphql_api.data import data_manager
 from graphql_api.dynamodb.models import ToshiIdentity, ToshiTableObject
@@ -94,7 +92,6 @@ class TestFailingMutation(unittest.TestCase):
 
 @mock_aws
 class TestFailingMutationWithMockedServices(unittest.TestCase):
-
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):
         self.client = Client(root_schema)

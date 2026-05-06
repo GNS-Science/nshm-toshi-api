@@ -126,7 +126,7 @@ class TestSchemaSearchTotalCount(unittest.TestCase):
     def setUp(self):
         self.client = Client(root_schema)
         # monkey patching
-        schema_sm = SearchManager(endpoint=FAKE_ENDPOINT, es_index=FAKE_INDEX, awsauth=awsauth)
+        SearchManager(endpoint=FAKE_ENDPOINT, es_index=FAKE_INDEX, awsauth=awsauth)
 
     def test_relations_only_total_count(self):
         qry = '''

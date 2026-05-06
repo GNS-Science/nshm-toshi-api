@@ -10,8 +10,8 @@ The core class OpenquakeHazardTask implements the `graphql_api.schema.task.Task`
 
 import json
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -114,8 +114,8 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.now(timezone.utc)
-        log.info(f"CreateOpenquakeHazardTask.mutate payload: {input}")
+        t0 = dt.now(UTC)
+        log.info("CreateOpenquakeHazardTask.mutate payload: %s", input)
         input_dict = dict(input)
         if input.config:
             # Validation!
@@ -123,7 +123,7 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
             assert input_type == "OpenquakeHazardConfig"
 
             ref = get_data_manager().thing.get_one(nid)
-            log.debug(f"Got a ref to a real thing: {ref} with thing id: {nid}")
+            log.debug("Got a ref to a real thing: %s with thing id: %s", ref, nid)
             if not ref:
                 raise Exception("Broken input")
         if input.srm_logic_tree:
@@ -134,7 +134,7 @@ class CreateOpenquakeHazardTask(graphene.Mutation):
             input_dict['openquake_config'] = json.dumps(input.openquake_config)
 
         openquake_hazard_task = get_data_manager().thing.create('OpenquakeHazardTask', **input_dict)
-        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'CreateOpenquakeHazardTask.mutate', dt.now(UTC) - t0)
         return CreateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task)
 
 
@@ -152,10 +152,10 @@ class UpdateOpenquakeHazardTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.now(timezone.utc)
-        log.debug(f"UpdateOpenquakeHazardTask.mutate payload: {input}")
+        t0 = dt.now(UTC)
+        log.debug("UpdateOpenquakeHazardTask.mutate payload: %s", input)
         thing_id = input.pop('task_id')
 
         openquake_hazard_task = get_data_manager().thing.update('OpenquakeHazardTask', thing_id, **input)
-        db_metrics.put_duration(__name__, 'UpdateOpenquakeHazardTask.mutate', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'UpdateOpenquakeHazardTask.mutate', dt.now(UTC) - t0)
         return UpdateOpenquakeHazardTask(openquake_hazard_task=openquake_hazard_task, ok=True)

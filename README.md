@@ -22,9 +22,9 @@ Java is required.
 
 
 ```
-poetry install
-poetry lock
-poetry shell
+uv sync
+uv lock
+# use: source .venv/bin/activate
 ```
 
 Make sure the dynamob plugin for local tests is installed
@@ -63,11 +63,11 @@ then
 yarn sls dynamodb start --stage local &\
 yarn sls s3 start &\
 
-### The serverless wsgi command requires the correct python env, provided via poetry
-poetry run yarn sls wsgi serve
+### The serverless wsgi command requires the correct python env, provided via uv
+uv run yarn sls wsgi serve
 ```
 
-If `shell` is not available, in `poetry`, it is possible to use `eval $(poetry env activate)`
+If needed, activate the venv directly: `source .venv/bin/activate`
 
 Then in another shell,
 ```bash
@@ -77,7 +77,7 @@ docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elas
 
 Then in another shell,
 ```bash
-poetry run python3 graphql_api/tests/smoketests.py
+uv run python3 graphql_api/tests/smoketests.py
 ```
 
 ## Unit test
@@ -91,15 +91,15 @@ TESTING=1
 then
 
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 ## Auditing requirements packages
 
 ```
-poetry export --all-groups > audit.txt
-poetry run pip-audit -r audit.txt -s pypi --require-hashes
-poetry run pip-audit -r audit.txt -s osv --require-hashes
+uv export --format requirements-txt --no-emit-project --output-file audit.txt
+uv run pip-audit -r audit.txt -s pypi --require-hashes
+uv run pip-audit -r audit.txt -s osv --require-hashes
 ```
 
 ## Test locally with Toshi UI
@@ -108,7 +108,7 @@ poetry run pip-audit -r audit.txt -s osv --require-hashes
 docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.8.0
 yarn sls dynamodb start --stage local &\
 yarn sls s3 start &\
-SLS_OFFLINE=1 poetry run yarn sls wsgi serve
+SLS_OFFLINE=1 uv run yarn sls wsgi serve
 ```
 then in another shell,
 ```

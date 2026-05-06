@@ -92,7 +92,7 @@ tables = [ToshiFileObject, ToshiTableObject, ToshiThingObject, ToshiIdentity]
 
 
 def migrate():
-    log.info(f'migrate() stage: {DEPLOYMENT_STAGE} offline: {IS_OFFLINE} region: {REGION} testing: {TESTING}')
+    log.info('migrate() stage: %s offline: %s region: %s testing: %s', DEPLOYMENT_STAGE, IS_OFFLINE, REGION, TESTING)
     for table in tables:
         if not table.exists():
             table.create_table(wait=True)

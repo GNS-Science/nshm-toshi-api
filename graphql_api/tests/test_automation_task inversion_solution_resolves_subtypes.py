@@ -3,14 +3,11 @@ Test API function for GeneralTask
 using moto mocking re issue #223
 """
 
-import datetime as dt
 import unittest
 from unittest import mock
 
 import boto3
-from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id
 from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 

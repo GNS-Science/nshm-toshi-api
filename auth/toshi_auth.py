@@ -17,11 +17,12 @@ Configuration (reads auth/auth_config.json OR env vars):
     TOSHI_CLIENT_ID        override automation client_id (for m2m-token)
     TOSHI_CLIENT_SECRET    override automation client_secret (for m2m-token)
 """
+
 import base64
 import json
 import os
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -40,6 +41,7 @@ DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'auth_config.json'
 # Config loading
 # ---------------------------------------------------------------------------
 
+
 def load_auth_config():
     config_path = os.environ.get('TOSHI_COGNITO_CONFIG', DEFAULT_CONFIG_PATH)
     if not os.path.exists(config_path):
@@ -54,6 +56,7 @@ def load_auth_config():
 # ---------------------------------------------------------------------------
 # Credential file helpers
 # ---------------------------------------------------------------------------
+
 
 def load_credentials():
     if not CREDENTIALS_PATH.exists():
@@ -73,6 +76,7 @@ def save_credentials(data):
 # ---------------------------------------------------------------------------
 # JWT helpers (no signature verification — authorizer does that)
 # ---------------------------------------------------------------------------
+
 
 def decode_jwt_payload(token):
     """Decode JWT payload without verifying signature (for display only)."""
@@ -98,6 +102,7 @@ def is_token_expired(token, buffer_seconds=60):
 # HTTP helpers (stdlib only — no requests dep for this CLI)
 # ---------------------------------------------------------------------------
 
+
 def http_post_form(url, data, auth=None):
     """POST application/x-www-form-urlencoded, return parsed JSON."""
     body = urlencode(data).encode()
@@ -113,6 +118,7 @@ def http_post_form(url, data, auth=None):
 # ---------------------------------------------------------------------------
 # Username / Password flow (USER_PASSWORD_AUTH via Cognito InitiateAuth API)
 # ---------------------------------------------------------------------------
+
 
 def password_flow_login(config):
     """Authenticate with email + password via Cognito USER_PASSWORD_AUTH."""
@@ -130,11 +136,11 @@ def password_flow_login(config):
             ClientId=client_id,
         )
     except cognito.exceptions.NotAuthorizedException:
-        raise click.ClickException('Invalid username or password.')
+        raise click.ClickException('Invalid username or password.') from None
     except cognito.exceptions.UserNotFoundException:
-        raise click.ClickException('User not found.')
+        raise click.ClickException('User not found.') from None
     except Exception as e:
-        raise click.ClickException(f'Authentication failed: {e}')
+        raise click.ClickException(f'Authentication failed: {e}') from None
 
     if 'ChallengeName' in resp:
         raise click.ClickException(f'Unexpected auth challenge: {resp["ChallengeName"]}. Contact your administrator.')
@@ -172,6 +178,7 @@ def refresh_token(config, refresh_tok):
 # Client Credentials flow (M2M / Runzi)
 # ---------------------------------------------------------------------------
 
+
 def client_credentials_flow(config):
     """Obtain access token via client credentials (no user context)."""
     domain = config['cognito_domain']
@@ -206,16 +213,14 @@ def client_credentials_flow(config):
 # AWS Credentials flow (Cognito Identity Pool → STS)
 # ---------------------------------------------------------------------------
 
+
 def get_aws_credentials(config, access_token, profile='toshi'):
     """Exchange Cognito token for AWS STS credentials via Identity Pool."""
     region = config['region']
     identity_pool_id = config.get('identity_pool_id')
 
     if not identity_pool_id:
-        raise click.ClickException(
-            'Identity Pool ID not found in config.\n'
-            'Run: python auth/cognito_setup.py'
-        )
+        raise click.ClickException('Identity Pool ID not found in config.\nRun: python auth/cognito_setup.py')
 
     cognito_identity = boto3.client('cognito-identity', region_name=region)
 
@@ -239,7 +244,7 @@ def get_aws_credentials(config, access_token, profile='toshi'):
 
     creds = resp['Credentials']
     click.echo(f'  AccessKeyId: {creds["AccessKeyId"]}')
-    click.echo(f'  Expires: {datetime.fromtimestamp(creds["Expiration"] / 1000, tz=timezone.utc).isoformat()}')
+    click.echo(f'  Expires: {datetime.fromtimestamp(creds["Expiration"] / 1000, tz=UTC).isoformat()}')
 
     aws_credentials_path = Path.home() / '.aws' / 'credentials'
     aws_credentials_path.parent.mkdir(parents=True, exist_ok=True)
@@ -250,6 +255,7 @@ def get_aws_credentials(config, access_token, profile='toshi'):
             config_content = f.read()
 
     import configparser
+
     parser = configparser.ConfigParser()
     parser.read_string(config_content)
 
@@ -271,6 +277,7 @@ def get_aws_credentials(config, access_token, profile='toshi'):
 # ---------------------------------------------------------------------------
 # CLI commands
 # ---------------------------------------------------------------------------
+
 
 @click.group()
 def cli():
@@ -295,7 +302,7 @@ def login():
     click.echo(f'\nLogged in as: {payload.get("username") or payload.get("sub", "unknown")}')
     click.echo(f'Scopes: {payload.get("scope", "none")}')
     exp = payload.get('exp', 0)
-    click.echo(f'Expires: {datetime.fromtimestamp(exp, tz=timezone.utc).isoformat()}')
+    click.echo(f'Expires: {datetime.fromtimestamp(exp, tz=UTC).isoformat()}')
     click.echo(f'\nToken saved to: {CREDENTIALS_PATH}')
 
 
@@ -325,7 +332,7 @@ def token(raw):
                 creds['refresh_token'] = token_resp['refresh_token']
             save_credentials(creds)
         except Exception as e:
-            raise click.ClickException(f'Token refresh failed: {e}. Run: python toshi_auth.py login')
+            raise click.ClickException(f'Token refresh failed: {e}. Run: python toshi_auth.py login') from None
 
     if raw:
         click.echo(access_token)
@@ -354,13 +361,13 @@ def whoami():
     click.echo(f'Token use:      {payload.get("token_use", "n/a")}')
 
     exp = payload.get('exp', 0)
-    exp_dt = datetime.fromtimestamp(exp, tz=timezone.utc)
+    exp_dt = datetime.fromtimestamp(exp, tz=UTC)
     status = 'EXPIRED' if expired else 'valid'
     click.echo(f'Expires:        {exp_dt.isoformat()} [{status}]')
 
     iat = payload.get('iat', 0)
     if iat:
-        iat_dt = datetime.fromtimestamp(iat, tz=timezone.utc)
+        iat_dt = datetime.fromtimestamp(iat, tz=UTC)
         click.echo(f'Issued at:      {iat_dt.isoformat()}')
 
     click.echo(f'\nGroups:         {payload.get("cognito:groups", [])}')
@@ -375,7 +382,7 @@ def m2m_token(raw):
 
     payload = decode_jwt_payload(access_token)
     exp = payload.get('exp', 0)
-    exp_dt = datetime.fromtimestamp(exp, tz=timezone.utc)
+    exp_dt = datetime.fromtimestamp(exp, tz=UTC)
 
     click.echo(f'M2M token obtained. Expires: {exp_dt.isoformat()}', err=True)
     click.echo(f'Scopes: {payload.get("scope", "none")}', err=True)
@@ -411,7 +418,7 @@ def aws_creds(profile):
                 creds['refresh_token'] = token_resp['refresh_token']
             save_credentials(creds)
         except Exception as e:
-            raise click.ClickException(f'Token refresh failed: {e}. Run: python toshi_auth.py login')
+            raise click.ClickException(f'Token refresh failed: {e}. Run: python toshi_auth.py login') from None
 
     result_profile = get_aws_credentials(config, access_token, profile)
 

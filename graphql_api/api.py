@@ -22,7 +22,7 @@ ref https://fangpenlin.com/posts/2012/08/26/good-logging-practice-in-python/
 
 """
 if os.path.exists(LOGGING_CFG):
-    with open(LOGGING_CFG, 'rt') as f:
+    with open(LOGGING_CFG) as f:
         config = yaml.safe_load(f.read())
     logging.config.dictConfig(config)
 else:

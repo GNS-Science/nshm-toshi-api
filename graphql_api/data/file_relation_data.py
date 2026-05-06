@@ -6,7 +6,6 @@ import datetime as dt
 import json
 import logging
 from importlib import import_module
-from typing import Dict, List, Union
 
 import backoff
 import pynamodb.exceptions
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 UNCOMPRESSED_LIMIT = 100
 
 
-def ensure_decompressed(maybe_compressed_list: Union[str, List]) -> List[Dict]:
+def ensure_decompressed(maybe_compressed_list: str | list) -> list[dict]:
     if isinstance(maybe_compressed_list, str):
         return json.loads(decompress_string(maybe_compressed_list))
     return maybe_compressed_list
@@ -35,7 +34,7 @@ class FileRelationData(BaseDynamoDBData):
     @backoff.on_exception(backoff.expo, pynamodb.exceptions.TransactWriteError, max_time=25)
     def create(self, clazz_name, thing_id, file_id, role):
 
-        logger.debug(f'FileRelationData.create() linking file {file_id} to and thing {thing_id} in role {role}')
+        logger.debug('FileRelationData.create() linking file %s to and thing %s in role %s', file_id, thing_id, role)
 
         thing = self._db_manager.thing.get_object(thing_id)
         thing_content = thing.object_content
@@ -51,11 +50,13 @@ class FileRelationData(BaseDynamoDBData):
         except pynamodb.exceptions.DoesNotExist:
             body = self._db_manager.file._from_s3(file_id)
             logger.info(
-                f"Migrate object to Pynamodb: key={file_id};  type={self._db_manager.file._prefix};"
-                f" object_type={body['clazz_name']}"
+                "Migrate object to Pynamodb: key=%s;  type=%s; object_type=%s",
+                file_id,
+                self._db_manager.file._prefix,
+                body['clazz_name'],
             )
             file = ToshiFileObject(object_id=file_id, object_type=body['clazz_name'], object_content=body)
-            logger.debug(f'ToshiFileObject version {file.version}')
+            logger.debug('ToshiFileObject version %s', file.version)
 
         file_content = file.object_content
         if not file_content.get('relations'):
@@ -78,26 +79,26 @@ class FileRelationData(BaseDynamoDBData):
         except pynamodb.exceptions.TransactWriteError as err:
             thing_len = len(json.dumps(thing_content))
             file_len = len(json.dumps(file_content))
-            logger.debug("length of thing_content: %s" % thing_len)
-            logger.debug("length of file_content: %s" % file_len)
+            logger.debug("length of thing_content: %s", thing_len)
+            logger.debug("length of file_content: %s", file_len)
             if file_len >= 400e3:
                 raise RuntimeError(
-                    "File object of size (%s) maybe too big, transaction raised exception: %s" % (file_len, err.cause)
-                )
+                    f"File object of size ({file_len}) maybe too big, transaction raised exception: {err.cause}"
+                ) from err
 
             if thing_len >= 400e3:
                 raise RuntimeError(
-                    "Thing object of size (%s) maybe too big, transaction raised exception: %s" % (thing_len, err.cause)
-                )
+                    f"Thing object of size ({thing_len}) maybe too big, transaction raised exception: {err.cause}"
+                ) from err
 
-        logger.debug(f'FileRelationData.create() thing {thing_id} has {len(thing_content["files"])} file')
-        logger.debug(f'FileRelationData.create() file {file_id} has {len(file_content["relations"])} related things')
+        logger.debug('FileRelationData.create() thing %s has %s file', thing_id, len(thing_content["files"]))
+        logger.debug('FileRelationData.create() file %s has %s related things', file_id, len(file_content["relations"]))
 
         es_thing_key = f"{self._db_manager.thing._prefix}_{thing_id}"
         es_file_key = f"{self._db_manager.file._prefix}_{file_id}"
 
-        logger.debug(f"update ES for key {es_thing_key}")
-        logger.debug(f"update ES for key {es_file_key}")
+        logger.debug("update ES for key %s", es_thing_key)
+        logger.debug("update ES for key %s", es_file_key)
 
         self._db_manager.search_manager.index_document(es_thing_key, thing_content)
         self._db_manager.search_manager.index_document(es_file_key, file_content)
@@ -111,7 +112,7 @@ class FileRelationData(BaseDynamoDBData):
             the FileRelation object
         """
         jsondata = self._read_object(_id)
-        logger.info("get_one: %s" % str(jsondata))
+        logger.info("get_one: %s", str(jsondata))
         relation = self.from_json(jsondata)
         return relation
 
@@ -123,7 +124,7 @@ class FileRelationData(BaseDynamoDBData):
             File: the Thing object
         """
         jsondata = {'file_id': file_id, 'thing_id': thing_id, 'role': thing_role}
-        logger.debug("get_one: %s" % str(jsondata))
+        logger.debug("get_one: %s", str(jsondata))
         relation = self.from_json(jsondata)
         return relation
 
@@ -134,7 +135,7 @@ class FileRelationData(BaseDynamoDBData):
         if created:
             jsondata['created'] = dt.datetime.fromisoformat(created)
 
-        clazz = getattr(import_module('graphql_api.schema'), "FileRelation")
+        clazz = import_module('graphql_api.schema').FileRelation
         # id is no longer a class attribute, but some old objects may still exist
         jsondata.pop('id', None)
         jsondata.pop('clazz_name', None)
