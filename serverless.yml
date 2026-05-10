@@ -200,7 +200,7 @@ functions:
           authorizer:
             name: jwtAuthorizer
             resultTtlInSeconds: 300
-            identitySource: context.requestId
+            identitySource: method.request.header.Authorization
             type: request
       - http:
           path: graphql
@@ -208,7 +208,7 @@ functions:
           authorizer:
             name: jwtAuthorizer
             resultTtlInSeconds: 300
-            identitySource: context.requestId
+            identitySource: method.request.header.Authorization
             type: request
     environment:
       ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
