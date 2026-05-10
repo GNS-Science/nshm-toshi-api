@@ -173,7 +173,7 @@ functions:
   jwtAuthorizer:
     handler: auth/authorizer/handler.handler
     description: Validates Cognito JWTs; accepts legacy x-api-key for backward compat
-    memorySize: 256
+    memorySize: 512
     timeout: 10
     environment:
       COGNITO_USER_POOL_ID: !Ref ToshiUserPool
@@ -199,7 +199,7 @@ functions:
           method: POST
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 300
             identitySource: context.requestId
             type: request
       - http:
@@ -207,7 +207,7 @@ functions:
           method: GET
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 300
             identitySource: context.requestId
             type: request
     environment:
