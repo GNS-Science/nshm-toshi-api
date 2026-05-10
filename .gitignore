@@ -105,3 +105,4 @@ package-lock.json
 .vscode
 auth/test_users.json
 .llm/.session
+auth/auth_config.json

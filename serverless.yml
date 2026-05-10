@@ -16,16 +16,28 @@ package:
     - .env
     - .env.*
     - .git/**
+    - .github/**
+    - .claude/**
+    - .llm/**
+    - .mypy_cache/**
     - .pytest_cache/**
     - .tox/**
+    - .dynamodb/**
+    - .coverage
+    - .bumpversion.cfg
     - bin/**
     - demo/**
+    - docs/**
     - lib/**
     - node_modules/**
     - prof/**
+    - auth/test_*
+    - auth/cdk/**
+    - auth/*.md
+    - '**/__pycache__/**'
+    - '**/*.pyc'
     - package.json
     - package-log.json
-    - node_modules/**
 
 custom:
   #serverless-wsgi settings
@@ -166,7 +178,11 @@ functions:
     environment:
       COGNITO_USER_POOL_ID: !Ref ToshiUserPool
       COGNITO_REGION: ${self:provider.region}
-      COGNITO_CLIENT_ID: !Ref ToshiScientistClient
+      COGNITO_CLIENT_ID:
+        Fn::Join:
+          - ','
+          - - !Ref ToshiScientistClient
+            - !Ref ToshiAutomationClient
       LEGACY_API_KEY: ${env:LEGACY_API_KEY, ''}
 
   app:

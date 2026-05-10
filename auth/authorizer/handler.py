@@ -7,7 +7,7 @@ Also accepts legacy x-api-key for backward compatibility during transition.
 Environment variables (required):
     COGNITO_USER_POOL_ID   e.g. ap-southeast-2_Abc123
     COGNITO_REGION         e.g. ap-southeast-2
-    COGNITO_CLIENT_ID      expected audience (access token uses client_id, not pool)
+    COGNITO_CLIENT_ID      expected audience — comma-separated list of allowed client IDs
 
 Environment variables (optional):
     LEGACY_API_KEY         if set, this x-api-key value is also accepted (backward compat)
@@ -128,11 +128,14 @@ def validate_cognito_token(token: str) -> tuple[str, str, dict]:
         raise jwt.InvalidTokenError(f'Invalid token_use: {token_use!r} — only access tokens accepted')
 
     # Cognito access tokens use client_id (not aud) to identify the intended audience.
+    # COGNITO_CLIENT_ID may be a single value or comma-separated list (scientist + automation).
     token_client_id = payload.get('client_id', '')
-    if client_id and token_client_id != client_id:
-        raise jwt.InvalidAudienceError(
-            f'client_id mismatch: expected {client_id}, got {token_client_id}'
-        )
+    if client_id:
+        allowed_ids = {c.strip() for c in client_id.split(',')}
+        if token_client_id not in allowed_ids:
+            raise jwt.InvalidAudienceError(
+                f'client_id mismatch: expected one of {allowed_ids}, got {token_client_id}'
+            )
 
     principal_id = payload.get('username') or payload.get('sub', 'unknown')
     scopes = payload.get('scope', '')
