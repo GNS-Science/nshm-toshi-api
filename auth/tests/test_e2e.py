@@ -34,15 +34,16 @@ from urllib.request import Request, urlopen
 import click
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+AUTH_DIR = os.path.join(os.path.dirname(__file__), '..')
+load_dotenv(os.path.join(AUTH_DIR, '.env'))
 
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
-SCRIPT_DIR = os.path.dirname(__file__)
-CONFIG_FILE = os.path.join(SCRIPT_DIR, 'auth_config.json')
+SCRIPT_DIR = AUTH_DIR
+CONFIG_FILE = os.path.join(AUTH_DIR, 'auth_config.json')
 
 GRAPHQL_QUERY = '{ __typename }'
 GRAPHQL_MUTATION = '''
@@ -127,7 +128,7 @@ def load_config():
     with open(config_path) as f:
         config = json.load(f)
 
-    test_users_path = os.path.join(os.path.dirname(__file__), 'test_users.json')
+    test_users_path = os.path.join(AUTH_DIR, 'test_users.json')
     if os.path.exists(test_users_path):
         with open(test_users_path) as f:
             config['test_users'] = json.load(f)

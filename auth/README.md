@@ -33,10 +33,10 @@ GraphQL resolvers / mutations (graphql_api/schema/)
 | File | Purpose |
 |------|---------|
 | `authorizer/handler.py` | Lambda Authorizer — validates JWTs (access tokens only), returns IAM policy |
-| `authorizer/test_handler.py` | Unit tests for the Lambda Authorizer (26 tests) |
 | `middleware.py` | Flask before_request hook — enforces read/write scopes via AST-based mutation detection |
-| `test_middleware.py` | Unit tests for mutation detection and scope enforcement (12 tests) |
-| `test_e2e.py` | End-to-end validation script (`--local` or `--remote` mode) |
+| `tests/test_handler.py` | Unit tests for the Lambda Authorizer (26 tests) |
+| `tests/test_middleware.py` | Unit tests for mutation detection and scope enforcement (12 tests) |
+| `tests/test_e2e.py` | End-to-end validation script (`--local` or `--remote` mode) |
 | `toshi_auth.py` | Scientist CLI — login, token, aws-creds commands |
 | `create_users.py` | Creates test users in the deployed User Pool |
 
