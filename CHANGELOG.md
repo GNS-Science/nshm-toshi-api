@@ -1,100 +1,32 @@
 # Changelog
 
-## [0.7.0] - 2026-05-11
+## [0.6.0] - 2026-05-11
 
 ### Added
- - Cognito User Pool, resource server, domain, app clients (scientist + automation), user groups,
-   Identity Pool, and IAM roles (`toshi-runzi-local/batch/admin`) provisioned directly in
-   `serverless.yml` as CloudFormation resources — `sls deploy` now provisions all auth
-   infrastructure in a single stack with no extra tooling
- - `resources.Outputs` in `serverless.yml`: `UserPoolId`, `IdentityPoolId`, `ScientistClientId`,
-   `AutomationClientId`, `CognitoDomain`, `Issuer`, `JwksUri`
- - Provisioning approach decision documented in `auth/IMPLEMENTATION_PLAN.md` (Serverless-native
-   chosen over CDK and raw boto3; CDK reference on branch `spike/cdk-auth-provisioning`)
+ - **JWT authentication** replacing the single shared `x-api-key` with per-user Cognito JWTs
+   - Lambda Authorizer (`auth/authorizer/handler.py`) validates JWTs and legacy API keys
+   - Flask middleware (`auth/middleware.py`) enforces `toshi/read` and `toshi/write` scopes
+   - Scientist CLI (`auth/toshi_auth.py`) for login, token management, and AWS credentials
+   - All Cognito infrastructure provisioned via CloudFormation in `serverless.yml`
+ - **Backward compatibility**: legacy `x-api-key` clients continue working via `LEGACY_API_KEY`
+   env var (reads `NZSHM22_TOSHI_API_KEY` in CI)
+ - **Token flows**: USER_PASSWORD_AUTH for scientists, client credentials for M2M/Runzi
+ - **IAM roles** for Runzi workloads via Cognito Identity Pool (`runzi-local/batch/admin`)
+ - 38 unit tests across authorizer handler and middleware mutation detection
 
 ### Changed
- - `jwtAuthorizer` env vars `COGNITO_USER_POOL_ID` and `COGNITO_CLIENT_ID` now resolved via
-   `!Ref ToshiUserPool` / `!Ref ToshiScientistClient` — no more hardcoded pool IDs
- - `COGNITO_CLIENT_ID` now accepts comma-separated list of client IDs so both scientist and
-   automation (M2M) tokens are validated correctly
- - Authorizer only accepts access tokens — removed dead id-token acceptance path; id tokens
-   carry no scopes and are not valid for API authorisation
- - Middleware mutation detection replaced: regex `_MUTATION_RE` swapped for `graphql-core` AST
-   parser (`graphql.parse` + `OperationDefinitionNode`) — fixes false positives on string
-   literals, comments, and multi-operation documents
- - Fixed `decode_options` type: `jwt.types.Options` (PyJWT ≥2.12) instead of `dict[str, bool]`
- - Authorizer Lambda memory increased from 256MB to 512MB for faster RSA verification
- - API Gateway authorizer cache TTL set to 300s (was 0); identity source changed from
-   `context.requestId` to `method.request.header.Authorization` so caching actually works
- - Lambda package size reduced from 329MB to 120MB unzipped by excluding `.mypy_cache`,
-   `.claude`, `.llm`, `.dynamodb`, `__pycache__`, `docs/`, and test files
- - Removed `auth/cognito_setup.py` and `auth/iam_roles.py` (replaced by `serverless.yml` resources)
- - `auth/IMPLEMENTATION_PLAN.md` Phase 1 provisioning steps updated to reflect `sls deploy` workflow
-
-### Deployment
- - Deployed to dev (account 461564345538, profile `nshm-admin`) — 9/9 E2E tests passing
- - Full manual API verification: introspection, queries, and mutations all working behind
-   JWT authorizer with scope enforcement
- - Removed `apiGateway.apiKeys` (TempApiKey) — API Gateway was consuming `x-api-key` header
-   before it reached the Lambda authorizer; removing it allows bare `x-api-key` to work
- - Set `identitySource: ''` so API Gateway invokes the authorizer for all requests regardless
-   of which headers are present
- - `LEGACY_API_KEY` reads from `NZSHM22_TOSHI_API_KEY` env var (already in CI) with fallback
-   to `LEGACY_API_KEY` for local deploys — no shared workflow changes needed
-
-### Changed (previous)
- - Removed "spike" references from `auth/` module docstrings, comments, and import examples
- - Renamed `auth/SPIKE_AUTH_PLAN.md` → `auth/AUTH_PLAN.md`
- - Added `auth` module to tox `[testenv:lint]` flake8 command
- - Fixed pre-existing flake8 issues in `auth/` (unused imports, f-strings, whitespace)
- - Restored `serverless.yml` to main branch values for `org`, `app`, `service`, Elasticsearch config, memory, and timeout; retained only the `jwtAuthorizer` function and authorizer wiring on GraphQL events
- - Added `.env` / `.env.*` to `serverless.yml` package excludes
-
-### Tests
- - Added `graphql_api/tests/test_api_init.py`: covers auth middleware try/import block in `api.py`
- - Added `TestSearchManagerDisabled` to `test_search_manager.py`: covers disabled Elasticsearch path
- - Added `auth/authorizer/test_handler.py`: 26 unit tests covering `build_policy`, `validate_legacy_api_key`, and all `handler()` branches (no credentials, x-api-key header, `Authorization: x-api-key`, unknown scheme, Bearer JWT — valid, expired, invalid)
- - Added `auth/test_middleware.py`: 12 unit tests for AST-based mutation detection (simple
-   query/mutation, string literal false positives, comment false positives, multi-op with
-   operationName, malformed input fail-closed, subscriptions)
- - Added `auth/authorizer/__init__.py` to make authorizer a proper Python package
- - Restored `auth/create_users.py` for provisioning test users after deploy
-
-### Type Checking
- - Added `mypy auth/authorizer/handler.py` to `[testenv:lint]` in `setup.cfg`
- - Added type hints to all functions in `auth/authorizer/handler.py`
-
-## [0.6.0] - 2026-04-09
-
-### Added
- - **Phase 1 SSO Authentication**: Cognito Identity Pool integration for AWS service credentials
-   - New `auth/` directory with complete SSO implementation
-   - IAM roles for Runzi users: `toshi-runzi-local`, `toshi-runzi-batch`, `toshi-runzi-admin`
-   - Cognito Identity Pool with role mappings by Cognito groups
-   - New CLI command: `toshi_auth.py aws-creds` to exchange JWT for STS credentials
- - IAM roles provisioning script: `auth/iam_roles.py`
- - Extended Cognito setup with Identity Pool creation in `auth/cognito_setup.py`
- - Test users for all Runzi personas: `runzi-local`, `runzi-batch`, `runzi-admin`
-
-### Changed
- - Promoted `spike/` (then `auth_migration/`) to a permanent top-level `auth/` module
- - Updated `serverless.yml` JWT authorizer handler path to `auth/authorizer/handler.handler`
- - Enabled Flask auth middleware in `graphql_api/api.py` (points to `auth.middleware`)
- - Updated GraphQL `about` query to reflect `[AUTH]` status (was `[SPIKE]`)
- - Cleaned up `graphql_api/logging_aws.yaml` to include dedicated `auth` logger
- - Separated test credentials into dedicated `auth/test_users.json` (gitignored)
- - Removed hardcoded test user passwords from source code for security
- - Migrated public routing config to `auth/auth_config.json` (committed)
+ - GraphQL events use Lambda Authorizer instead of `private: true` API key plan
+ - Mutation detection uses `graphql-core` AST parser (was regex — had false positives)
+ - Lambda package reduced from 329MB to 120MB by excluding dev artifacts
+ - Middleware is no-op when `TESTING=1` or `SLS_OFFLINE=1` — local dev unaffected
 
 ### Security
- - Separated M2M `automation_client_secret` into local `.env` instead of config file
- - `test_users.json` added to `.gitignore` — contains test user passwords
- - Test user credentials moved from source code to local-only config file
+ - Test user credentials and client secrets kept in gitignored local files only
+ - Authorizer only accepts access tokens (id tokens rejected)
 
 ### Future (Phase 2)
  - Entra ID (Azure AD) OIDC federation for GNS corporate SSO
- - PKCE Authorization Code flow for browser-based login
- - Migration path to IAM Identity Center when IT team ready
+ - Client library (`nshm-toshi-client`) migration to Bearer tokens
 
 ## [0.5.2] - 2025-12-15
 
