@@ -10,7 +10,6 @@ from unittest import mock
 
 from graphene.test import Client
 
-import graphql_api.data  # for mocking
 from graphql_api.schema import root_schema
 
 
@@ -22,19 +21,20 @@ class IncrId:
         return self.next_id
 
 
-READ_MOCK = lambda _self, id: dict(
-    id="0",
-    clazz_name="GeneralTask",
-    agent_name="DonDuck",
-    created="2021-06-11T02:37:26.009506+00:00",
-    argument_lists=[{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}],
-    meta=[{"k": "some_metric", "v": "55.5"}],
-    notes="dum de dum",
-    subtask_count=4,
-    subtask_type="rupture_set",
-    model_type="subduction",
-    subtask_result="partial",
-)
+def READ_MOCK(_self, id):
+    return dict(
+        id="0",
+        clazz_name="GeneralTask",
+        agent_name="DonDuck",
+        created="2021-06-11T02:37:26.009506+00:00",
+        argument_lists=[{"k": "bogus_metric", "v": ["20", "25"]}, {"k": "unswept_metric", "v": [None]}],
+        meta=[{"k": "some_metric", "v": "55.5"}],
+        notes="dum de dum",
+        subtask_count=4,
+        subtask_type="rupture_set",
+        model_type="subduction",
+        subtask_result="partial",
+    )
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', IncrId().get_next_id)

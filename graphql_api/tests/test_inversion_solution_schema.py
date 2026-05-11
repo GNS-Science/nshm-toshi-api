@@ -4,14 +4,12 @@ Mocking our data layer
 
 """
 
-import json
 import unittest
 from copy import copy
 from unittest import mock
 
 from graphene.test import Client
 
-import graphql_api.data  # for mocking
 from graphql_api.schema import InversionSolution, root_schema
 
 
@@ -23,34 +21,36 @@ class IncrId:
         return str(self.next_id) + 'RANDM'
 
 
-READ_MOCK = lambda _self, id: dict(
-    id="0i93qK",
-    clazz_name="InversionSolution",
-    md5_digest="$digest",
-    file_name="$file_name",
-    file_size="$file_size",
-    produced_by="VGFibGU6Tm9uZQ==",
-    mfd_table_id="VGFibGU6MA==",
-    created="2021-06-11T02:37:26.009506+00:00",
-    meta=[{"k": "max_jump_distance", "v": "55.5"}],
-    metrics=[{"k": "some_metric", "v": "20"}],
-    tables=[
-        {
-            'identity': 'table0',
-            "created": "2021-06-11T02:37:26.009506+00:00",
-            "produced_by_id": "VGFibGU6Tm9uZQ==",
-            "label": "MyMFDTable",
-            "table_id": "VGFibGU6MA==",
-            "dimensions": [
-                {"k": "grid_spacings", "v": ["0.1"]},
-                {"k": "IML_periods", "v": ["0, 0.1, etc"]},
-                {"k": "tags", "v": ["opensha", "testing"]},
-                {"k": "gmpes", "v": ["ASK_2014"]},
-            ],
-            "table_type": "MFD_CURVES_V2",
-        }
-    ],
-)
+def READ_MOCK(_self, id):
+    return dict(
+        id="0i93qK",
+        clazz_name="InversionSolution",
+        md5_digest="$digest",
+        file_name="$file_name",
+        file_size="$file_size",
+        produced_by="VGFibGU6Tm9uZQ==",
+        mfd_table_id="VGFibGU6MA==",
+        created="2021-06-11T02:37:26.009506+00:00",
+        meta=[{"k": "max_jump_distance", "v": "55.5"}],
+        metrics=[{"k": "some_metric", "v": "20"}],
+        tables=[
+            {
+                'identity': 'table0',
+                "created": "2021-06-11T02:37:26.009506+00:00",
+                "produced_by_id": "VGFibGU6Tm9uZQ==",
+                "label": "MyMFDTable",
+                "table_id": "VGFibGU6MA==",
+                "dimensions": [
+                    {"k": "grid_spacings", "v": ["0.1"]},
+                    {"k": "IML_periods", "v": ["0, 0.1, etc"]},
+                    {"k": "tags", "v": ["opensha", "testing"]},
+                    {"k": "gmpes", "v": ["ASK_2014"]},
+                ],
+                "table_type": "MFD_CURVES_V2",
+            }
+        ],
+    )
+
 
 ISMOCK = {
     "id": "1544.0vP8Bd",
@@ -288,7 +288,6 @@ class TestBasicInversionSolutionOperations(unittest.TestCase):
 
 
 class TestCustomResolvers(unittest.TestCase):
-
     def setUp(self):
         self.client = Client(root_schema)
 
@@ -329,6 +328,6 @@ class TestCustomResolvers(unittest.TestCase):
         assert result['data']['node']['produced_by']['id'] == "UnVwdHVyZUdlbmVyYXRpb25UYXNrOjcwOXpnTDg5"
         assert result['data']['node']['mfd_table_id'] == 'VGFibGU6MG8zZmtm'
         assert result['data']['node']['mfd_table']['id'] == 'VGFibGU6MG8zZmtm'
-        assert result['data']['node']['hazard_table_id'] == None
-        assert result['data']['node']['hazard_table'] == None
+        assert result['data']['node']['hazard_table_id'] is None
+        assert result['data']['node']['hazard_table'] is None
         assert result['data']['node']['tables'][0]['table']['id'] == "VGFibGU6MG8zZmtm"

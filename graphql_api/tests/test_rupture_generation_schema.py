@@ -16,7 +16,6 @@ from graphql_relay import from_global_id
 from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
-import graphql_api.data  # for mocking
 from graphql_api.config import REGION, S3_BUCKET_NAME
 from graphql_api.data import data_manager
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
@@ -109,7 +108,7 @@ class TestCreateRuptureGenerationTask(unittest.TestCase):
                 }
             }
         '''
-        startdate = dt.datetime.now()  # no timesone
+        dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
         assert 'September 5th, 1999' in executed['errors'][0]['message']
@@ -185,15 +184,16 @@ class TestUpdateRuptureGenerationTask(unittest.TestCase):
         assert result['metrics'][0]['v'] == "20"
 
 
-TASK_OLD = lambda _self, _id: {
-    "id": "0",
-    "clazz_name": "RuptureGenerationTask",
-    "created": "2020-10-30T09:15:00+00:00",
-    "duration": 600.0,
-    "git_refs": {"opensha_ucerf3": "B", "opensha_commons": "C", "opensha_core": "A", "nshm_nz_opensha": "D"},
-    "arguments": None,
-    "metrics": None,
-}
+def TASK_OLD(_self, _id):
+    return {
+        "id": "0",
+        "clazz_name": "RuptureGenerationTask",
+        "created": "2020-10-30T09:15:00+00:00",
+        "duration": 600.0,
+        "git_refs": {"opensha_ucerf3": "B", "opensha_commons": "C", "opensha_core": "A", "nshm_nz_opensha": "D"},
+        "arguments": None,
+        "metrics": None,
+    }
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)

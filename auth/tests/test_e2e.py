@@ -23,6 +23,7 @@ Test cases:
     5. M2M client credentials → mutation succeeds (200)
     6. Expired/invalid token → 401 from authorizer
 """
+
 import base64
 import json
 import os
@@ -55,14 +56,17 @@ mutation CreateTestTask($input: CreateGeneralTaskInput!) {
 '''
 
 SIMPLE_QUERY_BODY = json.dumps({'query': GRAPHQL_QUERY})
-SIMPLE_MUTATION_BODY = json.dumps({
-    'query': 'mutation { __typename }',
-})
+SIMPLE_MUTATION_BODY = json.dumps(
+    {
+        'query': 'mutation { __typename }',
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 class TestResult:
     def __init__(self, name):
@@ -190,6 +194,7 @@ def decode_jwt_payload(token):
 # Local-stack tests (no auth enforcement)
 # ---------------------------------------------------------------------------
 
+
 def run_local_tests(endpoint):
     """
     Tests against local stack (SLS_OFFLINE=1).
@@ -261,6 +266,7 @@ def run_local_tests(endpoint):
 # ---------------------------------------------------------------------------
 # Remote endpoint tests (with Cognito auth)
 # ---------------------------------------------------------------------------
+
 
 def run_remote_tests(endpoint, config):  # noqa: C901
     """Tests against a real API Gateway endpoint with Lambda Authorizer enabled."""
@@ -423,12 +429,16 @@ def run_remote_tests(endpoint, config):  # noqa: C901
 # CLI
 # ---------------------------------------------------------------------------
 
+
 @click.command()
 @click.option('--local', 'mode', flag_value='local', default=True, help='Test local stack (default)')
 @click.option('--remote', 'mode', flag_value='remote', help='Test remote API Gateway endpoint')
-@click.option('--endpoint', default=lambda: os.environ.get('TOSHI_API_ENDPOINT', 'http://localhost:5000/graphql'),
-              show_default='$TOSHI_API_ENDPOINT or http://localhost:5000/graphql',
-              help='GraphQL endpoint URL')
+@click.option(
+    '--endpoint',
+    default=lambda: os.environ.get('TOSHI_API_ENDPOINT', 'http://localhost:5000/graphql'),
+    show_default='$TOSHI_API_ENDPOINT or http://localhost:5000/graphql',
+    help='GraphQL endpoint URL',
+)
 @click.option('--verbose', is_flag=True, default=False)
 def main(mode, endpoint, verbose):
     """Run end-to-end auth validation tests."""

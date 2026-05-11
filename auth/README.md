@@ -95,7 +95,7 @@ are unaffected.
 # Run local stack (auth enforcement bypassed)
 yarn sls dynamodb start --stage local &
 yarn sls s3 start &
-poetry run yarn sls wsgi serve
+uv run yarn sls wsgi serve
 ```
 
 ## Setup (new environment)
@@ -103,7 +103,7 @@ poetry run yarn sls wsgi serve
 ```bash
 # 1. Deploy — provisions all Cognito + IAM resources
 aws sso login --profile AdministratorAccess-595842668254
-AWS_PROFILE=AdministratorAccess-595842668254 poetry run serverless deploy --stage dev
+AWS_PROFILE=AdministratorAccess-595842668254 uv run serverless deploy --stage dev
 
 # 2. Fetch automation client secret (once)
 aws cognito-idp describe-user-pool-client \
@@ -116,8 +116,8 @@ aws cognito-idp describe-user-pool-client \
 python auth/create_users.py --profile AdministratorAccess-595842668254
 
 # 4. Test login
-poetry run python auth/toshi_auth.py login
-poetry run python auth/toshi_auth.py aws-creds
+uv run python auth/toshi_auth.py login
+uv run python auth/toshi_auth.py aws-creds
 ```
 
 See `IMPLEMENTATION_PLAN.md` for detailed setup history and deployment notes.

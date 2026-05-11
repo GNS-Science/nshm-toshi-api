@@ -75,7 +75,7 @@ class TestGroup:
     def test_argument_skip_validation_with_no_gt_OK(
         self, graphql_client, create_gt_mutation, create_at_mutation, arguments, message
     ):
-        gt = self.setup_gt(graphql_client, create_gt_mutation)
+        self.setup_gt(graphql_client, create_gt_mutation)
 
         # Create the AT, without a GeneralTask id
         executed = graphql_client.execute(
@@ -97,11 +97,11 @@ class TestGroup:
             ),
             (
                 [dict(k="swept_arg", v="")],
-                f"not a member of GeneralTask.swept_arguments values",
+                "not a member of GeneralTask.swept_arguments values",
             ),
             (
                 [dict(k="swept_arg", v="NO")],
-                f"not a member of GeneralTask.swept_arguments values",
+                "not a member of GeneralTask.swept_arguments values",
             ),
         ],
     )
@@ -134,14 +134,14 @@ class TestGroup:
             ),
             (
                 to_global_id("FasterTurtle", "1"),
-                f"is not a `GeneralTask`",
+                "is not a `GeneralTask`",
             ),
         ],
     )
     def test_invalid_gt_id_expected_to_FAIL(
         self, graphql_client, create_gt_mutation, create_at_mutation, gt_id, message
     ):
-        gt = self.setup_gt(graphql_client, create_gt_mutation)
+        self.setup_gt(graphql_client, create_gt_mutation)
 
         # Now attempt to create the AT
         executed = graphql_client.execute(

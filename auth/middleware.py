@@ -16,6 +16,7 @@ Or inline:
     from auth import middleware as toshi_middleware
     app.before_request(toshi_middleware.check_auth)
 """
+
 import json
 import logging
 
@@ -58,9 +59,7 @@ def _is_mutation(query: str, operation_name: str | None = None) -> bool:
         doc = gql_parse(query)
     except Exception:
         return True  # fail closed
-    ops: list[OperationDefinitionNode] = [
-        d for d in doc.definitions if isinstance(d, OperationDefinitionNode)
-    ]
+    ops: list[OperationDefinitionNode] = [d for d in doc.definitions if isinstance(d, OperationDefinitionNode)]
     if operation_name:
         ops = [o for o in ops if o.name and o.name.value == operation_name]
     return any(o.operation == OperationType.MUTATION for o in ops)
@@ -92,6 +91,7 @@ def _extract_graphql_args(request_body_bytes: bytes) -> tuple[str, str | None]:
 # Header extraction
 # ---------------------------------------------------------------------------
 
+
 def _get_auth_context():
     """
     Extract auth context set by the Lambda Authorizer.
@@ -101,21 +101,9 @@ def _get_auth_context():
     """
     authorizer_ctx = flask.request.environ.get('serverless.authorizer') or {}
 
-    user_id = (
-        authorizer_ctx.get('userId')
-        or flask.request.headers.get('X-Auth-Userid')
-        or 'anonymous'
-    )
-    scopes_str = (
-        authorizer_ctx.get('scopes')
-        or flask.request.headers.get('X-Auth-Scopes')
-        or ''
-    )
-    auth_method = (
-        authorizer_ctx.get('authMethod')
-        or flask.request.headers.get('X-Auth-Method')
-        or 'none'
-    )
+    user_id = authorizer_ctx.get('userId') or flask.request.headers.get('X-Auth-Userid') or 'anonymous'
+    scopes_str = authorizer_ctx.get('scopes') or flask.request.headers.get('X-Auth-Scopes') or ''
+    auth_method = authorizer_ctx.get('authMethod') or flask.request.headers.get('X-Auth-Method') or 'none'
     scopes = set(scopes_str.split()) if scopes_str else set()
     return user_id, scopes, auth_method
 
@@ -123,6 +111,7 @@ def _get_auth_context():
 # ---------------------------------------------------------------------------
 # Main middleware function
 # ---------------------------------------------------------------------------
+
 
 def check_auth():
     """
@@ -145,25 +134,25 @@ def check_auth():
 
     # Log auth-related headers to verify authorizer context injection
     auth_headers = {k: v for k, v in flask.request.headers if 'amzn' in k.lower() or 'auth' in k.lower()}
-    logger.info(f'[middleware] auth-related headers: {auth_headers}')
+    logger.info('[middleware] auth-related headers: %s', auth_headers)
 
     user_id, scopes, auth_method = _get_auth_context()
 
     # Attach to Flask g for use in resolvers / logging
     flask.g.current_user = {'userId': user_id, 'scopes': scopes, 'authMethod': auth_method}
 
-    logger.info(f'[middleware] userId={user_id} scopes={scopes} method={auth_method}')
+    logger.info('[middleware] userId=%s scopes=%s method=%s', user_id, scopes, auth_method)
 
     # Read-only check — every authenticated user needs at least toshi/read
     if SCOPE_READ not in scopes:
-        logger.warning(f'Access denied for {user_id}: missing {SCOPE_READ}')
+        logger.warning('Access denied for %s: missing %s', user_id, SCOPE_READ)
         raise Forbidden(f'Missing required scope: {SCOPE_READ}')
 
     # Mutation check — mutations need toshi/write
     if flask.request.method == 'POST':
         query, operation_name = _extract_graphql_args(flask.request.get_data())
         if _is_mutation(query, operation_name) and SCOPE_WRITE not in scopes:
-            logger.warning(f'Mutation blocked for {user_id}: missing {SCOPE_WRITE}')
+            logger.warning('Mutation blocked for %s: missing %s', user_id, SCOPE_WRITE)
             raise Forbidden(f'GraphQL mutations require scope: {SCOPE_WRITE}')
 
     return None
@@ -172,6 +161,7 @@ def check_auth():
 # ---------------------------------------------------------------------------
 # Registration helper
 # ---------------------------------------------------------------------------
+
 
 def register_auth_middleware(app):
     """
@@ -183,7 +173,4 @@ def register_auth_middleware(app):
         register_auth_middleware(app)
     """
     app.before_request(check_auth)
-    logger.info(
-        'Auth middleware registered'
-        + (' [BYPASS: TESTING or SLS_OFFLINE]' if TESTING or IS_OFFLINE else '')
-    )
+    logger.info('Auth middleware registered' + (' [BYPASS: TESTING or SLS_OFFLINE]' if TESTING or IS_OFFLINE else ''))

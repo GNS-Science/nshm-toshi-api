@@ -10,7 +10,6 @@ from graphql_relay import from_global_id
 from moto import mock_aws
 
 import graphql_api.data.data_manager  # for monkeypatch
-from graphql_api.dynamodb.models import migrate
 
 
 @pytest.fixture(autouse=True)
@@ -49,10 +48,10 @@ def test_create_rupture_set_with_missing_file_attributes_fails(
               }
               }
             '''
-    executed = gt1 = graphql_client.execute(query)
+    executed = graphql_client.execute(query)
 
     print(executed)
-    assert executed['data'] == None
+    assert executed['data'] is None
     assert len(executed['errors'])
     messages = [x['message'] for x in executed['errors']]
     assert_string_in_messages("file_name", messages)
@@ -96,7 +95,7 @@ def test_create_rupture_set_valid_created(
         assert from_global_id(node['id'])[0] == "RuptureSet"
         assert node['file_name'] == "file_name"
     else:
-        assert executed['data'] == None
+        assert executed['data'] is None
         assert len(executed['errors'])
         messages = [x['message'] for x in executed['errors']]
         assert_string_in_messages("created", messages)
@@ -136,7 +135,7 @@ def test_create_rupture_set_valid_fault_models(
         assert from_global_id(node['id'])[0] == "RuptureSet"
         assert node['file_name'] == "file_name"
     else:
-        assert executed['data'] == None
+        assert executed['data'] is None
         assert len(executed['errors'])
         messages = [x['message'] for x in executed['errors']]
         assert_string_in_messages("fault_models", messages)

@@ -46,12 +46,16 @@ class ThingRelationData(BaseDynamoDBData):
             transaction.update(child, actions=[self._db_manager.thing.model.object_content.set(child_content)])
 
         logger.info(
-            f'create add_child_relation transaction OK: added: {child_id}'
-            f' to children {len(parent_content["children"])} of parent {parent_id}'
+            'create add_child_relation transaction OK: added: %s to children %s of parent %s',
+            child_id,
+            len(parent_content["children"]),
+            parent_id,
         )
         logger.info(
-            f'create parent_relation : added: {parent_id} to parents'
-            f' {len(child_content["parents"])} of child {child_id}'
+            'create parent_relation : added: %s to parents %s of child %s',
+            parent_id,
+            len(child_content["parents"]),
+            child_id,
         )
 
         # self._db_manager.search_manager.index_document(parent.object_id, parent_content)
@@ -60,8 +64,8 @@ class ThingRelationData(BaseDynamoDBData):
         es_parent_key = f"{self._db_manager.thing._prefix}_{parent_id}"
         es_child_key = f"{self._db_manager.thing._prefix}_{child_id}"
 
-        logger.info(f"update ES for key {es_parent_key}")
-        logger.info(f"update ES for key {es_child_key}")
+        logger.info("update ES for key %s", es_parent_key)
+        logger.info("update ES for key %s", es_child_key)
 
         self._db_manager.search_manager.index_document(es_parent_key, parent_content)
         self._db_manager.search_manager.index_document(es_child_key, child_content)
@@ -75,9 +79,9 @@ class ThingRelationData(BaseDynamoDBData):
         Returns:
             File: the Thing object
         """
-        logger.info(f'LEGACY RELATION GET ONE{_id}')
+        logger.info('LEGACY RELATION GET ONE%s', _id)
         jsondata = self._read_object(_id)
-        logger.info("get_one: %s" % str(jsondata))
+        logger.info("get_one: %s", str(jsondata))
         relation = self.from_json(jsondata)
         return relation
 
@@ -90,13 +94,13 @@ class ThingRelationData(BaseDynamoDBData):
             File: the TaskTaskRelation object
         """
         jsondata = {'parent_id': parent_id, 'child_id': child_id}
-        logger.info("build_one: %s" % str(jsondata))
+        logger.info("build_one: %s", str(jsondata))
         relation = self.from_json(jsondata)
         return relation
 
     @staticmethod
     def from_json(jsondata):
-        clazz = getattr(import_module('graphql_api.schema'), "TaskTaskRelation")
+        clazz = import_module('graphql_api.schema').TaskTaskRelation
 
         # id is no longer a class attribute, but some old objects may still exist
         jsondata.pop('id', None)

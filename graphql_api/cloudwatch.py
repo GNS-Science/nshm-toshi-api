@@ -43,4 +43,4 @@ class ServerlessMetricWriter:
             try:
                 client.put_metric_data(**rec)
             except Exception as err:
-                logger.warning(f'put_metric_data {rec} failed with {err}')
+                logger.warning('put_metric_data %s failed with %s', rec, err)

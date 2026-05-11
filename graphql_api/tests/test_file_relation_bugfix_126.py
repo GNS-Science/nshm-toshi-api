@@ -5,9 +5,7 @@ from io import BytesIO
 from unittest import mock
 
 import boto3
-import pytest
 from dateutil.tz import tzutc
-from elasticsearch import Elasticsearch
 from graphene.test import Client
 from graphql_relay import from_global_id, to_global_id
 from moto import mock_aws
@@ -198,7 +196,7 @@ class TestBug122(unittest.TestCase):
             QRY_CREATE_AT_RELATION, variable_values=dict(thing_id='QXV0b21hdGlvblRhc2s6MTAwMDAw', file_id=file_id)
         )
         print(link_result)
-        assert link_result['data']['create_file_relation']['ok'] == True
+        assert link_result['data']['create_file_relation']['ok']
 
     # @pytest.mark.skip("graphene udpate")
     def test_create_at(self):
@@ -233,4 +231,4 @@ class TestBug122(unittest.TestCase):
         # the relation
         link_result = self.client.execute(QRY_CREATE_AT_RELATION, variable_values=dict(thing_id=at_id, file_id=file_id))
 
-        assert link_result['data']['create_file_relation']['ok'] == True
+        assert link_result['data']['create_file_relation']['ok']

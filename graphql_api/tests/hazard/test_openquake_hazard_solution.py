@@ -195,7 +195,7 @@ class TestOpenquakeHazardSolution(unittest.TestCase, SetupHelpersMixin):
         archive = self.create_file("config_archive.zip")  # File 100003
         csv_archive = self.create_file("csv_archive.zip")  # File 100004
         csv_archive_id = csv_archive['data']['create_file']['file_result']['id']
-        modconf_id = archive['data']['create_file']['file_result']['id']
+        archive['data']['create_file']['file_result']['id']
 
         task_args_id = archive['data']['create_file']['file_result']['id']
 

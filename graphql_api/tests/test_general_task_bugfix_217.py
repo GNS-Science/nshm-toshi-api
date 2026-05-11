@@ -4,16 +4,12 @@ using moto mocking
 """
 
 import datetime as dt
-import json
 import unittest
-from io import BytesIO
 from unittest import mock
 
 import boto3
-import pytest
 from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id, to_global_id
 from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
@@ -47,7 +43,6 @@ CREATE_GT = '''
 
 @mock_aws
 class TestGeneralTaskBug217(unittest.TestCase):
-
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):
         self.client = Client(root_schema)

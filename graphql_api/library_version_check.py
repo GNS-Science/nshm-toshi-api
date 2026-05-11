@@ -32,7 +32,6 @@ e.g. excerpt from serverless.yml
 import importlib.util
 import logging
 import sys
-from typing import List
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -42,18 +41,18 @@ log = logging.getLogger(__name__)
 def check_import(name):
     spec = importlib.util.find_spec(name)
     if spec:
-        log.info('module %s has spec" %s ' % (name, spec))
+        log.info('module %s has spec" %s ', name, spec)
     else:
-        log.warning('unable to find_spec for module %s' % name)
+        log.warning('unable to find_spec for module %s', name)
         return
 
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
     spec.loader.exec_module(module)
-    log.info('library: "%s" has version: %s' % (name, module.__version__))
+    log.info('library: "%s" has version: %s', name, module.__version__)
 
 
-def log_library_info(lib_names: List[str] = None):
+def log_library_info(lib_names: list[str] = None):
     lib_names = lib_names or ['botocore', 'boto3']
     for name in lib_names:
         check_import(name)

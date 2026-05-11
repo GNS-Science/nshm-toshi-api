@@ -138,7 +138,7 @@ class TestCompressRelations(unittest.TestCase):
         )
 
         print(link_result)
-        assert link_result['data']['create_file_relation']['ok'] == True
+        assert link_result['data']['create_file_relation']['ok']
 
         # get the file back from dyamodb
         file = ToshiFileObject.get(FILEMOCKID)
@@ -152,7 +152,7 @@ class TestCompressRelations(unittest.TestCase):
 
         file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCKID)
 
-        link_result = self.client.execute(
+        self.client.execute(
             QRY_CREATE_AT_RELATION, variable_values=dict(thing_id='QXV0b21hdGlvblRhc2s6MTAwMDAw', file_id=file_id)
         )
 
@@ -163,35 +163,32 @@ class TestCompressRelations(unittest.TestCase):
             json.loads(decompress_string(file.object_content['relations']))[-1], {'id': '100000', 'role': 'read'}
         )
 
-        query = (
-            '''
-            query get_file {
-              node(id: "%s") {
+        query = f'''
+            query get_file {{
+              node(id: "{file_id}") {{
                 __typename
-                ... on File {
+                ... on File {{
                   file_name
                   file_size
-                  relations {
+                  relations {{
                     total_count
-                    edges {
-                      node {
-                        ... on FileRelation {
+                    edges {{
+                      node {{
+                        ... on FileRelation {{
                           role
-                          thing {
-                            ... on Node{
+                          thing {{
+                            ... on Node{{
                               id
                               __typename
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }'''
-            % file_id
-        )
+                            }}
+                          }}
+                        }}
+                      }}
+                    }}
+                  }}
+                }}
+              }}
+            }}'''
 
         file_result = self.client.execute(query)
         print(file_result)

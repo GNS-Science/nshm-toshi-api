@@ -30,7 +30,7 @@ def iterate_dynamodb_nodes(object_type, **kwargs):
     after = kwargs.get('after')  # cursor of last page, or none
     datastore_handler = get_datastore_handler(object_type)
     cursor_offset = from_global_id(after)[1] if after else "-1"
-    log.info(f"datastore_handler: {datastore_handler}")
+    log.info("datastore_handler: %s", datastore_handler)
     for itm in datastore_handler.get_all(object_type, limit=limit, after=cursor_offset):
         yield ObjectIdentity(
             object_type=itm.object_type, object_id=itm.object_id, node_id=to_global_id(itm.object_type, itm.object_id)
@@ -50,13 +50,13 @@ def iterate_legacy_s3_nodes(store_type, **kwargs):
 
 def paginated_object_identities(node_iterable, **kwargs) -> ObjectIdentitiesConnection:
     '''does the work for the schema resolver'''
-    log.info(f'resolve_object_identities args: {kwargs}')
+    log.info('resolve_object_identities args: %s', kwargs)
 
     first = kwargs.get('first', 5)  # how many to fetch
     after = kwargs.get('after')  # cursor of last page, or none
 
     cursor_offset = from_global_id(after)[1] if after else "-1"
-    log.info(f'paginated_object_identities first={first}, after={after} cursor_offset: {cursor_offset}')
+    log.info('paginated_object_identities first=%s, after=%s cursor_offset: %s', first, after, cursor_offset)
 
     # based on https://gist.github.com/AndrewIngram/b1a6e66ce92d2d0befd2f2f65eb62ca5#file-pagination-py-L152
     edges = [

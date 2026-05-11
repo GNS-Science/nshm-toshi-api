@@ -12,8 +12,8 @@ which is generated automatically by Graphene.
     created
 """
 
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -157,10 +157,10 @@ class UpdateGeneralTask(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         # print("mutate_and_get_payload: ", kwargs)
         thing_id = kwargs.pop('task_id')
         general_task = get_data_manager().thing.update('GeneralTask', thing_id, **kwargs)
         # print("general_task", general_task.created)
-        db_metrics.put_duration(__name__, 'UpdateGeneralTask.mutate_and_get_payload', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'UpdateGeneralTask.mutate_and_get_payload', dt.now(UTC) - t0)
         return UpdateGeneralTask(general_task=general_task, ok=True)

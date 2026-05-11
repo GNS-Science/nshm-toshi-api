@@ -6,7 +6,6 @@ from graphql_relay import from_global_id
 from moto import mock_aws
 
 import graphql_api.data.data_manager  # for monkeypatch
-from graphql_api.dynamodb.models import migrate
 
 
 @pytest.fixture(autouse=True)

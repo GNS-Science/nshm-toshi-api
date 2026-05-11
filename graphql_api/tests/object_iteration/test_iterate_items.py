@@ -38,10 +38,11 @@ class MockDBdata:
 
 
 # custom mock for graphql_api.data.BaseDynamoDBData_read_obect
-mock_db_read = lambda _self, _id: {
-    "id": _id,
-    "clazz_name": "GeneralTask",
-}
+def mock_db_read(_self, _id):
+    return {
+        "id": _id,
+        "clazz_name": "GeneralTask",
+    }
 
 
 def mock_get_all_s3_paginated(self, limit, after):

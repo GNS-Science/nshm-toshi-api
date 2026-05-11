@@ -15,7 +15,7 @@ from dateutil.tz import tzutc
 
 
 def fake_file_content():
-    filedata = BytesIO("not_really zip, but close enough".encode())
+    filedata = BytesIO(b"not_really zip, but close enough")
     filedata.seek(0)  # important!
     return filedata
 
@@ -165,7 +165,7 @@ class SetupHelpersMixin:
             digest=file_digest(fake_file),
             file_name="alineortwo.zip",
             file_size=file_size(fake_file),
-            created=dt.datetime.now(dt.timezone.utc).isoformat(),
+            created=dt.datetime.now(dt.UTC).isoformat(),
         )
         result = self.client.execute(query, variable_values=variables)
         print(result)
@@ -216,7 +216,7 @@ class SetupHelpersMixin:
             digest=file_digest(fake_file),
             file_name="alineortwo.zip",
             file_size=file_size(fake_file),
-            created=dt.datetime.now(dt.timezone.utc).isoformat(),
+            created=dt.datetime.now(dt.UTC).isoformat(),
             predecessors=predecessors,
         )
 
@@ -428,7 +428,7 @@ class SetupHelpersMixin:
             }'''
 
         # from hashlib import sha256, md5
-        filedata = BytesIO("a line\nor two".encode())
+        filedata = BytesIO(b"a line\nor two")
         digest = "sha256(filedata.read()).hexdigest()"
         filedata.seek(0)  # important!
         size = len(filedata.read())
@@ -470,7 +470,7 @@ class SetupHelpersMixin:
             }'''
 
         # from hashlib import sha256, md5
-        filedata = BytesIO("a line\nor two".encode())
+        filedata = BytesIO(b"a line\nor two")
         digest = "sha256(filedata.read()).hexdigest()"
         filedata.seek(0)  # important!
         size = len(filedata.read())
@@ -517,7 +517,7 @@ class SetupHelpersMixin:
             }'''
 
         # from hashlib import sha256, md5
-        filedata = BytesIO("a line\nor two".encode())
+        filedata = BytesIO(b"a line\nor two")
         digest = "sha256(filedata.read()).hexdigest()"
         filedata.seek(0)  # important!
         size = len(filedata.read())
@@ -577,7 +577,7 @@ class SetupHelpersMixin:
             }'''
 
         # from hashlib import sha256, md5
-        filedata = BytesIO("a line\nor two".encode())
+        filedata = BytesIO(b"a line\nor two")
         digest = "sha256(filedata.read()).hexdigest()"
         filedata.seek(0)  # important!
         size = len(filedata.read())

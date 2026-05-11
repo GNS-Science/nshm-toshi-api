@@ -6,6 +6,7 @@ Covers:
   - validate_legacy_api_key() — env-var driven
   - handler() — full integration with mocked validate_cognito_token
 """
+
 import os
 import unittest
 from unittest import mock
@@ -14,7 +15,6 @@ import jwt
 
 import auth.authorizer.handler as handler_module
 from auth.authorizer.handler import build_policy, handler, validate_legacy_api_key
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -36,8 +36,8 @@ def _event(authorization=None, x_api_key=None):
 # build_policy
 # ---------------------------------------------------------------------------
 
-class TestBuildPolicy(unittest.TestCase):
 
+class TestBuildPolicy(unittest.TestCase):
     def test_allow_policy_structure(self):
         policy = build_policy('user123', 'Allow', FAKE_ARN)
         self.assertEqual(policy['principalId'], 'user123')
@@ -68,8 +68,8 @@ class TestBuildPolicy(unittest.TestCase):
 # validate_legacy_api_key
 # ---------------------------------------------------------------------------
 
-class TestValidateLegacyApiKey(unittest.TestCase):
 
+class TestValidateLegacyApiKey(unittest.TestCase):
     def test_returns_true_for_matching_key(self):
         with mock.patch.dict(os.environ, {'LEGACY_API_KEY': 'secret123'}):
             self.assertTrue(validate_legacy_api_key('secret123'))
@@ -92,8 +92,8 @@ class TestValidateLegacyApiKey(unittest.TestCase):
 # handler — no auth credentials provided
 # ---------------------------------------------------------------------------
 
-class TestHandlerNoCredentials(unittest.TestCase):
 
+class TestHandlerNoCredentials(unittest.TestCase):
     def test_no_headers_raises_unauthorized(self):
         with self.assertRaises(Exception) as cm:
             handler(_event(), None)
@@ -109,8 +109,8 @@ class TestHandlerNoCredentials(unittest.TestCase):
 # handler — legacy x-api-key header
 # ---------------------------------------------------------------------------
 
-class TestHandlerLegacyApiKeyHeader(unittest.TestCase):
 
+class TestHandlerLegacyApiKeyHeader(unittest.TestCase):
     def test_valid_api_key_returns_allow(self):
         with mock.patch.dict(os.environ, {'LEGACY_API_KEY': 'mykey'}):
             result = handler(_event(x_api_key='mykey'), None)
@@ -142,8 +142,8 @@ class TestHandlerLegacyApiKeyHeader(unittest.TestCase):
 # handler — Authorization: x-api-key <key>
 # ---------------------------------------------------------------------------
 
-class TestHandlerAuthorizationApiKey(unittest.TestCase):
 
+class TestHandlerAuthorizationApiKey(unittest.TestCase):
     def test_authorization_xapikey_scheme_valid(self):
         with mock.patch.dict(os.environ, {'LEGACY_API_KEY': 'mykey'}):
             result = handler(_event(authorization='x-api-key mykey'), None)
@@ -166,8 +166,8 @@ class TestHandlerAuthorizationApiKey(unittest.TestCase):
 # handler — unknown / unsupported Authorization scheme
 # ---------------------------------------------------------------------------
 
-class TestHandlerUnknownScheme(unittest.TestCase):
 
+class TestHandlerUnknownScheme(unittest.TestCase):
     def test_unknown_scheme_raises_unauthorized(self):
         with self.assertRaises(Exception) as cm:
             handler(_event(authorization='Basic dXNlcjpwYXNz'), None)
@@ -183,12 +183,13 @@ class TestHandlerUnknownScheme(unittest.TestCase):
 # handler — Bearer JWT
 # ---------------------------------------------------------------------------
 
-class TestHandlerBearerJWT(unittest.TestCase):
 
+class TestHandlerBearerJWT(unittest.TestCase):
     def _patch_cognito(self, return_value=None, side_effect=None):
         """Patch validate_cognito_token on the handler module."""
-        return mock.patch.object(handler_module, 'validate_cognito_token',
-                                 return_value=return_value, side_effect=side_effect)
+        return mock.patch.object(
+            handler_module, 'validate_cognito_token', return_value=return_value, side_effect=side_effect
+        )
 
     def test_valid_jwt_returns_allow(self):
         payload = {'token_use': 'access'}

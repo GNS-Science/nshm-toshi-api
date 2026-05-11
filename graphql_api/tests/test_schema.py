@@ -224,7 +224,7 @@ class TestCreateDataFile(unittest.TestCase):
 
         # from hashlib import sha256, md5
 
-        filedata = BytesIO("a line\nor two".encode())
+        filedata = BytesIO(b"a line\nor two")
         digest = "sha256(filedata.read()).hexdigest()"
         filedata.seek(0)  # important!
         size = len(filedata.read())
@@ -242,7 +242,7 @@ class TestCreateDataFile(unittest.TestCase):
                 # with mock.patch('graphql_api.data.DataFileData.create', new=self.mock_create):
                 executed = self.client.execute(qry, variable_values=variables)
                 print(executed)
-                assert executed['data']['create_file']['ok'] == True
+                assert executed['data']['create_file']['ok']
 
 
 if __name__ == "__main__":

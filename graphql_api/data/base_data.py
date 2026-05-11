@@ -7,11 +7,10 @@ import json
 import logging
 import random
 from collections import namedtuple
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 from importlib import import_module
 from io import BytesIO
-from typing import Dict
 
 import backoff
 import boto3
@@ -58,7 +57,7 @@ def json_serialised(obj):
     return json.dumps(obj)
 
 
-def replace_enums(kwargs: Dict) -> Dict:
+def replace_enums(kwargs: dict) -> dict:
     """Replace any Enum members with their values.
 
     So that Graphene object instances can be serialised as json.
@@ -124,20 +123,20 @@ class BaseData:
         Returns:
             list: a list containing all the objects materialised from the S3 bucket
         """
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         if clazz_name:
             clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         else:
             clazz = None
 
         results = []
-        for obj_summary in self.s3_bucket.objects.filter(Prefix='%s/' % self._prefix):
+        for obj_summary in self.s3_bucket.objects.filter(Prefix=f'{self._prefix}/'):
             prefix, result_id, _ = obj_summary.key.split('/')
             assert prefix == self._prefix
             object = self.get_one(result_id)
             if clazz is None or isinstance(object, clazz):
                 results.append(object)
-        db_metrics.put_duration(__name__, 'get_all', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'get_all', dt.now(UTC) - t0)
         return results
 
     def get_all_s3_paginated(self, limit, after):
@@ -152,7 +151,7 @@ class BaseData:
         #  - MaxKeys to limit iteration
         marker = f"{self.prefix}/{after}" if after else ""
         filtered_objects = self.s3_bucket.objects.filter(
-            Prefix='%s/' % self.prefix,
+            Prefix=f'{self.prefix}/',
             Marker=marker,
             MaxKeys=limit,  # note this will optimise the filter behaviuor, but does not terminate the loop,
         )
@@ -217,8 +216,8 @@ class BaseData:
         return self._s3_bucket
 
     def _from_s3(self, object_id):
-        S3_key = "%s/%s/%s" % (self._prefix, object_id, 'object.json')
-        logger.info(f"get object from bucket {self._bucket_name}, key={S3_key})")
+        S3_key = "{}/{}/{}".format(self._prefix, object_id, 'object.json')
+        logger.info("get object from bucket %s, key=%s)", self._bucket_name, S3_key)
 
         s3obj = self.s3_connection.Object(self._bucket_name, S3_key, client=self.s3_client)
         file_object = BytesIO()
@@ -240,10 +239,10 @@ def backoff_hdlr(details):
 
 
 class BaseDynamoDBData(BaseData):
-    def __init__(self, client_args, db_manager, model, connection=Connection(region=REGION)):
+    def __init__(self, client_args, db_manager, model, connection=None):
         super().__init__(client_args, db_manager)
         self._model = model
-        self._connection = connection
+        self._connection = connection if connection is not None else Connection(region=REGION)
         if not TESTING and IS_OFFLINE:
             self._connection = Connection(host=DB_ENDPOINT)
 
@@ -259,10 +258,10 @@ class BaseDynamoDBData(BaseData):
         Returns:
             pynamodb model object
         """
-        t0 = dt.now(timezone.utc)
-        logger.debug('get dynamo key: %s for model %s' % (object_id, self._model))
+        t0 = dt.now(UTC)
+        logger.debug('get dynamo key: %s for model %s', object_id, self._model)
         obj = self._model.get(str(object_id))
-        db_metrics.put_duration(__name__, 'get_object', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'get_object', dt.now(UTC) - t0)
         return obj
 
     def get_next_id(self) -> str:
@@ -270,15 +269,15 @@ class BaseDynamoDBData(BaseData):
         Returns:
                 int: the next available id
         """
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         try:
             identity = ToshiIdentity.get(self._prefix)
         except DoesNotExist:
             # very first use of the identity
-            logger.debug(f'get_next_id setting initial ID; table_name={self._prefix}, object_id={FIRST_DYNAMO_ID}')
+            logger.debug('get_next_id setting initial ID; table_name=%s, object_id=%s', self._prefix, FIRST_DYNAMO_ID)
             identity = ToshiIdentity(table_name=self._prefix, object_id=FIRST_DYNAMO_ID)
             identity.save()
-        db_metrics.put_duration(__name__, 'get_next_id', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'get_next_id', dt.now(UTC) - t0)
         return identity.object_id
 
     def _read_object(self, object_id):
@@ -290,20 +289,20 @@ class BaseDynamoDBData(BaseData):
         Returns:
             dict: object data deserialised from the json object
         """
-        t0 = dt.now(timezone.utc)
-        key = "%s/%s" % (self._prefix, object_id)
-        logger.debug(f'_read_object; key: {key}, prefix {self._prefix}')
+        t0 = dt.now(UTC)
+        key = f"{self._prefix}/{object_id}"
+        logger.debug('_read_object; key: %s, prefix %s', key, self._prefix)
 
         try:
             obj = self.get_object(object_id)
-            db_metrics.put_duration(__name__, '_read_object', dt.now(timezone.utc) - t0)
+            db_metrics.put_duration(__name__, '_read_object', dt.now(UTC) - t0)
             return obj.object_content
         except Exception as exc:
             logger.info(exc)
 
         try:
             obj = self._from_s3(object_id)
-            db_metrics.put_duration(__name__, '_read_object', dt.now(timezone.utc) - t0)
+            db_metrics.put_duration(__name__, '_read_object', dt.now(UTC) - t0)
             return obj
         except Exception as exc:
             logger.warning(exc)
@@ -319,13 +318,13 @@ class BaseDynamoDBData(BaseData):
             body (dict): dict to be serialised to JSON
         """
 
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         identity = ToshiIdentity.get(self._prefix)  # first time round is handled in get_next_id()
 
         # TODO: make a transacion conditional check (maybe)
         if not identity.object_id == object_id:
             raise graphql_api.dynamodb.DynamoWriteConsistencyError(
-                F"object ids are not consistent!) {(identity.object_id, object_id)}"
+                f"object ids are not consistent!) {(identity.object_id, object_id)}"
             )
 
         # We've been caught out by Schema classes that are not json-serialisable (the ENUM issue).
@@ -338,11 +337,11 @@ class BaseDynamoDBData(BaseData):
                 " check that all enums and types are json serialisable!"
             )
             logging.error(msg)
-            raise graphql.GraphQLError(f'{__name__}._write_object() method failed with exception. %s' % msg)
+            raise graphql.GraphQLError(f'{__name__}._write_object() method failed with exception. %s' % msg) from None
 
         toshi_object = self._model(object_id=str(object_id), object_type=body['clazz_name'], object_content=body)
 
-        logger.debug(f"toshi_object: {toshi_object}")
+        logger.debug("toshi_object: %s", toshi_object)
 
         if DB_READ_ONLY:
             raise RuntimeError(f"Aborting write operation, API config has `DB_READ_ONLY` == {DB_READ_ONLY}")
@@ -351,16 +350,16 @@ class BaseDynamoDBData(BaseData):
                 transaction.update(identity, actions=[ToshiIdentity.object_id.add(1)])
                 transaction.save(toshi_object)
 
-        logger.info(f"toshi_object: object_id {object_id} object_type: {body['clazz_name']}")
+        logger.info("toshi_object: object_id %s object_type: %s", object_id, body['clazz_name'])
 
-        db_metrics.put_duration(__name__, '_write_object', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, '_write_object', dt.now(UTC) - t0)
         es_key = f"{self._prefix}_{object_id}"
         self._db_manager.search_manager.index_document(es_key, body)
 
     @backoff.on_exception(backoff.expo, pynamodb.exceptions.TransactWriteError, max_time=60, on_backoff=backoff_hdlr)
     def transact_update(self, object_id, object_type, body):
-        t0 = dt.now(timezone.utc)
-        logger.info("%s.update: %s : %s" % (object_type, object_id, str(body)))
+        t0 = dt.now(UTC)
+        logger.info("%s.update: %s : %s", object_type, object_id, str(body))
 
         model = self._model.get(object_id)
         assert model.object_type == body.get('clazz_name')
@@ -369,7 +368,7 @@ class BaseDynamoDBData(BaseData):
 
         es_key = f"{self._prefix}_{object_id}"
         self._db_manager.search_manager.index_document(es_key, replace_enums(body))
-        db_metrics.put_duration(__name__, 'transact_update', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'transact_update', dt.now(UTC) - t0)
 
     @backoff.on_exception(
         backoff.expo, graphql_api.dynamodb.DynamoWriteConsistencyError, max_time=60, on_backoff=backoff_hdlr
@@ -386,15 +385,15 @@ class BaseDynamoDBData(BaseData):
         Raises:
             ValueError: invalid data exception
         """
-        logger.info(f"create() {clazz_name} {kwargs} for model class : {self._model}")
+        logger.info("create() %s %s for model class : %s", clazz_name, kwargs, self._model)
 
         try:
             clazz = getattr(import_module('graphql_api.schema'), clazz_name)
         except AttributeError:
             # Did you forget to import the class in `graphql_api.schema.__init__` ?
             logger.error(
-                f"The class {clazz_name}` is not found in `graphql_api.schema`."
-                "Check your `graphql_api.schema.__init__.py` !"
+                "The class %s` is not found in `graphql_api.schema`.Check your `graphql_api.schema.__init__.py` !",
+                clazz_name,
             )
             raise
 
@@ -420,24 +419,26 @@ class BaseDynamoDBData(BaseData):
         logger.debug(object_instance.__class__)
         logger.debug(type(object_instance))
         logger.debug(dir(object_instance))
-        logger.debug(f" TODICT: {graphql.utilities.ast_to_dict(object_instance)}")
+        logger.debug(" TODICT: %s", graphql.utilities.ast_to_dict(object_instance))
 
         try:
             self._write_object(next_id, self._prefix, new_body(next_id, replace_enums(kwargs)))
         except Exception as err:
-            logger.error(F"failed to write {clazz_name} {kwargs} {err}")
+            logger.error("failed to write %s %s %s", clazz_name, kwargs, err)
             raise
 
-        logger.info(f"create() object_instance: {object_instance}")
+        logger.info("create() object_instance: %s", object_instance)
         return object_instance
 
     def get_all(self, object_type, limit: int, after: str):
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         after = after or "-1"
-        logger.info(f"get_all, {self._model} {self.prefix} {object_type} after {after}")
+        logger.info("get_all, %s %s %s after %s", self._model, self.prefix, object_type, after)
         for object_meta in self._model.model_id_index.query(
-            object_type, self._model.object_id > after, limit=limit  # range condition
+            object_type,
+            self._model.object_id > after,
+            limit=limit,  # range condition
         ):
             yield ObjectIdentityRecord(object_meta.object_type, object_meta.object_id)
 
-        db_metrics.put_duration(__name__, 'get_all', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'get_all', dt.now(UTC) - t0)

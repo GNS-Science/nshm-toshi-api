@@ -7,10 +7,11 @@ These cover the cases the old regex could not handle:
   - anonymous vs named operations
   - malformed documents (fail-closed behaviour)
 """
+
 from auth.middleware import _is_mutation
 
-
 # ── Plain queries and mutations ───────────────────────────────────────────────
+
 
 def test_simple_query_is_not_mutation():
     assert _is_mutation('{ generalTasks { edges { node { id } } } }') is False
@@ -29,6 +30,7 @@ def test_named_mutation():
 
 
 # ── Cases the regex got wrong ─────────────────────────────────────────────────
+
 
 def test_mutation_in_string_literal_is_not_mutation():
     """'mutation' inside a string value must not trigger write-scope enforcement."""
@@ -70,6 +72,7 @@ def test_multi_op_no_operation_name_returns_true_if_any_mutation():
 
 
 # ── Edge cases ────────────────────────────────────────────────────────────────
+
 
 def test_empty_query_is_not_mutation():
     assert _is_mutation('') is False

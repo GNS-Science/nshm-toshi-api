@@ -9,8 +9,8 @@ The core class AutomationTask implements the `graphql_api.schema.task.Task` Inte
 """
 
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -129,7 +129,7 @@ class AutomationTask(graphene.ObjectType):
     @staticmethod
     def resolve_inversion_solution(root, info, **args):
 
-        log.info(f"resolve_inversion_solution {root.task_type}")
+        log.info("resolve_inversion_solution %s", root.task_type)
         resolvable_types = [
             TaskSubType.INVERSION.value,
             TaskSubType.SCALE_SOLUTION.value,
@@ -140,10 +140,10 @@ class AutomationTask(graphene.ObjectType):
         if not len(root.files):
             return
         if root.task_type not in resolvable_types:
-            log.info(f"Cannot resove inversion_soluton for {root.task_type}")
+            log.info("Cannot resove inversion_soluton for %s", root.task_type)
             return
 
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         res = None
 
         # TODO this is an ugly hack....
@@ -164,10 +164,10 @@ class AutomationTask(graphene.ObjectType):
             file = get_data_manager().file.get_one(file_relation.file_id)
             if 'InversionSolution' in file.__class__.__name__:
                 res = file
-                log.info(f"resolved inversion_solution file {file}")
+                log.info("resolved inversion_solution file %s", file)
                 break
 
-        db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'AutomationTask.resolve_inversion_solution', dt.now(UTC) - t0)
         return res
 
 
@@ -192,12 +192,11 @@ class CreateAutomationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
 
         # When a gt_id is set, perform validations against the GT
         gt_id = input.get("general_task_id")
         if gt_id:
-
             object_type, _id = from_global_id(gt_id)
             if not object_type == "GeneralTask":
                 raise ValueError(f"the given id {gt_id} type: {object_type} is not a `GeneralTask`")
@@ -216,12 +215,11 @@ class CreateAutomationTask(graphene.Mutation):
             at_arguments_map = {obj['k']: obj['v'] for obj in tmp_at_instance.arguments}
             gt_argument_lists_map = {obj['k']: obj['v'] for obj in gt_instance.argument_lists}
 
-            log.debug(f"at_arguments_map: {at_arguments_map}")
-            log.debug(f"gt_argument_lists_map: {gt_argument_lists_map}")
+            log.debug("at_arguments_map: %s", at_arguments_map)
+            log.debug("gt_argument_lists_map: %s", gt_argument_lists_map)
 
             # Iterate over the GT swept args, validating the AT arguments
             for swept_key in gt_instance.resolve_swept_arguments(info):
-
                 # ONE: the swept key must exist in our AT arguments
                 if swept_key not in at_arguments_map.keys():
                     raise ValueError(
@@ -236,8 +234,8 @@ class CreateAutomationTask(graphene.Mutation):
                     )
 
         task_result = get_data_manager().thing.create('AutomationTask', **input)
-        log.info(f"task_result: {task_result}")
-        db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.now(timezone.utc) - t0)
+        log.info("task_result: %s", task_result)
+        db_metrics.put_duration(__name__, 'CreateAutomationTask.mutate', dt.now(UTC) - t0)
         return CreateAutomationTask(task_result=task_result)
 
 
@@ -249,9 +247,9 @@ class UpdateAutomationTask(graphene.Mutation):
 
     @classmethod
     def mutate(cls, root, info, input):
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         log.debug("mutate: ", input)
         thing_id = input.pop('task_id')
         task_result = get_data_manager().thing.update('AutomationTask', thing_id, **input)
-        db_metrics.put_duration(__name__, 'UpdateAutomationTask.mutate', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'UpdateAutomationTask.mutate', dt.now(UTC) - t0)
         return UpdateAutomationTask(task_result=task_result)

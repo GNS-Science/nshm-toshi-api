@@ -1,10 +1,5 @@
 """Test demonstrationg that we can cast old file data into RuptureSet objects when appropriate."""
 
-import datetime
-import json
-from copy import copy
-from unittest import mock
-
 import pytest
 from graphql_relay import from_global_id, to_global_id
 
