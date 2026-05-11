@@ -20,6 +20,7 @@ test_users.json format:
 Users are NOT managed by CDK (environment-specific, credentials gitignored).
 They are deleted automatically when the User Pool is removed via `cdk destroy`.
 """
+
 import json
 from pathlib import Path
 
@@ -34,8 +35,7 @@ USERS_FILE = AUTH_DIR / 'test_users.json'
 def load_config() -> dict:
     if not AUTH_CONFIG_FILE.exists():
         raise click.ClickException(
-            f'auth_config.json not found at {AUTH_CONFIG_FILE}.\n'
-            'Run: python auth/post_deploy.py'
+            f'auth_config.json not found at {AUTH_CONFIG_FILE}.\nRun: python auth/post_deploy.py'
         )
     with open(AUTH_CONFIG_FILE) as f:
         return json.load(f)
@@ -44,8 +44,7 @@ def load_config() -> dict:
 def load_users() -> list:
     if not USERS_FILE.exists():
         raise click.ClickException(
-            f'test_users.json not found at {USERS_FILE}.\n'
-            'Create the file with user definitions (gitignored).'
+            f'test_users.json not found at {USERS_FILE}.\nCreate the file with user definitions (gitignored).'
         )
     with open(USERS_FILE) as f:
         return json.load(f)

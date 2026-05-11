@@ -136,9 +136,7 @@ def validate_cognito_token(token: str) -> tuple[str, str, dict]:
     if client_id:
         allowed_ids = {c.strip() for c in client_id.split(',')}
         if token_client_id not in allowed_ids:
-            raise jwt.InvalidAudienceError(
-                f'client_id mismatch: expected one of {allowed_ids}, got {token_client_id}'
-            )
+            raise jwt.InvalidAudienceError(f'client_id mismatch: expected one of {allowed_ids}, got {token_client_id}')
 
     principal_id = payload.get('username') or payload.get('sub', 'unknown')
     scopes = payload.get('scope', '')
