@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.7.0] - 2026-05-11
 
 ### Added
  - Cognito User Pool, resource server, domain, app clients (scientist + automation), user groups,
@@ -32,9 +32,15 @@
  - `auth/IMPLEMENTATION_PLAN.md` Phase 1 provisioning steps updated to reflect `sls deploy` workflow
 
 ### Deployment
- - Deployed to dev (account 461564345538, profile `nshm-admin`) — 8/8 E2E tests passing
+ - Deployed to dev (account 461564345538, profile `nshm-admin`) — 9/9 E2E tests passing
  - Full manual API verification: introspection, queries, and mutations all working behind
    JWT authorizer with scope enforcement
+ - Removed `apiGateway.apiKeys` (TempApiKey) — API Gateway was consuming `x-api-key` header
+   before it reached the Lambda authorizer; removing it allows bare `x-api-key` to work
+ - Set `identitySource: ''` so API Gateway invokes the authorizer for all requests regardless
+   of which headers are present
+ - `LEGACY_API_KEY` reads from `NZSHM22_TOSHI_API_KEY` env var (already in CI) with fallback
+   to `LEGACY_API_KEY` for local deploys — no shared workflow changes needed
 
 ### Changed (previous)
  - Removed "spike" references from `auth/` module docstrings, comments, and import examples
