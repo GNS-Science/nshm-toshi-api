@@ -3,9 +3,10 @@
 This module contains the schema definition for a AggregateInversionSolution.
 
 """
+
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -90,10 +91,8 @@ class CreateAggregateInversionSolution(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.now(timezone.utc)
-        log.info(f"CreateAggregateInversionSolution mutate_and_get_payload {kwargs}")
+        t0 = dt.now(UTC)
+        log.info("CreateAggregateInversionSolution mutate_and_get_payload %s", kwargs)
         solution = get_data_manager().file.create('AggregateInversionSolution', **kwargs)
-        db_metrics.put_duration(
-            __name__, 'CreateAggregateInversionSolution.mutate_and_get_payload', dt.now(timezone.utc) - t0
-        )
+        db_metrics.put_duration(__name__, 'CreateAggregateInversionSolution.mutate_and_get_payload', dt.now(UTC) - t0)
         return CreateAggregateInversionSolution(solution=solution, ok=True)

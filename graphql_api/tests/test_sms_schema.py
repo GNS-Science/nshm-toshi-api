@@ -12,7 +12,6 @@ from unittest import mock
 from dateutil.tz import tzutc
 from graphene.test import Client
 
-import graphql_api.data  # for mocking
 from graphql_api.schema import root_schema
 
 CREATE = '''
@@ -73,7 +72,7 @@ class TestCreateSMS(unittest.TestCase):
                 }
             }
         '''
-        startdate = dt.datetime.now()  # no timesone
+        dt.datetime.now()  # no timesone
         executed = self.client.execute(qry)
         print(executed)
         assert 'September 5th, 1999' in executed['errors'][0]['message']
@@ -97,13 +96,14 @@ class TestCreateSMS(unittest.TestCase):
         )
 
 
-TASKZERO = lambda _self, _id: {
-    "id": "0",
-    "started": "2020-10-30T09:15:00+00:00",
-    "duration": 600.0,
-    "input_files": ["0"],
-    "arguments": {"max_jump_distance": 55.5, "max_sub_section_length": 2.0, "max_cumulative_azimuth": 590.0},
-}
+def TASKZERO(_self, _id):
+    return {
+        "id": "0",
+        "started": "2020-10-30T09:15:00+00:00",
+        "duration": 600.0,
+        "input_files": ["0"],
+        "arguments": {"max_jump_distance": 55.5, "max_sub_section_length": 2.0, "max_cumulative_azimuth": 590.0},
+    }
 
 
 @mock.patch('graphql_api.data.BaseDynamoDBData.get_next_id', lambda self: 0)

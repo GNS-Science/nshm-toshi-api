@@ -101,30 +101,28 @@ def mock_dynamodb_read(monkeypatch):
 def test_scaled_inversion_example(graphene_client, mock_dynamodb_read):
     """Test fgor modern DynamoDB objects"""
     QRY = """
-        query A {
-          node(id:"%s") {
+        query A {{
+          node(id:"{}") {{
             __typename
-            ...on ScaledInversionSolution {
+            ...on ScaledInversionSolution {{
               __typename
               id
-              source_solution {
+              source_solution {{
                 __typename
-                ... on Node {
+                ... on Node {{
                     id
-                }
-              }
-              predecessors {
+                }}
+              }}
+              predecessors {{
                 typename
                 id
                 depth
                 relationship
-              }
-            }
-          }
-        }
-    """ % to_global_id(
-        'ScaledInversionSolution', 120837
-    )
+              }}
+            }}
+          }}
+        }}
+    """.format(to_global_id('ScaledInversionSolution', 120837))
 
     result = graphene_client.execute(QRY)
     print(result)

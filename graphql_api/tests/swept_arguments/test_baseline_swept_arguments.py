@@ -10,7 +10,6 @@ import pytest
 from moto import mock_aws
 
 import graphql_api.data.data_manager  # for monkeypatch
-from graphql_api.dynamodb.models import migrate
 
 
 @pytest.fixture(autouse=True)
@@ -71,7 +70,7 @@ def test_swept_arguments_are_implied_from_GT_argument_lists(graphql_client, crea
     )
     print(gt1)
     general_task = gt1['data']['create_general_task']['general_task']
-    gt_id = general_task['id']
+    general_task['id']
 
     # argument_lists
     assert dict(k="unswept_arg", v=["A"]) in general_task['argument_lists']

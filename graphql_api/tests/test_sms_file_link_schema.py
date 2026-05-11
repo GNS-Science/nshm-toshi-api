@@ -14,7 +14,6 @@ from graphene.test import Client
 from graphql_relay import from_global_id
 from moto import mock_aws
 
-import graphql_api.data  # for mocking
 from graphql_api.config import REGION, S3_BUCKET_NAME
 from graphql_api.data import data_manager
 from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
@@ -96,7 +95,7 @@ class TestCreateSMSFile(unittest.TestCase):
 
         # from hashlib import sha256, md5
 
-        filedata = BytesIO("a line\nor two".encode())
+        filedata = BytesIO(b"a line\nor two")
         digest = "sha256(filedata.read()).hexdigest()"
         filedata.seek(0)  # important!
         size = len(filedata.read())

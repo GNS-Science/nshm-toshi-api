@@ -194,7 +194,7 @@ class TestTimeDependentSolution(unittest.TestCase, SetupHelpersMixin):
             }'''
 
         # from hashlib import sha256, md5
-        filedata = BytesIO("a line\nor two".encode())
+        filedata = BytesIO(b"a line\nor two")
         digest = "sha256(filedata.read()).hexdigest()"
         filedata.seek(0)  # important!
         size = len(filedata.read())

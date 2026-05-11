@@ -3,9 +3,10 @@
 This module contains the schema definition for a RuptureSet.
 
 """
+
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import graphene
 from graphene import relay
@@ -80,12 +81,12 @@ class CreateRuptureSet(relay.ClientIDMutation):
 
     @classmethod
     def mutate_and_get_payload(cls, root, info, **kwargs):
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
 
-        log.debug(f'mutate_and_get_payload: {kwargs}')
+        log.debug('mutate_and_get_payload: %s', kwargs)
         produced_by = kwargs.get('produced_by')
         assert from_global_id(produced_by)[0] == 'RuptureGenerationTask'
 
         rupture_set = get_data_manager().file.create('RuptureSet', **kwargs)
-        db_metrics.put_duration(__name__, 'CreateRuptureSet.mutate_and_get_payload', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'CreateRuptureSet.mutate_and_get_payload', dt.now(UTC) - t0)
         return CreateRuptureSet(rupture_set=rupture_set, ok=True)

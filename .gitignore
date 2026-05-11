@@ -103,3 +103,6 @@ package-lock.json
 
 #VSCode settings
 .vscode
+auth/test_users.json
+.llm/.session
+auth/auth_config.json

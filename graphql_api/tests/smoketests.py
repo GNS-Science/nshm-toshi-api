@@ -30,7 +30,7 @@ class SmokeTest:
         self.expected = expected
         self.query_fragment = query_fragment
 
-        headers = {"Authorization": "Bearer %s" % auth_token}
+        headers = {"Authorization": f"Bearer {auth_token}"}
         headers = {"x-api-key": auth_token}
         transport = RequestsHTTPTransport(url=api_url, headers=headers, use_json=True)
 

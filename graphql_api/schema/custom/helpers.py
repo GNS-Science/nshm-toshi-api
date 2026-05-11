@@ -1,7 +1,7 @@
 import copy
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 from importlib import import_module
 
 import graphql.language.ast
@@ -22,7 +22,7 @@ def resolve_node(root, info, id_field, dm_type):
     Optimisation function, looks at the query and avoids a fetch if
     we only want to resolve the id field.
     """
-    t0 = dt.now(timezone.utc)
+    t0 = dt.now(UTC)
     assert dm_type in ["table", "thing", 'file']
 
     node_id = getattr(root, id_field)
@@ -31,28 +31,28 @@ def resolve_node(root, info, id_field, dm_type):
 
     _type, nid = from_global_id(node_id)
 
-    log.debug(f"resolve_node() resolving for type {_type}, id: {nid}, id_field: {id_field}, dm_type: {dm_type}")
+    log.debug("resolve_node() resolving for type %s, id: %s, id_field: %s, dm_type: %s", _type, nid, id_field, dm_type)
 
     def typename_field(selections):
         for selection in selections:
-            log.debug(f'selection {type(selection)}')
+            log.debug('selection %s', type(selection))
             if isinstance(selection, graphql.language.ast.InlineFragmentNode):
                 continue
             if selection.name.value == '__typename':
                 return selection
 
     selections = list(info.field_nodes[0].selection_set.selections)
-    log.debug(f"resolve_node selections A {selections}")
+    log.debug("resolve_node selections A %s", selections)
     type_name_field = typename_field(selections)
     if type_name_field:
         selections.remove(type_name_field)
 
-    log.debug(f"resolve_node selections B {selections}")
+    log.debug("resolve_node selections B %s", selections)
     if len(selections) == 1 and getattr(selections[0], "type_condition", None):
         """We have a sub-selection InlineFragment (e.g `... on Node { ...`, so drill in one more level"""
         selections = copy.copy(selections[0].selection_set.selections)
 
-    log.debug(f"resolve_node selections C {selections}")
+    log.debug("resolve_node selections C %s", selections)
 
     if len(selections) == 1 and (selections[0].name.value == 'id'):
         # create an instance with just the id attribute set
@@ -60,10 +60,9 @@ def resolve_node(root, info, id_field, dm_type):
         clazz = getattr(import_module('graphql_api.schema'), _type)
         res = clazz(id=nid)
     else:
-
         res = getattr(get_data_manager(), dm_type).get_one(nid)
 
-    log.debug(f"resolve_node() returning  {res}")
+    log.debug("resolve_node() returning  %s", res)
 
-    db_metrics.put_duration(__name__, 'resolve_node', dt.now(timezone.utc) - t0)
+    db_metrics.put_duration(__name__, 'resolve_node', dt.now(UTC) - t0)
     return res

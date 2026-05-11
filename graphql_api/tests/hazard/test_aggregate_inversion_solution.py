@@ -20,7 +20,6 @@ from graphql_api.schema.search_manager import SearchManager
 
 @mock_aws
 class TestAggregateInversionSolution(unittest.TestCase, SetupHelpersMixin):
-
     @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
     def setUp(self, mock_es_class):
         self.client = Client(root_schema)

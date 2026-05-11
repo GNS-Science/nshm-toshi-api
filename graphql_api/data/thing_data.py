@@ -5,7 +5,6 @@ Object manager for Thing schema objects
 import datetime as dt
 import logging
 from importlib import import_module
-from typing import Dict
 
 import graphene
 from benedict import benedict
@@ -24,12 +23,12 @@ class ThingData(BaseDynamoDBData):
     """
 
     def create(self, clazz_name, **kwargs):
-        logger.info(f"ThingData.create() kwargs: {kwargs}")
+        logger.info("ThingData.create() kwargs: %s", kwargs)
         if not kwargs['created'].tzname():  # must have a timezone set
             raise ValueError("'created' DateTime() field must have a timezone set.")
         return super().create(clazz_name, **kwargs)
 
-    def migrate_old_thing_object(self, thing: Dict) -> Dict:
+    def migrate_old_thing_object(self, thing: dict) -> dict:
         """
         Migrate to the new_simplified object from the old form
 
@@ -72,7 +71,7 @@ class ThingData(BaseDynamoDBData):
         Returns:
             TYPE: the Thing object
         """
-        logger.info(f"update {clazz_name} {thing_id} {kwargs}")
+        logger.info("update %s %s %s", clazz_name, thing_id, kwargs)
         _type, this_id = from_global_id(thing_id)
         # print('thingupdate$$$$$$$$$$$', this_id, thing_id, clazz_name)
         assert _type == clazz_name
@@ -86,13 +85,13 @@ class ThingData(BaseDynamoDBData):
         jsondata = self.migrate_old_thing_object(self.get_one_raw(this_id))
         body = benedict(jsondata)
         body.merge(kwargs)
-        logger.debug("ThingData.update: %s : %s" % (this_id, str(body)))
+        logger.debug("ThingData.update: %s : %s", this_id, str(body))
         self.transact_update(this_id, _type, body)
         return self.from_json(body)
 
     def add_file_relation(self, thing_id, file_id, file_role):
         obj = self._read_object(thing_id)
-        logger.info("add_file_relation: thing_id: %s, file_id %s, " % (thing_id, file_id))
+        logger.info("add_file_relation: thing_id: %s, file_id %s, ", thing_id, file_id)
         try:
             obj['files'].append({'file_id': file_id, 'file_role': file_role})
         except (KeyError, AttributeError):
@@ -102,7 +101,7 @@ class ThingData(BaseDynamoDBData):
 
     @staticmethod
     def from_json(jsondata) -> graphene.ObjectType:
-        logger.debug("from_json: %s" % str(jsondata))
+        logger.debug("from_json: %s", str(jsondata))
 
         created = jsondata.get('created')
         if created and not isinstance(created, dt.datetime):
@@ -115,5 +114,5 @@ class ThingData(BaseDynamoDBData):
         clazz_name = jsondata.pop('clazz_name')
         clazz = getattr(import_module('graphql_api.schema'), clazz_name)
 
-        logger.debug(f'from_json() CLAZZ from json: {jsondata}')
+        logger.debug('from_json() CLAZZ from json: %s', jsondata)
         return clazz(**jsondata)

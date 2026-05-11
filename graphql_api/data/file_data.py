@@ -5,8 +5,8 @@ The object manager for File (and subclassed) schema objects
 import copy
 import json
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 from importlib import import_module
 
 from graphql_api.cloudwatch import ServerlessMetricWriter
@@ -48,11 +48,11 @@ class FileData(BaseDynamoDBData):
         Returns:
             File: the File object
         """
-        logger.info(f"FileData.create {kwargs}")
+        logger.info("FileData.create %s", kwargs)
         new_instance = super().create(clazz_name, **kwargs)
-        data_key = "%s/%s/%s" % (self._prefix, new_instance.id, new_instance.file_name)
+        data_key = f"{self._prefix}/{new_instance.id}/{new_instance.file_name}"
 
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         self.s3_bucket.put_object(Key=data_key, Body="placeholder_to_be_overwritten")
         post_data = self.s3_client.generate_presigned_post(
             Bucket=self._bucket_name,
@@ -69,7 +69,7 @@ class FileData(BaseDynamoDBData):
             ],
         )
 
-        db_metrics.put_duration(__name__, 'create[placeholder+generate-presigned-post]', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'create[placeholder+generate-presigned-post]', dt.now(UTC) - t0)
 
         new_instance.post_url = json.dumps(post_data['fields'])
 
@@ -92,7 +92,7 @@ class FileData(BaseDynamoDBData):
         """
         jsondata = self.get_one_raw(file_id)
 
-        logger.debug(f"FileData.get_one(), jsondata: {jsondata}")
+        logger.debug("FileData.get_one(), jsondata: %s", jsondata)
 
         # more migration hacks
         if not jsondata['clazz_name'] == expected_class:
@@ -110,9 +110,9 @@ class FileData(BaseDynamoDBData):
         Returns:
             string: a temporary URL that may be used to download the raw file data.
         """
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         file = self.get_one(_id)
-        key = "%s/%s/%s" % (self._prefix, _id, file.file_name)
+        key = f"{self._prefix}/{_id}/{file.file_name}"
         url = self.s3_client.generate_presigned_url(
             'get_object',
             Params={
@@ -121,7 +121,7 @@ class FileData(BaseDynamoDBData):
             },
             ExpiresIn=3600,
         )
-        db_metrics.put_duration(__name__, 'get_presigned_url', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'get_presigned_url', dt.now(UTC) - t0)
         return url
 
     @staticmethod
@@ -130,7 +130,7 @@ class FileData(BaseDynamoDBData):
         # we must not mutate the original data
         jsondata = copy.copy(jsondata)
 
-        logger.debug("from_json: %s" % str(jsondata))
+        logger.debug("from_json: %s", str(jsondata))
 
         # datetime comversions
         created = jsondata.get('created')
@@ -144,10 +144,10 @@ class FileData(BaseDynamoDBData):
         # this deals with graphql_api/tests/legacy/test_inversion_solution_file_migration_bug.py
         if clazz_name == "File" and (jsondata.get('tables') or jsondata.get('metrics')):
             # this is actually an InversionSolution
-            logger.info("from_json migration to InversionSolution of: %s" % str(jsondata))
-            clazz = getattr(import_module('graphql_api.schema'), 'InversionSolution')
+            logger.info("from_json migration to InversionSolution of: %s", str(jsondata))
+            clazz = import_module('graphql_api.schema').InversionSolution
 
-        logger.debug("from_json clazz: %s" % str(clazz))
+        logger.debug("from_json clazz: %s", str(clazz))
 
         ## produced_by_id -> produced_by schema migration
         produced_by_id = jsondata.pop('produced_by_id', None)
@@ -166,7 +166,7 @@ class FileData(BaseDynamoDBData):
                 jsondata['fault_models'] = [meta_map['fault_model']]
 
                 # this can now be cast to a RuptureSet
-                logger.info("from_json migration to RuptureSet: %s" % str(jsondata))
-                clazz = getattr(import_module('graphql_api.schema'), 'RuptureSet')
+                logger.info("from_json migration to RuptureSet: %s", str(jsondata))
+                clazz = import_module('graphql_api.schema').RuptureSet
 
         return clazz(**jsondata)

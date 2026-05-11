@@ -128,9 +128,9 @@ class TestOpenquakeSourcesNrml(unittest.TestCase, SetupHelpersMixin):
         result = self.client.execute(query, variable_values=dict(id=ss_id))
         print(result)
 
-        delta = dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(
-            result['data']['node']['created']
-        ).astimezone(dt.timezone.utc)
+        delta = dt.datetime.now(dt.UTC) - dt.datetime.fromisoformat(result['data']['node']['created']).astimezone(
+            dt.UTC
+        )
         max_delta = dt.timedelta(seconds=1)
         self.assertTrue(delta < max_delta)
 

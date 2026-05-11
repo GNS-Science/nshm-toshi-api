@@ -3,14 +3,11 @@ Test API function for GeneralTask
 using moto mocking
 """
 
-import datetime as dt
 import unittest
 from unittest import mock
 
 import boto3
-from dateutil.tz import tzutc
 from graphene.test import Client
-from graphql_relay import from_global_id
 from moto import mock_aws
 from pynamodb.connection.base import Connection  # for mocking
 
@@ -60,25 +57,22 @@ class TestScaledInversionSolution(unittest.TestCase, SetupHelpersMixin):
 
     def test_nodes_query(self):
         print("self.scaled_solution_id", self.scaled_solution_id)
-        qry = (
-            '''
-        query q0 {
-          nodes(id_in: ["%s"]) {
+        qry = f'''
+        query q0 {{
+          nodes(id_in: ["{self.scaled_solution_id}"]) {{
             ok
-            result {
-              edges {
-                node {
+            result {{
+              edges {{
+                node {{
                   __typename
-                  ... on Node {
+                  ... on Node {{
                     id
-                  }
-                }
-              }
-            }
-          }
-        }'''
-            % self.scaled_solution_id
-        )
+                  }}
+                }}
+              }}
+            }}
+          }}
+        }}'''
 
         print(qry)
         executed = self.client.execute(qry)
@@ -90,46 +84,43 @@ class TestScaledInversionSolution(unittest.TestCase, SetupHelpersMixin):
 
     def test_nodes_query_expand_solution(self):
         print("self.scaled_solution_id", self.scaled_solution_id)
-        qry = (
-            '''
-        query q0 {
-          nodes(id_in: ["%s"]) {
+        qry = f'''
+        query q0 {{
+          nodes(id_in: ["{self.scaled_solution_id}"]) {{
             ok
-            result {
-              edges {
-                node {
+            result {{
+              edges {{
+                node {{
                   __typename
-                  ... on Node {
+                  ... on Node {{
                     id
-                  }
-                  ... on InversionSolutionInterface {
-                    produced_by { ... on Node{id} }
-                  }
-                  # ... on PredecessorsInterface {
-                  #   predecessors {
+                  }}
+                  ... on InversionSolutionInterface {{
+                    produced_by {{ ... on Node{{id}} }}
+                  }}
+                  # ... on PredecessorsInterface {{
+                  #   predecessors {{
                   #       typename
                   #       relationship
-                  #       node {
+                  #       node {{
                   #           __typename
-                  #           ... on Node{ id }
-                  #       }
+                  #           ... on Node{{ id }}
+                  #       }}
                   #       depth
-                  #   }
-                  # }
-                  ...  on FileInterface {
+                  #   }}
+                  # }}
+                  ...  on FileInterface {{
                     file_name
                     file_size
-                  }
-                  ... on ScaledInversionSolution {
-                    source_solution { ... on Node{id} }
-                  }
-                }
-              }
-            }
-          }
-        }'''
-            % self.scaled_solution_id
-        )
+                  }}
+                  ... on ScaledInversionSolution {{
+                    source_solution {{ ... on Node{{id}} }}
+                  }}
+                }}
+              }}
+            }}
+          }}
+        }}'''
 
         print(qry)
         executed = self.client.execute(qry)
@@ -145,48 +136,45 @@ class TestScaledInversionSolution(unittest.TestCase, SetupHelpersMixin):
 
     def test_nodes_query_expand_solution_task_hierarchy(self):
         print("self.scaled_solution_id", self.scaled_solution_id)
-        qry = (
-            '''
-        query q0 {
-          nodes(id_in: ["%s"]) {
+        qry = f'''
+        query q0 {{
+          nodes(id_in: ["{self.scaled_solution_id}"]) {{
             ok
-            result {
-              edges {
-                node {
+            result {{
+              edges {{
+                node {{
                   __typename
-                  ... on Node {
+                  ... on Node {{
                     id
-                  }
-                  ... on InversionSolutionInterface {
-                    produced_by {
+                  }}
+                  ... on InversionSolutionInterface {{
+                    produced_by {{
                         __typename
-                        ... on Node{id} # the AutomationTask
-                        ... on AutomationTaskInterface {
-                            parents {
-                                edges {
-                                    node {
-                                        parent {
-                                            ... on Node { id } # the GT id
-                                            ... on GeneralTask {
-                                                meta {k v}
+                        ... on Node{{id}} # the AutomationTask
+                        ... on AutomationTaskInterface {{
+                            parents {{
+                                edges {{
+                                    node {{
+                                        parent {{
+                                            ... on Node {{ id }} # the GT id
+                                            ... on GeneralTask {{
+                                                meta {{k v}}
                                                 title
                                                 description
                                                 created
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }'''
-            % self.scaled_solution_id
-        )
+                                            }}
+                                        }}
+                                    }}
+                                }}
+                            }}
+                        }}
+                    }}
+                  }}
+                }}
+              }}
+            }}
+          }}
+        }}'''
 
         print(qry)
         executed = self.client.execute(qry)

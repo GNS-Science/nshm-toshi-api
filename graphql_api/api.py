@@ -22,7 +22,7 @@ ref https://fangpenlin.com/posts/2012/08/26/good-logging-practice-in-python/
 
 """
 if os.path.exists(LOGGING_CFG):
-    with open(LOGGING_CFG, 'rt') as f:
+    with open(LOGGING_CFG) as f:
         config = yaml.safe_load(f.read())
     logging.config.dictConfig(config)
 else:
@@ -51,6 +51,13 @@ CORS(app)
 
 # ensure any tables exist ...
 migrate()
+
+try:
+    from auth.middleware import register_auth_middleware
+
+    register_auth_middleware(app)
+except ImportError:
+    logger.debug('auth.middleware not available — skipping auth middleware')
 
 app.add_url_rule(
     '/graphql',

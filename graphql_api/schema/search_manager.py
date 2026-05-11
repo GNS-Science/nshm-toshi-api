@@ -3,8 +3,8 @@ Search Manager
 """
 
 import logging
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 
 import requests
 from elasticsearch7 import Elasticsearch, RequestsHttpConnection
@@ -31,14 +31,18 @@ class SearchManager:
         self._awsauth = awsauth
         self._endpoint = endpoint
         self._es_index = es_index
-        self._url = endpoint + '/' + es_index + '/' + TYPE + '/'
-        self.es = Elasticsearch(
-            hosts=[ES_ENDPOINT], http_auth=awsauth, verify_certs=True, connection_class=RequestsHttpConnection
-        )
+        self._enabled = bool(endpoint)
+        if self._enabled:
+            self._url = endpoint + '/' + es_index + '/' + TYPE + '/'
+            self.es = Elasticsearch(
+                hosts=[ES_ENDPOINT], http_auth=awsauth, verify_certs=True, connection_class=RequestsHttpConnection
+            )
 
     def index_document(self, key, document):
+        if not self._enabled:
+            return
         # Index the document
-        t0 = dt.now(timezone.utc)
+        t0 = dt.now(UTC)
         es_key = key.replace("/", "_")
 
         # >>> BEGIN_HACK
@@ -55,31 +59,33 @@ class SearchManager:
         try:
             # https://elasticsearch-py.readthedocs.io/en/v7.15.1/api.html?highlight=mapping#elasticsearch.Elasticsearch.index
             # index(index, body, doc_type=None, id=None, params=None, headers=None)
-            log.info(f' calling es.index() with {self._es_index}, {document}, {TYPE}, {es_key}')
+            log.info(' calling es.index() with %s, %s, %s, %s', self._es_index, document, TYPE, es_key)
             response = self.es.index(index=self._es_index, body=document, doc_type=TYPE, id=es_key)
-            log.info(f'es response {response}')
+            log.info('es response %s', response)
 
         except Exception as err:
-            log.warning(f'index_document raised err: {err}')
+            log.warning('index_document raised err: %s', err)
             raise
-        db_metrics.put_duration(__name__, 'index_document', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'index_document', dt.now(UTC) - t0)
 
     def search(self, term):
-        t0 = dt.now(timezone.utc)
+        if not self._enabled:
+            return []
+        t0 = dt.now(UTC)
 
         headers = {}  # "Content-Type": "application/json" }
         result = []
         try:
-            log.info(f"SearchManager.search({term})")
+            log.info("SearchManager.search(%s)", term)
             qurl = self._endpoint + '/' + self._es_index + '/_search?q=' + term
-            log.info(f"Query URL: {qurl}")
+            log.info("Query URL: %s", qurl)
             response = requests.get(qurl, auth=self._awsauth, headers=headers).json()
-            log.info(f"Query reponse: {response}")
+            log.info("Query reponse: %s", response)
             # print(response)
             # count = response['hits']['total']
             # print ("count",  count)
             for obj in response['hits']['hits']:
-                log.debug(f"hit: {(obj['_index'], obj['_type'], obj['_id'], obj['_score'])}")
+                log.debug("hit: %s", (obj['_index'], obj['_type'], obj['_id'], obj['_score']))
                 # if 'TaskData' in obj['_id']:
                 #     result.append(RuptureGenerationTask.from_json(obj['_source']))
                 # el
@@ -96,7 +102,7 @@ class SearchManager:
                     raise ValueError("unable to resolve, object id", obj['_source'])
 
         except Exception as err:
-            log.warning(f"search() raised err: {err}")
+            log.warning("search() raised err: %s", err)
 
-        db_metrics.put_duration(__name__, 'search', dt.now(timezone.utc) - t0)
+        db_metrics.put_duration(__name__, 'search', dt.now(UTC) - t0)
         return result

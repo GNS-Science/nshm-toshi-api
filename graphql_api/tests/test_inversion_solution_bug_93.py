@@ -4,7 +4,6 @@ from unittest import mock
 
 from graphene.test import Client
 
-import graphql_api.data  # for mocking
 from graphql_api.data.file_relation_data import FileRelationData
 from graphql_api.schema import root_schema
 

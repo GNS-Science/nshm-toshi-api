@@ -12,7 +12,6 @@ from unittest import mock
 from dateutil.tz import tzutc
 from graphene.test import Client
 
-import graphql_api.data  # for mocking
 from graphql_api.schema import root_schema
 
 CREATE_GT = '''
@@ -122,12 +121,14 @@ class IncrId:
         return self.next_id
 
 
-TASKMOCK = lambda _self, _id: {
-    "id": _id,
-    "clazz_name": "GeneralTask",
-    "created": "2020-10-30T09:15:00+00:00",
-    "title": "max_jump_distance",
-}
+def TASKMOCK(_self, _id):
+    return {
+        "id": _id,
+        "clazz_name": "GeneralTask",
+        "created": "2020-10-30T09:15:00+00:00",
+        "title": "max_jump_distance",
+    }
+
 
 RUPTMOCK = {
     'id': 0,
@@ -214,7 +215,7 @@ class TestGeneralTaskBug29(unittest.TestCase):
         )
 
         print('GTLINK ', gt_link_result)
-        assert gt_link_result['data']['create_task_relation']['ok'] == True
+        assert gt_link_result['data']['create_task_relation']['ok']
 
         with mock.patch('graphql_api.data.BaseDynamoDBData._read_object', side_effect=[RUPTMOCK, GENMOCK, GENMOCK]):
             ruptgen_parent_query = self.client.execute(

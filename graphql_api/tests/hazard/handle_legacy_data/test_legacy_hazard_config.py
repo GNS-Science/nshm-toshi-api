@@ -1,12 +1,7 @@
 """Test to show that legacy data from the PROD datastore is handled OK."""
 
-import datetime
-import json
-from copy import copy
-from unittest import mock
-
 import pytest
-from graphql_relay import from_global_id, to_global_id
+from graphql_relay import to_global_id
 
 import graphql_api.data  # for mocking
 

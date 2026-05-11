@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.6.0] - 2026-05-11
+
+### Added
+ - **JWT authentication** replacing the single shared `x-api-key` with per-user Cognito JWTs
+   - Lambda Authorizer (`auth/authorizer/handler.py`) validates JWTs and legacy API keys
+   - Flask middleware (`auth/middleware.py`) enforces `toshi/read` and `toshi/write` scopes
+   - Scientist CLI (`auth/toshi_auth.py`) for login, token management, and AWS credentials
+   - All Cognito infrastructure provisioned via CloudFormation in `serverless.yml`
+ - **Backward compatibility**: legacy `x-api-key` clients continue working via `LEGACY_API_KEY`
+   env var (reads `NZSHM22_TOSHI_API_KEY` in CI)
+ - **Token flows**: USER_PASSWORD_AUTH for scientists, client credentials for M2M/Runzi
+ - **IAM roles** for Runzi workloads via Cognito Identity Pool (`runzi-local/batch/admin`)
+ - 38 unit tests across authorizer handler and middleware mutation detection
+
+### Changed
+ - GraphQL events use Lambda Authorizer instead of `private: true` API key plan
+ - Mutation detection uses `graphql-core` AST parser (was regex — had false positives)
+ - Lambda package reduced from 329MB to 120MB by excluding dev artifacts
+ - Middleware is no-op when `TESTING=1` or `SLS_OFFLINE=1` — local dev unaffected
+ - Migrated from Poetry to uv; replaced flake8/black/isort with ruff
+ - CI deploy workflow uses GitHub environments (`AWS_TEST`/`AWS_PROD`) for per-stage secrets
+
+### Security
+ - Test user credentials and client secrets kept in gitignored local files only
+ - Authorizer only accepts access tokens (id tokens rejected)
+
+### Future (Phase 2)
+ - Entra ID (Azure AD) OIDC federation for GNS corporate SSO
+ - Client library (`nshm-toshi-client`) migration to Bearer tokens
+
 ## [0.5.2] - 2025-12-15
 
 ### Changed
