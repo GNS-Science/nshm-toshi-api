@@ -21,5 +21,6 @@ jobs:
       python-version: '3.12'
       node-version: '22'
       node-pkg-manager: 'yarn2'
+      environment: true
       smoketest-query: 'query QueryRoot{about}'
     secrets: inherit
