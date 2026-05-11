@@ -162,11 +162,6 @@ provider:
          - "dynamodb:UpdateItem"
       Resource: '*'
 
-  apiGateway:
-    apiKeys:
-      - name: TempApiKey-${self:custom.stack_name}
-        description: Api key until we have an auth function # Optional
-
 functions:
   # JWT Lambda Authorizer (auth — replaces x-api-key with Cognito JWTs)
   # COGNITO_USER_POOL_ID and COGNITO_CLIENT_ID are auto-wired from ToshiUserPool / ToshiScientistClient.
@@ -200,6 +195,7 @@ functions:
           authorizer:
             name: jwtAuthorizer
             resultTtlInSeconds: 0
+            identitySource: ''
             type: request
       - http:
           path: graphql
@@ -207,6 +203,7 @@ functions:
           authorizer:
             name: jwtAuthorizer
             resultTtlInSeconds: 0
+            identitySource: ''
             type: request
     environment:
       ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
