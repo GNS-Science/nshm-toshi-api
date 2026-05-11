@@ -199,16 +199,14 @@ functions:
           method: POST
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 300
-            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
             type: request
       - http:
           path: graphql
           method: GET
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 300
-            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
             type: request
     environment:
       ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
