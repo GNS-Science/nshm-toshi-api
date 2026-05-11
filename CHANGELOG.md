@@ -15,8 +15,26 @@
 ### Changed
  - `jwtAuthorizer` env vars `COGNITO_USER_POOL_ID` and `COGNITO_CLIENT_ID` now resolved via
    `!Ref ToshiUserPool` / `!Ref ToshiScientistClient` — no more hardcoded pool IDs
+ - `COGNITO_CLIENT_ID` now accepts comma-separated list of client IDs so both scientist and
+   automation (M2M) tokens are validated correctly
+ - Authorizer only accepts access tokens — removed dead id-token acceptance path; id tokens
+   carry no scopes and are not valid for API authorisation
+ - Middleware mutation detection replaced: regex `_MUTATION_RE` swapped for `graphql-core` AST
+   parser (`graphql.parse` + `OperationDefinitionNode`) — fixes false positives on string
+   literals, comments, and multi-operation documents
+ - Fixed `decode_options` type: `jwt.types.Options` (PyJWT ≥2.12) instead of `dict[str, bool]`
+ - Authorizer Lambda memory increased from 256MB to 512MB for faster RSA verification
+ - API Gateway authorizer cache TTL set to 300s (was 0); identity source changed from
+   `context.requestId` to `method.request.header.Authorization` so caching actually works
+ - Lambda package size reduced from 329MB to 120MB unzipped by excluding `.mypy_cache`,
+   `.claude`, `.llm`, `.dynamodb`, `__pycache__`, `docs/`, and test files
  - Removed `auth/cognito_setup.py` and `auth/iam_roles.py` (replaced by `serverless.yml` resources)
  - `auth/IMPLEMENTATION_PLAN.md` Phase 1 provisioning steps updated to reflect `sls deploy` workflow
+
+### Deployment
+ - Deployed to dev (account 461564345538, profile `nshm-admin`) — 8/8 E2E tests passing
+ - Full manual API verification: introspection, queries, and mutations all working behind
+   JWT authorizer with scope enforcement
 
 ### Changed (previous)
  - Removed "spike" references from `auth/` module docstrings, comments, and import examples
@@ -30,7 +48,11 @@
  - Added `graphql_api/tests/test_api_init.py`: covers auth middleware try/import block in `api.py`
  - Added `TestSearchManagerDisabled` to `test_search_manager.py`: covers disabled Elasticsearch path
  - Added `auth/authorizer/test_handler.py`: 26 unit tests covering `build_policy`, `validate_legacy_api_key`, and all `handler()` branches (no credentials, x-api-key header, `Authorization: x-api-key`, unknown scheme, Bearer JWT — valid, expired, invalid)
+ - Added `auth/test_middleware.py`: 12 unit tests for AST-based mutation detection (simple
+   query/mutation, string literal false positives, comment false positives, multi-op with
+   operationName, malformed input fail-closed, subscriptions)
  - Added `auth/authorizer/__init__.py` to make authorizer a proper Python package
+ - Restored `auth/create_users.py` for provisioning test users after deploy
 
 ### Type Checking
  - Added `mypy auth/authorizer/handler.py` to `[testenv:lint]` in `setup.cfg`
