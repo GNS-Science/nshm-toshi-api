@@ -178,7 +178,7 @@ functions:
           - ','
           - - !Ref ToshiScientistClient
             - !Ref ToshiAutomationClient
-      LEGACY_API_KEY: ${env:LEGACY_API_KEY, ''}
+      LEGACY_API_KEY: ${env:NZSHM22_TOSHI_API_KEY, env:LEGACY_API_KEY, ''}
 
   app:
     description: The graphql API of ${self:service}
