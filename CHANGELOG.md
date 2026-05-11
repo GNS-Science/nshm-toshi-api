@@ -19,6 +19,8 @@
  - Mutation detection uses `graphql-core` AST parser (was regex — had false positives)
  - Lambda package reduced from 329MB to 120MB by excluding dev artifacts
  - Middleware is no-op when `TESTING=1` or `SLS_OFFLINE=1` — local dev unaffected
+ - Migrated from Poetry to uv; replaced flake8/black/isort with ruff
+ - CI deploy workflow uses GitHub environments (`AWS_TEST`/`AWS_PROD`) for per-stage secrets
 
 ### Security
  - Test user credentials and client secrets kept in gitignored local files only
