@@ -7,7 +7,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer = "2026-05-04T06:03:05.645481Z"
 exclude-newer-span = "P1W"
 
 [options.exclude-newer-package]
@@ -1176,7 +1176,7 @@ wheels = [
 
 [[package]]
 name = "nshm-toshi-api"
-version = "0.5.2"
+version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "backoff" },
