@@ -39,7 +39,7 @@ dev = [
     "bump2version",
     "click",
     "moto",
-    "mypy",
+    "mypy>=2",
     "pip-audit",
     "pre-commit",
     "pytest-cov",
