@@ -6,7 +6,7 @@ import boto3
 
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
-from elasticsearch_dsl import Q, Search, connections
+from elasticsearch.dsl import Q, Search, connections
 
 
 from graphql_relay import to_global_id
