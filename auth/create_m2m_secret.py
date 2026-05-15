@@ -93,19 +93,32 @@ def main(
     secret_value = json.dumps({'client_id': client_id, 'client_secret': client_secret})
 
     click.echo(f'\nWriting to Secrets Manager: {secret_name} ...')
+    # Cognito client is already minted; any SM failure beyond here must roll
+    # the client back, otherwise repeated runs accumulate orphan app-clients
+    # against the user-pool's soft limit.
     try:
-        sm.describe_secret(SecretId=secret_name)
-        sm.put_secret_value(SecretId=secret_name, SecretString=secret_value)
-        secret_arn = sm.describe_secret(SecretId=secret_name)['ARN']
-        click.echo('  Updated existing secret')
-    except sm.exceptions.ResourceNotFoundException:
-        created = sm.create_secret(
-            Name=secret_name,
-            Description=f'Cognito M2M client_id + client_secret for {stage}',
-            SecretString=secret_value,
-        )
-        secret_arn = created['ARN']
-        click.echo('  Created new secret')
+        try:
+            sm.describe_secret(SecretId=secret_name)
+            sm.put_secret_value(SecretId=secret_name, SecretString=secret_value)
+            secret_arn = sm.describe_secret(SecretId=secret_name)['ARN']
+            click.echo('  Updated existing secret')
+        except sm.exceptions.ResourceNotFoundException:
+            created = sm.create_secret(
+                Name=secret_name,
+                Description=f'Cognito M2M client_id + client_secret for {stage}',
+                SecretString=secret_value,
+            )
+            secret_arn = created['ARN']
+            click.echo('  Created new secret')
+    except Exception as exc:
+        click.echo(f'  SM write failed ({exc!r}); deleting orphan Cognito client {client_id} ...')
+        try:
+            cognito.delete_user_pool_client(UserPoolId=pool_id, ClientId=client_id)
+            click.echo('  Cognito client deleted')
+        except Exception as cleanup_exc:
+            click.echo(f'  Cleanup also failed: {cleanup_exc!r}')
+            click.echo(f'  ACTION REQUIRED: manually delete ClientId={client_id} from pool {pool_id}')
+        raise
 
     click.echo('\n=== Done ===')
     click.echo('Set this in the consumer environment:')

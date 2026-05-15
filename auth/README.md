@@ -164,13 +164,20 @@ is a multi-step swap: mint new client → put_secret_value → wait ≥1 token T
 python auth/rotate_m2m_secret.py \
     --profile <GNS-admin-profile> --stage dev \
     --old-client-id <existing-m2m-client-id> \
-    --authorizer-function spike-toshi-api-dev-jwtAuthorizer
+    --authorizer-function nzshm22-toshi-api-dev-jwtAuthorizer
 ```
 
 With `--authorizer-function`, the script extends `COGNITO_CLIENT_ID` to
 `OLD,NEW` for the overlap window and narrows it back to `NEW` after the old
 client is deleted. Default `--ttl-seconds` is 3700 (Cognito access-token TTL
 plus buffer). Use `--skip-delete` to pause before the destructive step.
+
+> ⚠️ **IaC drift.** `COGNITO_CLIENT_ID` is also set by `serverless.yml`
+> (`Fn::Join` over `ToshiScientistClient` + `ToshiAutomationClient`). The
+> next `serverless deploy` will overwrite the script's patch. After
+> rotation, update the `Fn::Join` in `serverless.yml` to reference the new
+> ClientId before redeploying, or the authorizer will start rejecting M2M
+> tokens minted with it.
 
 Recommended cadence: 90 days. Automated rotation is out of scope (see #290).
 

@@ -17,7 +17,7 @@ Usage:
     python auth/rotate_m2m_secret.py \\
         --profile <admin-profile> --stage dev \\
         --old-client-id <existing-m2m-client-id> \\
-        --authorizer-function nshm-toshi-api-dev-jwtAuthorizer
+        --authorizer-function nzshm22-toshi-api-dev-jwtAuthorizer
 
 Pre-flight: capture the current --old-client-id from the Cognito console or
 from the prior create_m2m_secret.py output.
@@ -82,7 +82,7 @@ def update_authorizer_allowlist(lambda_client, function_name: str, client_ids: l
     '--authorizer-function',
     default=None,
     help=(
-        'Lambda fn name (e.g. spike-toshi-api-dev-jwtAuthorizer). If set, '
+        'Lambda fn name (e.g. nzshm22-toshi-api-dev-jwtAuthorizer). If set, '
         'COGNITO_CLIENT_ID is updated to OLD,NEW for the overlap window, then NEW after delete.'
     ),
 )
