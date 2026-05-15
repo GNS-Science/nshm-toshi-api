@@ -44,7 +44,7 @@ package:
     - '**/__pycache__/**'
     - '**/*.pyc'
     - package.json
-    - package-log.json
+    - package-lock.json
 
 custom:
   #serverless-wsgi settings
