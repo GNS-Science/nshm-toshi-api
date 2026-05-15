@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- deps: patch (12 pkgs), minor (9 pkgs), major: cryptography 47→48, elasticsearch 8→9 (drops `elasticsearch-dsl`; use `elasticsearch.dsl`), mypy 1→2
+
 ## [0.6.0] - 2026-05-11
 
 ### Added
