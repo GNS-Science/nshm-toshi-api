@@ -21,8 +21,12 @@ package:
     - .llm/**
     - .mypy_cache/**
     - .pytest_cache/**
+    - .ruff_cache/**
     - .tox/**
     - .dynamodb/**
+    - .serverless/**
+    - .venv/**
+    - .yarn/**
     - .coverage
     - .bumpversion.cfg
     - bin/**
@@ -31,7 +35,10 @@ package:
     - lib/**
     - node_modules/**
     - prof/**
+    - spike/**
+    - graphql_api/tests/**
     - auth/test_*
+    - auth/tests/**
     - auth/cdk/**
     - auth/*.md
     - '**/__pycache__/**'
