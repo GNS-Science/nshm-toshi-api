@@ -89,6 +89,7 @@ Cognito federates Entra as an OIDC identity provider. Cognito issues JWTs for To
 - `toshi_auth aws-creds` is a custom command rather than standard `aws sso login` — minor UX friction, removed once IAM Identity Center is in place
 - Cognito group assignment is initially manual — operational overhead if team grows quickly (mitigated by a future Pre-Token Generation Lambda trigger reading `group_mapping.json`)
 - Cognito User Pool is an additional service to operate alongside Entra and IAM Identity Center
+- Long-lived Cognito app-client `client_secret` still exists on the AWS side. Storing it in AWS Secrets Manager (`ToshiM2MSecret`, populated by `auth/create_m2m_secret.py`) minimises **caller-side** exposure (Runzi no longer ships env-var creds) but does not eliminate the long-lived credential — the SM entry's `SecretString` is the same secret Cognito issued. True secretless M2M (WIF / private-key JWT) would require dropping Cognito (Option B, rejected on governance grounds). Surfaced in client-side review: GNS-Science/nshm-toshi-client#41 (discussion r3232419054).
 
 **Verdict:** Recommended. Unblocks the team now, keeps dev team in control, and provides a clean handover path to IT team later.
 
