@@ -18,7 +18,7 @@ running before first deploy) the script will create_secret instead.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import boto3
@@ -42,11 +42,17 @@ def load_config() -> dict:
 @click.command()
 @click.option('--profile', default='default', show_default=True, help='AWS CLI profile name')
 @click.option('--region', default=None, help='AWS region (default: from auth_config.json)')
-@click.option('--stage', required=True, help='Deployment stage (dev|test|prod) — used to derive default secret/client names')
-@click.option('--scopes', default=DEFAULT_SCOPES, show_default=True, help='Space-separated OAuth scopes for the M2M client')
+@click.option(
+    '--stage', required=True, help='Deployment stage (dev|test|prod) — used to derive default secret/client names'
+)
+@click.option(
+    '--scopes', default=DEFAULT_SCOPES, show_default=True, help='Space-separated OAuth scopes for the M2M client'
+)
 @click.option('--secret-name', default=None, help='Secrets Manager secret name (default: toshi-m2m-<stage>)')
 @click.option('--client-name', default=None, help='Cognito app client name (default: toshi-m2m-<stage>-<YYYYMMDD>)')
-def main(profile: str, region: str | None, stage: str, scopes: str, secret_name: str | None, client_name: str | None) -> None:
+def main(
+    profile: str, region: str | None, stage: str, scopes: str, secret_name: str | None, client_name: str | None
+) -> None:
     """Create a Cognito M2M app client and store credentials in Secrets Manager."""
     config = load_config()
     pool_id = config['user_pool_id']
@@ -55,7 +61,7 @@ def main(profile: str, region: str | None, stage: str, scopes: str, secret_name:
     if secret_name is None:
         secret_name = f'toshi-m2m-{stage}'
     if client_name is None:
-        client_name = f'toshi-m2m-{stage}-{datetime.now(timezone.utc).strftime("%Y%m%d")}'
+        client_name = f'toshi-m2m-{stage}-{datetime.now(UTC).strftime("%Y%m%d")}'
 
     session = boto3.Session(profile_name=profile, region_name=region)
     cognito = session.client('cognito-idp')
@@ -102,7 +108,7 @@ def main(profile: str, region: str | None, stage: str, scopes: str, secret_name:
         click.echo('  Created new secret')
 
     click.echo('\n=== Done ===')
-    click.echo(f'Set this in the consumer environment:')
+    click.echo('Set this in the consumer environment:')
     click.echo(f'  NZSHM22_TOSHI_M2M_SECRET_ARN={secret_arn}')
     click.echo(f'\nReminder: authorizer COGNITO_CLIENT_ID env var must include {client_id}')
     click.echo('(comma-separated allowlist — see auth/authorizer/handler.py)')
