@@ -182,10 +182,13 @@ def handler(event: dict, _context: object) -> dict:
     """
     method_arn = event.get('methodArn', '*')
 
-    # REQUEST type: headers are in event['headers']
-    headers = event.get('headers') or {}
-    auth_header = headers.get('Authorization') or headers.get('authorization', '')
-    api_key_header = headers.get('x-api-key') or headers.get('X-Api-Key', '')
+    # REQUEST type: headers are in event['headers']. RFC 7230 §3.2: header
+    # names are case-insensitive. Normalize keys to lowercase once on entry so
+    # the rest of the function doesn't have to enumerate casings (clients in
+    # the wild send any of x-api-key / X-Api-Key / X-API-KEY).
+    headers = {k.lower(): v for k, v in (event.get('headers') or {}).items()}
+    auth_header = headers.get('authorization', '')
+    api_key_header = headers.get('x-api-key', '')
 
     scheme = (auth_header.split(' ', 1)[0].lower()) if auth_header else '(none)'
     print(f'[jwtAuthorizer] INVOKED scheme={scheme} api_key_present={bool(api_key_header)} arn={method_arn}')

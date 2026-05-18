@@ -137,6 +137,17 @@ class TestHandlerLegacyApiKeyHeader(unittest.TestCase):
             result = handler(_event(x_api_key='mykey'), None)
         self.assertEqual(result['context']['authMethod'], 'apikey')
 
+    def test_api_key_header_case_insensitive(self):
+        """RFC 7230 §3.2: header names are case-insensitive. The API Gateway
+        client sends 'X-API-KEY' (all-caps); we must accept any casing."""
+        for header_name in ('x-api-key', 'X-Api-Key', 'X-API-KEY', 'X-api-KEY'):
+            with self.subTest(header=header_name):
+                event = {'methodArn': FAKE_ARN, 'headers': {header_name: 'mykey'}}
+                with mock.patch.dict(os.environ, {'LEGACY_API_KEY': 'mykey'}):
+                    result = handler(event, None)
+                self.assertEqual(result['policyDocument']['Statement'][0]['Effect'], 'Allow')
+                self.assertEqual(result['context']['authMethod'], 'apikey')
+
 
 # ---------------------------------------------------------------------------
 # handler — Authorization: x-api-key <key>
