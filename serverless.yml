@@ -21,8 +21,12 @@ package:
     - .llm/**
     - .mypy_cache/**
     - .pytest_cache/**
+    - .ruff_cache/**
     - .tox/**
     - .dynamodb/**
+    - .serverless/**
+    - .venv/**
+    - .yarn/**
     - .coverage
     - .bumpversion.cfg
     - bin/**
@@ -31,13 +35,16 @@ package:
     - lib/**
     - node_modules/**
     - prof/**
+    - spike/**
+    - graphql_api/tests/**
     - auth/test_*
+    - auth/tests/**
     - auth/cdk/**
     - auth/*.md
     - '**/__pycache__/**'
     - '**/*.pyc'
     - package.json
-    - package-log.json
+    - package-lock.json
 
 custom:
   #serverless-wsgi settings
@@ -426,6 +433,11 @@ resources:
                     - arn:aws:s3:::nshm-runzi-output-*/*
                     - arn:aws:s3:::nshm-runzi-jars
                     - arn:aws:s3:::nshm-runzi-jars/*
+                - Sid: M2MSecretRead
+                  Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource:
+                    Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
 
     ToshiRunziBatchRole:
       Type: AWS::IAM::Role
@@ -482,6 +494,11 @@ resources:
                     - batch:DescribeComputeEnvironments
                     - batch:DescribeJobDefinitions
                   Resource: '*'
+                - Sid: M2MSecretRead
+                  Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource:
+                    Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
 
     ToshiRunziAdminRole:
       Type: AWS::IAM::Role
@@ -558,6 +575,11 @@ resources:
                     - ecr:BatchDeleteImage
                   Resource:
                     - arn:aws:ecr:*:*:repository/nshm-runzi-*
+                - Sid: M2MSecretRead
+                  Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource:
+                    Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
 
     # ── Identity Pool role attachment (rules-based by Cognito group) ───────────
     ToshiIdentityPoolRoleAttachment:
@@ -589,6 +611,18 @@ resources:
                   MatchType: Contains
                   Value: runzi-admin
                   RoleARN: !GetAtt ToshiRunziAdminRole.Arn
+
+    # ── Secrets Manager: Cognito M2M client_id/client_secret container ─────────
+    # Populated out-of-band by `auth/create_m2m_secret.py` after the Cognito
+    # automation app client is minted. Consumers (Runzi) read this via
+    # `nshm_toshi_client.ToshiTokenManager(secret_arn=...)`.
+    ToshiM2MSecret:
+      Type: AWS::SecretsManager::Secret
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      Properties:
+        Name: toshi-m2m-${self:custom.stage}
+        Description: Cognito M2M client_id + client_secret for ${self:custom.stage} (populated out-of-band by auth/create_m2m_secret.py)
 
   Outputs:
     UserPoolId:
@@ -631,3 +665,9 @@ resources:
             - .amazonaws.com/
             - !Ref ToshiUserPool
             - /.well-known/jwks.json
+    M2MSecretArn:
+      Description: ARN of the SM secret holding Cognito M2M client_id/client_secret (set NZSHM22_TOSHI_M2M_SECRET_ARN to this)
+      Value: !Ref ToshiM2MSecret
+    M2MSecretName:
+      Description: Name of the SM secret (use with auth/create_m2m_secret.py --secret-name)
+      Value: toshi-m2m-${self:custom.stage}

@@ -1,6 +1,6 @@
 [project]
 name = "nshm-toshi-api"
-version = "0.6.0"
+version = "0.7.0"
 description = "the object store used by NZSHM project"
 authors = [
     {name = "Chris B Chamberlain",email = "chrisbc@artisan.co.nz"},
@@ -13,7 +13,7 @@ license = "AGPL-3.0-or-later"
 dependencies = [
     "backoff",
     "boto3>=1.24.57",
-    "elasticsearch-dsl",
+    "elasticsearch>=9",
     "elasticsearch7-compatible",
     "flask>=3.0.3",
     "flask-cors>=6.0",
@@ -39,7 +39,7 @@ dev = [
     "bump2version",
     "click",
     "moto",
-    "mypy",
+    "mypy>=2",
     "pip-audit",
     "pre-commit",
     "pytest-cov",

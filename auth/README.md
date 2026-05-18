@@ -121,3 +121,80 @@ uv run python auth/toshi_auth.py aws-creds
 ```
 
 See `IMPLEMENTATION_PLAN.md` for detailed setup history and deployment notes.
+
+## M2M credential bootstrap (Runzi etc.)
+
+`nshm-toshi-client` 1.2.0+ sources Cognito M2M credentials from AWS Secrets
+Manager (no env-var bootstrap). The API stack provisions an empty SM container
+per stage (`ToshiM2MSecret` in `serverless.yml`); this script populates it.
+
+### One-time bootstrap
+
+```bash
+# 0. Deploy first — creates the SM container + IAM grants on Runzi roles
+uv run serverless deploy --stage dev --aws-profile <GNS-admin-profile>
+
+# 1. Mint a Cognito M2M app client and store its creds in SM
+python auth/create_m2m_secret.py --profile <GNS-admin-profile> --stage dev
+```
+
+The script:
+- Calls `cognito-idp create-user-pool-client` with `--generate-secret`,
+  `client_credentials` grant, scopes `toshi/read toshi/write`.
+- Writes `{"client_id":..., "client_secret":...}` to the SM secret
+  `toshi-m2m-<stage>` (via `put_secret_value` if the IaC container exists,
+  else `create_secret`).
+- Prints the resulting secret ARN.
+
+Copy the printed ARN into the consumer's environment as
+`NZSHM22_TOSHI_M2M_SECRET_ARN=...` (Runzi reads this to construct
+`ToshiTokenManager(secret_arn=...)`).
+
+**Also update the authorizer's allowlist:** the new ClientId must be added to
+the Lambda Authorizer's `COGNITO_CLIENT_ID` env var (comma-separated). The
+script prints the new ClientId as a reminder. Three ways to apply it:
+
+1. **IaC (correct long-term home):** edit the `Fn::Join` in `serverless.yml`
+   that builds `COGNITO_CLIENT_ID` from `ToshiScientistClient` +
+   `ToshiAutomationClient` to also reference the new ClientId, then
+   `serverless deploy`. This is the only path that survives subsequent
+   deploys.
+2. **Ad-hoc (console or CLI):** Lambda → `nzshm22-toshi-api-<stage>-jwtAuthorizer`
+   → Configuration → Environment variables → append `,<new-client-id>` to
+   `COGNITO_CLIENT_ID`; or `aws lambda update-function-configuration
+   --function-name nzshm22-toshi-api-<stage>-jwtAuthorizer --environment …`.
+   Fast, but will be overwritten on the next `serverless deploy`.
+3. **Automated (during rotation):** `rotate_m2m_secret.py
+   --authorizer-function …` handles the swap automatically (see below).
+
+Typical bootstrap flow: apply option 2 now to unblock the new caller, then
+fold the ClientId into `serverless.yml` (option 1) at the next convenient
+deploy.
+
+### Manual rotation
+
+Cognito doesn't expose a "regenerate secret in place" primitive, so rotation
+is a multi-step swap: mint new client → put_secret_value → wait ≥1 token TTL
+→ delete old client. Run the wrapper script:
+
+```bash
+python auth/rotate_m2m_secret.py \
+    --profile <GNS-admin-profile> --stage dev \
+    --old-client-id <existing-m2m-client-id> \
+    --authorizer-function nzshm22-toshi-api-dev-jwtAuthorizer
+```
+
+With `--authorizer-function`, the script extends `COGNITO_CLIENT_ID` to
+`OLD,NEW` for the overlap window and narrows it back to `NEW` after the old
+client is deleted. Default `--ttl-seconds` is 3700 (Cognito access-token TTL
+plus buffer). Use `--skip-delete` to pause before the destructive step.
+
+> ⚠️ **IaC drift.** `COGNITO_CLIENT_ID` is also set by `serverless.yml`
+> (`Fn::Join` over `ToshiScientistClient` + `ToshiAutomationClient`). The
+> next `serverless deploy` will overwrite the script's patch. After
+> rotation, update the `Fn::Join` in `serverless.yml` to reference the new
+> ClientId before redeploying, or the authorizer will start rejecting M2M
+> tokens minted with it.
+
+Recommended cadence: 90 days. Automated rotation is out of scope (see #290).
+
