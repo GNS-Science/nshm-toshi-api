@@ -3,14 +3,17 @@ create_m2m_secret.py — Mint a Cognito M2M app client and store its credentials
 in AWS Secrets Manager.
 
 Reads pool config from auth/auth_config.json (written by post_deploy.py after
-serverless deploy). Run once per new M2M consumer (or to rotate — see
-rotate_m2m_secret.py for the safe swap flow).
+serverless deploy). Run once when onboarding a new server-to-server caller
+(e.g. a new Runzi-style downstream service) — each caller gets its own Cognito
+app client + its own SM secret, 1:1. To rotate creds for an existing caller,
+see rotate_m2m_secret.py for the safe swap flow.
 
 Usage:
     python auth/create_m2m_secret.py --profile <admin-profile> --stage dev
 
-Output: prints the secret ARN. Consumers set NZSHM22_TOSHI_M2M_SECRET_ARN to
-that value (consumed by nshm_toshi_client.ToshiTokenManager).
+Output: prints the secret ARN. The downstream caller sets
+NZSHM22_TOSHI_M2M_SECRET_ARN to that value (consumed by
+nshm_toshi_client.ToshiTokenManager).
 
 The SM container itself is provisioned by serverless.yml (ToshiM2MSecret); this
 script populates its SecretString. If the container doesn't exist yet (e.g.

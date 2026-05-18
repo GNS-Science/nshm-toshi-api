@@ -152,7 +152,24 @@ Copy the printed ARN into the consumer's environment as
 
 **Also update the authorizer's allowlist:** the new ClientId must be added to
 the Lambda Authorizer's `COGNITO_CLIENT_ID` env var (comma-separated). The
-script prints the new ClientId as a reminder.
+script prints the new ClientId as a reminder. Three ways to apply it:
+
+1. **IaC (correct long-term home):** edit the `Fn::Join` in `serverless.yml`
+   that builds `COGNITO_CLIENT_ID` from `ToshiScientistClient` +
+   `ToshiAutomationClient` to also reference the new ClientId, then
+   `serverless deploy`. This is the only path that survives subsequent
+   deploys.
+2. **Ad-hoc (console or CLI):** Lambda → `nzshm22-toshi-api-<stage>-jwtAuthorizer`
+   → Configuration → Environment variables → append `,<new-client-id>` to
+   `COGNITO_CLIENT_ID`; or `aws lambda update-function-configuration
+   --function-name nzshm22-toshi-api-<stage>-jwtAuthorizer --environment …`.
+   Fast, but will be overwritten on the next `serverless deploy`.
+3. **Automated (during rotation):** `rotate_m2m_secret.py
+   --authorizer-function …` handles the swap automatically (see below).
+
+Typical bootstrap flow: apply option 2 now to unblock the new caller, then
+fold the ClientId into `serverless.yml` (option 1) at the next convenient
+deploy.
 
 ### Manual rotation
 
