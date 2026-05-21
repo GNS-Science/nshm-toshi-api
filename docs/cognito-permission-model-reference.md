@@ -7,8 +7,8 @@ A condensed walk-through of how `nshm-toshi-api` translates Cognito identity int
 | System | Permission tokens | Configured by | Consumed by |
 |---|---|---|---|
 | **GraphQL API scopes** | `toshi/read`, `toshi/write` | (a) group membership for users via `USER_PASSWORD_AUTH`, OR (b) OAuth `scope` claim for OAuth-code-flow users and M2M clients | `auth/authorizer/handler.py` → `auth/middleware.py` |
-| **AWS resource access** | IAM role attached via Identity Pool | `runzi-*` group membership + Identity Pool role-mapping rules | `serverless.yml:584-613` (Identity Pool RoleAttachment) |
-| **Caller allowlist (audience)** | `client_id` claim must be in allowlist | Lambda env var `COGNITO_CLIENT_ID` (comma-separated) | `auth/authorizer/handler.py:138` |
+| **AWS resource access** | IAM role attached via Identity Pool | `runzi-*` group membership + Identity Pool role-mapping rules | `serverless.yml::ToshiIdentityPoolRoleAttachment` |
+| **Caller allowlist (audience)** | `client_id` claim must be in allowlist | Lambda env var `COGNITO_CLIENT_ID` (comma-separated) | `auth/authorizer/handler.py::validate_cognito_token` — the `allowed_ids` audience check |
 
 The three systems are *disjoint by design* — adding a user to a `toshi-*` group never affects their IAM role, and vice versa.
 
@@ -20,7 +20,7 @@ There are two things that look like "group permissions" — keep them separate.
 
 ### Group existence (just declares the group)
 
-`serverless.yml:344-376` — `AWS::Cognito::UserPoolGroup` resources:
+Five `AWS::Cognito::UserPoolGroup` resources in `serverless.yml` — `ToshiGroupWriters`, `ToshiGroupReaders`, `ToshiGroupRunziLocal`, `ToshiGroupRunziBatch`, `ToshiGroupRunziAdmin`:
 
 ```yaml
 ToshiGroupWriters:    { GroupName: toshi-writers   }
@@ -34,7 +34,7 @@ These resources do not grant any permissions on their own — they only make the
 
 ### Group → API scope mapping (hardcoded in code)
 
-`auth/authorizer/handler.py:148-155`:
+`auth/authorizer/handler.py::validate_cognito_token` — the `aws.cognito.signin.user.admin` branch:
 
 ```python
 if 'aws.cognito.signin.user.admin' in scopes:
@@ -54,11 +54,11 @@ This is the **only** code that turns group membership into API scopes, and it on
 | `toshi-readers` | `toshi/read` |
 | `toshi-writers` | `toshi/read` + `toshi/write` |
 
-Membership in `runzi-*` groups grants **zero** API scopes — those groups only matter to the Identity Pool role mapping below. Also documented at `docs/AUTH_GUIDE.md:449-451`.
+Membership in `runzi-*` groups grants **zero** API scopes — those groups only matter to the Identity Pool role mapping below. Also documented at `docs/AUTH_GUIDE.md` § "Scopes Reference".
 
 ### Group → IAM role mapping (a different permission system)
 
-`serverless.yml:584-613` — Cognito Identity Pool role-mapping rules:
+`serverless.yml::ToshiIdentityPoolRoleAttachment` — Cognito Identity Pool role-mapping rules:
 
 ```yaml
 ToshiIdentityPoolRoleAttachment:
@@ -92,7 +92,7 @@ These rules are evaluated **in order**; the first match wins. The IAM role's pol
 
 You'd need both:
 1. Define the group (`AWS::Cognito::UserPoolGroup`) in `serverless.yml`
-2. Add a branch in `auth/authorizer/handler.py:148-155` mapping the new group name to one of the existing scopes (or to a new scope, which also requires adding it to the `ToshiResourceServer` resource at `serverless.yml:272-282`)
+2. Add a branch in `auth/authorizer/handler.py::validate_cognito_token` (the `aws.cognito.signin.user.admin` branch) mapping the new group name to one of the existing scopes (or to a new scope, which also requires adding it to `serverless.yml::ToshiResourceServer`)
 
 ---
 
@@ -100,7 +100,7 @@ You'd need both:
 
 Cognito users can belong to multiple groups, and the two permission systems consume **disjoint** sets of group names. Combining them is just multi-group membership.
 
-The codebase has a worked example at `auth/create_users.py:15`:
+The codebase has a worked example in the module docstring of `auth/create_users.py`:
 
 ```python
 "groups": ["toshi-writers", "runzi-local"]
@@ -121,13 +121,13 @@ aws cognito-idp admin-add-user-to-group \
 A single login produces two artefacts derived from the same authentication:
 
 1. **Access token** → `Authorization: Bearer <token>` to the GraphQL API. The authorizer sees `cognito:groups: ["toshi-writers", "runzi-local"]` and grants `toshi/read toshi/write` (the `runzi-local` is invisible to the API).
-2. **AWS temporary credentials** → obtained by exchanging the **ID token** at the Cognito Identity Pool via `GetCredentialsForIdentity`. The role-mapping rules at `serverless.yml:600-613` match `runzi-local` and hand back credentials for `ToshiRunziLocalRole`.
+2. **AWS temporary credentials** → obtained by exchanging the **ID token** at the Cognito Identity Pool via `GetCredentialsForIdentity`. The role-mapping rules in `serverless.yml::ToshiIdentityPoolRoleAttachment` match `runzi-local` and hand back credentials for `ToshiRunziLocalRole`.
 
-The Identity Pool ID is exported as `IdentityPoolId` at `serverless.yml:631-633`.
+The Identity Pool ID is exported as `serverless.yml::Outputs.IdentityPoolId`.
 
 ### One subtlety: multiple `runzi-*` groups
 
-If a user is in two `runzi-*` groups (e.g. both `runzi-local` and `runzi-batch`), the role-mapping rules are evaluated in order and the **first match wins**. `runzi-local` is listed first, so it would always shadow `runzi-batch` for that user. `AmbiguousRoleResolution: AuthenticatedRole` is the fallback (which is `ToshiRunziLocalRole`, per `serverless.yml:590`). This doesn't bite mixed `toshi-*` + single `runzi-*` setups — only when stacking `runzi-*` groups.
+If a user is in two `runzi-*` groups (e.g. both `runzi-local` and `runzi-batch`), the role-mapping rules are evaluated in order and the **first match wins**. `runzi-local` is listed first, so it would always shadow `runzi-batch` for that user. `AmbiguousRoleResolution: AuthenticatedRole` is the fallback (which is `ToshiRunziLocalRole`, per `serverless.yml::ToshiIdentityPoolRoleAttachment.Properties.Roles.authenticated`). This doesn't bite mixed `toshi-*` + single `runzi-*` setups — only when stacking `runzi-*` groups.
 
 ---
 
@@ -139,7 +139,7 @@ The `{client_id, client_secret}` in Secrets Manager are credentials for a specif
 
 ### The baseline automation client
 
-`serverless.yml:330-342`:
+`serverless.yml::ToshiAutomationClient`:
 
 ```yaml
 ToshiAutomationClient:
@@ -155,9 +155,9 @@ ToshiAutomationClient:
     AllowedOAuthFlowsUserPoolClient: true
 ```
 
-Each additional M2M caller is minted by `auth/create_m2m_secret.py` (line 81-88) using the same shape, defaulting to `toshi/read toshi/write`. Pass `--scopes "toshi/read"` for a read-only M2M caller.
+Each additional M2M caller is minted by `auth/create_m2m_secret.py::main` (the `cognito.create_user_pool_client(...)` call) using the same shape, defaulting to `toshi/read toshi/write`. Pass `--scopes "toshi/read"` for a read-only M2M caller.
 
-The Secrets Manager container itself (`ToshiM2MSecret` at `serverless.yml:619-625`) just stores the `{client_id, client_secret}` JSON — it carries no permission information.
+The Secrets Manager container itself (`serverless.yml::ToshiM2MSecret`) just stores the `{client_id, client_secret}` JSON — it carries no permission information.
 
 ### Runtime flow
 
@@ -168,11 +168,11 @@ The Secrets Manager container itself (`ToshiM2MSecret` at `serverless.yml:619-62
    - `client_id=<this client>`
    - **No** `cognito:groups`
    - **No** `username`
-4. **Authorizer validation** (`auth/authorizer/handler.py`):
+4. **Authorizer validation** (`auth/authorizer/handler.py::validate_cognito_token`):
    - Signature, issuer, expiry, and `token_use=access` checks pass (same as user path).
-   - **Client allowlist check at line 138**: the M2M client's `client_id` must be in the authorizer's `COGNITO_CLIENT_ID` env var — otherwise `InvalidAudienceError` → 401. `create_m2m_secret.py:129-130` explicitly reminds you of this.
-   - The `aws.cognito.signin.user.admin` branch at line 148 is **skipped** (M2M tokens never carry that scope). The raw `scope` claim becomes the effective scopes directly — no group derivation.
-5. **Middleware** (`auth/middleware.py:147-156`) enforces the same scope rules as for users: `toshi/read` for queries, `toshi/write` for mutations.
+   - **Client allowlist check** (the `allowed_ids` audience check in `validate_cognito_token`): the M2M client's `client_id` must be in the authorizer's `COGNITO_CLIENT_ID` env var — otherwise `InvalidAudienceError` → 401. The final `click.echo` "Reminder" block in `auth/create_m2m_secret.py::main` explicitly reminds you of this.
+   - The `aws.cognito.signin.user.admin` branch in `validate_cognito_token` is **skipped** (M2M tokens never carry that scope). The raw `scope` claim becomes the effective scopes directly — no group derivation.
+5. **Middleware** (`auth/middleware.py::check_auth`) enforces the same scope rules as for users: `toshi/read` for queries, `toshi/write` for mutations.
 
 ### Where M2M permissions are actually defined
 
@@ -207,7 +207,7 @@ M2M clients **cannot** access AWS resources via the Cognito Identity Pool path. 
 | `401 Unauthorized` | Token invalid (expired/signature/issuer), wrong `token_use`, or `client_id` not in `COGNITO_CLIENT_ID` allowlist | Lambda authorizer CloudWatch logs |
 | `403 Missing required scope: toshi/read` | User not in `toshi-readers`/`toshi-writers`, or M2M client requested fewer scopes than needed | Decode the JWT, check `cognito:groups` and `scope` claims |
 | `403 GraphQL mutations require scope: toshi/write` | User in `toshi-readers` only, or M2M token didn't include `toshi/write` | Same — decode the JWT |
-| Token validates but AWS resource calls fail | `cognito:groups` lacks a `runzi-*` entry, or the Identity Pool role mapping doesn't cover the resource | `serverless.yml:584-613`, then the IAM role policy itself |
+| Token validates but AWS resource calls fail | `cognito:groups` lacks a `runzi-*` entry, or the Identity Pool role mapping doesn't cover the resource | `serverless.yml::ToshiIdentityPoolRoleAttachment`, then the IAM role policy itself |
 
 Decode a JWT with:
 
@@ -217,13 +217,13 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | python -m json.tool
 
 ## Key files referenced
 
-- `auth/authorizer/handler.py:99-272` — JWT validation + scope derivation
-- `auth/middleware.py:116-158` — scope enforcement (the only source of 403)
-- `auth/create_m2m_secret.py` — mint M2M client + populate SM secret
-- `auth/create_users.py` — reference example of multi-group user setup
-- `serverless.yml:272-282` — `ToshiResourceServer` (defines `toshi/read`, `toshi/write` scopes)
-- `serverless.yml:296-342` — `ToshiScientistClient` + `ToshiAutomationClient`
-- `serverless.yml:344-376` — User pool group resources
-- `serverless.yml:584-613` — Identity Pool role-mapping rules
-- `serverless.yml:619-625` — `ToshiM2MSecret` Secrets Manager container
+- `auth/authorizer/handler.py::validate_cognito_token` + `auth/authorizer/handler.py::handler` — JWT validation + scope derivation
+- `auth/middleware.py::check_auth` — scope enforcement (the only source of 403)
+- `auth/create_m2m_secret.py::main` — mint M2M client + populate SM secret
+- `auth/create_users.py` — reference example of multi-group user setup (see module docstring)
+- `serverless.yml::ToshiResourceServer` — defines `toshi/read`, `toshi/write` scopes
+- `serverless.yml::ToshiScientistClient` + `serverless.yml::ToshiAutomationClient`
+- `serverless.yml` — `AWS::Cognito::UserPoolGroup` resources (`ToshiGroupWriters`, `ToshiGroupReaders`, `ToshiGroupRunziLocal`, `ToshiGroupRunziBatch`, `ToshiGroupRunziAdmin`)
+- `serverless.yml::ToshiIdentityPoolRoleAttachment` — Identity Pool role-mapping rules
+- `serverless.yml::ToshiM2MSecret` — Secrets Manager container
 - `docs/AUTH_GUIDE.md` — the canonical user-facing auth guide
