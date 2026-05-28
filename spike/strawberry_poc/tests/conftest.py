@@ -1,20 +1,26 @@
 """
-Test fixtures — mirrors the pattern in graphql_api/tests/conftest.py.
+Test fixtures using DynamoDB Local and Elasticsearch via testcontainers.
 
-Uses moto to mock DynamoDB. Tests call schema.execute_sync() directly,
-bypassing HTTP so they're fast and don't need a running server.
+Both services start once per session using the official Docker images:
+  - amazon/dynamodb-local  — real DynamoDB, supports transact_write_items
+  - elasticsearch:7.1.0    — same version as production
+
+DynamoDB tables are created fresh per test module (dropped on teardown) so
+modules remain isolated. Elasticsearch is shared across the session; search
+tests find whatever is indexed during their own module setup.
 """
 import os
-from decimal import Decimal
 
 import boto3
 import pytest
-from moto import mock_aws
+import requests
+from testcontainers.core.container import DockerContainer
+from testcontainers.core.waiting_utils import wait_for_logs
 
 STAGE = "test"
 REGION = "us-east-1"
+ES_INDEX = "toshi-index-mapped"
 
-# Must be set before importing anything that reads DEPLOYMENT_STAGE at module load
 os.environ.setdefault("DEPLOYMENT_STAGE", STAGE)
 os.environ.setdefault("AWS_DEFAULT_REGION", REGION)
 os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
@@ -22,50 +28,99 @@ os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
 os.environ.setdefault("AWS_SECURITY_TOKEN", "testing")
 os.environ.setdefault("AWS_SESSION_TOKEN", "testing")
 
+_TABLE_NAMES = [
+    f"ToshiThingObject-{STAGE}",
+    f"ToshiFileObject-{STAGE}",
+    f"ToshiTableObject-{STAGE}",
+]
+_IDENTITY_TABLE = f"ToshiIdentity-{STAGE}"
 
-def create_tables(dynamodb):
-    """Create the three Toshi DynamoDB tables in the moto mock."""
-    for table_name in [
-        f"ToshiThingObject-{STAGE}",
-        f"ToshiFileObject-{STAGE}",
-        f"ToshiTableObject-{STAGE}",
-    ]:
+
+def _create_tables(dynamodb):
+    for table_name in _TABLE_NAMES:
         dynamodb.create_table(
             TableName=table_name,
             KeySchema=[{"AttributeName": "object_id", "KeyType": "HASH"}],
             AttributeDefinitions=[{"AttributeName": "object_id", "AttributeType": "S"}],
             BillingMode="PAY_PER_REQUEST",
         )
-
     dynamodb.create_table(
-        TableName=f"ToshiIdentity-{STAGE}",
+        TableName=_IDENTITY_TABLE,
         KeySchema=[{"AttributeName": "table_name", "KeyType": "HASH"}],
         AttributeDefinitions=[{"AttributeName": "table_name", "AttributeType": "S"}],
         BillingMode="PAY_PER_REQUEST",
     )
 
 
-@pytest.fixture(scope="module")
-def dynamodb():
-    """Module-scoped moto DynamoDB resource with all tables created."""
-    with mock_aws():
-        db = boto3.resource("dynamodb", region_name=REGION)
-        create_tables(db)
-        yield db
+def _drop_tables(dynamodb):
+    for name in _TABLE_NAMES + [_IDENTITY_TABLE]:
+        try:
+            dynamodb.Table(name).delete()
+        except Exception:
+            pass
+
+
+@pytest.fixture(scope="session")
+def dynamo_endpoint():
+    """Start DynamoDB Local once for the entire test session."""
+    container = (
+        DockerContainer("amazon/dynamodb-local:latest")
+        .with_bind_ports(8000, None)
+        .with_command("-jar DynamoDBLocal.jar -inMemory -sharedDb")
+    )
+    with container as c:
+        wait_for_logs(c, "Initializing DynamoDB Local", timeout=30)
+        host = c.get_container_host_ip()
+        port = c.get_exposed_port(8000)
+        yield f"http://{host}:{port}"
+
+
+@pytest.fixture(scope="session")
+def es_endpoint():
+    """Start Elasticsearch 7.1.0 once for the entire test session."""
+    container = (
+        DockerContainer("docker.elastic.co/elasticsearch/elasticsearch:7.1.0")
+        .with_bind_ports(9200, None)
+        .with_env("discovery.type", "single-node")
+        .with_env("ES_JAVA_OPTS", "-Xms256m -Xmx256m")
+    )
+    with container as c:
+        wait_for_logs(c, "started", timeout=60)
+        host = c.get_container_host_ip()
+        port = c.get_exposed_port(9200)
+        endpoint = f"http://{host}:{port}"
+        # wait for green/yellow status before yielding
+        for _ in range(30):
+            try:
+                resp = requests.get(f"{endpoint}/_cluster/health", timeout=2)
+                if resp.json().get("status") in ("green", "yellow"):
+                    break
+            except Exception:
+                pass
+            import time; time.sleep(1)
+        os.environ["ES_ENDPOINT"] = endpoint
+        yield endpoint
 
 
 @pytest.fixture(scope="module")
-def gql_context(dynamodb):
-    """
-    GraphQL context dict injected into schema.execute_sync() calls.
+def dynamodb(dynamo_endpoint):
+    """Module-scoped DynamoDB resource — fresh tables per test file."""
+    db = boto3.resource(
+        "dynamodb",
+        endpoint_url=dynamo_endpoint,
+        region_name=REGION,
+        aws_access_key_id="testing",
+        aws_secret_access_key="testing",
+    )
+    _create_tables(db)
+    yield db
+    _drop_tables(db)
 
-    es_endpoint defaults to "" (no indexing) so the moto-backed unit tests
-    don't require a running Elasticsearch. Integration tests override this
-    via the ES_ENDPOINT env var on the conftest-level es_endpoint fixture.
-    """
-    import os
+
+@pytest.fixture(scope="module")
+def gql_context(dynamodb, es_endpoint):
     return {
         "dynamodb": dynamodb,
-        "es_endpoint": os.environ.get("ES_ENDPOINT", ""),
-        "es_index": os.environ.get("ES_INDEX", "toshi-index-mapped"),
+        "es_endpoint": es_endpoint,
+        "es_index": ES_INDEX,
     }

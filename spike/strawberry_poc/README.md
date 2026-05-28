@@ -53,10 +53,30 @@ spike/strawberry_poc/
 
 ```bash
 cd spike/strawberry_poc
-uv run --extra dev pytest tests/ -v
+uv run pytest -v
 ```
 
-Expected: **14 tests, all passing, ~0.3s**.
+All 44 tests run via `uv run pytest`. No manual service startup needed —
+testcontainers pulls and starts `amazon/dynamodb-local` and
+`elasticsearch:7.1.0` automatically via Docker.
+
+### Docker-in-Docker constraint
+
+All 44 passing tests require Docker (DynamoDB Local + Elasticsearch containers).
+This is fine in CI (GitHub Actions `ubuntu-latest` runs on VMs, not containers)
+but breaks in any environment that is itself a Docker container — e.g. the
+`pyup`/security-patching tool.
+
+**Workaround options:**
+
+| Option | Notes |
+|--------|-------|
+| `pytest -m "not docker"` | Skip container-dependent tests; add `@pytest.mark.docker` to mark them. Fast, portable, no Docker needed. Suitable for dep-bump regression checks. |
+| Socket mount | Pass `-v /var/run/docker.sock:/var/run/docker.sock` to the outer container. Spawned containers become siblings on the host daemon. Works, but gives full Docker access — a concern for a security tool. |
+| Testcontainers Cloud | Docker's commercial product (free tier for OSS). Library talks to a remote Docker host; no local socket needed. Requires `TESTCONTAINERS_CLOUD_TOKEN`. |
+
+Recommended: use `pytest -m "not docker"` in containerised environments and
+let CI run the full suite.
 
 The tests use `moto` to mock DynamoDB and call `schema.execute_sync()` directly —
 no HTTP server required, same pattern as the existing test suite.

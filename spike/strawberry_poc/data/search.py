@@ -12,22 +12,32 @@ import os
 
 import requests
 
-ES_ENDPOINT = os.environ.get("ES_ENDPOINT", "http://localhost:9200")
-ES_INDEX = os.environ.get("ES_INDEX", "toshi-index-mapped")
 _TIMEOUT = 5  # seconds
+
+# Read at call time (not import time) so testcontainers can set the env var
+# after startup and have it picked up by all subsequent calls.
+def _es_endpoint() -> str:
+    return os.environ.get("ES_ENDPOINT", "http://localhost:9200")
+
+def _es_index() -> str:
+    return os.environ.get("ES_INDEX", "toshi-index-mapped")
 
 
 def index_document(
     key: str,
     document: dict,
-    endpoint: str = ES_ENDPOINT,
-    index: str = ES_INDEX,
+    endpoint: str | None = None,
+    index: str | None = None,
 ) -> None:
     """
     Index a document in Elasticsearch. No-op if endpoint is empty.
     Mirrors search_manager.py index_document(), including the
     relations_compressed hack for File objects.
     """
+    if endpoint is None:
+        endpoint = _es_endpoint()
+    if index is None:
+        index = _es_index()
     if not endpoint:
         return
 
@@ -48,8 +58,8 @@ def index_document(
 
 def search(
     term: str,
-    endpoint: str = ES_ENDPOINT,
-    index: str = ES_INDEX,
+    endpoint: str | None = None,
+    index: str | None = None,
 ) -> list[dict]:
     """
     Lucene query-string search. Returns list of raw _source dicts, each
@@ -57,6 +67,10 @@ def search(
 
     Mirrors search_manager.py search(), minus AWS auth (local docker only).
     """
+    if endpoint is None:
+        endpoint = _es_endpoint()
+    if index is None:
+        index = _es_index()
     if not endpoint:
         return []
 
