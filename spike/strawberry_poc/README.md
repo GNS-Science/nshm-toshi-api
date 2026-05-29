@@ -124,6 +124,53 @@ no HTTP server required, same pattern as the existing test suite.
 `relay.Node` subclass. Earlier tutorials and docs show manual `relay.GlobalID(...)` construction
 — that pattern no longer works. Tested against **0.314.3**.
 
+## Pydantic integration experiment
+
+The POC uses Pydantic v2 as a data validation layer between DynamoDB raw dicts and Strawberry
+types. Two integration depths were evaluated:
+
+### Phase 1 — Pydantic as a validation layer (adopted)
+
+`data/models.py` defines one `BaseModel` per DynamoDB type. Each Strawberry type's `from_dict`
+calls `XxxData.model_validate(raw_dict)` for type-safe field access and early validation.
+The Pydantic models and Strawberry types are separate; `from_dict` bridges them.
+
+This is the approach in use. It is straightforward, predictable, and the tests pass unchanged.
+
+### Option C — `strawberry.experimental.pydantic` (evaluated, not adopted)
+
+`@strawberry.experimental.pydantic.type(model=...)` can compose with `relay.Node`. The recipe
+that works:
+
+```python
+@strawberry.experimental.pydantic.type(model=GeneralTaskData)
+class GeneralTask(relay.Node):
+    pk: relay.NodeID[str]          # not in Pydantic model → passed via extra={}
+    title: strawberry.auto         # auto-mapped from Pydantic field
+    subtask_type: strawberry.auto  # works only if Pydantic field type IS the enum
+    argument_lists: strawberry.auto  # works if nested type is also pydantic-experimental
+    files_raw: strawberry.Private[list]
+```
+
+`from_pydantic(model, extra={"pk": ..., "files_raw": ...})` handles conversion. `resolve_node`,
+`@strawberry.field`, and `strawberry.Private` all survive the decorator. `relay.ListConnection`
+generates `Connection`/`Edge` types correctly.
+
+**Why not adopted:**
+
+1. **All-or-nothing coupling.** Every nested type (`KeyValuePair`, `KeyValueListPair`) must also
+   be pydantic-experimental, and `data/models.py` must use enum types (not `str`) so Pydantic
+   coerces values before `from_pydantic` sees them. Any type that is not pydantic-experimental
+   causes `from_pydantic` to fail with a confusing `AttributeError`.
+
+2. **Custom classmethods are dropped.** The decorator rebuilds the class and strips any classmethod
+   not part of the relay interface (e.g. `from_dict`). These must become module-level functions.
+
+3. **Experimental label is load-bearing.** Strawberry has changed this API across minor versions.
+   The `strawberry.auto` annotation and `from_pydantic` signature have both shifted in 0.2xx→0.3xx.
+
+Revisit if Strawberry stabilises the pydantic experimental API in a future major release.
+
 ## What remains for a full migration
 
 The POC covers the hard architectural problems. A full migration would be a significant
