@@ -23,13 +23,6 @@ from .relations import (
 )
 
 
-def _kv_list(data: dict, key: str) -> Optional[list[KeyValuePair]]:
-    raw = data.get(key)
-    if not raw:
-        return None
-    return [KeyValuePair(k=i["k"], v=i["v"]) for i in raw]
-
-
 def _kv_input_to_list(items) -> Optional[list[dict]]:
     if not items:
         return None
@@ -78,20 +71,22 @@ class AutomationTask(relay.Node):
 
     @classmethod
     def from_dict(cls, data: dict) -> "AutomationTask":
+        from data.models import AutomationTaskData
+        d = AutomationTaskData.model_validate(data)
         return cls(
-            pk=data["object_id"],
-            state=EventState(data["state"]) if data.get("state") else None,
-            result=EventResult(data["result"]) if data.get("result") else None,
-            task_type=TaskSubType(data["task_type"]) if data.get("task_type") else None,
-            model_type=ModelType(data["model_type"]) if data.get("model_type") else None,
-            created=data.get("created"),
-            duration=data.get("duration"),
-            arguments=_kv_list(data, "arguments"),
-            environment=_kv_list(data, "environment"),
-            metrics=_kv_list(data, "metrics"),
-            files_raw=data.get("files", []),
-            parents_raw=data.get("parents", []),
-            children_raw=data.get("children", []),
+            pk=d.object_id,
+            state=EventState(d.state) if d.state else None,
+            result=EventResult(d.result) if d.result else None,
+            task_type=TaskSubType(d.task_type) if d.task_type else None,
+            model_type=ModelType(d.model_type) if d.model_type else None,
+            created=d.created,
+            duration=d.duration,
+            arguments=[KeyValuePair(k=i.k, v=i.v) for i in d.arguments] if d.arguments else None,
+            environment=[KeyValuePair(k=i.k, v=i.v) for i in d.environment] if d.environment else None,
+            metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
+            files_raw=d.files,
+            parents_raw=d.parents,
+            children_raw=d.children,
         )
 
 
@@ -135,19 +130,21 @@ class RuptureGenerationTask(relay.Node):
 
     @classmethod
     def from_dict(cls, data: dict) -> "RuptureGenerationTask":
+        from data.models import AutomationTaskData
+        d = AutomationTaskData.model_validate(data)
         return cls(
-            pk=data["object_id"],
-            state=EventState(data["state"]) if data.get("state") else None,
-            result=EventResult(data["result"]) if data.get("result") else None,
-            task_type=TaskSubType(data["task_type"]) if data.get("task_type") else None,
-            created=data.get("created"),
-            duration=data.get("duration"),
-            arguments=_kv_list(data, "arguments"),
-            environment=_kv_list(data, "environment"),
-            metrics=_kv_list(data, "metrics"),
-            files_raw=data.get("files", []),
-            parents_raw=data.get("parents", []),
-            children_raw=data.get("children", []),
+            pk=d.object_id,
+            state=EventState(d.state) if d.state else None,
+            result=EventResult(d.result) if d.result else None,
+            task_type=TaskSubType(d.task_type) if d.task_type else None,
+            created=d.created,
+            duration=d.duration,
+            arguments=[KeyValuePair(k=i.k, v=i.v) for i in d.arguments] if d.arguments else None,
+            environment=[KeyValuePair(k=i.k, v=i.v) for i in d.environment] if d.environment else None,
+            metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
+            files_raw=d.files,
+            parents_raw=d.parents,
+            children_raw=d.children,
         )
 
 

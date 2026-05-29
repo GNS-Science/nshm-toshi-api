@@ -41,19 +41,21 @@ class StrongMotionStation(relay.Node):
 
     @classmethod
     def from_dict(cls, data: dict) -> "StrongMotionStation":
+        from data.models import StrongMotionStationData
+        d = StrongMotionStationData.model_validate(data)
         return cls(
-            pk=data["object_id"],
-            site_code=data.get("site_code"),
-            site_class=SmsSiteClass(data["site_class"]) if data.get("site_class") else None,
-            site_class_basis=SmsSiteClassBasis(data["site_class_basis"]) if data.get("site_class_basis") else None,
-            Vs30_mean=data.get("Vs30_mean"),
-            Vs30_std_dev=data.get("Vs30_std_dev"),
-            liquefiable=data.get("liquefiable"),
-            bedrock_encountered=data.get("bedrock_encountered"),
-            soft_clay_or_peat=data.get("soft_clay_or_peat"),
-            created=data.get("created"),
-            updated=data.get("updated"),
-            files_raw=data.get("files", []),
+            pk=d.object_id,
+            site_code=d.site_code,
+            site_class=SmsSiteClass(d.site_class) if d.site_class else None,
+            site_class_basis=SmsSiteClassBasis(d.site_class_basis) if d.site_class_basis else None,
+            Vs30_mean=d.Vs30_mean,
+            Vs30_std_dev=d.Vs30_std_dev,
+            liquefiable=d.liquefiable,
+            bedrock_encountered=d.bedrock_encountered,
+            soft_clay_or_peat=d.soft_clay_or_peat,
+            created=d.created,
+            updated=d.updated,
+            files_raw=d.files,
         )
 
 

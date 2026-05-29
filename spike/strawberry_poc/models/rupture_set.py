@@ -54,16 +54,17 @@ class RuptureSet(relay.Node):
 
     @classmethod
     def from_dict(cls, data: dict) -> "RuptureSet":
-        metrics = data.get("metrics")
+        from data.models import RuptureSetData
+        d = RuptureSetData.model_validate(data)
         return cls(
-            pk=data["object_id"],
-            file_name=data.get("file_name"),
-            md5_digest=data.get("md5_digest"),
-            file_size=data.get("file_size"),
-            created=data.get("created"),
-            fault_models=data.get("fault_models"),
-            metrics=[KeyValuePair(k=i["k"], v=i["v"]) for i in metrics] if metrics else None,
-            produced_by_raw_id=data.get("produced_by"),
+            pk=d.object_id,
+            file_name=d.file_name,
+            md5_digest=d.md5_digest,
+            file_size=d.file_size,
+            created=d.created,
+            fault_models=d.fault_models,
+            metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
+            produced_by_raw_id=d.produced_by,
         )
 
 

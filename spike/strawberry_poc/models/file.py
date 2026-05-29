@@ -46,15 +46,16 @@ class ToshiFile(relay.Node):
 
     @classmethod
     def from_dict(cls, data: dict) -> "ToshiFile":
-        meta = data.get("meta")
+        from data.models import ToshiFileData
+        d = ToshiFileData.model_validate(data)
         return cls(
-            pk=data["object_id"],
-            file_name=data.get("file_name"),
-            md5_digest=data.get("md5_digest"),
-            file_size=data.get("file_size"),
-            meta=[KeyValuePair(k=i["k"], v=i["v"]) for i in meta] if meta else None,
-            created=data.get("created"),
-            relations_raw=data.get("relations", []),
+            pk=d.object_id,
+            file_name=d.file_name,
+            md5_digest=d.md5_digest,
+            file_size=d.file_size,
+            meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
+            created=d.created,
+            relations_raw=d.relations,
         )
 
 

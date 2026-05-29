@@ -36,14 +36,16 @@ class SmsFile(relay.Node):
 
     @classmethod
     def from_dict(cls, data: dict) -> "SmsFile":
+        from data.models import SmsFileData
+        d = SmsFileData.model_validate(data)
         return cls(
-            pk=data["object_id"],
-            file_name=data.get("file_name"),
-            md5_digest=data.get("md5_digest"),
-            file_size=data.get("file_size"),
-            file_type=SmsFileType(data["file_type"]) if data.get("file_type") else None,
-            created=data.get("created"),
-            relations_raw=data.get("relations", []),
+            pk=d.object_id,
+            file_name=d.file_name,
+            md5_digest=d.md5_digest,
+            file_size=d.file_size,
+            file_type=SmsFileType(d.file_type) if d.file_type else None,
+            created=d.created,
+            relations_raw=d.relations,
         )
 
 

@@ -79,24 +79,24 @@ class GeneralTask(relay.Node):
 
     @classmethod
     def from_dict(cls, data: dict) -> "GeneralTask":
-        kvl = data.get("argument_lists")
-        meta = data.get("meta")
+        from data.models import GeneralTaskData
+        d = GeneralTaskData.model_validate(data)
         return cls(
-            pk=data["object_id"],
-            title=data.get("title"),
-            description=data.get("description"),
-            agent_name=data.get("agent_name"),
-            created=data.get("created"),
-            updated=data.get("updated"),
-            notes=data.get("notes"),
-            subtask_count=data.get("subtask_count"),
-            subtask_type=TaskSubType(data["subtask_type"]) if data.get("subtask_type") else None,
-            model_type=ModelType(data["model_type"]) if data.get("model_type") else None,
-            argument_lists=[KeyValueListPair(k=i["k"], v=i["v"]) for i in kvl] if kvl else None,
-            meta=[KeyValuePair(k=i["k"], v=i["v"]) for i in meta] if meta else None,
-            files_raw=data.get("files", []),
-            children_raw=data.get("children", []),
-            parents_raw=data.get("parents", []),
+            pk=d.object_id,
+            title=d.title,
+            description=d.description,
+            agent_name=d.agent_name,
+            created=d.created,
+            updated=d.updated,
+            notes=d.notes,
+            subtask_count=d.subtask_count,
+            subtask_type=TaskSubType(d.subtask_type) if d.subtask_type else None,
+            model_type=ModelType(d.model_type) if d.model_type else None,
+            argument_lists=[KeyValueListPair(k=i.k, v=i.v) for i in d.argument_lists] if d.argument_lists else None,
+            meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
+            files_raw=d.files,
+            children_raw=d.children,
+            parents_raw=d.parents,
         )
 
 
