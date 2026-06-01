@@ -169,7 +169,7 @@ class InversionSolution(relay.Node):
             meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
             created=d.created,
             metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
-            tables=[_ltr_from_dict(t) for t in d.tables] if d.tables else None,
+            tables=[_ltr_from_dict(t.model_dump()) for t in d.tables] if d.tables else None,
             produced_by_raw_id=d.produced_by,
             predecessors_raw=[p.model_dump() for p in d.predecessors] if d.predecessors else None,
         )
