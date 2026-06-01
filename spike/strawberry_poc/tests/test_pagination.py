@@ -11,6 +11,7 @@ the list returned by each resolver.
 Run with:
     uv run --extra dev pytest tests/test_pagination.py -v
 """
+
 import pytest
 
 from schema import schema
@@ -62,9 +63,7 @@ def _query(gql_context, first=None, after=None):
         vars["first"] = first
     if after is not None:
         vars["after"] = after
-    result = schema.execute_sync(
-        PAGINATED_QUERY, context_value=gql_context, variable_values=vars
-    )
+    result = schema.execute_sync(PAGINATED_QUERY, context_value=gql_context, variable_values=vars)
     assert result.errors is None, result.errors
     return result.data["general_tasks"]
 

@@ -11,7 +11,8 @@ from embedded arrays inside Thing / File objects:
 strawberry.lazy is used to reference types defined in other modules without
 causing circular imports at schema build time.
 """
-from typing import Annotated, Optional, Union
+
+from typing import Annotated
 
 import strawberry
 from strawberry.types import Info
@@ -25,8 +26,12 @@ _SmsFile = Annotated["SmsFile", strawberry.lazy("models.sms_file")]
 _RuptureSet = Annotated["RuptureSet", strawberry.lazy("models.rupture_set")]
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("models.inversion_solution")]
 _ScaledInversionSolution = Annotated["ScaledInversionSolution", strawberry.lazy("models.scaled_inversion_solution")]
-_AggregateInversionSolution = Annotated["AggregateInversionSolution", strawberry.lazy("models.aggregate_inversion_solution")]
-_TimeDependentInversionSolution = Annotated["TimeDependentInversionSolution", strawberry.lazy("models.time_dependent_inversion_solution")]
+_AggregateInversionSolution = Annotated[
+    "AggregateInversionSolution", strawberry.lazy("models.aggregate_inversion_solution")
+]
+_TimeDependentInversionSolution = Annotated[
+    "TimeDependentInversionSolution", strawberry.lazy("models.time_dependent_inversion_solution")
+]
 _InversionSolutionNrml = Annotated["InversionSolutionNrml", strawberry.lazy("models.inversion_solution_nrml")]
 _GeneralTask = Annotated["GeneralTask", strawberry.lazy("models.general_task")]
 _RuptureGenerationTask = Annotated["RuptureGenerationTask", strawberry.lazy("models.automation_task")]
@@ -38,32 +43,41 @@ _OpenquakeHazardConfig = Annotated["OpenquakeHazardConfig", strawberry.lazy("mod
 
 # Union types — referenced as return types of @strawberry.field methods
 FileUnion = Annotated[
-    Union[
-        _ToshiFile, _SmsFile, _RuptureSet,
-        _InversionSolution, _ScaledInversionSolution, _AggregateInversionSolution,
-        _TimeDependentInversionSolution, _InversionSolutionNrml,
-    ],
+    _ToshiFile
+    | _SmsFile
+    | _RuptureSet
+    | _InversionSolution
+    | _ScaledInversionSolution
+    | _AggregateInversionSolution
+    | _TimeDependentInversionSolution
+    | _InversionSolutionNrml,
     strawberry.union(name="FileUnion"),
 ]
 
 ThingUnion = Annotated[
-    Union[
-        _GeneralTask, _RuptureGenerationTask, _AutomationTask, _StrongMotionStation,
-        _OpenquakeHazardTask, _OpenquakeHazardSolution, _OpenquakeHazardConfig,
-    ],
+    _GeneralTask
+    | _RuptureGenerationTask
+    | _AutomationTask
+    | _StrongMotionStation
+    | _OpenquakeHazardTask
+    | _OpenquakeHazardSolution
+    | _OpenquakeHazardConfig,
     strawberry.union(name="ThingUnion"),
 ]
 
 ChildTaskUnion = Annotated[
-    Union[
-        _GeneralTask, _RuptureGenerationTask, _AutomationTask, _StrongMotionStation,
-        _OpenquakeHazardTask, _OpenquakeHazardSolution,
-    ],
+    _GeneralTask
+    | _RuptureGenerationTask
+    | _AutomationTask
+    | _StrongMotionStation
+    | _OpenquakeHazardTask
+    | _OpenquakeHazardSolution,
     strawberry.union(name="ChildTaskUnion"),
 ]
 
 
 # ── FileRelation ──────────────────────────────────────────────────────────────
+
 
 @strawberry.type
 class FileRelation:
@@ -77,19 +91,22 @@ class FileRelation:
     thing_raw_id: strawberry.Private[str]
 
     @strawberry.field
-    def file(self, info: Info) -> Optional[FileUnion]:
+    def file(self, info: Info) -> FileUnion | None:
         from data.dynamo import get_file
+
         data = get_file(info.context["dynamodb"], self.file_raw_id)
         return _dispatch_file(data) if data else None
 
     @strawberry.field
-    def thing(self, info: Info) -> Optional[ThingUnion]:
+    def thing(self, info: Info) -> ThingUnion | None:
         from data.dynamo import get_thing
+
         data = get_thing(info.context["dynamodb"], self.thing_raw_id)
         return _dispatch_thing(data) if data else None
 
 
 # ── TaskTaskRelation ──────────────────────────────────────────────────────────
+
 
 @strawberry.type
 class TaskTaskRelation:
@@ -103,46 +120,57 @@ class TaskTaskRelation:
     child_clazz: strawberry.Private[str]
 
     @strawberry.field
-    def parent(self, info: Info) -> Optional[_GeneralTask]:
+    def parent(self, info: Info) -> _GeneralTask | None:
         from data.dynamo import get_thing
         from models.general_task import GeneralTask
+
         data = get_thing(info.context["dynamodb"], self.parent_raw_id)
         return GeneralTask.from_dict(data) if data else None
 
     @strawberry.field
-    def child(self, info: Info) -> Optional[ChildTaskUnion]:
+    def child(self, info: Info) -> ChildTaskUnion | None:
         from data.dynamo import get_thing
+
         data = get_thing(info.context["dynamodb"], self.child_raw_id)
         return _dispatch_thing(data) if data else None
 
 
 # ── Dispatch helpers ──────────────────────────────────────────────────────────
 
+
 def _dispatch_file(data: dict):
     """Instantiate the right Strawberry file type from a raw data dict."""
     clazz = data.get("clazz_name", "")
     if clazz == "SmsFile":
         from models.sms_file import SmsFile
+
         return SmsFile.from_dict(data)
     if clazz == "RuptureSet":
         from models.rupture_set import RuptureSet
+
         return RuptureSet.from_dict(data)
     if clazz == "InversionSolution":
         from models.inversion_solution import InversionSolution
+
         return InversionSolution.from_dict(data)
     if clazz == "ScaledInversionSolution":
         from models.scaled_inversion_solution import ScaledInversionSolution
+
         return ScaledInversionSolution.from_dict(data)
     if clazz == "AggregateInversionSolution":
         from models.aggregate_inversion_solution import AggregateInversionSolution
+
         return AggregateInversionSolution.from_dict(data)
     if clazz == "TimeDependentInversionSolution":
         from models.time_dependent_inversion_solution import TimeDependentInversionSolution
+
         return TimeDependentInversionSolution.from_dict(data)
     if clazz == "InversionSolutionNrml":
         from models.inversion_solution_nrml import InversionSolutionNrml
+
         return InversionSolutionNrml.from_dict(data)
     from models.file import ToshiFile
+
     return ToshiFile.from_dict(data)
 
 
@@ -151,27 +179,35 @@ def _dispatch_thing(data: dict):
     clazz = data.get("clazz_name", "")
     if clazz == "RuptureGenerationTask":
         from models.automation_task import RuptureGenerationTask
+
         return RuptureGenerationTask.from_dict(data)
     if clazz == "AutomationTask":
         from models.automation_task import AutomationTask
+
         return AutomationTask.from_dict(data)
     if clazz == "StrongMotionStation":
         from models.strong_motion_station import StrongMotionStation
+
         return StrongMotionStation.from_dict(data)
     if clazz == "OpenquakeHazardTask":
         from models.openquake_hazard_task import OpenquakeHazardTask
+
         return OpenquakeHazardTask.from_dict(data)
     if clazz == "OpenquakeHazardSolution":
         from models.openquake_hazard_solution import OpenquakeHazardSolution
+
         return OpenquakeHazardSolution.from_dict(data)
     if clazz == "OpenquakeHazardConfig":
         from models.openquake_hazard_config import OpenquakeHazardConfig
+
         return OpenquakeHazardConfig.from_dict(data)
     from models.general_task import GeneralTask
+
     return GeneralTask.from_dict(data)
 
 
 # ── Input types for mutations ─────────────────────────────────────────────────
+
 
 @strawberry.input
 class CreateFileRelationInput:
@@ -188,9 +224,8 @@ class CreateTaskRelationInput:
 
 # ── Builder helpers (called from Thing/File from_dict) ────────────────────────
 
-def build_file_relations_for_thing(
-    thing_raw_id: str, files_raw: list
-) -> list[FileRelation]:
+
+def build_file_relations_for_thing(thing_raw_id: str, files_raw: list) -> list[FileRelation]:
     """Build FileRelation list from a Thing's embedded files array."""
     result = []
     for entry in files_raw or []:
@@ -205,9 +240,7 @@ def build_file_relations_for_thing(
     return result
 
 
-def build_file_relations_for_file(
-    file_raw_id: str, relations_raw: list
-) -> list[FileRelation]:
+def build_file_relations_for_file(file_raw_id: str, relations_raw: list) -> list[FileRelation]:
     """Build FileRelation list from a File's embedded relations array."""
     result = []
     for entry in relations_raw or []:
@@ -222,9 +255,7 @@ def build_file_relations_for_file(
     return result
 
 
-def build_task_children(
-    parent_raw_id: str, children_raw: list
-) -> list[TaskTaskRelation]:
+def build_task_children(parent_raw_id: str, children_raw: list) -> list[TaskTaskRelation]:
     return [
         TaskTaskRelation(
             parent_raw_id=parent_raw_id,
@@ -236,9 +267,7 @@ def build_task_children(
     ]
 
 
-def build_task_parents(
-    child_raw_id: str, parents_raw: list
-) -> list[TaskTaskRelation]:
+def build_task_parents(child_raw_id: str, parents_raw: list) -> list[TaskTaskRelation]:
     return [
         TaskTaskRelation(
             parent_raw_id=entry["parent_id"],
@@ -252,9 +281,12 @@ def build_task_parents(
 
 # ── Mutation resolvers ────────────────────────────────────────────────────────
 
+
 def mutate_create_file_relation(info: Info, input: CreateFileRelationInput) -> bool:
-    from data.dynamo import create_file_relation
     from strawberry.relay import GlobalID
+
+    from data.dynamo import create_file_relation
+
     thing_gid = GlobalID.from_id(input.thing_id)
     file_gid = GlobalID.from_id(input.file_id)
     create_file_relation(
@@ -266,11 +298,11 @@ def mutate_create_file_relation(info: Info, input: CreateFileRelationInput) -> b
     return True
 
 
-def mutate_create_task_relation(
-    info: Info, input: CreateTaskRelationInput
-) -> TaskTaskRelation:
-    from data.dynamo import create_task_relation, get_thing
+def mutate_create_task_relation(info: Info, input: CreateTaskRelationInput) -> TaskTaskRelation:
     from strawberry.relay import GlobalID
+
+    from data.dynamo import create_task_relation, get_thing
+
     parent_gid = GlobalID.from_id(input.parent_id)
     child_gid = GlobalID.from_id(input.child_id)
     parent_data = get_thing(info.context["dynamodb"], parent_gid.node_id)

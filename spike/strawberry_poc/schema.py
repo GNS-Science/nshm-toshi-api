@@ -9,12 +9,20 @@ Designed as a drop-in replacement for the Graphene stack:
 This means all existing client query strings work unchanged against
 either the old (Graphene/Flask) or new (Strawberry/FastAPI) stack.
 """
-from typing import Annotated, Iterable, Optional, Union
+
+from collections.abc import Iterable
+from typing import Annotated
 
 import strawberry
 from strawberry import relay
 from strawberry.schema.config import StrawberryConfig
 
+from models.aggregate_inversion_solution import (
+    AggregateInversionSolution,
+    CreateAggregateInversionSolutionInput,
+    mutate_create_aggregate_inversion_solution,
+    resolve_aggregate_inversion_solutions,
+)
 from models.automation_task import (
     AutomationTask,
     CreateAutomationTaskInput,
@@ -34,25 +42,6 @@ from models.general_task import (
     mutate_create_general_task,
     mutate_update_general_task,
     resolve_general_tasks,
-)
-from models.relations import (
-    CreateFileRelationInput,
-    CreateTaskRelationInput,
-    TaskTaskRelation,
-    mutate_create_file_relation,
-    mutate_create_task_relation,
-)
-from models.rupture_set import (
-    CreateRuptureSetInput,
-    RuptureSet,
-    mutate_create_rupture_set,
-    resolve_rupture_sets,
-)
-from models.aggregate_inversion_solution import (
-    AggregateInversionSolution,
-    CreateAggregateInversionSolutionInput,
-    mutate_create_aggregate_inversion_solution,
-    resolve_aggregate_inversion_solutions,
 )
 from models.inversion_solution import (
     AppendInversionSolutionTablesInput,
@@ -88,6 +77,19 @@ from models.openquake_hazard_task import (
     mutate_update_openquake_hazard_task,
     resolve_openquake_hazard_tasks,
 )
+from models.relations import (
+    CreateFileRelationInput,
+    CreateTaskRelationInput,
+    TaskTaskRelation,
+    mutate_create_file_relation,
+    mutate_create_task_relation,
+)
+from models.rupture_set import (
+    CreateRuptureSetInput,
+    RuptureSet,
+    mutate_create_rupture_set,
+    resolve_rupture_sets,
+)
 from models.scaled_inversion_solution import (
     CreateScaledInversionSolutionInput,
     ScaledInversionSolution,
@@ -108,34 +110,31 @@ from models.time_dependent_inversion_solution import (
     resolve_time_dependent_inversion_solutions,
 )
 
-
 # ── SearchResult union + connection ───────────────────────────────────────────
 
 SearchResult = Annotated[
-    Union[
-        GeneralTask,
-        RuptureGenerationTask,
-        AutomationTask,
-        StrongMotionStation,
-        OpenquakeHazardTask,
-        OpenquakeHazardSolution,
-        OpenquakeHazardConfig,
-        ToshiFile,
-        SmsFile,
-        RuptureSet,
-        InversionSolution,
-        ScaledInversionSolution,
-        AggregateInversionSolution,
-        TimeDependentInversionSolution,
-        InversionSolutionNrml,
-    ],
+    GeneralTask
+    | RuptureGenerationTask
+    | AutomationTask
+    | StrongMotionStation
+    | OpenquakeHazardTask
+    | OpenquakeHazardSolution
+    | OpenquakeHazardConfig
+    | ToshiFile
+    | SmsFile
+    | RuptureSet
+    | InversionSolution
+    | ScaledInversionSolution
+    | AggregateInversionSolution
+    | TimeDependentInversionSolution
+    | InversionSolutionNrml,
     strawberry.union(name="SearchResult"),
 ]
 
 
 @strawberry.type
 class SearchResultEdge:
-    node: Optional[SearchResult] = None
+    node: SearchResult | None = None
 
 
 @strawberry.type
@@ -145,10 +144,10 @@ class SearchResultConnection:
 
 @strawberry.type
 class SearchPayload:
-    search_result: Optional[SearchResultConnection] = None
+    search_result: SearchResultConnection | None = None
 
 
-def _dispatch_search(hit: dict) -> Optional[SearchResult]:  # noqa: C901
+def _dispatch_search(hit: dict) -> SearchResult | None:  # noqa: C901
     """Instantiate the right Strawberry type from an ES _source dict."""
     clazz = hit.get("clazz_name", "")
     try:
@@ -188,103 +187,125 @@ def _dispatch_search(hit: dict) -> Optional[SearchResult]:  # noqa: C901
 
 # ── Payload wrapper types (mirrors Graphene's ClientIDMutation Output pattern) ─
 
+
 @strawberry.type
 class CreateGeneralTaskPayload:
-    general_task: Optional[GeneralTask] = None
+    general_task: GeneralTask | None = None
+
 
 @strawberry.type
 class UpdateGeneralTaskPayload:
-    general_task: Optional[GeneralTask] = None
+    general_task: GeneralTask | None = None
+
 
 @strawberry.type
 class CreateRuptureGenerationTaskPayload:
-    task_result: Optional[RuptureGenerationTask] = None
+    task_result: RuptureGenerationTask | None = None
+
 
 @strawberry.type
 class UpdateRuptureGenerationTaskPayload:
-    task_result: Optional[RuptureGenerationTask] = None
+    task_result: RuptureGenerationTask | None = None
+
 
 @strawberry.type
 class CreateAutomationTaskPayload:
-    task_result: Optional[AutomationTask] = None
+    task_result: AutomationTask | None = None
+
 
 @strawberry.type
 class CreateFilePayload:
-    ok: Optional[bool] = None
-    file_result: Optional[ToshiFile] = None
+    ok: bool | None = None
+    file_result: ToshiFile | None = None
+
 
 @strawberry.type
 class CreateSmsFilePayload:
-    ok: Optional[bool] = None
-    file_result: Optional[SmsFile] = None
+    ok: bool | None = None
+    file_result: SmsFile | None = None
+
 
 @strawberry.type
 class CreateStrongMotionStationPayload:
-    strong_motion_station: Optional[StrongMotionStation] = None
+    strong_motion_station: StrongMotionStation | None = None
+
 
 @strawberry.type
 class CreateRuptureSetPayload:
-    ok: Optional[bool] = None
-    rupture_set: Optional[RuptureSet] = None
+    ok: bool | None = None
+    rupture_set: RuptureSet | None = None
+
 
 @strawberry.type
 class CreateFileRelationPayload:
-    ok: Optional[bool] = None
+    ok: bool | None = None
+
 
 @strawberry.type
 class CreateTaskRelationPayload:
-    ok: Optional[bool] = None
-    thing_relation: Optional[TaskTaskRelation] = None
+    ok: bool | None = None
+    thing_relation: TaskTaskRelation | None = None
+
 
 @strawberry.type
 class CreateInversionSolutionPayload:
-    ok: Optional[bool] = None
-    inversion_solution: Optional[InversionSolution] = None
+    ok: bool | None = None
+    inversion_solution: InversionSolution | None = None
+
 
 @strawberry.type
 class AppendInversionSolutionTablesPayload:
-    ok: Optional[bool] = None
-    inversion_solution: Optional[InversionSolution] = None
+    ok: bool | None = None
+    inversion_solution: InversionSolution | None = None
+
 
 @strawberry.type
 class CreateScaledInversionSolutionPayload:
-    ok: Optional[bool] = None
-    solution: Optional[ScaledInversionSolution] = None
+    ok: bool | None = None
+    solution: ScaledInversionSolution | None = None
+
 
 @strawberry.type
 class CreateAggregateInversionSolutionPayload:
-    ok: Optional[bool] = None
-    solution: Optional[AggregateInversionSolution] = None
+    ok: bool | None = None
+    solution: AggregateInversionSolution | None = None
+
 
 @strawberry.type
 class CreateTimeDependentInversionSolutionPayload:
-    ok: Optional[bool] = None
-    solution: Optional[TimeDependentInversionSolution] = None
+    ok: bool | None = None
+    solution: TimeDependentInversionSolution | None = None
+
 
 @strawberry.type
 class CreateInversionSolutionNrmlPayload:
-    ok: Optional[bool] = None
-    inversion_solution_nrml: Optional[InversionSolutionNrml] = None
+    ok: bool | None = None
+    inversion_solution_nrml: InversionSolutionNrml | None = None
+
 
 @strawberry.type
 class CreateOpenquakeHazardConfigPayload:
-    ok: Optional[bool] = None
-    config: Optional[OpenquakeHazardConfig] = None
+    ok: bool | None = None
+    config: OpenquakeHazardConfig | None = None
+
 
 @strawberry.type
 class CreateOpenquakeHazardSolutionPayload:
-    ok: Optional[bool] = None
-    openquake_hazard_solution: Optional[OpenquakeHazardSolution] = None
+    ok: bool | None = None
+    openquake_hazard_solution: OpenquakeHazardSolution | None = None
+
 
 @strawberry.type
 class CreateOpenquakeHazardTaskPayload:
-    ok: Optional[bool] = None
-    task_result: Optional[OpenquakeHazardTask] = None
+    ok: bool | None = None
+    task_result: OpenquakeHazardTask | None = None
+
 
 @strawberry.type
 class UpdateOpenquakeHazardTaskPayload:
-    ok: Optional[bool] = None
-    task_result: Optional[OpenquakeHazardTask] = None
+    ok: bool | None = None
+    task_result: OpenquakeHazardTask | None = None
+
 
 @strawberry.type
 class ReindexPayload:
@@ -293,6 +314,7 @@ class ReindexPayload:
 
 
 # ── Query ──────────────────────────────────────────────────────────────────────
+
 
 @strawberry.type
 class Query:
@@ -339,7 +361,9 @@ class Query:
         return resolve_aggregate_inversion_solutions(info)
 
     @relay.connection(relay.ListConnection[TimeDependentInversionSolution])
-    def time_dependent_inversion_solutions(self, info: strawberry.types.Info) -> Iterable[TimeDependentInversionSolution]:
+    def time_dependent_inversion_solutions(
+        self, info: strawberry.types.Info
+    ) -> Iterable[TimeDependentInversionSolution]:
         return resolve_time_dependent_inversion_solutions(info)
 
     @relay.connection(relay.ListConnection[InversionSolutionNrml])
@@ -361,21 +385,19 @@ class Query:
     @strawberry.field
     def search(self, info: strawberry.types.Info, search_term: str) -> SearchPayload:
         from data.search import search as es_search
+
         ctx = info.context
         hits = es_search(
             search_term,
             endpoint=ctx.get("es_endpoint", ""),
             index=ctx.get("es_index", "toshi-index-mapped"),
         )
-        edges = [
-            SearchResultEdge(node=node)
-            for hit in hits
-            if (node := _dispatch_search(hit)) is not None
-        ]
+        edges = [SearchResultEdge(node=node) for hit in hits if (node := _dispatch_search(hit)) is not None]
         return SearchPayload(search_result=SearchResultConnection(edges=edges))
 
 
 # ── Mutation ───────────────────────────────────────────────────────────────────
+
 
 @strawberry.type
 class Mutation:
@@ -392,30 +414,22 @@ class Mutation:
         return UpdateGeneralTaskPayload(general_task=mutate_update_general_task(info, input))
 
     @strawberry.mutation
-    def create_rupture_set(
-        self, info: strawberry.types.Info, input: CreateRuptureSetInput
-    ) -> CreateRuptureSetPayload:
+    def create_rupture_set(self, info: strawberry.types.Info, input: CreateRuptureSetInput) -> CreateRuptureSetPayload:
         return CreateRuptureSetPayload(ok=True, rupture_set=mutate_create_rupture_set(info, input))
 
     @strawberry.mutation
-    def create_file(
-        self, info: strawberry.types.Info, input: CreateFileInput
-    ) -> CreateFilePayload:
+    def create_file(self, info: strawberry.types.Info, input: CreateFileInput) -> CreateFilePayload:
         return CreateFilePayload(ok=True, file_result=mutate_create_file(info, input))
 
     @strawberry.mutation
-    def create_sms_file(
-        self, info: strawberry.types.Info, input: CreateSmsFileInput
-    ) -> CreateSmsFilePayload:
+    def create_sms_file(self, info: strawberry.types.Info, input: CreateSmsFileInput) -> CreateSmsFilePayload:
         return CreateSmsFilePayload(ok=True, file_result=mutate_create_sms_file(info, input))
 
     @strawberry.mutation
     def create_strong_motion_station(
         self, info: strawberry.types.Info, input: CreateStrongMotionStationInput
     ) -> CreateStrongMotionStationPayload:
-        return CreateStrongMotionStationPayload(
-            strong_motion_station=mutate_create_strong_motion_station(info, input)
-        )
+        return CreateStrongMotionStationPayload(strong_motion_station=mutate_create_strong_motion_station(info, input))
 
     @strawberry.mutation
     def create_automation_task(
@@ -427,25 +441,19 @@ class Mutation:
     def create_rupture_generation_task(
         self, info: strawberry.types.Info, input: CreateAutomationTaskInput
     ) -> CreateRuptureGenerationTaskPayload:
-        return CreateRuptureGenerationTaskPayload(
-            task_result=mutate_create_rupture_generation_task(info, input)
-        )
+        return CreateRuptureGenerationTaskPayload(task_result=mutate_create_rupture_generation_task(info, input))
 
     @strawberry.mutation
     def update_rupture_generation_task(
         self, info: strawberry.types.Info, input: UpdateAutomationTaskInput
     ) -> UpdateRuptureGenerationTaskPayload:
-        return UpdateRuptureGenerationTaskPayload(
-            task_result=mutate_update_rupture_generation_task(info, input)
-        )
+        return UpdateRuptureGenerationTaskPayload(task_result=mutate_update_rupture_generation_task(info, input))
 
     @strawberry.mutation
     def create_inversion_solution(
         self, info: strawberry.types.Info, input: CreateInversionSolutionInput
     ) -> CreateInversionSolutionPayload:
-        return CreateInversionSolutionPayload(
-            ok=True, inversion_solution=mutate_create_inversion_solution(info, input)
-        )
+        return CreateInversionSolutionPayload(ok=True, inversion_solution=mutate_create_inversion_solution(info, input))
 
     @strawberry.mutation
     def append_inversion_solution_tables(
@@ -491,9 +499,7 @@ class Mutation:
     def create_openquake_hazard_config(
         self, info: strawberry.types.Info, input: CreateOpenquakeHazardConfigInput
     ) -> CreateOpenquakeHazardConfigPayload:
-        return CreateOpenquakeHazardConfigPayload(
-            ok=True, config=mutate_create_openquake_hazard_config(info, input)
-        )
+        return CreateOpenquakeHazardConfigPayload(ok=True, config=mutate_create_openquake_hazard_config(info, input))
 
     @strawberry.mutation
     def create_openquake_hazard_solution(
@@ -507,17 +513,13 @@ class Mutation:
     def create_openquake_hazard_task(
         self, info: strawberry.types.Info, input: CreateOpenquakeHazardTaskInput
     ) -> CreateOpenquakeHazardTaskPayload:
-        return CreateOpenquakeHazardTaskPayload(
-            ok=True, task_result=mutate_create_openquake_hazard_task(info, input)
-        )
+        return CreateOpenquakeHazardTaskPayload(ok=True, task_result=mutate_create_openquake_hazard_task(info, input))
 
     @strawberry.mutation
     def update_openquake_hazard_task(
         self, info: strawberry.types.Info, input: UpdateOpenquakeHazardTaskInput
     ) -> UpdateOpenquakeHazardTaskPayload:
-        return UpdateOpenquakeHazardTaskPayload(
-            ok=True, task_result=mutate_update_openquake_hazard_task(info, input)
-        )
+        return UpdateOpenquakeHazardTaskPayload(ok=True, task_result=mutate_update_openquake_hazard_task(info, input))
 
     @strawberry.mutation
     def create_file_relation(
@@ -534,11 +536,10 @@ class Mutation:
         return CreateTaskRelationPayload(ok=True, thing_relation=relation)
 
     @strawberry.mutation
-    def reindex(
-        self, info: strawberry.types.Info, id_in: list[strawberry.ID]
-    ) -> ReindexPayload:
-        from data.dynamo import get_object, es_key_for
+    def reindex(self, info: strawberry.types.Info, id_in: list[strawberry.ID]) -> ReindexPayload:
+        from data.dynamo import es_key_for, get_object
         from data.search import index_document
+
         ctx = info.context
         dynamodb = ctx["dynamodb"]
         ep = ctx.get("es_endpoint", "")

@@ -8,6 +8,7 @@ Replaces PynamoDB entirely. The DynamoDB table layout is unchanged:
 
 Reading existing data requires no migration — same tables, same JSON.
 """
+
 import json
 import logging
 import os
@@ -47,19 +48,37 @@ def _table_table(dynamodb, stage: str = STAGE):
 
 
 # ── Type → table routing ─────────────────────────────────────────────────────
-THING_CLASSES: frozenset[str] = frozenset({
-    "GeneralTask", "AutomationTask", "RuptureGenerationTask", "StrongMotionStation",
-    "OpenquakeHazardTask", "OpenquakeHazardSolution", "OpenquakeHazardConfig",
-})
-FILE_CLASSES: frozenset[str] = frozenset({
-    "ToshiFile", "File", "SmsFile", "RuptureSet",
-    "InversionSolution", "ScaledInversionSolution", "AggregateInversionSolution",
-    "TimeDependentInversionSolution", "InversionSolutionNrml",
-})
+THING_CLASSES: frozenset[str] = frozenset(
+    {
+        "GeneralTask",
+        "AutomationTask",
+        "RuptureGenerationTask",
+        "StrongMotionStation",
+        "OpenquakeHazardTask",
+        "OpenquakeHazardSolution",
+        "OpenquakeHazardConfig",
+    }
+)
+FILE_CLASSES: frozenset[str] = frozenset(
+    {
+        "ToshiFile",
+        "File",
+        "SmsFile",
+        "RuptureSet",
+        "InversionSolution",
+        "ScaledInversionSolution",
+        "AggregateInversionSolution",
+        "TimeDependentInversionSolution",
+        "InversionSolutionNrml",
+    }
+)
 # Extend as table-backed models are added to the schema.
-TABLE_CLASSES: frozenset[str] = frozenset({
-    "GroundMotionTable", "GriddedHazard",
-})
+TABLE_CLASSES: frozenset[str] = frozenset(
+    {
+        "GroundMotionTable",
+        "GriddedHazard",
+    }
+)
 
 
 def get_object(dynamodb, type_name: str, object_id: str, stage: str = STAGE) -> dict | None:
@@ -84,6 +103,7 @@ def es_key_for(type_name: str, object_id: str) -> str:
 
 # ── S3 fallback (legacy objects not yet migrated to DynamoDB) ─────────────────
 
+
 def _from_s3(object_id: str, prefix: str) -> dict | None:
     """
     Read object.json from S3 for legacy objects not in DynamoDB.
@@ -104,9 +124,8 @@ def _from_s3(object_id: str, prefix: str) -> dict | None:
 
 # ── Atomic ID allocation ──────────────────────────────────────────────────────
 
-def _atomic_put(
-    dynamodb, dest_table_name: str, clazz_name: str, payload: dict, stage: str
-) -> str:
+
+def _atomic_put(dynamodb, dest_table_name: str, clazz_name: str, payload: dict, stage: str) -> str:
     """
     Atomically increment ToshiIdentity and write the object in a single
     transact_write_items call. A conditional check on the counter value
@@ -126,35 +145,37 @@ def _atomic_put(
         current_id = read_current_id(dynamodb, stage)
         object_id = append_uniq(current_id)
         try:
-            client.transact_write_items(TransactItems=[
-                {
-                    "Update": {
-                        "TableName": f"ToshiIdentity-{stage}",
-                        "Key": {"table_name": {"S": stage}},
-                        "UpdateExpression": "SET object_id = object_id + :inc",
-                        "ConditionExpression": "object_id = :cur",
-                        "ExpressionAttributeValues": {
-                            ":inc": {"N": "1"},
-                            ":cur": {"N": str(current_id)},
-                        },
-                    }
-                },
-                {
-                    "Put": {
-                        "TableName": dest_table_name,
-                        "Item": {
-                            "object_id": {"S": object_id},
-                            "object_type": {"S": clazz_name},
-                            "object_content": {"S": json.dumps(payload)},
-                        },
-                    }
-                },
-            ])
+            client.transact_write_items(
+                TransactItems=[
+                    {
+                        "Update": {
+                            "TableName": f"ToshiIdentity-{stage}",
+                            "Key": {"table_name": {"S": stage}},
+                            "UpdateExpression": "SET object_id = object_id + :inc",
+                            "ConditionExpression": "object_id = :cur",
+                            "ExpressionAttributeValues": {
+                                ":inc": {"N": "1"},
+                                ":cur": {"N": str(current_id)},
+                            },
+                        }
+                    },
+                    {
+                        "Put": {
+                            "TableName": dest_table_name,
+                            "Item": {
+                                "object_id": {"S": object_id},
+                                "object_type": {"S": clazz_name},
+                                "object_content": {"S": json.dumps(payload)},
+                            },
+                        }
+                    },
+                ]
+            )
             return object_id
         except ClientError as exc:
             if exc.response["Error"]["Code"] not in ("TransactionCanceledException", "TransactionConflictException"):
                 raise
-            wait = (2 ** attempt) * 0.05 + random.uniform(0, 0.05)
+            wait = (2**attempt) * 0.05 + random.uniform(0, 0.05)
             logger.debug("TransactionCanceledException attempt %d; retrying in %.2fs", attempt, wait)
             time.sleep(wait)
 
@@ -162,6 +183,7 @@ def _atomic_put(
 
 
 # ── Thing table (GeneralTask, AutomationTask, etc.) ──────────────────────────
+
 
 def get_thing(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
     resp = _thing_table(dynamodb, stage).get_item(Key={"object_id": object_id})
@@ -178,6 +200,7 @@ def get_thing(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 def create_thing(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
     from .search import index_document
+
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiThingObject-{stage}", clazz_name, payload, stage)
@@ -188,15 +211,18 @@ def create_thing(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -
 
 def update_thing(dynamodb, object_id: str, payload: dict, stage: str = STAGE) -> dict | None:
     from .search import index_document
+
     existing = get_thing(dynamodb, object_id, stage)
     if existing is None:
         return None
     updated = {**existing, **{k: v for k, v in payload.items() if v is not None}}
-    _thing_table(dynamodb, stage).put_item(Item={
-        "object_id": object_id,
-        "object_type": updated.get("clazz_name", ""),
-        "object_content": json.dumps({k: v for k, v in updated.items() if k != "object_id"}),
-    })
+    _thing_table(dynamodb, stage).put_item(
+        Item={
+            "object_id": object_id,
+            "object_type": updated.get("clazz_name", ""),
+            "object_content": json.dumps({k: v for k, v in updated.items() if k != "object_id"}),
+        }
+    )
     index_document(f"ThingData_{object_id}", updated)
     return updated
 
@@ -224,6 +250,7 @@ def list_things(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
 
 # ── File table (RuptureSet, InversionSolution, File, etc.) ───────────────────
 
+
 def get_file(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
     resp = _file_table(dynamodb, stage).get_item(Key={"object_id": object_id})
     item = resp.get("Item")
@@ -239,6 +266,7 @@ def get_file(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 def create_file(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
     from .search import index_document
+
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiFileObject-{stage}", clazz_name, payload, stage)
@@ -270,6 +298,7 @@ def list_files(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
 
 # ── Table table (GroundMotionTable, GriddedHazard, etc.) ─────────────────────
 
+
 def get_table(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
     resp = _table_table(dynamodb, stage).get_item(Key={"object_id": object_id})
     item = resp.get("Item")
@@ -282,6 +311,7 @@ def get_table(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 def create_table(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
     from .search import index_document
+
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiTableObject-{stage}", clazz_name, payload, stage)
@@ -316,6 +346,7 @@ def list_tables(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
 # separate DynamoDB records. This mirrors the production pattern in
 # file_relation_data.py and thing_relation_data.py.
 
+
 def _patch_thing(dynamodb, object_id: str, patch_fn, stage: str = STAGE) -> None:
     """Read a thing, apply patch_fn to its data dict, write it back."""
     table = _thing_table(dynamodb, stage)
@@ -324,11 +355,13 @@ def _patch_thing(dynamodb, object_id: str, patch_fn, stage: str = STAGE) -> None
         raise ValueError(f"Thing {object_id} not found")
     data = json.loads(item["object_content"])
     patch_fn(data)
-    table.put_item(Item={
-        "object_id": object_id,
-        "object_type": item["object_type"],
-        "object_content": json.dumps(data),
-    })
+    table.put_item(
+        Item={
+            "object_id": object_id,
+            "object_type": item["object_type"],
+            "object_content": json.dumps(data),
+        }
+    )
 
 
 def _patch_file(dynamodb, object_id: str, patch_fn, stage: str = STAGE) -> None:
@@ -339,16 +372,16 @@ def _patch_file(dynamodb, object_id: str, patch_fn, stage: str = STAGE) -> None:
         raise ValueError(f"File {object_id} not found")
     data = json.loads(item["object_content"])
     patch_fn(data)
-    table.put_item(Item={
-        "object_id": object_id,
-        "object_type": item["object_type"],
-        "object_content": json.dumps(data),
-    })
+    table.put_item(
+        Item={
+            "object_id": object_id,
+            "object_type": item["object_type"],
+            "object_content": json.dumps(data),
+        }
+    )
 
 
-def create_file_relation(
-    dynamodb, thing_id: str, file_id: str, role: str, stage: str = STAGE
-) -> None:
+def create_file_relation(dynamodb, thing_id: str, file_id: str, role: str, stage: str = STAGE) -> None:
     """
     Append a file↔thing relation to both the Thing and File records.
 
@@ -356,12 +389,13 @@ def create_file_relation(
     File.relations → [..., {"id": thing_id, "role": role}]
     """
     from .search import index_document
-    _patch_thing(dynamodb, thing_id, lambda d: d.setdefault("files", []).append(
-        {"file_id": file_id, "file_role": role}
-    ), stage)
-    _patch_file(dynamodb, file_id, lambda d: d.setdefault("relations", []).append(
-        {"id": thing_id, "role": role}
-    ), stage)
+
+    _patch_thing(
+        dynamodb, thing_id, lambda d: d.setdefault("files", []).append({"file_id": file_id, "file_role": role}), stage
+    )
+    _patch_file(
+        dynamodb, file_id, lambda d: d.setdefault("relations", []).append({"id": thing_id, "role": role}), stage
+    )
     thing_data = get_thing(dynamodb, thing_id, stage)
     if thing_data:
         index_document(f"ThingData_{thing_id}", thing_data)
@@ -385,12 +419,19 @@ def create_task_relation(
     Child.parents   → [..., {"parent_id": parent_id, "parent_clazz": parent_clazz}]
     """
     from .search import index_document
-    _patch_thing(dynamodb, parent_id, lambda d: d.setdefault("children", []).append(
-        {"child_id": child_id, "child_clazz": child_clazz}
-    ), stage)
-    _patch_thing(dynamodb, child_id, lambda d: d.setdefault("parents", []).append(
-        {"parent_id": parent_id, "parent_clazz": parent_clazz}
-    ), stage)
+
+    _patch_thing(
+        dynamodb,
+        parent_id,
+        lambda d: d.setdefault("children", []).append({"child_id": child_id, "child_clazz": child_clazz}),
+        stage,
+    )
+    _patch_thing(
+        dynamodb,
+        child_id,
+        lambda d: d.setdefault("parents", []).append({"parent_id": parent_id, "parent_clazz": parent_clazz}),
+        stage,
+    )
     parent_data = get_thing(dynamodb, parent_id, stage)
     if parent_data:
         index_document(f"ThingData_{parent_id}", parent_data)

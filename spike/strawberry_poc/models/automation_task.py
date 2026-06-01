@@ -7,7 +7,9 @@ different clazz_name). Both live in ToshiThingObject.
 Relations (files, parents, children) are stored as embedded arrays in the
 Thing's JSON and assembled into virtual FileRelation / TaskTaskRelation objects.
 """
-from typing import Iterable, Optional
+
+from collections.abc import Iterable
+from typing import Optional
 
 import strawberry
 from strawberry import relay
@@ -23,7 +25,7 @@ from .relations import (
 )
 
 
-def _kv_input_to_list(items) -> Optional[list[dict]]:
+def _kv_input_to_list(items) -> list[dict] | None:
     if not items:
         return None
     return [{"k": i.k, "v": i.v} for i in items]
@@ -31,25 +33,26 @@ def _kv_input_to_list(items) -> Optional[list[dict]]:
 
 # ── AutomationTask ─────────────────────────────────────────────────────────────
 
+
 @strawberry.type
 class AutomationTask(relay.Node):
     """An automation task in the NSHM process."""
 
     pk: relay.NodeID[str]
-    state: Optional[EventState] = None
-    result: Optional[EventResult] = None
-    task_type: Optional[TaskSubType] = None
-    model_type: Optional[ModelType] = None
-    created: Optional[str] = None
-    duration: Optional[float] = None
-    arguments: Optional[list[KeyValuePair]] = None
-    environment: Optional[list[KeyValuePair]] = None
-    metrics: Optional[list[KeyValuePair]] = None
+    state: EventState | None = None
+    result: EventResult | None = None
+    task_type: TaskSubType | None = None
+    model_type: ModelType | None = None
+    created: str | None = None
+    duration: float | None = None
+    arguments: list[KeyValuePair] | None = None
+    environment: list[KeyValuePair] | None = None
+    metrics: list[KeyValuePair] | None = None
 
     # Embedded relation arrays — hidden from schema, resolved lazily
-    files_raw: strawberry.Private[Optional[list]] = None
-    parents_raw: strawberry.Private[Optional[list]] = None
-    children_raw: strawberry.Private[Optional[list]] = None
+    files_raw: strawberry.Private[list | None] = None
+    parents_raw: strawberry.Private[list | None] = None
+    children_raw: strawberry.Private[list | None] = None
 
     @relay.connection(relay.ListConnection[FileRelation])
     def files(self, info: Info) -> list[FileRelation]:
@@ -66,12 +69,14 @@ class AutomationTask(relay.Node):
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["AutomationTask"]:
         from data.dynamo import get_thing
+
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "AutomationTask":
         from data.models import AutomationTaskData
+
         d = AutomationTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -92,23 +97,24 @@ class AutomationTask(relay.Node):
 
 # ── RuptureGenerationTask ──────────────────────────────────────────────────────
 
+
 @strawberry.type
 class RuptureGenerationTask(relay.Node):
     """A rupture set generation task — stored identically to AutomationTask."""
 
     pk: relay.NodeID[str]
-    state: Optional[EventState] = None
-    result: Optional[EventResult] = None
-    task_type: Optional[TaskSubType] = None
-    created: Optional[str] = None
-    duration: Optional[float] = None
-    arguments: Optional[list[KeyValuePair]] = None
-    environment: Optional[list[KeyValuePair]] = None
-    metrics: Optional[list[KeyValuePair]] = None
+    state: EventState | None = None
+    result: EventResult | None = None
+    task_type: TaskSubType | None = None
+    created: str | None = None
+    duration: float | None = None
+    arguments: list[KeyValuePair] | None = None
+    environment: list[KeyValuePair] | None = None
+    metrics: list[KeyValuePair] | None = None
 
-    files_raw: strawberry.Private[Optional[list]] = None
-    parents_raw: strawberry.Private[Optional[list]] = None
-    children_raw: strawberry.Private[Optional[list]] = None
+    files_raw: strawberry.Private[list | None] = None
+    parents_raw: strawberry.Private[list | None] = None
+    children_raw: strawberry.Private[list | None] = None
 
     @relay.connection(relay.ListConnection[FileRelation])
     def files(self, info: Info) -> list[FileRelation]:
@@ -125,12 +131,14 @@ class RuptureGenerationTask(relay.Node):
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["RuptureGenerationTask"]:
         from data.dynamo import get_thing
+
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "RuptureGenerationTask":
         from data.models import AutomationTaskData
+
         d = AutomationTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -150,40 +158,44 @@ class RuptureGenerationTask(relay.Node):
 
 # ── Input types ───────────────────────────────────────────────────────────────
 
+
 @strawberry.input
 class CreateAutomationTaskInput:
     state: EventState
     result: EventResult
     created: str
     task_type: TaskSubType
-    duration: Optional[float] = None
-    model_type: Optional[ModelType] = None
-    arguments: Optional[list[KeyValuePairInput]] = None
-    environment: Optional[list[KeyValuePairInput]] = None
-    metrics: Optional[list[KeyValuePairInput]] = None
+    duration: float | None = None
+    model_type: ModelType | None = None
+    arguments: list[KeyValuePairInput] | None = None
+    environment: list[KeyValuePairInput] | None = None
+    metrics: list[KeyValuePairInput] | None = None
 
 
 @strawberry.input
 class UpdateAutomationTaskInput:
     task_id: strawberry.ID
-    state: Optional[EventState] = None
-    result: Optional[EventResult] = None
-    duration: Optional[float] = None
-    arguments: Optional[list[KeyValuePairInput]] = None
-    environment: Optional[list[KeyValuePairInput]] = None
-    metrics: Optional[list[KeyValuePairInput]] = None
+    state: EventState | None = None
+    result: EventResult | None = None
+    duration: float | None = None
+    arguments: list[KeyValuePairInput] | None = None
+    environment: list[KeyValuePairInput] | None = None
+    metrics: list[KeyValuePairInput] | None = None
 
 
 # ── Resolvers ─────────────────────────────────────────────────────────────────
 
+
 def resolve_automation_tasks(info: Info) -> Iterable[AutomationTask]:
     from data.dynamo import list_things
+
     items = list_things(info.context["dynamodb"], "AutomationTask")
     return [AutomationTask.from_dict(item) for item in items]
 
 
 def resolve_rupture_generation_tasks(info: Info) -> Iterable[RuptureGenerationTask]:
     from data.dynamo import list_things
+
     items = list_things(info.context["dynamodb"], "RuptureGenerationTask")
     return [RuptureGenerationTask.from_dict(item) for item in items]
 
@@ -204,6 +216,7 @@ def _build_payload(input, clazz_name: str) -> dict:
 
 def mutate_create_automation_task(info: Info, input: CreateAutomationTaskInput) -> AutomationTask:
     from data.dynamo import create_thing
+
     payload = _build_payload(input, "AutomationTask")
     data = create_thing(info.context["dynamodb"], "AutomationTask", payload)
     return AutomationTask.from_dict(data)
@@ -211,16 +224,17 @@ def mutate_create_automation_task(info: Info, input: CreateAutomationTaskInput) 
 
 def mutate_create_rupture_generation_task(info: Info, input: CreateAutomationTaskInput) -> RuptureGenerationTask:
     from data.dynamo import create_thing
+
     payload = _build_payload(input, "RuptureGenerationTask")
     data = create_thing(info.context["dynamodb"], "RuptureGenerationTask", payload)
     return RuptureGenerationTask.from_dict(data)
 
 
-def mutate_update_rupture_generation_task(
-    info: Info, input: UpdateAutomationTaskInput
-) -> Optional[RuptureGenerationTask]:
-    from data.dynamo import update_thing
+def mutate_update_rupture_generation_task(info: Info, input: UpdateAutomationTaskInput) -> RuptureGenerationTask | None:
     from strawberry.relay import GlobalID
+
+    from data.dynamo import update_thing
+
     gid = GlobalID.from_id(input.task_id)
     payload = {
         "state": input.state.value if input.state else None,

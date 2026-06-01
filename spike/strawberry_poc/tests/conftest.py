@@ -9,6 +9,7 @@ DynamoDB tables are created fresh per test module (dropped on teardown) so
 modules remain isolated. Elasticsearch is shared across the session; search
 tests find whatever is indexed during their own module setup.
 """
+
 import os
 
 import boto3
@@ -97,7 +98,9 @@ def es_endpoint():
                     break
             except Exception:
                 pass
-            import time; time.sleep(1)
+            import time
+
+            time.sleep(1)
         os.environ["ES_ENDPOINT"] = endpoint
         yield endpoint
 

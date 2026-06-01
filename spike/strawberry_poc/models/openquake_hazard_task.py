@@ -1,12 +1,20 @@
 """OpenquakeHazardTask — Thing type extending AutomationTask with hazard-specific fields."""
-from typing import Annotated, Iterable, Optional
+
+from collections.abc import Iterable
+from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
 from strawberry.types import Info
 
 from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
-from .relations import FileRelation, TaskTaskRelation, build_file_relations_for_thing, build_task_children, build_task_parents
+from .relations import (
+    FileRelation,
+    TaskTaskRelation,
+    build_file_relations_for_thing,
+    build_task_children,
+    build_task_parents,
+)
 
 _OpenquakeHazardSolution = Annotated["OpenquakeHazardSolution", strawberry.lazy("models.openquake_hazard_solution")]
 
@@ -14,24 +22,24 @@ _OpenquakeHazardSolution = Annotated["OpenquakeHazardSolution", strawberry.lazy(
 @strawberry.type
 class OpenquakeHazardTask(relay.Node):
     pk: relay.NodeID[str]
-    state: Optional[EventState] = None
-    result: Optional[EventResult] = None
-    task_type: Optional[TaskSubType] = None
-    model_type: Optional[ModelType] = None
-    created: Optional[str] = None
-    duration: Optional[float] = None
-    arguments: Optional[list[KeyValuePair]] = None
-    environment: Optional[list[KeyValuePair]] = None
-    metrics: Optional[list[KeyValuePair]] = None
-    executor: Optional[str] = None
-    srm_logic_tree: Optional[str] = None    # JSON string
-    gmcm_logic_tree: Optional[str] = None   # JSON string
-    openquake_config: Optional[str] = None  # JSON string
+    state: EventState | None = None
+    result: EventResult | None = None
+    task_type: TaskSubType | None = None
+    model_type: ModelType | None = None
+    created: str | None = None
+    duration: float | None = None
+    arguments: list[KeyValuePair] | None = None
+    environment: list[KeyValuePair] | None = None
+    metrics: list[KeyValuePair] | None = None
+    executor: str | None = None
+    srm_logic_tree: str | None = None  # JSON string
+    gmcm_logic_tree: str | None = None  # JSON string
+    openquake_config: str | None = None  # JSON string
 
-    files_raw: strawberry.Private[Optional[list]] = None
-    parents_raw: strawberry.Private[Optional[list]] = None
-    children_raw: strawberry.Private[Optional[list]] = None
-    hazard_solution_raw_id: strawberry.Private[Optional[str]] = None
+    files_raw: strawberry.Private[list | None] = None
+    parents_raw: strawberry.Private[list | None] = None
+    children_raw: strawberry.Private[list | None] = None
+    hazard_solution_raw_id: strawberry.Private[str | None] = None
 
     @relay.connection(relay.ListConnection[FileRelation])
     def files(self, info: Info) -> list[FileRelation]:
@@ -46,12 +54,14 @@ class OpenquakeHazardTask(relay.Node):
         return build_task_children(self.pk, self.children_raw or [])
 
     @strawberry.field
-    def hazard_solution(self, info: Info) -> Optional[_OpenquakeHazardSolution]:
+    def hazard_solution(self, info: Info) -> _OpenquakeHazardSolution | None:
         if not self.hazard_solution_raw_id:
             return None
+        from strawberry.relay import GlobalID
+
         from data.dynamo import get_thing
         from models.openquake_hazard_solution import OpenquakeHazardSolution
-        from strawberry.relay import GlobalID
+
         try:
             raw_id = GlobalID.from_id(self.hazard_solution_raw_id).node_id
         except Exception:
@@ -62,12 +72,14 @@ class OpenquakeHazardTask(relay.Node):
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["OpenquakeHazardTask"]:
         from data.dynamo import get_thing
+
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "OpenquakeHazardTask":
         from data.models import OpenquakeHazardTaskData
+
         d = OpenquakeHazardTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -97,40 +109,40 @@ class CreateOpenquakeHazardTaskInput:
     result: EventResult
     created: str
     task_type: TaskSubType
-    duration: Optional[float] = None
-    model_type: Optional[ModelType] = None
-    arguments: Optional[list[KeyValuePairInput]] = None
-    environment: Optional[list[KeyValuePairInput]] = None
-    metrics: Optional[list[KeyValuePairInput]] = None
-    executor: Optional[str] = None
-    srm_logic_tree: Optional[str] = None
-    gmcm_logic_tree: Optional[str] = None
-    openquake_config: Optional[str] = None
-    hazard_solution: Optional[strawberry.ID] = None
+    duration: float | None = None
+    model_type: ModelType | None = None
+    arguments: list[KeyValuePairInput] | None = None
+    environment: list[KeyValuePairInput] | None = None
+    metrics: list[KeyValuePairInput] | None = None
+    executor: str | None = None
+    srm_logic_tree: str | None = None
+    gmcm_logic_tree: str | None = None
+    openquake_config: str | None = None
+    hazard_solution: strawberry.ID | None = None
 
 
 @strawberry.input
 class UpdateOpenquakeHazardTaskInput:
     task_id: strawberry.ID
-    state: Optional[EventState] = None
-    result: Optional[EventResult] = None
-    duration: Optional[float] = None
-    arguments: Optional[list[KeyValuePairInput]] = None
-    environment: Optional[list[KeyValuePairInput]] = None
-    metrics: Optional[list[KeyValuePairInput]] = None
-    hazard_solution: Optional[strawberry.ID] = None
+    state: EventState | None = None
+    result: EventResult | None = None
+    duration: float | None = None
+    arguments: list[KeyValuePairInput] | None = None
+    environment: list[KeyValuePairInput] | None = None
+    metrics: list[KeyValuePairInput] | None = None
+    hazard_solution: strawberry.ID | None = None
 
 
 def resolve_openquake_hazard_tasks(info: Info) -> Iterable[OpenquakeHazardTask]:
     from data.dynamo import list_things
+
     items = list_things(info.context["dynamodb"], "OpenquakeHazardTask")
     return [OpenquakeHazardTask.from_dict(item) for item in items]
 
 
-def mutate_create_openquake_hazard_task(
-    info: Info, input: CreateOpenquakeHazardTaskInput
-) -> OpenquakeHazardTask:
+def mutate_create_openquake_hazard_task(info: Info, input: CreateOpenquakeHazardTaskInput) -> OpenquakeHazardTask:
     from data.dynamo import create_thing
+
     payload = {
         "state": input.state.value,
         "result": input.result.value,
@@ -153,9 +165,11 @@ def mutate_create_openquake_hazard_task(
 
 def mutate_update_openquake_hazard_task(
     info: Info, input: UpdateOpenquakeHazardTaskInput
-) -> Optional[OpenquakeHazardTask]:
-    from data.dynamo import update_thing
+) -> OpenquakeHazardTask | None:
     from strawberry.relay import GlobalID
+
+    from data.dynamo import update_thing
+
     gid = GlobalID.from_id(input.task_id)
     payload = {
         "state": input.state.value if input.state else None,

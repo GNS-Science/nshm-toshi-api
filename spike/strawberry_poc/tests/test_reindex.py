@@ -9,8 +9,10 @@ reindex(id_in: [ID!]!) re-pushes each object to Elasticsearch by:
 Unit tests mock index_document so no live ES is required.
 Integration test verifies the document actually lands in ES.
 """
+
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, call
 
 from schema import schema
 
@@ -43,6 +45,7 @@ def run(query, gql_context, variables=None):
 
 
 # ── Unit tests (no ES required) ───────────────────────────────────────────────
+
 
 def test_reindex_thing_calls_index_document(gql_context):
     """reindex on a GeneralTask calls index_document with ThingData_ prefix."""
@@ -86,6 +89,7 @@ def test_reindex_multiple_ids(gql_context):
 def test_reindex_unknown_id_skipped(gql_context):
     """An ID that doesn't exist in DynamoDB is silently skipped."""
     from strawberry.relay import GlobalID
+
     fake_id = str(GlobalID("GeneralTask", "999999zzzzz"))
 
     with patch("data.search.index_document") as mock_index:
@@ -105,15 +109,14 @@ def test_reindex_empty_list(gql_context):
 
 # ── Integration test — requires live ES ──────────────────────────────────────
 
+
 @pytest.mark.integration
-@pytest.mark.skipif(
-    not __import__("os").environ.get("ES_ENDPOINT"),
-    reason="requires ES_ENDPOINT"
-)
+@pytest.mark.skipif(not __import__("os").environ.get("ES_ENDPOINT"), reason="requires ES_ENDPOINT")
 def test_reindex_document_lands_in_es(gql_context):
     """After reindex, the document is queryable from ES."""
-    import requests as _req
     import time
+
+    import requests as _req
 
     gt_id = run(CREATE_GT, gql_context)["create_general_task"]["general_task"]["id"]
     ep = gql_context.get("es_endpoint", "")
@@ -121,6 +124,7 @@ def test_reindex_document_lands_in_es(gql_context):
 
     # Delete and re-index to confirm reindex actually writes
     from strawberry.relay import GlobalID
+
     gid = GlobalID.from_id(gt_id)
     key = f"ThingData_{gid.node_id}"
     _req.delete(f"{ep}/{idx}/_doc/{key}", timeout=5)

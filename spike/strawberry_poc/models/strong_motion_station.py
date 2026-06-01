@@ -1,7 +1,9 @@
 """
 StrongMotionStation — Thing type with file relations.
 """
-from typing import Iterable, Optional
+
+from collections.abc import Iterable
+from typing import Optional
 
 import strawberry
 from strawberry import relay
@@ -16,18 +18,18 @@ class StrongMotionStation(relay.Node):
     """An NSHM Strong Motion Station record."""
 
     pk: relay.NodeID[str]
-    site_code: Optional[str] = None
-    site_class: Optional[SmsSiteClass] = None
-    site_class_basis: Optional[SmsSiteClassBasis] = None
-    Vs30_mean: Optional[list[float]] = None
-    Vs30_std_dev: Optional[list[float]] = None
-    liquefiable: Optional[bool] = None
-    bedrock_encountered: Optional[bool] = None
-    soft_clay_or_peat: Optional[bool] = None
-    created: Optional[str] = None
-    updated: Optional[str] = None
+    site_code: str | None = None
+    site_class: SmsSiteClass | None = None
+    site_class_basis: SmsSiteClassBasis | None = None
+    Vs30_mean: list[float] | None = None
+    Vs30_std_dev: list[float] | None = None
+    liquefiable: bool | None = None
+    bedrock_encountered: bool | None = None
+    soft_clay_or_peat: bool | None = None
+    created: str | None = None
+    updated: str | None = None
 
-    files_raw: strawberry.Private[Optional[list]] = None
+    files_raw: strawberry.Private[list | None] = None
 
     @relay.connection(relay.ListConnection[FileRelation])
     def files(self, info: Info) -> list[FileRelation]:
@@ -36,12 +38,14 @@ class StrongMotionStation(relay.Node):
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["StrongMotionStation"]:
         from data.dynamo import get_thing
+
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "StrongMotionStation":
         from data.models import StrongMotionStationData
+
         d = StrongMotionStationData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -61,28 +65,28 @@ class StrongMotionStation(relay.Node):
 
 @strawberry.input
 class CreateStrongMotionStationInput:
-    site_code: Optional[str] = None
-    site_class: Optional[SmsSiteClass] = None
-    site_class_basis: Optional[SmsSiteClassBasis] = None
-    Vs30_mean: Optional[list[float]] = None
-    Vs30_std_dev: Optional[list[float]] = None
-    liquefiable: Optional[bool] = None
-    bedrock_encountered: Optional[bool] = None
-    soft_clay_or_peat: Optional[bool] = None
-    created: Optional[str] = None
-    updated: Optional[str] = None
+    site_code: str | None = None
+    site_class: SmsSiteClass | None = None
+    site_class_basis: SmsSiteClassBasis | None = None
+    Vs30_mean: list[float] | None = None
+    Vs30_std_dev: list[float] | None = None
+    liquefiable: bool | None = None
+    bedrock_encountered: bool | None = None
+    soft_clay_or_peat: bool | None = None
+    created: str | None = None
+    updated: str | None = None
 
 
 def resolve_strong_motion_stations(info: Info) -> Iterable[StrongMotionStation]:
     from data.dynamo import list_things
+
     items = list_things(info.context["dynamodb"], "StrongMotionStation")
     return [StrongMotionStation.from_dict(item) for item in items]
 
 
-def mutate_create_strong_motion_station(
-    info: Info, input: CreateStrongMotionStationInput
-) -> StrongMotionStation:
+def mutate_create_strong_motion_station(info: Info, input: CreateStrongMotionStationInput) -> StrongMotionStation:
     from data.dynamo import create_thing
+
     payload = {
         "site_code": input.site_code,
         "site_class": input.site_class.value if input.site_class else None,

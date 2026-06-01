@@ -8,12 +8,12 @@ Key feasibility signals:
   4. OpenquakeHazardConfig.template_archive → resolves ToshiFile
   5. OpenquakeHazardConfig.source_models → resolves OpenquakeNrmlUnion (ToshiFile case)
 """
+
 import base64
 
 import pytest
 
 from schema import schema
-
 
 # ── Mutation / query strings ──────────────────────────────────────────────────
 
@@ -121,14 +121,17 @@ query GetNode($id: ID!) {
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _seed_toshi_file(gql_context, name="archive.zip"):
     from data.dynamo import create_file
+
     data = create_file(gql_context["dynamodb"], "ToshiFile", {"file_name": name})
     raw_id = data["object_id"]
     return base64.b64encode(f"ToshiFile:{raw_id}".encode()).decode()
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="module")
 def created_oq_task(gql_context):
@@ -170,6 +173,7 @@ def created_oq_solution(gql_context, created_oq_task):
 
 # ── OpenquakeHazardTask tests ─────────────────────────────────────────────────
 
+
 def test_oq_task_id_encoding(created_oq_task):
     decoded = base64.b64decode(created_oq_task["id"]).decode()
     assert decoded.startswith("OpenquakeHazardTask:"), f"Unexpected ID: {decoded}"
@@ -185,6 +189,7 @@ def test_oq_task_fields(created_oq_task):
 
 
 # ── OpenquakeHazardSolution tests ─────────────────────────────────────────────
+
 
 def test_oq_solution_id_encoding(created_oq_solution):
     decoded = base64.b64decode(created_oq_solution["id"]).decode()
@@ -219,6 +224,7 @@ def test_oq_solution_node_lookup(gql_context, created_oq_solution, created_oq_ta
 
 
 # ── update_openquake_hazard_task tests ────────────────────────────────────────
+
 
 @pytest.fixture(scope="module")
 def updated_oq_task(gql_context, created_oq_task, created_oq_solution):
@@ -263,6 +269,7 @@ def test_updated_task_node_lookup(gql_context, updated_oq_task, created_oq_solut
 
 
 # ── OpenquakeHazardConfig tests ───────────────────────────────────────────────
+
 
 @pytest.fixture(scope="module")
 def template_archive_id(gql_context):

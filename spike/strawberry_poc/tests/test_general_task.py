@@ -8,12 +8,12 @@ objects accumulate across tests (same behaviour as existing test suite).
 Field and mutation names use snake_case (auto_camel_case=False on schema).
 Mutations return payload wrapper types matching the Graphene API shape.
 """
+
 import base64
 
 import pytest
 
 from schema import schema
-
 
 CREATE_MUTATION = """
 mutation CreateTask($input: CreateGeneralTaskInput!) {

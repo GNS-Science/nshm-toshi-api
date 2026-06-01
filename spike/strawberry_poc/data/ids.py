@@ -4,6 +4,7 @@ ID allocation and relay GlobalID encoding/decoding.
 Replicates the append_uniq + ToshiIdentity pattern from base_data.py,
 using raw boto3 instead of PynamoDB (same DynamoDB table, same layout).
 """
+
 import os
 import random
 from decimal import Decimal

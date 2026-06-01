@@ -8,12 +8,12 @@ Key feasibility signals:
   4. ScaledInversionSolution.source_solution — resolves SourceSolutionUnion (InversionSolution)
   5. Predecessors — inline embedded type with computed typename/relationship
 """
+
 import base64
 
 import pytest
 
 from schema import schema
-
 
 # ── Mutation / query strings ──────────────────────────────────────────────────
 
@@ -109,8 +109,10 @@ query GetNode($id: ID!) {
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _seed_rupture_gen_task(gql_context):
     from data.dynamo import create_thing
+
     data = create_thing(
         gql_context["dynamodb"],
         "RuptureGenerationTask",
@@ -123,6 +125,7 @@ def _seed_rupture_gen_task(gql_context):
 def _seed_toshi_file(gql_context, label="table.hdf5"):
     """Seed a plain ToshiFile to act as a table target."""
     from data.dynamo import create_file
+
     data = create_file(
         gql_context["dynamodb"],
         "ToshiFile",
@@ -133,6 +136,7 @@ def _seed_toshi_file(gql_context, label="table.hdf5"):
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="module")
 def rgt_id(gql_context):
@@ -173,6 +177,7 @@ def created_inversion_solution(gql_context, rgt_id, table_file_id):
 
 
 # ── InversionSolution tests ───────────────────────────────────────────────────
+
 
 def test_inversion_solution_id_encoding(created_inversion_solution):
     gid = created_inversion_solution["id"]
@@ -227,6 +232,7 @@ def test_node_lookup(gql_context, created_inversion_solution, table_file_id):
 
 # ── Append tables mutation ────────────────────────────────────────────────────
 
+
 def test_append_inversion_solution_tables(gql_context, created_inversion_solution, table_file_id):
     """append_inversion_solution_tables must add a new table without removing existing ones."""
     extra_file_id = _seed_toshi_file(gql_context, "hazard.hdf5")
@@ -255,6 +261,7 @@ def test_append_inversion_solution_tables(gql_context, created_inversion_solutio
 
 
 # ── ScaledInversionSolution tests ─────────────────────────────────────────────
+
 
 @pytest.fixture(scope="module")
 def created_scaled(gql_context, created_inversion_solution):

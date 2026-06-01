@@ -1,4 +1,5 @@
 """Shared scalar types and enums used across schema types."""
+
 import enum
 
 import strawberry
@@ -30,6 +31,7 @@ class KeyValueListPairInput:
 
 # ── Task enums ────────────────────────────────────────────────────────────────
 # Values match the production Graphene schema (lowercase stored values).
+
 
 @strawberry.enum
 class TaskSubType(enum.Enum):
@@ -71,6 +73,7 @@ class EventState(enum.Enum):
 
 # ── File relation enums ───────────────────────────────────────────────────────
 
+
 @strawberry.enum
 class FileRole(enum.Enum):
     READ = "read"
@@ -80,6 +83,7 @@ class FileRole(enum.Enum):
 
 
 # ── SMS / StrongMotionStation enums ───────────────────────────────────────────
+
 
 @strawberry.enum
 class SmsSiteClass(enum.Enum):
@@ -107,6 +111,7 @@ class SmsFileType(enum.Enum):
 
 
 # ── Openquake / hazard enums ──────────────────────────────────────────────────
+
 
 @strawberry.enum
 class OpenquakeTaskType(enum.Enum):

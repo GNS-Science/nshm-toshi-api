@@ -11,7 +11,6 @@ Lambda deploy:
     handler: spike/strawberry_poc/app.handler
     (adjust serverless.yml function definition)
 """
-import os
 
 import boto3
 from fastapi import FastAPI, Request
@@ -32,9 +31,7 @@ async def get_context(request: Request) -> dict:
     In tests, the moto-patched resource is passed via request.state.
     ES_ENDPOINT/ES_INDEX can be overridden via env vars or request.state.
     """
-    dynamodb = getattr(request.state, "dynamodb", None) or boto3.resource(
-        "dynamodb", region_name="ap-southeast-2"
-    )
+    dynamodb = getattr(request.state, "dynamodb", None) or boto3.resource("dynamodb", region_name="ap-southeast-2")
     return {
         "dynamodb": dynamodb,
         "es_endpoint": getattr(request.state, "es_endpoint", ES_ENDPOINT),

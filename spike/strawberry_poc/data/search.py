@@ -8,16 +8,19 @@ for the search call. No AWS auth needed for local docker ES.
 Index name and endpoint are read from env vars at import time, but can be
 overridden per-call for testing.
 """
+
 import os
 
 import requests
 
 _TIMEOUT = 5  # seconds
 
+
 # Read at call time (not import time) so testcontainers can set the env var
 # after startup and have it picked up by all subsequent calls.
 def _es_endpoint() -> str:
     return os.environ.get("ES_ENDPOINT", "http://localhost:9200")
+
 
 def _es_index() -> str:
     return os.environ.get("ES_INDEX", "toshi-index-mapped")
@@ -77,9 +80,6 @@ def search(
     url = f"{endpoint}/{index}/_search?q={term}"
     try:
         resp = requests.get(url, timeout=_TIMEOUT).json()
-        return [
-            {"_id": hit["_id"], **hit["_source"]}
-            for hit in resp.get("hits", {}).get("hits", [])
-        ]
+        return [{"_id": hit["_id"], **hit["_source"]} for hit in resp.get("hits", {}).get("hits", [])]
     except Exception:
         return []

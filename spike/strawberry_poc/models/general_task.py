@@ -7,7 +7,9 @@ Key differences vs Graphene:
   - get_node() becomes resolve_node() classmethod
   - Children/parents relations omitted in POC (same pattern as produced_by on RuptureSet)
 """
-from typing import Iterable, Optional
+
+from collections.abc import Iterable
+from typing import Optional
 
 import strawberry
 from strawberry import relay
@@ -30,21 +32,21 @@ class GeneralTask(relay.Node):
     """
 
     pk: relay.NodeID[str]
-    title: Optional[str] = None
-    description: Optional[str] = None
-    agent_name: Optional[str] = None
-    created: Optional[str] = None
-    updated: Optional[str] = None
-    notes: Optional[str] = None
-    subtask_count: Optional[int] = None
-    subtask_type: Optional[TaskSubType] = None
-    model_type: Optional[ModelType] = None
-    argument_lists: Optional[list[KeyValueListPair]] = None
-    meta: Optional[list[KeyValuePair]] = None
+    title: str | None = None
+    description: str | None = None
+    agent_name: str | None = None
+    created: str | None = None
+    updated: str | None = None
+    notes: str | None = None
+    subtask_count: int | None = None
+    subtask_type: TaskSubType | None = None
+    model_type: ModelType | None = None
+    argument_lists: list[KeyValueListPair] | None = None
+    meta: list[KeyValuePair] | None = None
 
-    files_raw: strawberry.Private[Optional[list]] = None
-    children_raw: strawberry.Private[Optional[list]] = None
-    parents_raw: strawberry.Private[Optional[list]] = None
+    files_raw: strawberry.Private[list | None] = None
+    children_raw: strawberry.Private[list | None] = None
+    parents_raw: strawberry.Private[list | None] = None
 
     @relay.connection(relay.ListConnection[FileRelation])
     def files(self, info: Info) -> list[FileRelation]:
@@ -74,12 +76,14 @@ class GeneralTask(relay.Node):
         **kwargs,
     ) -> Optional["GeneralTask"]:
         from data.dynamo import get_thing
+
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "GeneralTask":
         from data.models import GeneralTaskData
+
         d = GeneralTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -102,35 +106,36 @@ class GeneralTask(relay.Node):
 
 @strawberry.input
 class CreateGeneralTaskInput:
-    title: Optional[str] = None
-    description: Optional[str] = None
-    agent_name: Optional[str] = None
-    created: Optional[str] = None
-    notes: Optional[str] = None
-    subtask_count: Optional[int] = None
-    subtask_type: Optional[TaskSubType] = None
-    model_type: Optional[ModelType] = None
-    argument_lists: Optional[list[KeyValueListPairInput]] = None
-    meta: Optional[list[KeyValuePairInput]] = None
+    title: str | None = None
+    description: str | None = None
+    agent_name: str | None = None
+    created: str | None = None
+    notes: str | None = None
+    subtask_count: int | None = None
+    subtask_type: TaskSubType | None = None
+    model_type: ModelType | None = None
+    argument_lists: list[KeyValueListPairInput] | None = None
+    meta: list[KeyValuePairInput] | None = None
 
 
 @strawberry.input
 class UpdateGeneralTaskInput:
     task_id: strawberry.ID
-    title: Optional[str] = None
-    description: Optional[str] = None
-    agent_name: Optional[str] = None
-    updated: Optional[str] = None
-    notes: Optional[str] = None
-    subtask_count: Optional[int] = None
-    subtask_type: Optional[TaskSubType] = None
-    model_type: Optional[ModelType] = None
-    argument_lists: Optional[list[KeyValueListPairInput]] = None
-    meta: Optional[list[KeyValuePairInput]] = None
+    title: str | None = None
+    description: str | None = None
+    agent_name: str | None = None
+    updated: str | None = None
+    notes: str | None = None
+    subtask_count: int | None = None
+    subtask_type: TaskSubType | None = None
+    model_type: ModelType | None = None
+    argument_lists: list[KeyValueListPairInput] | None = None
+    meta: list[KeyValuePairInput] | None = None
 
 
 def resolve_general_tasks(info: Info) -> Iterable[GeneralTask]:
     from data.dynamo import list_things
+
     items = list_things(info.context["dynamodb"], "GeneralTask")
     return [GeneralTask.from_dict(item) for item in items]
 
@@ -157,7 +162,7 @@ def mutate_create_general_task(info: Info, input: CreateGeneralTaskInput) -> Gen
     return GeneralTask.from_dict(data)
 
 
-def mutate_update_general_task(info: Info, input: UpdateGeneralTaskInput) -> Optional[GeneralTask]:
+def mutate_update_general_task(info: Info, input: UpdateGeneralTaskInput) -> GeneralTask | None:
     from data.dynamo import update_thing
 
     # Decode relay global ID → raw object_id

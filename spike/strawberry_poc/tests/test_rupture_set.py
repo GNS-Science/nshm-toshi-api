@@ -9,12 +9,12 @@ Key feasibility signals tested here:
 Field and mutation names use snake_case (auto_camel_case=False on schema).
 Mutations return payload wrapper types matching the Graphene API shape.
 """
+
 import base64
 
 import pytest
 
 from schema import schema
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -75,6 +75,7 @@ query GetNode($id: ID!) {
 def _make_rupture_generation_task(gql_context):
     """Seed a RuptureGenerationTask directly via the data layer."""
     from data.dynamo import create_thing
+
     data = create_thing(
         gql_context["dynamodb"],
         "RuptureGenerationTask",
@@ -86,6 +87,7 @@ def _make_rupture_generation_task(gql_context):
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="module")
 def rupture_gen_task_id(gql_context):
@@ -117,6 +119,7 @@ def created_rupture_set(gql_context, rupture_gen_task_id):
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────────
+
 
 def test_rupture_set_id_encoding(created_rupture_set):
     """Relay global ID must be base64('RuptureSet:<raw_id>')."""

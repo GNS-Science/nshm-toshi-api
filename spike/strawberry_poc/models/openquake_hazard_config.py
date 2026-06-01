@@ -1,5 +1,7 @@
 """OpenquakeHazardConfig — Thing type holding source model references."""
-from typing import Annotated, Iterable, Optional, Union
+
+from collections.abc import Iterable
+from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
@@ -11,7 +13,7 @@ _ToshiFile = Annotated["ToshiFile", strawberry.lazy("models.file")]
 _InversionSolutionNrml = Annotated["InversionSolutionNrml", strawberry.lazy("models.inversion_solution_nrml")]
 
 OpenquakeNrmlUnion = Annotated[
-    Union[_ToshiFile, _InversionSolutionNrml],
+    _ToshiFile | _InversionSolutionNrml,
     strawberry.union(name="OpenquakeNrmlUnion"),
 ]
 
@@ -20,27 +22,32 @@ def dispatch_nrml(data: dict):
     clazz = data.get("clazz_name", "")
     if clazz == "InversionSolutionNrml":
         from models.inversion_solution_nrml import InversionSolutionNrml
+
         return InversionSolutionNrml.from_dict(data)
     from models.file import ToshiFile
+
     return ToshiFile.from_dict(data)
 
 
 # ── OpenquakeHazardConfig ─────────────────────────────────────────────────────
 
+
 @strawberry.type
 class OpenquakeHazardConfig(relay.Node):
     pk: relay.NodeID[str]
-    created: Optional[str] = None
+    created: str | None = None
 
-    source_models_raw_ids: strawberry.Private[Optional[list[str]]] = None
-    template_archive_raw_id: strawberry.Private[Optional[str]] = None
+    source_models_raw_ids: strawberry.Private[list[str] | None] = None
+    template_archive_raw_id: strawberry.Private[str | None] = None
 
     @strawberry.field
-    def source_models(self, info: Info) -> Optional[list[OpenquakeNrmlUnion]]:
+    def source_models(self, info: Info) -> list[OpenquakeNrmlUnion] | None:
         if not self.source_models_raw_ids:
             return None
-        from data.dynamo import get_file
         from strawberry.relay import GlobalID
+
+        from data.dynamo import get_file
+
         results = []
         for gid_str in self.source_models_raw_ids:
             try:
@@ -53,12 +60,14 @@ class OpenquakeHazardConfig(relay.Node):
         return results or None
 
     @strawberry.field
-    def template_archive(self, info: Info) -> Optional[_ToshiFile]:
+    def template_archive(self, info: Info) -> _ToshiFile | None:
         if not self.template_archive_raw_id:
             return None
+        from strawberry.relay import GlobalID
+
         from data.dynamo import get_file
         from models.file import ToshiFile
-        from strawberry.relay import GlobalID
+
         try:
             raw_id = GlobalID.from_id(self.template_archive_raw_id).node_id
         except Exception:
@@ -69,12 +78,14 @@ class OpenquakeHazardConfig(relay.Node):
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["OpenquakeHazardConfig"]:
         from data.dynamo import get_thing
+
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "OpenquakeHazardConfig":
         from data.models import OpenquakeHazardConfigData
+
         d = OpenquakeHazardConfigData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -87,20 +98,20 @@ class OpenquakeHazardConfig(relay.Node):
 @strawberry.input
 class CreateOpenquakeHazardConfigInput:
     template_archive: strawberry.ID
-    source_models: Optional[list[strawberry.ID]] = None
-    created: Optional[str] = None
+    source_models: list[strawberry.ID] | None = None
+    created: str | None = None
 
 
 def resolve_openquake_hazard_configs(info: Info) -> Iterable[OpenquakeHazardConfig]:
     from data.dynamo import list_things
+
     items = list_things(info.context["dynamodb"], "OpenquakeHazardConfig")
     return [OpenquakeHazardConfig.from_dict(item) for item in items]
 
 
-def mutate_create_openquake_hazard_config(
-    info: Info, input: CreateOpenquakeHazardConfigInput
-) -> OpenquakeHazardConfig:
+def mutate_create_openquake_hazard_config(info: Info, input: CreateOpenquakeHazardConfigInput) -> OpenquakeHazardConfig:
     from data.dynamo import create_thing
+
     payload = {
         "created": input.created,
         "template_archive": str(input.template_archive),

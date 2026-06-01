@@ -5,7 +5,9 @@ This is the union-type stress test: produced_by can be a RuptureGenerationTask
 (or other automation task types in future). In Strawberry, unions are explicit
 annotated types — much cleaner than Graphene's dynamic dispatch.
 """
-from typing import Iterable, Optional
+
+from collections.abc import Iterable
+from typing import Optional
 
 import strawberry
 from strawberry import relay
@@ -14,29 +16,31 @@ from strawberry.types import Info
 from .automation_task import RuptureGenerationTask  # noqa: F401 — re-exported for schema.py
 from .common import KeyValuePair, KeyValuePairInput
 
-
 # ── RuptureSet ────────────────────────────────────────────────────────────────
+
 
 @strawberry.type
 class RuptureSet(relay.Node):
     """A RuptureSet file produced by a RuptureGenerationTask."""
 
     pk: relay.NodeID[str]
-    file_name: Optional[str] = None
-    md5_digest: Optional[str] = None
-    file_size: Optional[int] = None
-    created: Optional[str] = None
-    fault_models: Optional[list[str]] = None
-    metrics: Optional[list[KeyValuePair]] = None
+    file_name: str | None = None
+    md5_digest: str | None = None
+    file_size: int | None = None
+    created: str | None = None
+    fault_models: list[str] | None = None
+    metrics: list[KeyValuePair] | None = None
     # stored as raw object_id; resolved lazily (hidden from GraphQL schema)
-    produced_by_raw_id: strawberry.Private[Optional[str]] = None
+    produced_by_raw_id: strawberry.Private[str | None] = None
 
     @strawberry.field
-    def produced_by(self, info: Info) -> Optional[RuptureGenerationTask]:
+    def produced_by(self, info: Info) -> RuptureGenerationTask | None:
         if not self.produced_by_raw_id:
             return None
-        from data.dynamo import get_thing
         from strawberry.relay import GlobalID
+
+        from data.dynamo import get_thing
+
         # produced_by is stored as a relay global ID string
         try:
             gid = GlobalID.from_id(self.produced_by_raw_id)
@@ -49,12 +53,14 @@ class RuptureSet(relay.Node):
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["RuptureSet"]:
         from data.dynamo import get_file
+
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "RuptureSet":
         from data.models import RuptureSetData
+
         d = RuptureSetData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -72,15 +78,16 @@ class RuptureSet(relay.Node):
 class CreateRuptureSetInput:
     file_name: str
     produced_by: strawberry.ID
-    md5_digest: Optional[str] = None
-    file_size: Optional[int] = None
-    created: Optional[str] = None
-    fault_models: Optional[list[str]] = None
-    metrics: Optional[list[KeyValuePairInput]] = None
+    md5_digest: str | None = None
+    file_size: int | None = None
+    created: str | None = None
+    fault_models: list[str] | None = None
+    metrics: list[KeyValuePairInput] | None = None
 
 
 def resolve_rupture_sets(info: Info) -> Iterable[RuptureSet]:
     from data.dynamo import list_files
+
     items = list_files(info.context["dynamodb"], "RuptureSet")
     return [RuptureSet.from_dict(item) for item in items]
 
@@ -90,9 +97,7 @@ def mutate_create_rupture_set(info: Info, input: CreateRuptureSetInput) -> Ruptu
 
     # Validate produced_by is a RuptureGenerationTask global ID
     gid = relay.GlobalID.from_id(input.produced_by)
-    assert gid.type_name == "RuptureGenerationTask", (
-        f"produced_by must be a RuptureGenerationTask, got {gid.type_name}"
-    )
+    assert gid.type_name == "RuptureGenerationTask", f"produced_by must be a RuptureGenerationTask, got {gid.type_name}"
 
     metrics = [{"k": i.k, "v": i.v} for i in input.metrics] if input.metrics else None
     payload = {

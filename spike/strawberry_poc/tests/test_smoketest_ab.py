@@ -11,12 +11,13 @@ Key differences from the original smoketest:
     (no TOSHI_FIX_RANDOM_SEED dependency)
   - Verification via node() and list queries instead of search()
 """
+
 import pytest
 
 from schema import schema
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="module")
 def ids(gql_context):
@@ -25,6 +26,7 @@ def ids(gql_context):
     Mutation strings mirror graphql_api/tests/smoketests.py test_setup.
     """
     import requests as _requests
+
     ep = gql_context.get("es_endpoint", "")
     idx = gql_context.get("es_index", "toshi-index-mapped")
     if ep:
@@ -71,7 +73,8 @@ def ids(gql_context):
     collected["rgt1_id"] = data["create_rupture_generation_task"]["task_result"]["id"]
 
     # 3. Update RuptureGenerationTask — mirrors "update_ruptgen_task"
-    data = run("""
+    data = run(
+        """
         mutation update_ruptgen_task($task_id: ID!) {
             update_rupture_generation_task(input: {
                 task_id: $task_id
@@ -81,7 +84,9 @@ def ids(gql_context):
                 task_result { id }
             }
         }
-    """, {"task_id": collected["rgt1_id"]})
+    """,
+        {"task_id": collected["rgt1_id"]},
+    )
     assert data["update_rupture_generation_task"]["task_result"]["id"] == collected["rgt1_id"]
 
     # 4. File — mirrors "new_rupt_file"
@@ -100,7 +105,8 @@ def ids(gql_context):
     collected["file_id"] = data["create_file"]["file_result"]["id"]
 
     # 5. File → RuptureGenerationTask relation — mirrors "new_rupt_file_relation"
-    data = run("""
+    data = run(
+        """
         mutation new_rupt_file_relation($file_id: ID!, $thing_id: ID!) {
             create_file_relation(input: {
                 file_id: $file_id
@@ -108,7 +114,9 @@ def ids(gql_context):
                 role: WRITE
             }) { ok }
         }
-    """, {"file_id": collected["file_id"], "thing_id": collected["rgt1_id"]})
+    """,
+        {"file_id": collected["file_id"], "thing_id": collected["rgt1_id"]},
+    )
     assert data["create_file_relation"]["ok"] is True
 
     # 6. SmsFile — mirrors "new_sms_file"
@@ -127,7 +135,8 @@ def ids(gql_context):
     collected["sms_file_id"] = data["create_sms_file"]["file_result"]["id"]
 
     # 7. SmsFile → StrongMotionStation relation — mirrors "new_sms_file_relation"
-    data = run("""
+    data = run(
+        """
         mutation new_sms_file_relation($file_id: ID!, $thing_id: ID!) {
             create_file_relation(input: {
                 file_id: $file_id
@@ -135,7 +144,9 @@ def ids(gql_context):
                 role: UNDEFINED
             }) { ok }
         }
-    """, {"file_id": collected["sms_file_id"], "thing_id": collected["sms_id"]})
+    """,
+        {"file_id": collected["sms_file_id"], "thing_id": collected["sms_id"]},
+    )
     assert data["create_file_relation"]["ok"] is True
 
     # 8. GeneralTask — mirrors "new_general_task"
@@ -154,7 +165,8 @@ def ids(gql_context):
     collected["gt_id"] = data["create_general_task"]["general_task"]["id"]
 
     # 9. File → GeneralTask relation — mirrors "new_gt_file_relation"
-    data = run("""
+    data = run(
+        """
         mutation new_gt_file_relation($file_id: ID!, $thing_id: ID!) {
             create_file_relation(input: {
                 file_id: $file_id
@@ -162,11 +174,14 @@ def ids(gql_context):
                 role: READ
             }) { ok }
         }
-    """, {"file_id": collected["file_id"], "thing_id": collected["gt_id"]})
+    """,
+        {"file_id": collected["file_id"], "thing_id": collected["gt_id"]},
+    )
     assert data["create_file_relation"]["ok"] is True
 
     # 10. SmsFile → GeneralTask relation — mirrors "new_gt_smsfile_relation"
-    data = run("""
+    data = run(
+        """
         mutation new_gt_smsfile_relation($file_id: ID!, $thing_id: ID!) {
             create_file_relation(input: {
                 file_id: $file_id
@@ -174,11 +189,14 @@ def ids(gql_context):
                 role: UNDEFINED
             }) { ok }
         }
-    """, {"file_id": collected["sms_file_id"], "thing_id": collected["gt_id"]})
+    """,
+        {"file_id": collected["sms_file_id"], "thing_id": collected["gt_id"]},
+    )
     assert data["create_file_relation"]["ok"] is True
 
     # 11. GeneralTask → RuptureGenerationTask — mirrors "new_task_subtask_relation"
-    data = run("""
+    data = run(
+        """
         mutation new_task_subtask_relation($child_id: ID!, $parent_id: ID!) {
             create_task_relation(input: {
                 child_id: $child_id
@@ -190,7 +208,9 @@ def ids(gql_context):
                 }
             }
         }
-    """, {"child_id": collected["rgt1_id"], "parent_id": collected["gt_id"]})
+    """,
+        {"child_id": collected["rgt1_id"], "parent_id": collected["gt_id"]},
+    )
     rel = data["create_task_relation"]["thing_relation"]
     assert rel["parent"]["id"] == collected["gt_id"]
     assert rel["child"]["id"] == collected["rgt1_id"]
@@ -252,16 +272,16 @@ def ids(gql_context):
 
 # ── Verification tests ────────────────────────────────────────────────────────
 
+
 def test_setup_returns_all_ids(ids):
-    assert all(k in ids for k in [
-        "sms_id", "rgt1_id", "file_id", "sms_file_id", "gt_id", "at_id", "rgt2_id"
-    ])
+    assert all(k in ids for k in ["sms_id", "rgt1_id", "file_id", "sms_file_id", "gt_id", "at_id", "rgt2_id"])
     for key, val in ids.items():
         assert val and len(val) > 4, f"{key} has empty ID"
 
 
 def test_node_strong_motion_station(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query GetSMS($id: ID!) {
             node(id: $id) {
                 __typename
@@ -274,7 +294,10 @@ def test_node_strong_motion_station(ids, gql_context):
                 }
             }
         }
-    """, context_value=gql_context, variable_values={"id": ids["sms_id"]})
+    """,
+        context_value=gql_context,
+        variable_values={"id": ids["sms_id"]},
+    )
     assert result.errors is None
     node = result.data["node"]
     assert node["__typename"] == "StrongMotionStation"
@@ -285,7 +308,8 @@ def test_node_strong_motion_station(ids, gql_context):
 
 
 def test_node_rgt_after_update(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query GetRGT($id: ID!) {
             node(id: $id) {
                 __typename
@@ -298,7 +322,10 @@ def test_node_rgt_after_update(ids, gql_context):
                 }
             }
         }
-    """, context_value=gql_context, variable_values={"id": ids["rgt1_id"]})
+    """,
+        context_value=gql_context,
+        variable_values={"id": ids["rgt1_id"]},
+    )
     assert result.errors is None
     node = result.data["node"]
     assert node["__typename"] == "RuptureGenerationTask"
@@ -308,7 +335,8 @@ def test_node_rgt_after_update(ids, gql_context):
 
 
 def test_node_file_with_relations(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query GetFile($id: ID!) {
             node(id: $id) {
                 ... on ToshiFile {
@@ -328,7 +356,10 @@ def test_node_file_with_relations(ids, gql_context):
                 }
             }
         }
-    """, context_value=gql_context, variable_values={"id": ids["file_id"]})
+    """,
+        context_value=gql_context,
+        variable_values={"id": ids["file_id"]},
+    )
     assert result.errors is None
     node = result.data["node"]
     assert node["file_name"] == "myfile2.txt"
@@ -340,7 +371,8 @@ def test_node_file_with_relations(ids, gql_context):
 
 
 def test_node_sms_file_with_relation(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query GetSmsFile($id: ID!) {
             node(id: $id) {
                 ... on SmsFile {
@@ -362,7 +394,10 @@ def test_node_sms_file_with_relation(ids, gql_context):
                 }
             }
         }
-    """, context_value=gql_context, variable_values={"id": ids["sms_file_id"]})
+    """,
+        context_value=gql_context,
+        variable_values={"id": ids["sms_file_id"]},
+    )
     assert result.errors is None
     node = result.data["node"]
     assert node["file_name"] == "my_sms_File2.txt"
@@ -373,7 +408,8 @@ def test_node_sms_file_with_relation(ids, gql_context):
 
 
 def test_node_general_task_children_and_files(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query GetGT($id: ID!) {
             node(id: $id) {
                 ... on GeneralTask {
@@ -414,7 +450,10 @@ def test_node_general_task_children_and_files(ids, gql_context):
                 }
             }
         }
-    """, context_value=gql_context, variable_values={"id": ids["gt_id"]})
+    """,
+        context_value=gql_context,
+        variable_values={"id": ids["gt_id"]},
+    )
     assert result.errors is None
     node = result.data["node"]
     assert node["title"] == "My First Manual task"
@@ -439,7 +478,8 @@ def test_node_general_task_children_and_files(ids, gql_context):
 
 
 def test_node_rgt_files_and_parents(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query GetRGT($id: ID!) {
             node(id: $id) {
                 ... on RuptureGenerationTask {
@@ -467,7 +507,10 @@ def test_node_rgt_files_and_parents(ids, gql_context):
                 }
             }
         }
-    """, context_value=gql_context, variable_values={"id": ids["rgt1_id"]})
+    """,
+        context_value=gql_context,
+        variable_values={"id": ids["rgt1_id"]},
+    )
     assert result.errors is None
     node = result.data["node"]
     assert node["state"] == "DONE"
@@ -476,7 +519,8 @@ def test_node_rgt_files_and_parents(ids, gql_context):
 
 
 def test_node_automation_task(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query GetAT($id: ID!) {
             node(id: $id) {
                 __typename
@@ -488,7 +532,10 @@ def test_node_automation_task(ids, gql_context):
                 }
             }
         }
-    """, context_value=gql_context, variable_values={"id": ids["at_id"]})
+    """,
+        context_value=gql_context,
+        variable_values={"id": ids["at_id"]},
+    )
     assert result.errors is None
     node = result.data["node"]
     assert node["__typename"] == "AutomationTask"
@@ -497,7 +544,8 @@ def test_node_automation_task(ids, gql_context):
 
 
 def test_node_rgt2_arguments_and_metrics(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query GetRGT2($id: ID!) {
             node(id: $id) {
                 __typename
@@ -510,7 +558,10 @@ def test_node_rgt2_arguments_and_metrics(ids, gql_context):
                 }
             }
         }
-    """, context_value=gql_context, variable_values={"id": ids["rgt2_id"]})
+    """,
+        context_value=gql_context,
+        variable_values={"id": ids["rgt2_id"]},
+    )
     assert result.errors is None
     node = result.data["node"]
     assert node["__typename"] == "RuptureGenerationTask"
@@ -520,18 +571,24 @@ def test_node_rgt2_arguments_and_metrics(ids, gql_context):
 
 
 def test_list_general_tasks(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query { general_tasks { edges { node { id title agent_name } } } }
-    """, context_value=gql_context)
+    """,
+        context_value=gql_context,
+    )
     assert result.errors is None
     nodes = [e["node"] for e in result.data["general_tasks"]["edges"]]
     assert any(n["id"] == ids["gt_id"] and n["title"] == "My First Manual task" for n in nodes)
 
 
 def test_list_rupture_generation_tasks(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query { rupture_generation_tasks { edges { node { id state result } } } }
-    """, context_value=gql_context)
+    """,
+        context_value=gql_context,
+    )
     assert result.errors is None
     nodes = [e["node"] for e in result.data["rupture_generation_tasks"]["edges"]]
     found = {n["id"] for n in nodes}
@@ -543,27 +600,36 @@ def test_list_rupture_generation_tasks(ids, gql_context):
 
 
 def test_list_strong_motion_stations(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query { strong_motion_stations { edges { node { id site_code site_class } } } }
-    """, context_value=gql_context)
+    """,
+        context_value=gql_context,
+    )
     assert result.errors is None
     nodes = [e["node"] for e in result.data["strong_motion_stations"]["edges"]]
     assert any(n["id"] == ids["sms_id"] and n["site_code"] == "ABCD" for n in nodes)
 
 
 def test_list_sms_files(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query { sms_files { edges { node { id file_name file_type } } } }
-    """, context_value=gql_context)
+    """,
+        context_value=gql_context,
+    )
     assert result.errors is None
     nodes = [e["node"] for e in result.data["sms_files"]["edges"]]
     assert any(n["id"] == ids["sms_file_id"] and n["file_type"] == "CPT" for n in nodes)
 
 
 def test_list_automation_tasks(ids, gql_context):
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         query { automation_tasks { edges { node { id task_type } } } }
-    """, context_value=gql_context)
+    """,
+        context_value=gql_context,
+    )
     assert result.errors is None
     nodes = [e["node"] for e in result.data["automation_tasks"]["edges"]]
     assert any(n["id"] == ids["at_id"] and n["task_type"] == "INVERSION" for n in nodes)
@@ -695,7 +761,9 @@ fragment sr on SearchResult {
 }
 """
 
-SEARCH_QUERY = SEARCH_FRAGMENT + """
+SEARCH_QUERY = (
+    SEARCH_FRAGMENT
+    + """
 query Search($term: String!) {
     search(search_term: $term) {
         search_result {
@@ -706,12 +774,11 @@ query Search($term: String!) {
     }
 }
 """
+)
 
 
 def _search(gql_context, term):
-    result = schema.execute_sync(
-        SEARCH_QUERY, context_value=gql_context, variable_values={"term": term}
-    )
+    result = schema.execute_sync(SEARCH_QUERY, context_value=gql_context, variable_values={"term": term})
     assert result.errors is None, result.errors
     return result.data["search"]["search_result"]["edges"]
 
@@ -719,7 +786,9 @@ def _search(gql_context, term):
 @pytest.mark.integration
 def test_search_sms_by_site_class_basis(ids, gql_context):
     """Mirrors smoketests.py search_sms query."""
-    import time; time.sleep(1)  # allow ES to index
+    import time
+
+    time.sleep(1)  # allow ES to index
     edges = _search(gql_context, "site_class_basis:SPT")
     nodes = [e["node"] for e in edges]
     sms = next((n for n in nodes if n["__typename"] == "StrongMotionStation"), None)
@@ -745,10 +814,7 @@ def test_search_rupture_generation_task_by_result(ids, gql_context):
     assert rgt["result"] == "SUCCESS"
     assert rgt["state"] == "DONE"
     file_nodes = [e["node"] for e in rgt["files"]["edges"]]
-    assert any(
-        e["role"] == "WRITE" and e["file"] and e["file"]["file_name"] == "myfile2.txt"
-        for e in file_nodes
-    )
+    assert any(e["role"] == "WRITE" and e["file"] and e["file"]["file_name"] == "myfile2.txt" for e in file_nodes)
 
 
 @pytest.mark.integration

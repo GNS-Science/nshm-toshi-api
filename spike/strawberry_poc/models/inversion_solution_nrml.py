@@ -1,5 +1,7 @@
 """InversionSolutionNrml — file type used as an Openquake source model."""
-from typing import Iterable, Optional
+
+from collections.abc import Iterable
+from typing import Optional
 
 import strawberry
 from strawberry import relay
@@ -13,21 +15,23 @@ from .scaled_inversion_solution import SourceSolutionUnion, dispatch_source_solu
 @strawberry.type
 class InversionSolutionNrml(relay.Node):
     pk: relay.NodeID[str]
-    file_name: Optional[str] = None
-    md5_digest: Optional[str] = None
-    file_size: Optional[int] = None
-    meta: Optional[list[KeyValuePair]] = None
-    created: Optional[str] = None
+    file_name: str | None = None
+    md5_digest: str | None = None
+    file_size: int | None = None
+    meta: list[KeyValuePair] | None = None
+    created: str | None = None
 
-    source_solution_raw_id: strawberry.Private[Optional[str]] = None
-    predecessors_raw: strawberry.Private[Optional[list]] = None
+    source_solution_raw_id: strawberry.Private[str | None] = None
+    predecessors_raw: strawberry.Private[list | None] = None
 
     @strawberry.field
-    def source_solution(self, info: Info) -> Optional[SourceSolutionUnion]:
+    def source_solution(self, info: Info) -> SourceSolutionUnion | None:
         if not self.source_solution_raw_id:
             return None
-        from data.dynamo import get_file
         from strawberry.relay import GlobalID
+
+        from data.dynamo import get_file
+
         try:
             raw_id = GlobalID.from_id(self.source_solution_raw_id).node_id
         except Exception:
@@ -36,7 +40,7 @@ class InversionSolutionNrml(relay.Node):
         return dispatch_source_solution(data) if data else None
 
     @strawberry.field
-    def predecessors(self) -> Optional[list[Predecessor]]:
+    def predecessors(self) -> list[Predecessor] | None:
         if not self.predecessors_raw:
             return None
         return [Predecessor(id=p["id"], depth=p["depth"]) for p in self.predecessors_raw]
@@ -44,12 +48,14 @@ class InversionSolutionNrml(relay.Node):
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["InversionSolutionNrml"]:
         from data.dynamo import get_file
+
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "InversionSolutionNrml":
         from data.models import InversionSolutionNrmlData
+
         d = InversionSolutionNrmlData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -66,24 +72,24 @@ class InversionSolutionNrml(relay.Node):
 @strawberry.input
 class CreateInversionSolutionNrmlInput:
     file_name: str
-    source_solution: Optional[strawberry.ID] = None
-    md5_digest: Optional[str] = None
-    file_size: Optional[int] = None
-    meta: Optional[list[KeyValuePairInput]] = None
-    created: Optional[str] = None
-    predecessors: Optional[list[PredecessorInput]] = None
+    source_solution: strawberry.ID | None = None
+    md5_digest: str | None = None
+    file_size: int | None = None
+    meta: list[KeyValuePairInput] | None = None
+    created: str | None = None
+    predecessors: list[PredecessorInput] | None = None
 
 
 def resolve_inversion_solution_nrmls(info: Info) -> Iterable[InversionSolutionNrml]:
     from data.dynamo import list_files
+
     items = list_files(info.context["dynamodb"], "InversionSolutionNrml")
     return [InversionSolutionNrml.from_dict(item) for item in items]
 
 
-def mutate_create_inversion_solution_nrml(
-    info: Info, input: CreateInversionSolutionNrmlInput
-) -> InversionSolutionNrml:
+def mutate_create_inversion_solution_nrml(info: Info, input: CreateInversionSolutionNrmlInput) -> InversionSolutionNrml:
     from data.dynamo import create_file
+
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     predecessors = [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
     payload = {

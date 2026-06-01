@@ -1,11 +1,12 @@
 """AggregateInversionSolution — file type with multiple source solutions."""
-from typing import Iterable, Optional
+
+from collections.abc import Iterable
+from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
 from strawberry.types import Info
 
-from typing import Annotated, Optional as _Opt
 from .common import AggregationFn, KeyValuePair, KeyValuePairInput
 from .inversion_solution import Predecessor, PredecessorInput
 from .scaled_inversion_solution import SourceSolutionUnion, dispatch_source_solution
@@ -16,25 +17,27 @@ _RuptureSet = Annotated["RuptureSet", strawberry.lazy("models.rupture_set")]
 @strawberry.type
 class AggregateInversionSolution(relay.Node):
     pk: relay.NodeID[str]
-    file_name: Optional[str] = None
-    md5_digest: Optional[str] = None
-    file_size: Optional[int] = None
-    meta: Optional[list[KeyValuePair]] = None
-    created: Optional[str] = None
-    metrics: Optional[list[KeyValuePair]] = None
-    aggregation_fn: Optional[AggregationFn] = None
+    file_name: str | None = None
+    md5_digest: str | None = None
+    file_size: int | None = None
+    meta: list[KeyValuePair] | None = None
+    created: str | None = None
+    metrics: list[KeyValuePair] | None = None
+    aggregation_fn: AggregationFn | None = None
 
-    produced_by_raw_id: strawberry.Private[Optional[str]] = None
-    common_rupture_set_raw_id: strawberry.Private[Optional[str]] = None
-    source_solutions_raw_ids: strawberry.Private[Optional[list[str]]] = None
-    predecessors_raw: strawberry.Private[Optional[list]] = None
+    produced_by_raw_id: strawberry.Private[str | None] = None
+    common_rupture_set_raw_id: strawberry.Private[str | None] = None
+    source_solutions_raw_ids: strawberry.Private[list[str] | None] = None
+    predecessors_raw: strawberry.Private[list | None] = None
 
     @strawberry.field
-    def common_rupture_set(self, info: Info) -> Optional[_RuptureSet]:
+    def common_rupture_set(self, info: Info) -> _RuptureSet | None:
         if not self.common_rupture_set_raw_id:
             return None
-        from data.dynamo import get_file
         from strawberry.relay import GlobalID
+
+        from data.dynamo import get_file
+
         try:
             raw_id = GlobalID.from_id(self.common_rupture_set_raw_id).node_id
         except Exception:
@@ -43,14 +46,17 @@ class AggregateInversionSolution(relay.Node):
         if data is None:
             return None
         from models.rupture_set import RuptureSet
+
         return RuptureSet.from_dict(data)
 
     @strawberry.field
-    def source_solutions(self, info: Info) -> Optional[list[SourceSolutionUnion]]:
+    def source_solutions(self, info: Info) -> list[SourceSolutionUnion] | None:
         if not self.source_solutions_raw_ids:
             return None
-        from data.dynamo import get_file
         from strawberry.relay import GlobalID
+
+        from data.dynamo import get_file
+
         results = []
         for gid_str in self.source_solutions_raw_ids:
             try:
@@ -63,7 +69,7 @@ class AggregateInversionSolution(relay.Node):
         return results or None
 
     @strawberry.field
-    def predecessors(self) -> Optional[list[Predecessor]]:
+    def predecessors(self) -> list[Predecessor] | None:
         if not self.predecessors_raw:
             return None
         return [Predecessor(id=p["id"], depth=p["depth"]) for p in self.predecessors_raw]
@@ -71,12 +77,14 @@ class AggregateInversionSolution(relay.Node):
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["AggregateInversionSolution"]:
         from data.dynamo import get_file
+
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "AggregateInversionSolution":
         from data.models import AggregateInversionSolutionData
+
         d = AggregateInversionSolutionData.model_validate(data)
         try:
             agg_fn = AggregationFn(d.aggregation_fn) if d.aggregation_fn else None
@@ -104,16 +112,17 @@ class CreateAggregateInversionSolutionInput:
     common_rupture_set: strawberry.ID
     source_solutions: list[strawberry.ID]
     aggregation_fn: AggregationFn
-    produced_by: Optional[strawberry.ID] = None
-    md5_digest: Optional[str] = None
-    file_size: Optional[int] = None
-    meta: Optional[list[KeyValuePairInput]] = None
-    created: Optional[str] = None
-    predecessors: Optional[list[PredecessorInput]] = None
+    produced_by: strawberry.ID | None = None
+    md5_digest: str | None = None
+    file_size: int | None = None
+    meta: list[KeyValuePairInput] | None = None
+    created: str | None = None
+    predecessors: list[PredecessorInput] | None = None
 
 
 def resolve_aggregate_inversion_solutions(info: Info) -> Iterable[AggregateInversionSolution]:
     from data.dynamo import list_files
+
     items = list_files(info.context["dynamodb"], "AggregateInversionSolution")
     return [AggregateInversionSolution.from_dict(item) for item in items]
 
@@ -122,6 +131,7 @@ def mutate_create_aggregate_inversion_solution(
     info: Info, input: CreateAggregateInversionSolutionInput
 ) -> AggregateInversionSolution:
     from data.dynamo import create_file
+
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     predecessors = [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
     payload = {
