@@ -48,12 +48,64 @@ from models.rupture_set import (
     mutate_create_rupture_set,
     resolve_rupture_sets,
 )
+from models.aggregate_inversion_solution import (
+    AggregateInversionSolution,
+    CreateAggregateInversionSolutionInput,
+    mutate_create_aggregate_inversion_solution,
+    resolve_aggregate_inversion_solutions,
+)
+from models.inversion_solution import (
+    AppendInversionSolutionTablesInput,
+    CreateInversionSolutionInput,
+    InversionSolution,
+    mutate_append_inversion_solution_tables,
+    mutate_create_inversion_solution,
+    resolve_inversion_solutions,
+)
+from models.inversion_solution_nrml import (
+    CreateInversionSolutionNrmlInput,
+    InversionSolutionNrml,
+    mutate_create_inversion_solution_nrml,
+    resolve_inversion_solution_nrmls,
+)
+from models.openquake_hazard_config import (
+    CreateOpenquakeHazardConfigInput,
+    OpenquakeHazardConfig,
+    mutate_create_openquake_hazard_config,
+    resolve_openquake_hazard_configs,
+)
+from models.openquake_hazard_solution import (
+    CreateOpenquakeHazardSolutionInput,
+    OpenquakeHazardSolution,
+    mutate_create_openquake_hazard_solution,
+    resolve_openquake_hazard_solutions,
+)
+from models.openquake_hazard_task import (
+    CreateOpenquakeHazardTaskInput,
+    OpenquakeHazardTask,
+    UpdateOpenquakeHazardTaskInput,
+    mutate_create_openquake_hazard_task,
+    mutate_update_openquake_hazard_task,
+    resolve_openquake_hazard_tasks,
+)
+from models.scaled_inversion_solution import (
+    CreateScaledInversionSolutionInput,
+    ScaledInversionSolution,
+    mutate_create_scaled_inversion_solution,
+    resolve_scaled_inversion_solutions,
+)
 from models.sms_file import CreateSmsFileInput, SmsFile, mutate_create_sms_file, resolve_sms_files
 from models.strong_motion_station import (
     CreateStrongMotionStationInput,
     StrongMotionStation,
     mutate_create_strong_motion_station,
     resolve_strong_motion_stations,
+)
+from models.time_dependent_inversion_solution import (
+    CreateTimeDependentInversionSolutionInput,
+    TimeDependentInversionSolution,
+    mutate_create_time_dependent_inversion_solution,
+    resolve_time_dependent_inversion_solutions,
 )
 
 
@@ -65,9 +117,17 @@ SearchResult = Annotated[
         RuptureGenerationTask,
         AutomationTask,
         StrongMotionStation,
+        OpenquakeHazardTask,
+        OpenquakeHazardSolution,
+        OpenquakeHazardConfig,
         ToshiFile,
         SmsFile,
         RuptureSet,
+        InversionSolution,
+        ScaledInversionSolution,
+        AggregateInversionSolution,
+        TimeDependentInversionSolution,
+        InversionSolutionNrml,
     ],
     strawberry.union(name="SearchResult"),
 ]
@@ -88,7 +148,7 @@ class SearchPayload:
     search_result: Optional[SearchResultConnection] = None
 
 
-def _dispatch_search(hit: dict) -> Optional[SearchResult]:
+def _dispatch_search(hit: dict) -> Optional[SearchResult]:  # noqa: C901
     """Instantiate the right Strawberry type from an ES _source dict."""
     clazz = hit.get("clazz_name", "")
     try:
@@ -100,10 +160,26 @@ def _dispatch_search(hit: dict) -> Optional[SearchResult]:
             return AutomationTask.from_dict(hit)
         elif clazz == "StrongMotionStation":
             return StrongMotionStation.from_dict(hit)
+        elif clazz == "OpenquakeHazardTask":
+            return OpenquakeHazardTask.from_dict(hit)
+        elif clazz == "OpenquakeHazardSolution":
+            return OpenquakeHazardSolution.from_dict(hit)
+        elif clazz == "OpenquakeHazardConfig":
+            return OpenquakeHazardConfig.from_dict(hit)
         elif clazz == "SmsFile":
             return SmsFile.from_dict(hit)
         elif clazz == "RuptureSet":
             return RuptureSet.from_dict(hit)
+        elif clazz == "InversionSolution":
+            return InversionSolution.from_dict(hit)
+        elif clazz == "ScaledInversionSolution":
+            return ScaledInversionSolution.from_dict(hit)
+        elif clazz == "AggregateInversionSolution":
+            return AggregateInversionSolution.from_dict(hit)
+        elif clazz == "TimeDependentInversionSolution":
+            return TimeDependentInversionSolution.from_dict(hit)
+        elif clazz == "InversionSolutionNrml":
+            return InversionSolutionNrml.from_dict(hit)
         else:
             return ToshiFile.from_dict(hit)
     except Exception:
@@ -161,6 +237,56 @@ class CreateTaskRelationPayload:
     thing_relation: Optional[TaskTaskRelation] = None
 
 @strawberry.type
+class CreateInversionSolutionPayload:
+    ok: Optional[bool] = None
+    inversion_solution: Optional[InversionSolution] = None
+
+@strawberry.type
+class AppendInversionSolutionTablesPayload:
+    ok: Optional[bool] = None
+    inversion_solution: Optional[InversionSolution] = None
+
+@strawberry.type
+class CreateScaledInversionSolutionPayload:
+    ok: Optional[bool] = None
+    solution: Optional[ScaledInversionSolution] = None
+
+@strawberry.type
+class CreateAggregateInversionSolutionPayload:
+    ok: Optional[bool] = None
+    solution: Optional[AggregateInversionSolution] = None
+
+@strawberry.type
+class CreateTimeDependentInversionSolutionPayload:
+    ok: Optional[bool] = None
+    solution: Optional[TimeDependentInversionSolution] = None
+
+@strawberry.type
+class CreateInversionSolutionNrmlPayload:
+    ok: Optional[bool] = None
+    inversion_solution_nrml: Optional[InversionSolutionNrml] = None
+
+@strawberry.type
+class CreateOpenquakeHazardConfigPayload:
+    ok: Optional[bool] = None
+    config: Optional[OpenquakeHazardConfig] = None
+
+@strawberry.type
+class CreateOpenquakeHazardSolutionPayload:
+    ok: Optional[bool] = None
+    openquake_hazard_solution: Optional[OpenquakeHazardSolution] = None
+
+@strawberry.type
+class CreateOpenquakeHazardTaskPayload:
+    ok: Optional[bool] = None
+    task_result: Optional[OpenquakeHazardTask] = None
+
+@strawberry.type
+class UpdateOpenquakeHazardTaskPayload:
+    ok: Optional[bool] = None
+    task_result: Optional[OpenquakeHazardTask] = None
+
+@strawberry.type
 class ReindexPayload:
     ok: bool
     reindexed_ids: list[str]
@@ -199,6 +325,38 @@ class Query:
     @relay.connection(relay.ListConnection[RuptureGenerationTask])
     def rupture_generation_tasks(self, info: strawberry.types.Info) -> Iterable[RuptureGenerationTask]:
         return resolve_rupture_generation_tasks(info)
+
+    @relay.connection(relay.ListConnection[InversionSolution])
+    def inversion_solutions(self, info: strawberry.types.Info) -> Iterable[InversionSolution]:
+        return resolve_inversion_solutions(info)
+
+    @relay.connection(relay.ListConnection[ScaledInversionSolution])
+    def scaled_inversion_solutions(self, info: strawberry.types.Info) -> Iterable[ScaledInversionSolution]:
+        return resolve_scaled_inversion_solutions(info)
+
+    @relay.connection(relay.ListConnection[AggregateInversionSolution])
+    def aggregate_inversion_solutions(self, info: strawberry.types.Info) -> Iterable[AggregateInversionSolution]:
+        return resolve_aggregate_inversion_solutions(info)
+
+    @relay.connection(relay.ListConnection[TimeDependentInversionSolution])
+    def time_dependent_inversion_solutions(self, info: strawberry.types.Info) -> Iterable[TimeDependentInversionSolution]:
+        return resolve_time_dependent_inversion_solutions(info)
+
+    @relay.connection(relay.ListConnection[InversionSolutionNrml])
+    def inversion_solution_nrmls(self, info: strawberry.types.Info) -> Iterable[InversionSolutionNrml]:
+        return resolve_inversion_solution_nrmls(info)
+
+    @relay.connection(relay.ListConnection[OpenquakeHazardConfig])
+    def openquake_hazard_configs(self, info: strawberry.types.Info) -> Iterable[OpenquakeHazardConfig]:
+        return resolve_openquake_hazard_configs(info)
+
+    @relay.connection(relay.ListConnection[OpenquakeHazardSolution])
+    def openquake_hazard_solutions(self, info: strawberry.types.Info) -> Iterable[OpenquakeHazardSolution]:
+        return resolve_openquake_hazard_solutions(info)
+
+    @relay.connection(relay.ListConnection[OpenquakeHazardTask])
+    def openquake_hazard_tasks(self, info: strawberry.types.Info) -> Iterable[OpenquakeHazardTask]:
+        return resolve_openquake_hazard_tasks(info)
 
     @strawberry.field
     def search(self, info: strawberry.types.Info, search_term: str) -> SearchPayload:
@@ -279,6 +437,86 @@ class Mutation:
     ) -> UpdateRuptureGenerationTaskPayload:
         return UpdateRuptureGenerationTaskPayload(
             task_result=mutate_update_rupture_generation_task(info, input)
+        )
+
+    @strawberry.mutation
+    def create_inversion_solution(
+        self, info: strawberry.types.Info, input: CreateInversionSolutionInput
+    ) -> CreateInversionSolutionPayload:
+        return CreateInversionSolutionPayload(
+            ok=True, inversion_solution=mutate_create_inversion_solution(info, input)
+        )
+
+    @strawberry.mutation
+    def append_inversion_solution_tables(
+        self, info: strawberry.types.Info, input: AppendInversionSolutionTablesInput
+    ) -> AppendInversionSolutionTablesPayload:
+        return AppendInversionSolutionTablesPayload(
+            ok=True, inversion_solution=mutate_append_inversion_solution_tables(info, input)
+        )
+
+    @strawberry.mutation
+    def create_scaled_inversion_solution(
+        self, info: strawberry.types.Info, input: CreateScaledInversionSolutionInput
+    ) -> CreateScaledInversionSolutionPayload:
+        return CreateScaledInversionSolutionPayload(
+            ok=True, solution=mutate_create_scaled_inversion_solution(info, input)
+        )
+
+    @strawberry.mutation
+    def create_aggregate_inversion_solution(
+        self, info: strawberry.types.Info, input: CreateAggregateInversionSolutionInput
+    ) -> CreateAggregateInversionSolutionPayload:
+        return CreateAggregateInversionSolutionPayload(
+            ok=True, solution=mutate_create_aggregate_inversion_solution(info, input)
+        )
+
+    @strawberry.mutation
+    def create_time_dependent_inversion_solution(
+        self, info: strawberry.types.Info, input: CreateTimeDependentInversionSolutionInput
+    ) -> CreateTimeDependentInversionSolutionPayload:
+        return CreateTimeDependentInversionSolutionPayload(
+            ok=True, solution=mutate_create_time_dependent_inversion_solution(info, input)
+        )
+
+    @strawberry.mutation
+    def create_inversion_solution_nrml(
+        self, info: strawberry.types.Info, input: CreateInversionSolutionNrmlInput
+    ) -> CreateInversionSolutionNrmlPayload:
+        return CreateInversionSolutionNrmlPayload(
+            ok=True, inversion_solution_nrml=mutate_create_inversion_solution_nrml(info, input)
+        )
+
+    @strawberry.mutation
+    def create_openquake_hazard_config(
+        self, info: strawberry.types.Info, input: CreateOpenquakeHazardConfigInput
+    ) -> CreateOpenquakeHazardConfigPayload:
+        return CreateOpenquakeHazardConfigPayload(
+            ok=True, config=mutate_create_openquake_hazard_config(info, input)
+        )
+
+    @strawberry.mutation
+    def create_openquake_hazard_solution(
+        self, info: strawberry.types.Info, input: CreateOpenquakeHazardSolutionInput
+    ) -> CreateOpenquakeHazardSolutionPayload:
+        return CreateOpenquakeHazardSolutionPayload(
+            ok=True, openquake_hazard_solution=mutate_create_openquake_hazard_solution(info, input)
+        )
+
+    @strawberry.mutation
+    def create_openquake_hazard_task(
+        self, info: strawberry.types.Info, input: CreateOpenquakeHazardTaskInput
+    ) -> CreateOpenquakeHazardTaskPayload:
+        return CreateOpenquakeHazardTaskPayload(
+            ok=True, task_result=mutate_create_openquake_hazard_task(info, input)
+        )
+
+    @strawberry.mutation
+    def update_openquake_hazard_task(
+        self, info: strawberry.types.Info, input: UpdateOpenquakeHazardTaskInput
+    ) -> UpdateOpenquakeHazardTaskPayload:
+        return UpdateOpenquakeHazardTaskPayload(
+            ok=True, task_result=mutate_update_openquake_hazard_task(info, input)
         )
 
     @strawberry.mutation

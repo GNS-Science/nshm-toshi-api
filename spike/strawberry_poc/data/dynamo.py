@@ -49,9 +49,12 @@ def _table_table(dynamodb, stage: str = STAGE):
 # ── Type → table routing ─────────────────────────────────────────────────────
 THING_CLASSES: frozenset[str] = frozenset({
     "GeneralTask", "AutomationTask", "RuptureGenerationTask", "StrongMotionStation",
+    "OpenquakeHazardTask", "OpenquakeHazardSolution", "OpenquakeHazardConfig",
 })
 FILE_CLASSES: frozenset[str] = frozenset({
     "ToshiFile", "File", "SmsFile", "RuptureSet",
+    "InversionSolution", "ScaledInversionSolution", "AggregateInversionSolution",
+    "TimeDependentInversionSolution", "InversionSolutionNrml",
 })
 # Extend as table-backed models are added to the schema.
 TABLE_CLASSES: frozenset[str] = frozenset({

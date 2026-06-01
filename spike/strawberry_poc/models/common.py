@@ -104,3 +104,35 @@ class SmsFileType(enum.Enum):
     DH = "dh"
     HVSR = "hvsr"
     SW = "sw"
+
+
+# ── Openquake / hazard enums ──────────────────────────────────────────────────
+
+@strawberry.enum
+class OpenquakeTaskType(enum.Enum):
+    HAZARD = "hazard"
+    DISAGG = "disagg"
+    UNDEFINED = "undefined"
+
+
+@strawberry.enum
+class AggregationFn(enum.Enum):
+    MEAN = "mean"
+
+
+@strawberry.enum
+class TableType(enum.Enum):
+    HAZARD_GRIDDED = "hazard_gridded"
+    HAZARD_SITES = "hazard_sites"
+    MFD_CURVES = "mfd_curves"
+    MFD_CURVES_V2 = "mfd_curves_v2"
+    GENERAL = "general"
+
+
+@strawberry.enum
+class AncestryLabel(enum.Enum):
+    SIBLING = 0
+    PARENT = -1
+    GRANDPARENT = -2
+    GREAT_GRANDPARENT = -3
+    GREAT_GREAT_GRANDPARENT = -4

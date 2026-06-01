@@ -23,24 +23,42 @@ from .common import FileRole
 _ToshiFile = Annotated["ToshiFile", strawberry.lazy("models.file")]
 _SmsFile = Annotated["SmsFile", strawberry.lazy("models.sms_file")]
 _RuptureSet = Annotated["RuptureSet", strawberry.lazy("models.rupture_set")]
+_InversionSolution = Annotated["InversionSolution", strawberry.lazy("models.inversion_solution")]
+_ScaledInversionSolution = Annotated["ScaledInversionSolution", strawberry.lazy("models.scaled_inversion_solution")]
+_AggregateInversionSolution = Annotated["AggregateInversionSolution", strawberry.lazy("models.aggregate_inversion_solution")]
+_TimeDependentInversionSolution = Annotated["TimeDependentInversionSolution", strawberry.lazy("models.time_dependent_inversion_solution")]
+_InversionSolutionNrml = Annotated["InversionSolutionNrml", strawberry.lazy("models.inversion_solution_nrml")]
 _GeneralTask = Annotated["GeneralTask", strawberry.lazy("models.general_task")]
 _RuptureGenerationTask = Annotated["RuptureGenerationTask", strawberry.lazy("models.automation_task")]
 _AutomationTask = Annotated["AutomationTask", strawberry.lazy("models.automation_task")]
 _StrongMotionStation = Annotated["StrongMotionStation", strawberry.lazy("models.strong_motion_station")]
+_OpenquakeHazardTask = Annotated["OpenquakeHazardTask", strawberry.lazy("models.openquake_hazard_task")]
+_OpenquakeHazardSolution = Annotated["OpenquakeHazardSolution", strawberry.lazy("models.openquake_hazard_solution")]
+_OpenquakeHazardConfig = Annotated["OpenquakeHazardConfig", strawberry.lazy("models.openquake_hazard_config")]
 
 # Union types — referenced as return types of @strawberry.field methods
 FileUnion = Annotated[
-    Union[_ToshiFile, _SmsFile, _RuptureSet],
+    Union[
+        _ToshiFile, _SmsFile, _RuptureSet,
+        _InversionSolution, _ScaledInversionSolution, _AggregateInversionSolution,
+        _TimeDependentInversionSolution, _InversionSolutionNrml,
+    ],
     strawberry.union(name="FileUnion"),
 ]
 
 ThingUnion = Annotated[
-    Union[_GeneralTask, _RuptureGenerationTask, _AutomationTask, _StrongMotionStation],
+    Union[
+        _GeneralTask, _RuptureGenerationTask, _AutomationTask, _StrongMotionStation,
+        _OpenquakeHazardTask, _OpenquakeHazardSolution, _OpenquakeHazardConfig,
+    ],
     strawberry.union(name="ThingUnion"),
 ]
 
 ChildTaskUnion = Annotated[
-    Union[_GeneralTask, _RuptureGenerationTask, _AutomationTask, _StrongMotionStation],
+    Union[
+        _GeneralTask, _RuptureGenerationTask, _AutomationTask, _StrongMotionStation,
+        _OpenquakeHazardTask, _OpenquakeHazardSolution,
+    ],
     strawberry.union(name="ChildTaskUnion"),
 ]
 
@@ -106,12 +124,26 @@ def _dispatch_file(data: dict):
     if clazz == "SmsFile":
         from models.sms_file import SmsFile
         return SmsFile.from_dict(data)
-    elif clazz == "RuptureSet":
+    if clazz == "RuptureSet":
         from models.rupture_set import RuptureSet
         return RuptureSet.from_dict(data)
-    else:
-        from models.file import ToshiFile
-        return ToshiFile.from_dict(data)
+    if clazz == "InversionSolution":
+        from models.inversion_solution import InversionSolution
+        return InversionSolution.from_dict(data)
+    if clazz == "ScaledInversionSolution":
+        from models.scaled_inversion_solution import ScaledInversionSolution
+        return ScaledInversionSolution.from_dict(data)
+    if clazz == "AggregateInversionSolution":
+        from models.aggregate_inversion_solution import AggregateInversionSolution
+        return AggregateInversionSolution.from_dict(data)
+    if clazz == "TimeDependentInversionSolution":
+        from models.time_dependent_inversion_solution import TimeDependentInversionSolution
+        return TimeDependentInversionSolution.from_dict(data)
+    if clazz == "InversionSolutionNrml":
+        from models.inversion_solution_nrml import InversionSolutionNrml
+        return InversionSolutionNrml.from_dict(data)
+    from models.file import ToshiFile
+    return ToshiFile.from_dict(data)
 
 
 def _dispatch_thing(data: dict):
@@ -120,15 +152,23 @@ def _dispatch_thing(data: dict):
     if clazz == "RuptureGenerationTask":
         from models.automation_task import RuptureGenerationTask
         return RuptureGenerationTask.from_dict(data)
-    elif clazz == "AutomationTask":
+    if clazz == "AutomationTask":
         from models.automation_task import AutomationTask
         return AutomationTask.from_dict(data)
-    elif clazz == "StrongMotionStation":
+    if clazz == "StrongMotionStation":
         from models.strong_motion_station import StrongMotionStation
         return StrongMotionStation.from_dict(data)
-    else:
-        from models.general_task import GeneralTask
-        return GeneralTask.from_dict(data)
+    if clazz == "OpenquakeHazardTask":
+        from models.openquake_hazard_task import OpenquakeHazardTask
+        return OpenquakeHazardTask.from_dict(data)
+    if clazz == "OpenquakeHazardSolution":
+        from models.openquake_hazard_solution import OpenquakeHazardSolution
+        return OpenquakeHazardSolution.from_dict(data)
+    if clazz == "OpenquakeHazardConfig":
+        from models.openquake_hazard_config import OpenquakeHazardConfig
+        return OpenquakeHazardConfig.from_dict(data)
+    from models.general_task import GeneralTask
+    return GeneralTask.from_dict(data)
 
 
 # ── Input types for mutations ─────────────────────────────────────────────────

@@ -96,14 +96,102 @@ class ToshiFileData(BaseModel):
     relations: list[dict] = []
 
 
+class SmsFileData(ToshiFileData):
+    file_type: Optional[str] = None
+
+
+class LabelledTableRelationEntry(BaseModel):
+    identity: Optional[str] = None
+    created: Optional[str] = None
+    produced_by_id: Optional[str] = None
+    label: Optional[str] = None
+    table_id: Optional[str] = None
+    table_type: Optional[str] = None
+    dimensions: Optional[list[KVListPairModel]] = None
+
+
+class PredecessorEntry(BaseModel):
+    id: str    # relay GlobalID string
+    depth: int
+
+
+class InversionSolutionData(ToshiFileData):
+    metrics: Optional[list[KVPairModel]] = None
+    produced_by: Optional[str] = None  # relay GlobalID
+    tables: Optional[list[LabelledTableRelationEntry]] = None
+    predecessors: Optional[list[PredecessorEntry]] = None
+
+
 class RuptureSetData(ToshiFileData):
     fault_models: Optional[list[str]] = None
     metrics: Optional[list[KVPairModel]] = None
-    produced_by: Optional[str] = None  # stored as relay GlobalID string
+    produced_by: Optional[str] = None  # relay GlobalID
 
 
-class SmsFileData(ToshiFileData):
-    file_type: Optional[str] = None
+class ScaledInversionSolutionData(ToshiFileData):
+    metrics: Optional[list[KVPairModel]] = None
+    produced_by: Optional[str] = None
+    source_solution: Optional[str] = None  # relay GlobalID
+    predecessors: Optional[list[PredecessorEntry]] = None
+
+
+class AggregateInversionSolutionData(ToshiFileData):
+    metrics: Optional[list[KVPairModel]] = None
+    produced_by: Optional[str] = None
+    common_rupture_set: Optional[str] = None  # relay GlobalID
+    source_solutions: Optional[list[str]] = None  # list of relay GlobalIDs
+    aggregation_fn: Optional[str] = None
+    predecessors: Optional[list[PredecessorEntry]] = None
+
+
+class TimeDependentInversionSolutionData(ToshiFileData):
+    metrics: Optional[list[KVPairModel]] = None
+    produced_by: Optional[str] = None
+    source_solution: Optional[str] = None  # relay GlobalID
+    predecessors: Optional[list[PredecessorEntry]] = None
+
+
+class InversionSolutionNrmlData(ToshiFileData):
+    source_solution: Optional[str] = None  # relay GlobalID
+    predecessors: Optional[list[PredecessorEntry]] = None
+
+
+# ── Thing types — Openquake ───────────────────────────────────────────────────
+
+class OpenquakeHazardConfigData(BaseModel):
+    object_id: str
+    clazz_name: Optional[str] = None
+    created: Optional[str] = None
+    source_models: Optional[list[str]] = None  # list of relay GlobalIDs
+    template_archive: Optional[str] = None  # relay GlobalID
+    files: list[dict] = []
+    parents: list[dict] = []
+    children: list[dict] = []
+
+
+class OpenquakeHazardSolutionData(BaseModel):
+    object_id: str
+    clazz_name: Optional[str] = None
+    created: Optional[str] = None
+    task_type: Optional[str] = None
+    produced_by: Optional[str] = None   # relay GlobalID → OpenquakeHazardTask
+    csv_archive: Optional[str] = None   # relay GlobalID → File
+    hdf5_archive: Optional[str] = None  # relay GlobalID → File
+    task_args: Optional[str] = None     # relay GlobalID → File
+    metrics: Optional[list[KVPairModel]] = None
+    meta: Optional[list[KVPairModel]] = None
+    predecessors: Optional[list[PredecessorEntry]] = None
+    files: list[dict] = []
+    parents: list[dict] = []
+    children: list[dict] = []
+
+
+class OpenquakeHazardTaskData(AutomationTaskData):
+    hazard_solution: Optional[str] = None  # relay GlobalID
+    executor: Optional[str] = None
+    srm_logic_tree: Optional[str] = None   # JSON string
+    gmcm_logic_tree: Optional[str] = None  # JSON string
+    openquake_config: Optional[str] = None # JSON string
 
 
 # ── Catch-all for unknown / future types ─────────────────────────────────────
