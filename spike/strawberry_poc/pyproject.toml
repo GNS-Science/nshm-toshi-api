@@ -29,7 +29,7 @@ members = ["."]
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "PLC0415"]
+select = ["E", "F", "I", "B", "UP", "G004", "PLC0415"]
 
 [tool.ruff.lint.per-file-ignores]
 # strawberry.lazy() uses string forward refs that are intentionally not imported
@@ -37,9 +37,24 @@ select = ["E", "F", "I", "UP", "PLC0415"]
 # test helpers / fixtures use local imports for clarity and testcontainer lazy-start patterns
 "tests/*.py" = ["PLC0415"]
 
+[tool.mypy]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "models.*"
+# Strawberry relay.Node **kwargs pattern triggers false-positive override warnings;
+# ListConnection[FileRelation/TaskTaskRelation] triggers false-positive type-var warnings;
+# strawberry.lazy() string forward refs trigger false-positive name-defined warnings.
+disable_error_code = ["override", "type-var", "name-defined"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 markers = [
     "integration: requires a live Elasticsearch instance (ES_ENDPOINT env var)",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.1.0",
 ]

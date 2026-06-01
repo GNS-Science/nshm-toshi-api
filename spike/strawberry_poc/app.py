@@ -17,7 +17,7 @@ from fastapi import FastAPI, Request
 from mangum import Mangum
 from strawberry.fastapi import GraphQLRouter
 
-from data.search import ES_ENDPOINT, ES_INDEX
+from data.search import es_endpoint, es_index
 from schema import schema
 
 app = FastAPI(title="nshm-toshi-api (Strawberry POC)")
@@ -34,13 +34,13 @@ async def get_context(request: Request) -> dict:
     dynamodb = getattr(request.state, "dynamodb", None) or boto3.resource("dynamodb", region_name="ap-southeast-2")
     return {
         "dynamodb": dynamodb,
-        "es_endpoint": getattr(request.state, "es_endpoint", ES_ENDPOINT),
-        "es_index": getattr(request.state, "es_index", ES_INDEX),
+        "es_endpoint": getattr(request.state, "es_endpoint", None) or es_endpoint(),
+        "es_index": getattr(request.state, "es_index", None) or es_index(),
         "request": request,
     }
 
 
-graphql_router = GraphQLRouter(schema, context_getter=get_context)
+graphql_router = GraphQLRouter(schema, context_getter=get_context)  # type: ignore[arg-type]
 app.include_router(graphql_router, prefix="/graphql")
 
 # Lambda entry point — replaces serverless-wsgi's wsgi_handler.handler

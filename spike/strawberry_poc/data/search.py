@@ -18,11 +18,11 @@ _TIMEOUT = 5  # seconds
 
 # Read at call time (not import time) so testcontainers can set the env var
 # after startup and have it picked up by all subsequent calls.
-def _es_endpoint() -> str:
+def es_endpoint() -> str:
     return os.environ.get("ES_ENDPOINT", "http://localhost:9200")
 
 
-def _es_index() -> str:
+def es_index() -> str:
     return os.environ.get("ES_INDEX", "toshi-index-mapped")
 
 
@@ -38,9 +38,9 @@ def index_document(
     relations_compressed hack for File objects.
     """
     if endpoint is None:
-        endpoint = _es_endpoint()
+        endpoint = es_endpoint()
     if index is None:
-        index = _es_index()
+        index = es_index()
     if not endpoint:
         return
 
@@ -71,9 +71,9 @@ def search(
     Mirrors search_manager.py search(), minus AWS auth (local docker only).
     """
     if endpoint is None:
-        endpoint = _es_endpoint()
+        endpoint = es_endpoint()
     if index is None:
-        index = _es_index()
+        index = es_index()
     if not endpoint:
         return []
 
