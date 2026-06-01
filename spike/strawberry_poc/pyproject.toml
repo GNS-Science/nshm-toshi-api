@@ -50,11 +50,26 @@ disable_error_code = ["override", "type-var", "name-defined"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = "--cov=. --cov-branch --cov-report=term-missing --cov-report=xml"
 markers = [
     "integration: requires a live Elasticsearch instance (ES_ENDPOINT env var)",
+]
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
 ]
 
 [dependency-groups]
 dev = [
     "mypy>=2.1.0",
+    "pytest-cov>=7.1.0",
+    "types-requests>=2.33.0.20260518",
 ]
