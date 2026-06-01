@@ -11,7 +11,11 @@ from typing import Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
+
+from data.dynamo import create_file, get_file, get_thing, list_files
+from data.models import RuptureSetData
 
 from .automation_task import RuptureGenerationTask  # noqa: F401 — re-exported for schema.py
 from .common import KeyValuePair, KeyValuePairInput
@@ -37,10 +41,6 @@ class RuptureSet(relay.Node):
     def produced_by(self, info: Info) -> RuptureGenerationTask | None:
         if not self.produced_by_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_thing
-
         # produced_by is stored as a relay global ID string
         try:
             gid = GlobalID.from_id(self.produced_by_raw_id)
@@ -52,15 +52,11 @@ class RuptureSet(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["RuptureSet"]:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "RuptureSet":
-        from data.models import RuptureSetData
-
         d = RuptureSetData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -86,15 +82,11 @@ class CreateRuptureSetInput:
 
 
 def resolve_rupture_sets(info: Info) -> Iterable[RuptureSet]:
-    from data.dynamo import list_files
-
     items = list_files(info.context["dynamodb"], "RuptureSet")
     return [RuptureSet.from_dict(item) for item in items]
 
 
 def mutate_create_rupture_set(info: Info, input: CreateRuptureSetInput) -> RuptureSet:
-    from data.dynamo import create_file
-
     # Validate produced_by is a RuptureGenerationTask global ID
     gid = relay.GlobalID.from_id(input.produced_by)
     assert gid.type_name == "RuptureGenerationTask", f"produced_by must be a RuptureGenerationTask, got {gid.type_name}"

@@ -5,7 +5,13 @@ from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
+
+from data.dynamo import create_thing, get_file, get_thing, list_things
+from data.models import OpenquakeHazardConfigData
+from models.file import ToshiFile
+from models.inversion_solution_nrml import InversionSolutionNrml
 
 # ── OpenquakeNrmlUnion ────────────────────────────────────────────────────────
 
@@ -21,11 +27,7 @@ OpenquakeNrmlUnion = Annotated[
 def dispatch_nrml(data: dict):
     clazz = data.get("clazz_name", "")
     if clazz == "InversionSolutionNrml":
-        from models.inversion_solution_nrml import InversionSolutionNrml
-
         return InversionSolutionNrml.from_dict(data)
-    from models.file import ToshiFile
-
     return ToshiFile.from_dict(data)
 
 
@@ -44,10 +46,6 @@ class OpenquakeHazardConfig(relay.Node):
     def source_models(self, info: Info) -> list[OpenquakeNrmlUnion] | None:
         if not self.source_models_raw_ids:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_file
-
         results = []
         for gid_str in self.source_models_raw_ids:
             try:
@@ -63,11 +61,6 @@ class OpenquakeHazardConfig(relay.Node):
     def template_archive(self, info: Info) -> _ToshiFile | None:
         if not self.template_archive_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_file
-        from models.file import ToshiFile
-
         try:
             raw_id = GlobalID.from_id(self.template_archive_raw_id).node_id
         except Exception:
@@ -77,15 +70,11 @@ class OpenquakeHazardConfig(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["OpenquakeHazardConfig"]:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "OpenquakeHazardConfig":
-        from data.models import OpenquakeHazardConfigData
-
         d = OpenquakeHazardConfigData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -103,15 +92,11 @@ class CreateOpenquakeHazardConfigInput:
 
 
 def resolve_openquake_hazard_configs(info: Info) -> Iterable[OpenquakeHazardConfig]:
-    from data.dynamo import list_things
-
     items = list_things(info.context["dynamodb"], "OpenquakeHazardConfig")
     return [OpenquakeHazardConfig.from_dict(item) for item in items]
 
 
 def mutate_create_openquake_hazard_config(info: Info, input: CreateOpenquakeHazardConfigInput) -> OpenquakeHazardConfig:
-    from data.dynamo import create_thing
-
     payload = {
         "created": input.created,
         "template_archive": str(input.template_archive),

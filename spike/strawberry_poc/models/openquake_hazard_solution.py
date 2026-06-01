@@ -5,7 +5,13 @@ from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
+
+from data.dynamo import create_thing, get_file, get_thing, list_things
+from data.models import OpenquakeHazardSolutionData
+from models.file import ToshiFile
+from models.openquake_hazard_task import OpenquakeHazardTask
 
 from .common import KeyValuePair, KeyValuePairInput, OpenquakeTaskType
 from .inversion_solution import Predecessor, PredecessorInput
@@ -31,11 +37,6 @@ class OpenquakeHazardSolution(relay.Node):
     def _resolve_file(self, info: Info, raw_id: str | None):
         if not raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_file
-        from models.file import ToshiFile
-
         try:
             node_id = GlobalID.from_id(raw_id).node_id
         except Exception:
@@ -47,11 +48,6 @@ class OpenquakeHazardSolution(relay.Node):
     def produced_by(self, info: Info) -> _OpenquakeHazardTask | None:
         if not self.produced_by_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_thing
-        from models.openquake_hazard_task import OpenquakeHazardTask
-
         try:
             raw_id = GlobalID.from_id(self.produced_by_raw_id).node_id
         except Exception:
@@ -79,15 +75,11 @@ class OpenquakeHazardSolution(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["OpenquakeHazardSolution"]:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "OpenquakeHazardSolution":
-        from data.models import OpenquakeHazardSolutionData
-
         d = OpenquakeHazardSolutionData.model_validate(data)
         try:
             task_type = OpenquakeTaskType(d.task_type) if d.task_type else None
@@ -121,8 +113,6 @@ class CreateOpenquakeHazardSolutionInput:
 
 
 def resolve_openquake_hazard_solutions(info: Info) -> Iterable[OpenquakeHazardSolution]:
-    from data.dynamo import list_things
-
     items = list_things(info.context["dynamodb"], "OpenquakeHazardSolution")
     return [OpenquakeHazardSolution.from_dict(item) for item in items]
 
@@ -130,8 +120,6 @@ def resolve_openquake_hazard_solutions(info: Info) -> Iterable[OpenquakeHazardSo
 def mutate_create_openquake_hazard_solution(
     info: Info, input: CreateOpenquakeHazardSolutionInput
 ) -> OpenquakeHazardSolution:
-    from data.dynamo import create_thing
-
     metrics = [{"k": i.k, "v": i.v} for i in input.metrics] if input.metrics else None
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     predecessors = [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None

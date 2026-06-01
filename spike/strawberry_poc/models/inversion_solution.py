@@ -6,14 +6,20 @@ LabelledTableRelation is stored inline in the parent's JSON; it has no
 separate DynamoDB record and is not a relay.Node.
 """
 
+import json
 import uuid
 from collections.abc import Iterable
 from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
 
+from data.dynamo import _file_table, create_file, get_file, get_thing, list_files
+from data.models import InversionSolutionData
+
+from .automation_task import AutomationTask, RuptureGenerationTask
 from .common import (
     AncestryLabel,
     KeyValueListPair,
@@ -101,8 +107,6 @@ class Predecessor:
     @strawberry.field
     def typename(self) -> str | None:
         try:
-            from strawberry.relay import GlobalID
-
             return GlobalID.from_id(self.id).type_name
         except Exception:
             return None
@@ -144,10 +148,6 @@ class InversionSolution(relay.Node):
     def produced_by(self, info: Info) -> AutomationTaskUnion | None:
         if not self.produced_by_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_thing
-
         try:
             raw_id = GlobalID.from_id(self.produced_by_raw_id).node_id
         except Exception:
@@ -163,15 +163,11 @@ class InversionSolution(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["InversionSolution"]:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "InversionSolution":
-        from data.models import InversionSolutionData
-
         d = InversionSolutionData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -190,12 +186,8 @@ class InversionSolution(relay.Node):
 def _dispatch_automation_task(data: dict):
     clazz = data.get("clazz_name", "")
     if clazz == "RuptureGenerationTask":
-        from models.automation_task import RuptureGenerationTask
-
         return RuptureGenerationTask.from_dict(data)
     else:
-        from models.automation_task import AutomationTask
-
         return AutomationTask.from_dict(data)
 
 
@@ -225,15 +217,11 @@ class AppendInversionSolutionTablesInput:
 
 
 def resolve_inversion_solutions(info: Info) -> Iterable[InversionSolution]:
-    from data.dynamo import list_files
-
     items = list_files(info.context["dynamodb"], "InversionSolution")
     return [InversionSolution.from_dict(item) for item in items]
 
 
 def mutate_create_inversion_solution(info: Info, input: CreateInversionSolutionInput) -> InversionSolution:
-    from data.dynamo import create_file
-
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     metrics = [{"k": i.k, "v": i.v} for i in input.metrics] if input.metrics else None
     tables = [_ltr_to_dict(t) for t in input.tables] if input.tables else None
@@ -256,12 +244,6 @@ def mutate_create_inversion_solution(info: Info, input: CreateInversionSolutionI
 def mutate_append_inversion_solution_tables(
     info: Info, input: AppendInversionSolutionTablesInput
 ) -> InversionSolution | None:
-    import json
-
-    from strawberry.relay import GlobalID
-
-    from data.dynamo import _file_table, get_file
-
     gid = GlobalID.from_id(input.id)
     existing = get_file(info.context["dynamodb"], gid.node_id)
     if existing is None:

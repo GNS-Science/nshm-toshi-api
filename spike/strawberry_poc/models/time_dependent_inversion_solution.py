@@ -5,10 +5,14 @@ from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
 
+from data.dynamo import create_file, get_file, list_files
+from data.models import TimeDependentInversionSolutionData
+
 from .common import KeyValuePair, KeyValuePairInput
-from .inversion_solution import Predecessor, PredecessorInput
+from .inversion_solution import InversionSolution, Predecessor, PredecessorInput
 
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("models.inversion_solution")]
 
@@ -31,11 +35,6 @@ class TimeDependentInversionSolution(relay.Node):
     def source_solution(self, info: Info) -> _InversionSolution | None:
         if not self.source_solution_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_file
-        from models.inversion_solution import InversionSolution
-
         try:
             raw_id = GlobalID.from_id(self.source_solution_raw_id).node_id
         except Exception:
@@ -51,15 +50,11 @@ class TimeDependentInversionSolution(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["TimeDependentInversionSolution"]:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "TimeDependentInversionSolution":
-        from data.models import TimeDependentInversionSolutionData
-
         d = TimeDependentInversionSolutionData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -88,8 +83,6 @@ class CreateTimeDependentInversionSolutionInput:
 
 
 def resolve_time_dependent_inversion_solutions(info: Info) -> Iterable[TimeDependentInversionSolution]:
-    from data.dynamo import list_files
-
     items = list_files(info.context["dynamodb"], "TimeDependentInversionSolution")
     return [TimeDependentInversionSolution.from_dict(item) for item in items]
 
@@ -97,8 +90,6 @@ def resolve_time_dependent_inversion_solutions(info: Info) -> Iterable[TimeDepen
 def mutate_create_time_dependent_inversion_solution(
     info: Info, input: CreateTimeDependentInversionSolutionInput
 ) -> TimeDependentInversionSolution:
-    from data.dynamo import create_file
-
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     predecessors = [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
     payload = {

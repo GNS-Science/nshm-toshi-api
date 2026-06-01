@@ -15,7 +15,10 @@ causing circular imports at schema build time.
 from typing import Annotated
 
 import strawberry
+from strawberry.relay import GlobalID
 from strawberry.types import Info
+
+from data.dynamo import create_file_relation, create_task_relation, get_file, get_thing
 
 from .common import FileRole
 
@@ -92,15 +95,11 @@ class FileRelation:
 
     @strawberry.field
     def file(self, info: Info) -> FileUnion | None:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], self.file_raw_id)
         return _dispatch_file(data) if data else None
 
     @strawberry.field
     def thing(self, info: Info) -> ThingUnion | None:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], self.thing_raw_id)
         return _dispatch_thing(data) if data else None
 
@@ -121,16 +120,13 @@ class TaskTaskRelation:
 
     @strawberry.field
     def parent(self, info: Info) -> _GeneralTask | None:
-        from data.dynamo import get_thing
-        from models.general_task import GeneralTask
+        from models.general_task import GeneralTask  # noqa: PLC0415
 
         data = get_thing(info.context["dynamodb"], self.parent_raw_id)
         return GeneralTask.from_dict(data) if data else None
 
     @strawberry.field
     def child(self, info: Info) -> ChildTaskUnion | None:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], self.child_raw_id)
         return _dispatch_thing(data) if data else None
 
@@ -142,34 +138,34 @@ def _dispatch_file(data: dict):
     """Instantiate the right Strawberry file type from a raw data dict."""
     clazz = data.get("clazz_name", "")
     if clazz == "SmsFile":
-        from models.sms_file import SmsFile
+        from models.sms_file import SmsFile  # noqa: PLC0415
 
         return SmsFile.from_dict(data)
     if clazz == "RuptureSet":
-        from models.rupture_set import RuptureSet
+        from models.rupture_set import RuptureSet  # noqa: PLC0415
 
         return RuptureSet.from_dict(data)
     if clazz == "InversionSolution":
-        from models.inversion_solution import InversionSolution
+        from models.inversion_solution import InversionSolution  # noqa: PLC0415
 
         return InversionSolution.from_dict(data)
     if clazz == "ScaledInversionSolution":
-        from models.scaled_inversion_solution import ScaledInversionSolution
+        from models.scaled_inversion_solution import ScaledInversionSolution  # noqa: PLC0415
 
         return ScaledInversionSolution.from_dict(data)
     if clazz == "AggregateInversionSolution":
-        from models.aggregate_inversion_solution import AggregateInversionSolution
+        from models.aggregate_inversion_solution import AggregateInversionSolution  # noqa: PLC0415
 
         return AggregateInversionSolution.from_dict(data)
     if clazz == "TimeDependentInversionSolution":
-        from models.time_dependent_inversion_solution import TimeDependentInversionSolution
+        from models.time_dependent_inversion_solution import TimeDependentInversionSolution  # noqa: PLC0415
 
         return TimeDependentInversionSolution.from_dict(data)
     if clazz == "InversionSolutionNrml":
-        from models.inversion_solution_nrml import InversionSolutionNrml
+        from models.inversion_solution_nrml import InversionSolutionNrml  # noqa: PLC0415
 
         return InversionSolutionNrml.from_dict(data)
-    from models.file import ToshiFile
+    from models.file import ToshiFile  # noqa: PLC0415
 
     return ToshiFile.from_dict(data)
 
@@ -178,30 +174,30 @@ def _dispatch_thing(data: dict):
     """Instantiate the right Strawberry thing type from a raw data dict."""
     clazz = data.get("clazz_name", "")
     if clazz == "RuptureGenerationTask":
-        from models.automation_task import RuptureGenerationTask
+        from models.automation_task import RuptureGenerationTask  # noqa: PLC0415
 
         return RuptureGenerationTask.from_dict(data)
     if clazz == "AutomationTask":
-        from models.automation_task import AutomationTask
+        from models.automation_task import AutomationTask  # noqa: PLC0415
 
         return AutomationTask.from_dict(data)
     if clazz == "StrongMotionStation":
-        from models.strong_motion_station import StrongMotionStation
+        from models.strong_motion_station import StrongMotionStation  # noqa: PLC0415
 
         return StrongMotionStation.from_dict(data)
     if clazz == "OpenquakeHazardTask":
-        from models.openquake_hazard_task import OpenquakeHazardTask
+        from models.openquake_hazard_task import OpenquakeHazardTask  # noqa: PLC0415
 
         return OpenquakeHazardTask.from_dict(data)
     if clazz == "OpenquakeHazardSolution":
-        from models.openquake_hazard_solution import OpenquakeHazardSolution
+        from models.openquake_hazard_solution import OpenquakeHazardSolution  # noqa: PLC0415
 
         return OpenquakeHazardSolution.from_dict(data)
     if clazz == "OpenquakeHazardConfig":
-        from models.openquake_hazard_config import OpenquakeHazardConfig
+        from models.openquake_hazard_config import OpenquakeHazardConfig  # noqa: PLC0415
 
         return OpenquakeHazardConfig.from_dict(data)
-    from models.general_task import GeneralTask
+    from models.general_task import GeneralTask  # noqa: PLC0415
 
     return GeneralTask.from_dict(data)
 
@@ -283,10 +279,6 @@ def build_task_parents(child_raw_id: str, parents_raw: list) -> list[TaskTaskRel
 
 
 def mutate_create_file_relation(info: Info, input: CreateFileRelationInput) -> bool:
-    from strawberry.relay import GlobalID
-
-    from data.dynamo import create_file_relation
-
     thing_gid = GlobalID.from_id(input.thing_id)
     file_gid = GlobalID.from_id(input.file_id)
     create_file_relation(
@@ -299,10 +291,6 @@ def mutate_create_file_relation(info: Info, input: CreateFileRelationInput) -> b
 
 
 def mutate_create_task_relation(info: Info, input: CreateTaskRelationInput) -> TaskTaskRelation:
-    from strawberry.relay import GlobalID
-
-    from data.dynamo import create_task_relation, get_thing
-
     parent_gid = GlobalID.from_id(input.parent_id)
     child_gid = GlobalID.from_id(input.child_id)
     parent_data = get_thing(info.context["dynamodb"], parent_gid.node_id)

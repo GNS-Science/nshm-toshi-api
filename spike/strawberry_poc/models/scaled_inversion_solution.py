@@ -5,10 +5,15 @@ from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
 
+from data.dynamo import create_file, get_file, list_files
+from data.models import ScaledInversionSolutionData
+
 from .common import KeyValuePair, KeyValuePairInput
-from .inversion_solution import Predecessor, PredecessorInput
+from .inversion_solution import InversionSolution, Predecessor, PredecessorInput
+from .time_dependent_inversion_solution import TimeDependentInversionSolution
 
 # ── SourceSolutionUnion (lazy — defined once here, imported elsewhere) ────────
 
@@ -33,15 +38,11 @@ def dispatch_source_solution(data: dict):
     if clazz == "ScaledInversionSolution":
         return ScaledInversionSolution.from_dict(data)
     if clazz == "AggregateInversionSolution":
-        from models.aggregate_inversion_solution import AggregateInversionSolution
+        from models.aggregate_inversion_solution import AggregateInversionSolution  # noqa: PLC0415
 
         return AggregateInversionSolution.from_dict(data)
     if clazz == "TimeDependentInversionSolution":
-        from models.time_dependent_inversion_solution import TimeDependentInversionSolution
-
         return TimeDependentInversionSolution.from_dict(data)
-    from models.inversion_solution import InversionSolution
-
     return InversionSolution.from_dict(data)
 
 
@@ -66,10 +67,6 @@ class ScaledInversionSolution(relay.Node):
     def source_solution(self, info: Info) -> SourceSolutionUnion | None:
         if not self.source_solution_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_file
-
         try:
             raw_id = GlobalID.from_id(self.source_solution_raw_id).node_id
         except Exception:
@@ -85,15 +82,11 @@ class ScaledInversionSolution(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["ScaledInversionSolution"]:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "ScaledInversionSolution":
-        from data.models import ScaledInversionSolutionData
-
         d = ScaledInversionSolutionData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -122,8 +115,6 @@ class CreateScaledInversionSolutionInput:
 
 
 def resolve_scaled_inversion_solutions(info: Info) -> Iterable[ScaledInversionSolution]:
-    from data.dynamo import list_files
-
     items = list_files(info.context["dynamodb"], "ScaledInversionSolution")
     return [ScaledInversionSolution.from_dict(item) for item in items]
 
@@ -131,8 +122,6 @@ def resolve_scaled_inversion_solutions(info: Info) -> Iterable[ScaledInversionSo
 def mutate_create_scaled_inversion_solution(
     info: Info, input: CreateScaledInversionSolutionInput
 ) -> ScaledInversionSolution:
-    from data.dynamo import create_file
-
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     predecessors = [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
     payload = {

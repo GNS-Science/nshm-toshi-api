@@ -20,6 +20,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from .ids import append_uniq, read_current_id
+from .search import index_document
 
 logger = logging.getLogger(__name__)
 
@@ -199,8 +200,6 @@ def get_thing(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 
 def create_thing(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
-    from .search import index_document
-
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiThingObject-{stage}", clazz_name, payload, stage)
@@ -210,8 +209,6 @@ def create_thing(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -
 
 
 def update_thing(dynamodb, object_id: str, payload: dict, stage: str = STAGE) -> dict | None:
-    from .search import index_document
-
     existing = get_thing(dynamodb, object_id, stage)
     if existing is None:
         return None
@@ -265,8 +262,6 @@ def get_file(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 
 def create_file(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
-    from .search import index_document
-
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiFileObject-{stage}", clazz_name, payload, stage)
@@ -310,8 +305,6 @@ def get_table(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 
 def create_table(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
-    from .search import index_document
-
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiTableObject-{stage}", clazz_name, payload, stage)
@@ -388,8 +381,6 @@ def create_file_relation(dynamodb, thing_id: str, file_id: str, role: str, stage
     Thing.files  → [..., {"file_id": file_id, "file_role": role}]
     File.relations → [..., {"id": thing_id, "role": role}]
     """
-    from .search import index_document
-
     _patch_thing(
         dynamodb, thing_id, lambda d: d.setdefault("files", []).append({"file_id": file_id, "file_role": role}), stage
     )
@@ -418,8 +409,6 @@ def create_task_relation(
     Parent.children → [..., {"child_id": child_id, "child_clazz": child_clazz}]
     Child.parents   → [..., {"parent_id": parent_id, "parent_clazz": parent_clazz}]
     """
-    from .search import index_document
-
     _patch_thing(
         dynamodb,
         parent_id,

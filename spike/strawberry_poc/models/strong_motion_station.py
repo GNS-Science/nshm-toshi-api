@@ -9,6 +9,9 @@ import strawberry
 from strawberry import relay
 from strawberry.types import Info
 
+from data.dynamo import create_thing, get_thing, list_things
+from data.models import StrongMotionStationData
+
 from .common import SmsSiteClass, SmsSiteClassBasis
 from .relations import FileRelation, build_file_relations_for_thing
 
@@ -37,15 +40,11 @@ class StrongMotionStation(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["StrongMotionStation"]:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "StrongMotionStation":
-        from data.models import StrongMotionStationData
-
         d = StrongMotionStationData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -78,15 +77,11 @@ class CreateStrongMotionStationInput:
 
 
 def resolve_strong_motion_stations(info: Info) -> Iterable[StrongMotionStation]:
-    from data.dynamo import list_things
-
     items = list_things(info.context["dynamodb"], "StrongMotionStation")
     return [StrongMotionStation.from_dict(item) for item in items]
 
 
 def mutate_create_strong_motion_station(info: Info, input: CreateStrongMotionStationInput) -> StrongMotionStation:
-    from data.dynamo import create_thing
-
     payload = {
         "site_code": input.site_code,
         "site_class": input.site_class.value if input.site_class else None,

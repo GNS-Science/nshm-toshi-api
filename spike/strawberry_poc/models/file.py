@@ -13,6 +13,9 @@ import strawberry
 from strawberry import relay
 from strawberry.types import Info
 
+from data.dynamo import create_file, get_file, list_files
+from data.models import ToshiFileData
+
 from .common import KeyValuePair, KeyValuePairInput
 from .relations import FileRelation, build_file_relations_for_file
 
@@ -42,15 +45,11 @@ class ToshiFile(relay.Node):
         info: Info,
         **kwargs,
     ) -> Optional["ToshiFile"]:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "ToshiFile":
-        from data.models import ToshiFileData
-
         d = ToshiFileData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -73,15 +72,11 @@ class CreateFileInput:
 
 
 def resolve_files(info: Info) -> Iterable[ToshiFile]:
-    from data.dynamo import list_files
-
     items = list_files(info.context["dynamodb"], "File")
     return [ToshiFile.from_dict(item) for item in items]
 
 
 def mutate_create_file(info: Info, input: CreateFileInput) -> ToshiFile:
-    from data.dynamo import create_file
-
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     payload = {
         "file_name": input.file_name,

@@ -15,8 +15,12 @@ from typing import Annotated
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.schema.config import StrawberryConfig
 
+import data.search as _data_search
+from data.dynamo import es_key_for, get_object
+from data.search import search as es_search
 from models.aggregate_inversion_solution import (
     AggregateInversionSolution,
     CreateAggregateInversionSolutionInput,
@@ -384,8 +388,6 @@ class Query:
 
     @strawberry.field
     def search(self, info: strawberry.types.Info, search_term: str) -> SearchPayload:
-        from data.search import search as es_search
-
         ctx = info.context
         hits = es_search(
             search_term,
@@ -537,19 +539,17 @@ class Mutation:
 
     @strawberry.mutation
     def reindex(self, info: strawberry.types.Info, id_in: list[strawberry.ID]) -> ReindexPayload:
-        from data.dynamo import es_key_for, get_object
-        from data.search import index_document
-
         ctx = info.context
         dynamodb = ctx["dynamodb"]
         ep = ctx.get("es_endpoint", "")
         idx = ctx.get("es_index", "toshi-index-mapped")
         reindexed = []
         for gid in id_in:
-            global_id = relay.GlobalID.from_id(gid)
+            global_id = GlobalID.from_id(gid)
             data = get_object(dynamodb, global_id.type_name, global_id.node_id)
             if data:
-                index_document(es_key_for(global_id.type_name, global_id.node_id), data, endpoint=ep, index=idx)
+                key = es_key_for(global_id.type_name, global_id.node_id)
+                _data_search.index_document(key, data, endpoint=ep, index=idx)
                 reindexed.append(str(gid))
         return ReindexPayload(ok=True, reindexed_ids=reindexed)
 

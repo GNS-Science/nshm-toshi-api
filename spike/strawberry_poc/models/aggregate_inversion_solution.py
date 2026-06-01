@@ -5,10 +5,15 @@ from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
+
+from data.dynamo import create_file, get_file, list_files
+from data.models import AggregateInversionSolutionData
 
 from .common import AggregationFn, KeyValuePair, KeyValuePairInput
 from .inversion_solution import Predecessor, PredecessorInput
+from .rupture_set import RuptureSet
 from .scaled_inversion_solution import SourceSolutionUnion, dispatch_source_solution
 
 _RuptureSet = Annotated["RuptureSet", strawberry.lazy("models.rupture_set")]
@@ -34,10 +39,6 @@ class AggregateInversionSolution(relay.Node):
     def common_rupture_set(self, info: Info) -> _RuptureSet | None:
         if not self.common_rupture_set_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_file
-
         try:
             raw_id = GlobalID.from_id(self.common_rupture_set_raw_id).node_id
         except Exception:
@@ -45,18 +46,12 @@ class AggregateInversionSolution(relay.Node):
         data = get_file(info.context["dynamodb"], raw_id)
         if data is None:
             return None
-        from models.rupture_set import RuptureSet
-
         return RuptureSet.from_dict(data)
 
     @strawberry.field
     def source_solutions(self, info: Info) -> list[SourceSolutionUnion] | None:
         if not self.source_solutions_raw_ids:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_file
-
         results = []
         for gid_str in self.source_solutions_raw_ids:
             try:
@@ -76,15 +71,11 @@ class AggregateInversionSolution(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["AggregateInversionSolution"]:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "AggregateInversionSolution":
-        from data.models import AggregateInversionSolutionData
-
         d = AggregateInversionSolutionData.model_validate(data)
         try:
             agg_fn = AggregationFn(d.aggregation_fn) if d.aggregation_fn else None
@@ -121,8 +112,6 @@ class CreateAggregateInversionSolutionInput:
 
 
 def resolve_aggregate_inversion_solutions(info: Info) -> Iterable[AggregateInversionSolution]:
-    from data.dynamo import list_files
-
     items = list_files(info.context["dynamodb"], "AggregateInversionSolution")
     return [AggregateInversionSolution.from_dict(item) for item in items]
 
@@ -130,8 +119,6 @@ def resolve_aggregate_inversion_solutions(info: Info) -> Iterable[AggregateInver
 def mutate_create_aggregate_inversion_solution(
     info: Info, input: CreateAggregateInversionSolutionInput
 ) -> AggregateInversionSolution:
-    from data.dynamo import create_file
-
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     predecessors = [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
     payload = {

@@ -5,7 +5,11 @@ from typing import Annotated, Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
+
+from data.dynamo import create_thing, get_thing, list_things, update_thing
+from data.models import OpenquakeHazardTaskData
 
 from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
 from .relations import (
@@ -57,10 +61,7 @@ class OpenquakeHazardTask(relay.Node):
     def hazard_solution(self, info: Info) -> _OpenquakeHazardSolution | None:
         if not self.hazard_solution_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_thing
-        from models.openquake_hazard_solution import OpenquakeHazardSolution
+        from models.openquake_hazard_solution import OpenquakeHazardSolution  # noqa: PLC0415
 
         try:
             raw_id = GlobalID.from_id(self.hazard_solution_raw_id).node_id
@@ -71,15 +72,11 @@ class OpenquakeHazardTask(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["OpenquakeHazardTask"]:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "OpenquakeHazardTask":
-        from data.models import OpenquakeHazardTaskData
-
         d = OpenquakeHazardTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -134,15 +131,11 @@ class UpdateOpenquakeHazardTaskInput:
 
 
 def resolve_openquake_hazard_tasks(info: Info) -> Iterable[OpenquakeHazardTask]:
-    from data.dynamo import list_things
-
     items = list_things(info.context["dynamodb"], "OpenquakeHazardTask")
     return [OpenquakeHazardTask.from_dict(item) for item in items]
 
 
 def mutate_create_openquake_hazard_task(info: Info, input: CreateOpenquakeHazardTaskInput) -> OpenquakeHazardTask:
-    from data.dynamo import create_thing
-
     payload = {
         "state": input.state.value,
         "result": input.result.value,
@@ -166,10 +159,6 @@ def mutate_create_openquake_hazard_task(info: Info, input: CreateOpenquakeHazard
 def mutate_update_openquake_hazard_task(
     info: Info, input: UpdateOpenquakeHazardTaskInput
 ) -> OpenquakeHazardTask | None:
-    from strawberry.relay import GlobalID
-
-    from data.dynamo import update_thing
-
     gid = GlobalID.from_id(input.task_id)
     payload = {
         "state": input.state.value if input.state else None,

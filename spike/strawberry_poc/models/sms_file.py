@@ -9,6 +9,9 @@ import strawberry
 from strawberry import relay
 from strawberry.types import Info
 
+from data.dynamo import create_file, get_file, list_files
+from data.models import SmsFileData
+
 from .common import SmsFileType
 from .relations import FileRelation, build_file_relations_for_file
 
@@ -32,15 +35,11 @@ class SmsFile(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["SmsFile"]:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "SmsFile":
-        from data.models import SmsFileData
-
         d = SmsFileData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -63,15 +62,11 @@ class CreateSmsFileInput:
 
 
 def resolve_sms_files(info: Info) -> Iterable[SmsFile]:
-    from data.dynamo import list_files
-
     items = list_files(info.context["dynamodb"], "SmsFile")
     return [SmsFile.from_dict(item) for item in items]
 
 
 def mutate_create_sms_file(info: Info, input: CreateSmsFileInput) -> SmsFile:
-    from data.dynamo import create_file
-
     payload = {
         "file_name": input.file_name,
         "file_type": input.file_type.value,

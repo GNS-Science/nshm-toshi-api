@@ -5,7 +5,11 @@ from typing import Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
+
+from data.dynamo import create_file, get_file, list_files
+from data.models import InversionSolutionNrmlData
 
 from .common import KeyValuePair, KeyValuePairInput
 from .inversion_solution import Predecessor, PredecessorInput
@@ -28,10 +32,6 @@ class InversionSolutionNrml(relay.Node):
     def source_solution(self, info: Info) -> SourceSolutionUnion | None:
         if not self.source_solution_raw_id:
             return None
-        from strawberry.relay import GlobalID
-
-        from data.dynamo import get_file
-
         try:
             raw_id = GlobalID.from_id(self.source_solution_raw_id).node_id
         except Exception:
@@ -47,15 +47,11 @@ class InversionSolutionNrml(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["InversionSolutionNrml"]:
-        from data.dynamo import get_file
-
         data = get_file(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "InversionSolutionNrml":
-        from data.models import InversionSolutionNrmlData
-
         d = InversionSolutionNrmlData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -81,15 +77,11 @@ class CreateInversionSolutionNrmlInput:
 
 
 def resolve_inversion_solution_nrmls(info: Info) -> Iterable[InversionSolutionNrml]:
-    from data.dynamo import list_files
-
     items = list_files(info.context["dynamodb"], "InversionSolutionNrml")
     return [InversionSolutionNrml.from_dict(item) for item in items]
 
 
 def mutate_create_inversion_solution_nrml(info: Info, input: CreateInversionSolutionNrmlInput) -> InversionSolutionNrml:
-    from data.dynamo import create_file
-
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     predecessors = [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
     payload = {

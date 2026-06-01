@@ -13,7 +13,11 @@ from typing import Optional
 
 import strawberry
 from strawberry import relay
+from strawberry.relay import GlobalID
 from strawberry.types import Info
+
+from data.dynamo import create_thing, get_thing, list_things, update_thing
+from data.models import AutomationTaskData
 
 from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
 from .relations import (
@@ -68,15 +72,11 @@ class AutomationTask(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["AutomationTask"]:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "AutomationTask":
-        from data.models import AutomationTaskData
-
         d = AutomationTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -130,15 +130,11 @@ class RuptureGenerationTask(relay.Node):
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["RuptureGenerationTask"]:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "RuptureGenerationTask":
-        from data.models import AutomationTaskData
-
         d = AutomationTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -187,15 +183,11 @@ class UpdateAutomationTaskInput:
 
 
 def resolve_automation_tasks(info: Info) -> Iterable[AutomationTask]:
-    from data.dynamo import list_things
-
     items = list_things(info.context["dynamodb"], "AutomationTask")
     return [AutomationTask.from_dict(item) for item in items]
 
 
 def resolve_rupture_generation_tasks(info: Info) -> Iterable[RuptureGenerationTask]:
-    from data.dynamo import list_things
-
     items = list_things(info.context["dynamodb"], "RuptureGenerationTask")
     return [RuptureGenerationTask.from_dict(item) for item in items]
 
@@ -215,26 +207,18 @@ def _build_payload(input, clazz_name: str) -> dict:
 
 
 def mutate_create_automation_task(info: Info, input: CreateAutomationTaskInput) -> AutomationTask:
-    from data.dynamo import create_thing
-
     payload = _build_payload(input, "AutomationTask")
     data = create_thing(info.context["dynamodb"], "AutomationTask", payload)
     return AutomationTask.from_dict(data)
 
 
 def mutate_create_rupture_generation_task(info: Info, input: CreateAutomationTaskInput) -> RuptureGenerationTask:
-    from data.dynamo import create_thing
-
     payload = _build_payload(input, "RuptureGenerationTask")
     data = create_thing(info.context["dynamodb"], "RuptureGenerationTask", payload)
     return RuptureGenerationTask.from_dict(data)
 
 
 def mutate_update_rupture_generation_task(info: Info, input: UpdateAutomationTaskInput) -> RuptureGenerationTask | None:
-    from strawberry.relay import GlobalID
-
-    from data.dynamo import update_thing
-
     gid = GlobalID.from_id(input.task_id)
     payload = {
         "state": input.state.value if input.state else None,

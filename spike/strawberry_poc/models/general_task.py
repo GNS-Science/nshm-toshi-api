@@ -15,6 +15,9 @@ import strawberry
 from strawberry import relay
 from strawberry.types import Info
 
+from data.dynamo import create_thing, get_thing, list_things, update_thing
+from data.models import GeneralTaskData
+
 from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
 from .relations import (
     FileRelation,
@@ -75,15 +78,11 @@ class GeneralTask(relay.Node):
         info: Info,
         **kwargs,
     ) -> Optional["GeneralTask"]:
-        from data.dynamo import get_thing
-
         data = get_thing(info.context["dynamodb"], node_id)
         return cls.from_dict(data) if data else None
 
     @classmethod
     def from_dict(cls, data: dict) -> "GeneralTask":
-        from data.models import GeneralTaskData
-
         d = GeneralTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
@@ -134,15 +133,11 @@ class UpdateGeneralTaskInput:
 
 
 def resolve_general_tasks(info: Info) -> Iterable[GeneralTask]:
-    from data.dynamo import list_things
-
     items = list_things(info.context["dynamodb"], "GeneralTask")
     return [GeneralTask.from_dict(item) for item in items]
 
 
 def mutate_create_general_task(info: Info, input: CreateGeneralTaskInput) -> GeneralTask:
-    from data.dynamo import create_thing
-
     def _kvl(items):
         return [{"k": i.k, "v": i.v} for i in items] if items else None
 
@@ -163,8 +158,6 @@ def mutate_create_general_task(info: Info, input: CreateGeneralTaskInput) -> Gen
 
 
 def mutate_update_general_task(info: Info, input: UpdateGeneralTaskInput) -> GeneralTask | None:
-    from data.dynamo import update_thing
-
     # Decode relay global ID → raw object_id
     gid = relay.GlobalID.from_id(input.task_id)
     object_id = gid.node_id
