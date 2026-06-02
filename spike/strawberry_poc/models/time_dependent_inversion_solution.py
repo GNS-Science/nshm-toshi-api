@@ -13,13 +13,15 @@ from data.models import TimeDependentInversionSolutionData
 
 from .common import KeyValuePair, KeyValuePairInput
 from .file_interface import FileInterface
-from .inversion_solution import InversionSolution, Predecessor, PredecessorInput
+from .inversion_solution import InversionSolution
+from .predecessor import PredecessorInput
+from .predecessors_interface import PredecessorsInterface
 
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("models.inversion_solution")]
 
 
 @strawberry.type
-class TimeDependentInversionSolution(relay.Node, FileInterface):
+class TimeDependentInversionSolution(relay.Node, FileInterface, PredecessorsInterface):
     pk: relay.NodeID[str]
     metrics: list[KeyValuePair] | None = None
 
@@ -37,12 +39,6 @@ class TimeDependentInversionSolution(relay.Node, FileInterface):
             raw_id = self.source_solution_raw_id
         data = get_file(info.context["dynamodb"], raw_id)
         return InversionSolution.from_dict(data) if data else None
-
-    @strawberry.field
-    def predecessors(self) -> list[Predecessor] | None:
-        if not self.predecessors_raw:
-            return None
-        return [Predecessor(id=p["id"], depth=p["depth"]) for p in self.predecessors_raw]
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["TimeDependentInversionSolution"]:

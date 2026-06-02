@@ -21,7 +21,6 @@ from data.models import InversionSolutionData
 
 from .automation_task import AutomationTask, RuptureGenerationTask
 from .common import (
-    AncestryLabel,
     KeyValueListPair,
     KeyValueListPairInput,
     KeyValuePair,
@@ -29,6 +28,8 @@ from .common import (
     TableType,
 )
 from .file_interface import FileInterface
+from .predecessor import Predecessor, PredecessorInput  # noqa: F401 — re-exported for other models
+from .predecessors_interface import PredecessorsInterface
 
 # ── Lazy forward refs for produced_by union ───────────────────────────────────
 
@@ -95,42 +96,11 @@ def _ltr_to_dict(inp: LabelledTableRelationInput) -> dict:
     }
 
 
-# ── Predecessor (embedded — not a relay.Node) ─────────────────────────────────
-
-
-@strawberry.type
-class Predecessor:
-    """An ancestor in the provenance chain, stored inline in the parent."""
-
-    id: strawberry.ID
-    depth: int
-
-    @strawberry.field
-    def typename(self) -> str | None:
-        try:
-            return GlobalID.from_id(self.id).type_name
-        except Exception:
-            return None
-
-    @strawberry.field
-    def relationship(self) -> str | None:
-        try:
-            return AncestryLabel(self.depth).name.lower()
-        except ValueError:
-            return None
-
-
-@strawberry.input
-class PredecessorInput:
-    id: strawberry.ID
-    depth: int
-
-
 # ── InversionSolution ──────────────────────────────────────────────────────────
 
 
 @strawberry.type
-class InversionSolution(relay.Node, FileInterface):
+class InversionSolution(relay.Node, FileInterface, PredecessorsInterface):
     """An Inversion Solution file produced by an automation task."""
 
     pk: relay.NodeID[str]
@@ -150,12 +120,6 @@ class InversionSolution(relay.Node, FileInterface):
             raw_id = self.produced_by_raw_id
         data = get_thing(info.context["dynamodb"], raw_id)
         return _dispatch_automation_task(data) if data else None
-
-    @strawberry.field
-    def predecessors(self) -> list[Predecessor] | None:
-        if not self.predecessors_raw:
-            return None
-        return [Predecessor(id=p["id"], depth=p["depth"]) for p in self.predecessors_raw]
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["InversionSolution"]:

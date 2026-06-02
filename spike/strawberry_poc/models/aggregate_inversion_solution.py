@@ -13,7 +13,8 @@ from data.models import AggregateInversionSolutionData
 
 from .common import AggregationFn, KeyValuePair, KeyValuePairInput
 from .file_interface import FileInterface
-from .inversion_solution import Predecessor, PredecessorInput
+from .predecessor import PredecessorInput
+from .predecessors_interface import PredecessorsInterface
 from .rupture_set import RuptureSet
 from .scaled_inversion_solution import SourceSolutionUnion, dispatch_source_solution
 
@@ -21,7 +22,7 @@ _RuptureSet = Annotated["RuptureSet", strawberry.lazy("models.rupture_set")]
 
 
 @strawberry.type
-class AggregateInversionSolution(relay.Node, FileInterface):
+class AggregateInversionSolution(relay.Node, FileInterface, PredecessorsInterface):
     pk: relay.NodeID[str]
     metrics: list[KeyValuePair] | None = None
     aggregation_fn: AggregationFn | None = None
@@ -58,12 +59,6 @@ class AggregateInversionSolution(relay.Node, FileInterface):
             if data:
                 results.append(dispatch_source_solution(data))
         return results or None
-
-    @strawberry.field
-    def predecessors(self) -> list[Predecessor] | None:
-        if not self.predecessors_raw:
-            return None
-        return [Predecessor(id=p["id"], depth=p["depth"]) for p in self.predecessors_raw]
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["AggregateInversionSolution"]:

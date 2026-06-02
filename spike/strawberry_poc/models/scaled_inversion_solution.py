@@ -13,7 +13,9 @@ from data.models import ScaledInversionSolutionData
 
 from .common import KeyValuePair, KeyValuePairInput
 from .file_interface import FileInterface
-from .inversion_solution import InversionSolution, Predecessor, PredecessorInput
+from .inversion_solution import InversionSolution
+from .predecessor import PredecessorInput
+from .predecessors_interface import PredecessorsInterface
 from .time_dependent_inversion_solution import TimeDependentInversionSolution
 
 # ── SourceSolutionUnion (lazy — defined once here, imported elsewhere) ────────
@@ -51,7 +53,7 @@ def dispatch_source_solution(data: dict):
 
 
 @strawberry.type
-class ScaledInversionSolution(relay.Node, FileInterface):
+class ScaledInversionSolution(relay.Node, FileInterface, PredecessorsInterface):
     pk: relay.NodeID[str]
     metrics: list[KeyValuePair] | None = None
 
@@ -69,12 +71,6 @@ class ScaledInversionSolution(relay.Node, FileInterface):
             raw_id = self.source_solution_raw_id
         data = get_file(info.context["dynamodb"], raw_id)
         return dispatch_source_solution(data) if data else None
-
-    @strawberry.field
-    def predecessors(self) -> list[Predecessor] | None:
-        if not self.predecessors_raw:
-            return None
-        return [Predecessor(id=p["id"], depth=p["depth"]) for p in self.predecessors_raw]
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["ScaledInversionSolution"]:

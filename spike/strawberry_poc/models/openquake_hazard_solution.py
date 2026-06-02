@@ -14,14 +14,15 @@ from models.file import ToshiFile
 from models.openquake_hazard_task import OpenquakeHazardTask
 
 from .common import KeyValuePair, KeyValuePairInput, OpenquakeTaskType
-from .inversion_solution import Predecessor, PredecessorInput
+from .predecessor import PredecessorInput
+from .predecessors_interface import PredecessorsInterface
 
 _OpenquakeHazardTask = Annotated["OpenquakeHazardTask", strawberry.lazy("models.openquake_hazard_task")]
 _ToshiFile = Annotated["ToshiFile", strawberry.lazy("models.file")]
 
 
 @strawberry.type
-class OpenquakeHazardSolution(relay.Node):
+class OpenquakeHazardSolution(relay.Node, PredecessorsInterface):
     pk: relay.NodeID[str]
     created: str | None = None
     task_type: OpenquakeTaskType | None = None
@@ -66,12 +67,6 @@ class OpenquakeHazardSolution(relay.Node):
     @strawberry.field
     def task_args(self, info: Info) -> _ToshiFile | None:
         return self._resolve_file(info, self.task_args_raw_id)
-
-    @strawberry.field
-    def predecessors(self) -> list[Predecessor] | None:
-        if not self.predecessors_raw:
-            return None
-        return [Predecessor(id=p["id"], depth=p["depth"]) for p in self.predecessors_raw]
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["OpenquakeHazardSolution"]:
