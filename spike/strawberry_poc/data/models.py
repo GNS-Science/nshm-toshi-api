@@ -59,6 +59,7 @@ class AutomationTaskData(BaseModel):
     model_type: str | None = None
     created: str | None = None
     duration: float | None = None
+    general_task_id: str | None = None
     arguments: list[KVPairModel] | None = None
     environment: list[KVPairModel] | None = None
     metrics: list[KVPairModel] | None = None

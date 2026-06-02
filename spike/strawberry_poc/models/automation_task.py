@@ -49,6 +49,7 @@ class AutomationTask(relay.Node):
     model_type: ModelType | None = None
     created: str | None = None
     duration: float | None = None
+    general_task_id: strawberry.ID | None = None
     arguments: list[KeyValuePair] | None = None
     environment: list[KeyValuePair] | None = None
     metrics: list[KeyValuePair] | None = None
@@ -89,6 +90,7 @@ class AutomationTask(relay.Node):
             arguments=[KeyValuePair(k=i.k, v=i.v) for i in d.arguments] if d.arguments else None,
             environment=[KeyValuePair(k=i.k, v=i.v) for i in d.environment] if d.environment else None,
             metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
+            general_task_id=strawberry.ID(d.general_task_id) if d.general_task_id else None,
             files_raw=d.files,
             parents_raw=d.parents,
             children_raw=d.children,
@@ -108,6 +110,7 @@ class RuptureGenerationTask(relay.Node):
     task_type: TaskSubType | None = None
     created: str | None = None
     duration: float | None = None
+    general_task_id: strawberry.ID | None = None
     arguments: list[KeyValuePair] | None = None
     environment: list[KeyValuePair] | None = None
     metrics: list[KeyValuePair] | None = None
@@ -146,6 +149,7 @@ class RuptureGenerationTask(relay.Node):
             arguments=[KeyValuePair(k=i.k, v=i.v) for i in d.arguments] if d.arguments else None,
             environment=[KeyValuePair(k=i.k, v=i.v) for i in d.environment] if d.environment else None,
             metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
+            general_task_id=strawberry.ID(d.general_task_id) if d.general_task_id else None,
             files_raw=d.files,
             parents_raw=d.parents,
             children_raw=d.children,
