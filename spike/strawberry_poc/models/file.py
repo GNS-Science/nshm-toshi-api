@@ -20,7 +20,7 @@ from .common import KeyValuePair, KeyValuePairInput
 from .relations import FileRelation, build_file_relations_for_file
 
 
-@strawberry.type
+@strawberry.type(name="File")
 class ToshiFile(relay.Node):
     """A file stored in S3 and indexed in DynamoDB."""
 
