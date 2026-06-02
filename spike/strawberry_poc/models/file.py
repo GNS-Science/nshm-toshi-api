@@ -17,19 +17,15 @@ from data.dynamo import create_file, get_file, list_files
 from data.models import ToshiFileData
 
 from .common import KeyValuePair, KeyValuePairInput
+from .file_interface import FileInterface
 from .relations import FileRelation, build_file_relations_for_file
 
 
 @strawberry.type(name="File")
-class ToshiFile(relay.Node):
+class ToshiFile(relay.Node, FileInterface):
     """A file stored in S3 and indexed in DynamoDB."""
 
     pk: relay.NodeID[str]
-    file_name: str | None = None
-    md5_digest: str | None = None
-    file_size: int | None = None
-    meta: list[KeyValuePair] | None = None
-    created: str | None = None
 
     relations_raw: strawberry.Private[list | None] = None
 

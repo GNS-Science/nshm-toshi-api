@@ -19,19 +19,16 @@ from data.models import RuptureSetData
 
 from .automation_task import RuptureGenerationTask  # noqa: F401 — re-exported for schema.py
 from .common import KeyValuePair, KeyValuePairInput
+from .file_interface import FileInterface
 
 # ── RuptureSet ────────────────────────────────────────────────────────────────
 
 
 @strawberry.type
-class RuptureSet(relay.Node):
+class RuptureSet(relay.Node, FileInterface):
     """A RuptureSet file produced by a RuptureGenerationTask."""
 
     pk: relay.NodeID[str]
-    file_name: str | None = None
-    md5_digest: str | None = None
-    file_size: int | None = None
-    created: str | None = None
     fault_models: list[str] | None = None
     metrics: list[KeyValuePair] | None = None
     # stored as raw object_id; resolved lazily (hidden from GraphQL schema)
@@ -64,6 +61,7 @@ class RuptureSet(relay.Node):
             md5_digest=d.md5_digest,
             file_size=d.file_size,
             created=d.created,
+            meta=None,
             fault_models=d.fault_models,
             metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
             produced_by_raw_id=d.produced_by,

@@ -13,19 +13,16 @@ from data.dynamo import create_file, get_file, list_files
 from data.models import SmsFileData
 
 from .common import SmsFileType
+from .file_interface import FileInterface
 from .relations import FileRelation, build_file_relations_for_file
 
 
 @strawberry.type
-class SmsFile(relay.Node):
+class SmsFile(relay.Node, FileInterface):
     """A file associated with a Strong Motion Station."""
 
     pk: relay.NodeID[str]
-    file_name: str | None = None
-    md5_digest: str | None = None
-    file_size: int | None = None
     file_type: SmsFileType | None = None
-    created: str | None = None
 
     relations_raw: strawberry.Private[list | None] = None
 
@@ -48,6 +45,7 @@ class SmsFile(relay.Node):
             file_size=d.file_size,
             file_type=SmsFileType(d.file_type) if d.file_type else None,
             created=d.created,
+            meta=None,
             relations_raw=d.relations,
         )
 

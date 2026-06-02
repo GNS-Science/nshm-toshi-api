@@ -12,6 +12,7 @@ from data.dynamo import create_file, get_file, list_files
 from data.models import AggregateInversionSolutionData
 
 from .common import AggregationFn, KeyValuePair, KeyValuePairInput
+from .file_interface import FileInterface
 from .inversion_solution import Predecessor, PredecessorInput
 from .rupture_set import RuptureSet
 from .scaled_inversion_solution import SourceSolutionUnion, dispatch_source_solution
@@ -20,13 +21,8 @@ _RuptureSet = Annotated["RuptureSet", strawberry.lazy("models.rupture_set")]
 
 
 @strawberry.type
-class AggregateInversionSolution(relay.Node):
+class AggregateInversionSolution(relay.Node, FileInterface):
     pk: relay.NodeID[str]
-    file_name: str | None = None
-    md5_digest: str | None = None
-    file_size: int | None = None
-    meta: list[KeyValuePair] | None = None
-    created: str | None = None
     metrics: list[KeyValuePair] | None = None
     aggregation_fn: AggregationFn | None = None
 

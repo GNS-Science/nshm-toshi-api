@@ -12,18 +12,14 @@ from data.dynamo import create_file, get_file, list_files
 from data.models import InversionSolutionNrmlData
 
 from .common import KeyValuePair, KeyValuePairInput
+from .file_interface import FileInterface
 from .inversion_solution import Predecessor, PredecessorInput
 from .scaled_inversion_solution import SourceSolutionUnion, dispatch_source_solution
 
 
 @strawberry.type
-class InversionSolutionNrml(relay.Node):
+class InversionSolutionNrml(relay.Node, FileInterface):
     pk: relay.NodeID[str]
-    file_name: str | None = None
-    md5_digest: str | None = None
-    file_size: int | None = None
-    meta: list[KeyValuePair] | None = None
-    created: str | None = None
 
     source_solution_raw_id: strawberry.Private[str | None] = None
     predecessors_raw: strawberry.Private[list | None] = None

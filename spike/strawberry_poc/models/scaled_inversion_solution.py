@@ -12,6 +12,7 @@ from data.dynamo import create_file, get_file, list_files
 from data.models import ScaledInversionSolutionData
 
 from .common import KeyValuePair, KeyValuePairInput
+from .file_interface import FileInterface
 from .inversion_solution import InversionSolution, Predecessor, PredecessorInput
 from .time_dependent_inversion_solution import TimeDependentInversionSolution
 
@@ -50,13 +51,8 @@ def dispatch_source_solution(data: dict):
 
 
 @strawberry.type
-class ScaledInversionSolution(relay.Node):
+class ScaledInversionSolution(relay.Node, FileInterface):
     pk: relay.NodeID[str]
-    file_name: str | None = None
-    md5_digest: str | None = None
-    file_size: int | None = None
-    meta: list[KeyValuePair] | None = None
-    created: str | None = None
     metrics: list[KeyValuePair] | None = None
 
     produced_by_raw_id: strawberry.Private[str | None] = None

@@ -28,6 +28,7 @@ from .common import (
     KeyValuePairInput,
     TableType,
 )
+from .file_interface import FileInterface
 
 # ── Lazy forward refs for produced_by union ───────────────────────────────────
 
@@ -129,15 +130,10 @@ class PredecessorInput:
 
 
 @strawberry.type
-class InversionSolution(relay.Node):
+class InversionSolution(relay.Node, FileInterface):
     """An Inversion Solution file produced by an automation task."""
 
     pk: relay.NodeID[str]
-    file_name: str | None = None
-    md5_digest: str | None = None
-    file_size: int | None = None
-    meta: list[KeyValuePair] | None = None
-    created: str | None = None
     metrics: list[KeyValuePair] | None = None
     tables: list[LabelledTableRelation] | None = None
 
