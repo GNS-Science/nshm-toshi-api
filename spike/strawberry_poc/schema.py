@@ -324,6 +324,10 @@ class ReindexPayload:
 class Query:
     node: relay.Node = relay.node()
 
+    @strawberry.field
+    def about(self) -> str:
+        return "Hello, I am nshm_toshi_api (Strawberry POC)! [AUTH]"
+
     @relay.connection(relay.ListConnection[GeneralTask])
     def general_tasks(self, info: strawberry.types.Info) -> Iterable[GeneralTask]:
         return resolve_general_tasks(info)
