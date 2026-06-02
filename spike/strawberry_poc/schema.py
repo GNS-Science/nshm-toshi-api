@@ -19,7 +19,8 @@ from strawberry.relay import GlobalID
 from strawberry.schema.config import StrawberryConfig
 
 import data.search as _data_search
-from data.dynamo import es_key_for, get_object
+from data.dynamo import es_key_for, get_object, scan_objects_paginated
+from data.s3 import scan_s3_paginated
 from data.search import search as es_search
 from models.aggregate_inversion_solution import (
     AggregateInversionSolution,
@@ -60,6 +61,11 @@ from models.inversion_solution_nrml import (
     InversionSolutionNrml,
     mutate_create_inversion_solution_nrml,
     resolve_inversion_solution_nrmls,
+)
+from models.object_identity import (
+    ObjectIdentitiesConnection,
+    decode_cursor,
+    make_object_identities_connection,
 )
 from models.openquake_hazard_config import (
     CreateOpenquakeHazardConfigInput,
@@ -312,9 +318,15 @@ class UpdateOpenquakeHazardTaskPayload:
 
 
 @strawberry.type
+class NodeFilterPayload:
+    ok: bool = False
+    result: SearchResultConnection = strawberry.field(default_factory=SearchResultConnection)
+
+
+@strawberry.type
 class ReindexPayload:
-    ok: bool
-    reindexed_ids: list[str]
+    ok: bool = False
+    reindexed_ids: list[str] = strawberry.field(default_factory=list)
 
 
 # ── Query ──────────────────────────────────────────────────────────────────────
@@ -389,6 +401,47 @@ class Query:
     @relay.connection(relay.ListConnection[OpenquakeHazardTask])
     def openquake_hazard_tasks(self, info: strawberry.types.Info) -> Iterable[OpenquakeHazardTask]:
         return resolve_openquake_hazard_tasks(info)
+
+    @strawberry.field
+    def object_identities(
+        self,
+        info: strawberry.types.Info,
+        object_type: str,
+        first: int = 5,
+        after: str | None = None,
+    ) -> ObjectIdentitiesConnection:
+        after_id = decode_cursor(after) if after else None
+        items, has_more, last_id = scan_objects_paginated(
+            info.context["dynamodb"], object_type, limit=first, after_id=after_id
+        )
+        return make_object_identities_connection(items, has_more, last_id)
+
+    @strawberry.field
+    def legacy_object_identities(
+        self,
+        info: strawberry.types.Info,
+        store_type: str,
+        first: int = 5,
+        after: str | None = None,
+    ) -> ObjectIdentitiesConnection:
+        if store_type not in ("File", "Thing", "Table"):
+            return ObjectIdentitiesConnection()
+        after_id = decode_cursor(after) if after else None
+        items, has_more, last_id = scan_s3_paginated(store_type, limit=first, after_id=after_id)
+        return make_object_identities_connection(items, has_more, last_id)
+
+    @strawberry.field
+    def nodes(self, info: strawberry.types.Info, id_in: list[strawberry.ID]) -> NodeFilterPayload:
+        edges = []
+        for gid_str in id_in:
+            try:
+                gid = GlobalID.from_id(str(gid_str))
+                data = get_object(info.context["dynamodb"], gid.type_name, gid.node_id)
+            except Exception:
+                continue
+            if data and (node := _dispatch_search(data)) is not None:
+                edges.append(SearchResultEdge(node=node))
+        return NodeFilterPayload(ok=True, result=SearchResultConnection(edges=edges))
 
     @strawberry.field
     def search(self, info: strawberry.types.Info, search_term: str) -> SearchPayload:

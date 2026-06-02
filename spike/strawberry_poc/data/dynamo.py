@@ -344,6 +344,58 @@ def list_tables(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
     return results
 
 
+# ── Paginated scan (for object_identities query) ──────────────────────────────
+
+
+def scan_objects_paginated(
+    dynamodb,
+    object_type: str,
+    limit: int = 5,
+    after_id: str | None = None,
+    stage: str = STAGE,
+) -> tuple[list[dict], bool, str | None]:
+    """Page through one DynamoDB table filtered to object_type.
+
+    Returns (items, has_more, last_object_id).  Uses ExclusiveStartKey for
+    efficient forward pagination — after_id is the object_id of the last item
+    from the previous page (decoded from the cursor by the caller).
+    """
+    if object_type in THING_CLASSES:
+        table = _thing_table(dynamodb, stage)
+    elif object_type in FILE_CLASSES:
+        table = _file_table(dynamodb, stage)
+    elif object_type in TABLE_CLASSES:
+        table = _table_table(dynamodb, stage)
+    else:
+        return [], False, None
+
+    results: list[dict] = []
+    last_id: str | None = None
+    kwargs: dict[str, Any] = {
+        "FilterExpression": "object_type = :t",
+        "ExpressionAttributeValues": {":t": object_type},
+    }
+    if after_id:
+        kwargs["ExclusiveStartKey"] = {"object_id": after_id}
+
+    while len(results) < limit:
+        resp = table.scan(**kwargs)
+        for item in resp.get("Items", []):
+            data = json.loads(item["object_content"])
+            data["object_id"] = item["object_id"]
+            results.append(data)
+            last_id = item["object_id"]
+            if len(results) >= limit:
+                break
+        last_key = resp.get("LastEvaluatedKey")
+        if not last_key or len(results) >= limit:
+            break
+        kwargs["ExclusiveStartKey"] = last_key
+
+    has_more = len(results) >= limit
+    return results[:limit], has_more, last_id
+
+
 # ── Relation helpers ──────────────────────────────────────────────────────────
 # Relations are stored as embedded arrays within the parent objects, NOT as
 # separate DynamoDB records. This mirrors the production pattern in
