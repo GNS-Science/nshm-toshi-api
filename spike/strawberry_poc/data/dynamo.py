@@ -24,7 +24,7 @@ from .search import index_document
 
 logger = logging.getLogger(__name__)
 
-STAGE = os.environ.get("DEPLOYMENT_STAGE", "dev")
+STAGE = os.environ.get("DEPLOYMENT_STAGE", "dev").upper()
 REGION = os.environ.get("REGION", "ap-southeast-2")
 S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", "")
 DB_READ_ONLY = os.environ.get("DB_READ_ONLY", "") not in ("", "0")
