@@ -27,6 +27,12 @@ logger = logging.getLogger(__name__)
 STAGE = os.environ.get("DEPLOYMENT_STAGE", "dev")
 REGION = os.environ.get("REGION", "ap-southeast-2")
 S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", "")
+DB_READ_ONLY = os.environ.get("DB_READ_ONLY", "") not in ("", "0")
+
+
+def _assert_writable() -> None:
+    if DB_READ_ONLY:
+        raise RuntimeError("Aborting write: DB_READ_ONLY is set")
 
 
 def _dynamodb(endpoint_url: str | None = None):
@@ -200,6 +206,7 @@ def get_thing(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 
 def create_thing(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
+    _assert_writable()
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiThingObject-{stage}", clazz_name, payload, stage)
@@ -209,6 +216,7 @@ def create_thing(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -
 
 
 def update_thing(dynamodb, object_id: str, payload: dict, stage: str = STAGE) -> dict | None:
+    _assert_writable()
     existing = get_thing(dynamodb, object_id, stage)
     if existing is None:
         return None
@@ -262,6 +270,7 @@ def get_file(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 
 def create_file(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
+    _assert_writable()
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiFileObject-{stage}", clazz_name, payload, stage)
@@ -305,6 +314,7 @@ def get_table(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
 
 
 def create_table(dynamodb, clazz_name: str, payload: dict, stage: str = STAGE) -> dict:
+    _assert_writable()
     payload = {k: v for k, v in payload.items() if v is not None}
     payload["clazz_name"] = clazz_name
     object_id = _atomic_put(dynamodb, f"ToshiTableObject-{stage}", clazz_name, payload, stage)
@@ -375,6 +385,7 @@ def _patch_file(dynamodb, object_id: str, patch_fn, stage: str = STAGE) -> None:
 
 
 def create_file_relation(dynamodb, thing_id: str, file_id: str, role: str, stage: str = STAGE) -> None:
+    _assert_writable()
     """
     Append a file↔thing relation to both the Thing and File records.
 
@@ -403,6 +414,7 @@ def create_task_relation(
     child_clazz: str,
     stage: str = STAGE,
 ) -> None:
+    _assert_writable()
     """
     Append a parent↔child task relation to both Thing records.
 

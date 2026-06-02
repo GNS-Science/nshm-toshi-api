@@ -12,6 +12,9 @@ plugins:
   - serverless-plugin-ifelse
 package:
   individually: false
+  include:
+    - spike/strawberry_poc/**
+    - strawberry_poc_handler.py
   exclude:
     - .env
     - .env.*
@@ -224,6 +227,38 @@ functions:
         enabled:
           - test
           - prod
+
+  strawberry-poc:
+    description: Strawberry/FastAPI POC at /graphql-v2 (read-only)
+    handler: strawberry_poc_handler.handler
+    memorySize: 1024
+    timeout: 30
+    events:
+      - http:
+          path: graphql-v2
+          method: OPTIONS
+      - http:
+          path: graphql-v2
+          method: GET
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: ''
+            type: request
+      - http:
+          path: graphql-v2
+          method: POST
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: ''
+            type: request
+    environment:
+      DB_READ_ONLY: "1"
+      DEPLOYMENT_STAGE: ${self:custom.stage}
+    warmup:
+      lowConcurrencyWarmer:
+        enabled: false
 
 resources:
   Resources:
