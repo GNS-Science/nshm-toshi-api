@@ -45,9 +45,9 @@ class GeneralTaskData(BaseModel):
     model_type: str | None = None
     argument_lists: list[KVListPairModel] | None = None
     meta: list[KVPairModel] | None = None
-    files: list[dict] = []
-    children: list[dict] = []
-    parents: list[dict] = []
+    files: list[dict] | None = None
+    children: list[dict] | None = None
+    parents: list[dict] | None = None
 
 
 class AutomationTaskData(BaseModel):
@@ -62,9 +62,9 @@ class AutomationTaskData(BaseModel):
     arguments: list[KVPairModel] | None = None
     environment: list[KVPairModel] | None = None
     metrics: list[KVPairModel] | None = None
-    files: list[dict] = []
-    parents: list[dict] = []
-    children: list[dict] = []
+    files: list[dict] | None = None
+    parents: list[dict] | None = None
+    children: list[dict] | None = None
 
 
 class StrongMotionStationData(BaseModel):
@@ -80,7 +80,7 @@ class StrongMotionStationData(BaseModel):
     soft_clay_or_peat: bool | None = None
     created: str | None = None
     updated: str | None = None
-    files: list[dict] = []
+    files: list[dict] | None = None
 
 
 # ── File types (ToshiFileObject) ──────────────────────────────────────────────
@@ -94,7 +94,7 @@ class ToshiFileData(BaseModel):
     file_size: int | None = None
     meta: list[KVPairModel] | None = None
     created: str | None = None
-    relations: list[dict] = []
+    relations: list[dict] | None = None
 
 
 class SmsFileData(ToshiFileData):
@@ -166,9 +166,9 @@ class OpenquakeHazardConfigData(BaseModel):
     created: str | None = None
     source_models: list[str] | None = None  # list of relay GlobalIDs
     template_archive: str | None = None  # relay GlobalID
-    files: list[dict] = []
-    parents: list[dict] = []
-    children: list[dict] = []
+    files: list[dict] | None = None
+    parents: list[dict] | None = None
+    children: list[dict] | None = None
 
 
 class OpenquakeHazardSolutionData(BaseModel):
@@ -183,9 +183,9 @@ class OpenquakeHazardSolutionData(BaseModel):
     metrics: list[KVPairModel] | None = None
     meta: list[KVPairModel] | None = None
     predecessors: list[PredecessorEntry] | None = None
-    files: list[dict] = []
-    parents: list[dict] = []
-    children: list[dict] = []
+    files: list[dict] | None = None
+    parents: list[dict] | None = None
+    children: list[dict] | None = None
 
 
 class OpenquakeHazardTaskData(AutomationTaskData):
