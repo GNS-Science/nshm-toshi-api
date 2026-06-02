@@ -12,6 +12,8 @@ Lambda deploy:
     (adjust serverless.yml function definition)
 """
 
+import os
+
 import boto3
 from fastapi import FastAPI, Request
 from mangum import Mangum
@@ -41,7 +43,7 @@ async def get_context(request: Request) -> dict:
 
 
 graphql_router = GraphQLRouter(schema, context_getter=get_context)  # type: ignore[arg-type]
-app.include_router(graphql_router, prefix="/graphql")
+app.include_router(graphql_router, prefix=os.environ.get("GRAPHQL_PATH", "/graphql"))
 
 # Lambda entry point — replaces serverless-wsgi's wsgi_handler.handler
 handler = Mangum(app)

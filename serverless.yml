@@ -256,6 +256,7 @@ functions:
     environment:
       DB_READ_ONLY: "1"
       DEPLOYMENT_STAGE: ${self:custom.stage}
+      GRAPHQL_PATH: /graphql-v2
     warmup:
       lowConcurrencyWarmer:
         enabled: false
