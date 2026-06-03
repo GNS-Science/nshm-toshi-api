@@ -113,7 +113,7 @@ from models.strong_motion_station import (
     mutate_create_strong_motion_station,
     resolve_strong_motion_stations,
 )
-from models.table import Table  # noqa: F401 — ensures Table enters the schema type graph
+from models.table import CreateTableInput, Table, mutate_create_table
 from models.time_dependent_inversion_solution import (
     CreateTimeDependentInversionSolutionInput,
     TimeDependentInversionSolution,
@@ -325,6 +325,12 @@ class NodeFilterPayload:
 
 
 @strawberry.type
+class CreateTablePayload:
+    ok: bool | None = None
+    table: Table | None = None
+
+
+@strawberry.type
 class ReindexPayload:
     ok: bool = False
     reindexed_ids: list[str] = strawberry.field(default_factory=list)
@@ -514,6 +520,10 @@ class Mutation:
         self, info: strawberry.types.Info, input: CreateInversionSolutionInput
     ) -> CreateInversionSolutionPayload:
         return CreateInversionSolutionPayload(ok=True, inversion_solution=mutate_create_inversion_solution(info, input))
+
+    @strawberry.mutation
+    def create_table(self, info: strawberry.types.Info, input: CreateTableInput) -> CreateTablePayload:
+        return CreateTablePayload(ok=True, table=mutate_create_table(info, input))
 
     @strawberry.mutation
     def append_inversion_solution_tables(
