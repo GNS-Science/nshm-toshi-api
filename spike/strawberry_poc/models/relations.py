@@ -79,6 +79,20 @@ ChildTaskUnion = Annotated[
 ]
 
 
+# ── InversionSolutionRelations ────────────────────────────────────────────────
+
+
+@strawberry.type
+class InversionSolutionRelations:
+    """Return type for InversionSolutionInterface.relations; provides total_count."""
+
+    edges: list["FileRelation"] = strawberry.field(default_factory=list)
+
+    @strawberry.field
+    def total_count(self) -> int:
+        return len(self.edges)
+
+
 # ── FileRelation ──────────────────────────────────────────────────────────────
 
 

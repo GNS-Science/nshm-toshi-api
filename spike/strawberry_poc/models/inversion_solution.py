@@ -9,17 +9,16 @@ separate DynamoDB record and is not a relay.Node.
 import json
 import uuid
 from collections.abc import Iterable
-from typing import Annotated, Optional
+from typing import Optional
 
 import strawberry
 from strawberry import relay
 from strawberry.relay import GlobalID
 from strawberry.types import Info
 
-from data.dynamo import _file_table, create_file, get_file, get_table, get_thing, list_files
+from data.dynamo import _file_table, create_file, get_file, list_files
 from data.models import InversionSolutionData
 
-from .automation_task import AutomationTask, RuptureGenerationTask
 from .common import (
     KeyValueListPair,
     KeyValueListPairInput,
@@ -27,20 +26,15 @@ from .common import (
     KeyValuePairInput,
     TableType,
 )
-from .table import Table  # noqa: F401 — re-exported; also needed for mfd_table return type
 from .file_interface import FileInterface
+from .inversion_solution_interface import (  # noqa: F401 — re-export AutomationTaskUnion for other modules
+    AutomationTaskUnion,
+    InversionSolutionInterface,
+    _dispatch_automation_task,
+)
 from .predecessor import Predecessor, PredecessorInput  # noqa: F401 — re-exported for other models
 from .predecessors_interface import PredecessorsInterface
-
-# ── Lazy forward refs for produced_by union ───────────────────────────────────
-
-_RuptureGenerationTask = Annotated["RuptureGenerationTask", strawberry.lazy("models.automation_task")]
-_AutomationTask = Annotated["AutomationTask", strawberry.lazy("models.automation_task")]
-
-AutomationTaskUnion = Annotated[
-    _RuptureGenerationTask | _AutomationTask,
-    strawberry.union(name="AutomationTaskUnion"),
-]
+from .table import Table  # noqa: F401 — re-exported; also needed for mfd_table return type
 
 
 # ── LabelledTableRelation (embedded — not a relay.Node) ───────────────────────
@@ -101,40 +95,17 @@ def _ltr_to_dict(inp: LabelledTableRelationInput) -> dict:
 
 
 @strawberry.type
-class InversionSolution(relay.Node, FileInterface, PredecessorsInterface):
+class InversionSolution(relay.Node, FileInterface, InversionSolutionInterface, PredecessorsInterface):
     """An Inversion Solution file produced by an automation task."""
 
     pk: relay.NodeID[str]
     metrics: list[KeyValuePair] | None = None
-    tables: list[LabelledTableRelation] | None = None
+    # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id, relations
+    # are all inherited from InversionSolutionInterface.
 
     produced_by_raw_id: strawberry.Private[str | None] = None
+    relations_raw: strawberry.Private[list | None] = None
     predecessors_raw: strawberry.Private[list | None] = None
-
-    @strawberry.field
-    def produced_by(self, info: Info) -> AutomationTaskUnion | None:
-        if not self.produced_by_raw_id:
-            return None
-        try:
-            raw_id = GlobalID.from_id(self.produced_by_raw_id).node_id
-        except Exception:
-            raw_id = self.produced_by_raw_id
-        data = get_thing(info.context["dynamodb"], raw_id)
-        return _dispatch_automation_task(data) if data else None
-
-    @strawberry.field
-    def mfd_table(self, info: Info) -> Table | None:
-        if not self.tables:
-            return None
-        for t in self.tables:
-            if t.table_type == TableType.MFD_CURVES_V2 and t.table_id:
-                try:
-                    raw_id = GlobalID.from_id(str(t.table_id)).node_id
-                except Exception:
-                    raw_id = str(t.table_id)
-                data = get_table(info.context["dynamodb"], raw_id)
-                return Table.from_dict(data) if data else None
-        return None
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["InversionSolution"]:
@@ -154,16 +125,9 @@ class InversionSolution(relay.Node, FileInterface, PredecessorsInterface):
             metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
             tables=[_ltr_from_dict(t.model_dump()) for t in d.tables] if d.tables else None,
             produced_by_raw_id=d.produced_by,
+            relations_raw=d.relations,
             predecessors_raw=[p.model_dump() for p in d.predecessors] if d.predecessors else None,
         )
-
-
-def _dispatch_automation_task(data: dict):
-    clazz = data.get("clazz_name", "")
-    if clazz == "RuptureGenerationTask":
-        return RuptureGenerationTask.from_dict(data)
-    else:
-        return AutomationTask.from_dict(data)
 
 
 # ── Input types ───────────────────────────────────────────────────────────────
