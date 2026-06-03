@@ -45,7 +45,7 @@ class SmsFile(relay.Node, FileInterface):
             file_size=d.file_size,
             file_type=SmsFileType(d.file_type) if d.file_type else None,
             created=d.created,
-            meta=None,
+            meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
             relations_raw=d.relations,
         )
 

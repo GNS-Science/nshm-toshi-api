@@ -82,6 +82,7 @@ FILE_CLASSES: frozenset[str] = frozenset(
 # Extend as table-backed models are added to the schema.
 TABLE_CLASSES: frozenset[str] = frozenset(
     {
+        "Table",
         "GroundMotionTable",
         "GriddedHazard",
     }

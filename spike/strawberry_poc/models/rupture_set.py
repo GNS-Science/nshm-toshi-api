@@ -61,7 +61,7 @@ class RuptureSet(relay.Node, FileInterface):
             md5_digest=d.md5_digest,
             file_size=d.file_size,
             created=d.created,
-            meta=None,
+            meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
             fault_models=d.fault_models,
             metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
             produced_by_raw_id=d.produced_by,

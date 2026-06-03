@@ -21,3 +21,15 @@ class FileInterface:
     @strawberry.field
     def file_url(self, info: Info) -> str | None:
         return presigned_download_url(self.pk, self.file_name)  # type: ignore[attr-defined]
+
+    @strawberry.field
+    def post_url(self) -> str | None:
+        return None
+
+    @strawberry.field
+    def post_url_v2(self) -> str | None:
+        return None
+
+    @strawberry.field
+    def post_data_v2(self) -> str | None:
+        return None

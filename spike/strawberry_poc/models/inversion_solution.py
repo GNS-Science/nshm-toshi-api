@@ -16,7 +16,7 @@ from strawberry import relay
 from strawberry.relay import GlobalID
 from strawberry.types import Info
 
-from data.dynamo import _file_table, create_file, get_file, get_thing, list_files
+from data.dynamo import _file_table, create_file, get_file, get_table, get_thing, list_files
 from data.models import InversionSolutionData
 
 from .automation_task import AutomationTask, RuptureGenerationTask
@@ -27,6 +27,7 @@ from .common import (
     KeyValuePairInput,
     TableType,
 )
+from .table import Table  # noqa: F401 — re-exported; also needed for mfd_table return type
 from .file_interface import FileInterface
 from .predecessor import Predecessor, PredecessorInput  # noqa: F401 — re-exported for other models
 from .predecessors_interface import PredecessorsInterface
@@ -120,6 +121,20 @@ class InversionSolution(relay.Node, FileInterface, PredecessorsInterface):
             raw_id = self.produced_by_raw_id
         data = get_thing(info.context["dynamodb"], raw_id)
         return _dispatch_automation_task(data) if data else None
+
+    @strawberry.field
+    def mfd_table(self, info: Info) -> Table | None:
+        if not self.tables:
+            return None
+        for t in self.tables:
+            if t.table_type == TableType.MFD_CURVES_V2 and t.table_id:
+                try:
+                    raw_id = GlobalID.from_id(str(t.table_id)).node_id
+                except Exception:
+                    raw_id = str(t.table_id)
+                data = get_table(info.context["dynamodb"], raw_id)
+                return Table.from_dict(data) if data else None
+        return None
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["InversionSolution"]:

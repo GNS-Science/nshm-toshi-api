@@ -32,6 +32,7 @@ class OpenquakeHazardTask(relay.Node):
     model_type: ModelType | None = None
     created: str | None = None
     duration: float | None = None
+    general_task_id: strawberry.ID | None = None
     arguments: list[KeyValuePair] | None = None
     environment: list[KeyValuePair] | None = None
     metrics: list[KeyValuePair] | None = None
@@ -86,6 +87,7 @@ class OpenquakeHazardTask(relay.Node):
             model_type=ModelType(d.model_type) if d.model_type else None,
             created=d.created,
             duration=d.duration,
+            general_task_id=strawberry.ID(d.general_task_id) if d.general_task_id else None,
             arguments=[KeyValuePair(k=i.k, v=i.v) for i in d.arguments] if d.arguments else None,
             environment=[KeyValuePair(k=i.k, v=i.v) for i in d.environment] if d.environment else None,
             metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,

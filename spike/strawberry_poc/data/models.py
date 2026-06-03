@@ -135,6 +135,7 @@ class ScaledInversionSolutionData(ToshiFileData):
     produced_by: str | None = None
     source_solution: str | None = None  # relay GlobalID
     predecessors: list[PredecessorEntry] | None = None
+    tables: list[LabelledTableRelationEntry] | None = None
 
 
 class AggregateInversionSolutionData(ToshiFileData):
@@ -144,6 +145,7 @@ class AggregateInversionSolutionData(ToshiFileData):
     source_solutions: list[str] | None = None  # list of relay GlobalIDs
     aggregation_fn: str | None = None
     predecessors: list[PredecessorEntry] | None = None
+    tables: list[LabelledTableRelationEntry] | None = None
 
 
 class TimeDependentInversionSolutionData(ToshiFileData):
@@ -151,6 +153,7 @@ class TimeDependentInversionSolutionData(ToshiFileData):
     produced_by: str | None = None
     source_solution: str | None = None  # relay GlobalID
     predecessors: list[PredecessorEntry] | None = None
+    tables: list[LabelledTableRelationEntry] | None = None
 
 
 class InversionSolutionNrmlData(ToshiFileData):
@@ -195,6 +198,19 @@ class OpenquakeHazardTaskData(AutomationTaskData):
     srm_logic_tree: str | None = None  # JSON string
     gmcm_logic_tree: str | None = None  # JSON string
     openquake_config: str | None = None  # JSON string
+
+
+class TableData(BaseModel):
+    object_id: str
+    clazz_name: str | None = None
+    name: str | None = None
+    created: str | None = None
+    column_headers: list[str] | None = None
+    column_types: list[str] | None = None
+    rows: list[list[str]] | None = None
+    meta: list[KVPairModel] | None = None
+    table_type: str | None = None
+    dimensions: list[KVListPairModel] | None = None
 
 
 # ── Catch-all for unknown / future types ─────────────────────────────────────

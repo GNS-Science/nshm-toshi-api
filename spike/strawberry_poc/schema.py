@@ -113,6 +113,7 @@ from models.strong_motion_station import (
     mutate_create_strong_motion_station,
     resolve_strong_motion_stations,
 )
+from models.table import Table  # noqa: F401 — ensures Table enters the schema type graph
 from models.time_dependent_inversion_solution import (
     CreateTimeDependentInversionSolutionInput,
     TimeDependentInversionSolution,
