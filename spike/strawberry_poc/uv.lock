@@ -548,6 +548,15 @@ wheels = [
 ]
 
 [[package]]
+name = "nzshm-common"
+version = "0.9.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/cc/ad2063f93335d2ef19099adbb8032870e9420c2be4616056066a835029f3/nzshm_common-0.9.4.tar.gz", hash = "sha256:5f985f4e76fbe36bbaa5987b1bd08ecdc1b2183e4e023f279b1db6b2b3dd877c", size = 269324, upload-time = "2026-03-30T22:45:43.151Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c6/a0/215dac876966fbf9d7cf216b9e3b6be4ae82e8e3889cc0be59e52b6c7239/nzshm_common-0.9.4-py3-none-any.whl", hash = "sha256:d2d18df08d7ed58b6922b653c7321907de46e1c5d59c77df7d4d3ba4c95d9175", size = 289751, upload-time = "2026-03-30T22:45:41.798Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "26.1"
 source = { registry = "https://pypi.org/simple" }
@@ -861,6 +870,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "boto3" },
     { name = "mangum" },
+    { name = "nzshm-common" },
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "requests" },
@@ -883,6 +893,7 @@ dev = [
 requires-dist = [
     { name = "boto3", specifier = ">=1.26" },
     { name = "mangum", specifier = ">=0.17" },
+    { name = "nzshm-common", specifier = ">=0.9.0" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "requests", specifier = ">=2.28" },
