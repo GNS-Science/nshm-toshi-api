@@ -35,6 +35,7 @@ from models.automation_task import (
     UpdateAutomationTaskInput,
     mutate_create_automation_task,
     mutate_create_rupture_generation_task,
+    mutate_update_automation_task,
     mutate_update_rupture_generation_task,
     resolve_automation_tasks,
     resolve_rupture_generation_tasks,
@@ -221,6 +222,11 @@ class UpdateRuptureGenerationTaskPayload:
 
 @strawberry.type
 class CreateAutomationTaskPayload:
+    task_result: AutomationTask | None = None
+
+
+@strawberry.type
+class UpdateAutomationTaskPayload:
     task_result: AutomationTask | None = None
 
 
@@ -514,6 +520,12 @@ class Mutation:
         self, info: strawberry.types.Info, input: UpdateAutomationTaskInput
     ) -> UpdateRuptureGenerationTaskPayload:
         return UpdateRuptureGenerationTaskPayload(task_result=mutate_update_rupture_generation_task(info, input))
+
+    @strawberry.mutation
+    def update_automation_task(
+        self, info: strawberry.types.Info, input: UpdateAutomationTaskInput
+    ) -> UpdateAutomationTaskPayload:
+        return UpdateAutomationTaskPayload(task_result=mutate_update_automation_task(info, input))
 
     @strawberry.mutation
     def create_inversion_solution(

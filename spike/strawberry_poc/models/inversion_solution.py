@@ -25,6 +25,7 @@ from .common import (
     KeyValuePair,
     KeyValuePairInput,
     TableType,
+    _try_enum,
 )
 from .file_interface import FileInterface
 from .inversion_solution_interface import (  # noqa: F401 — re-export AutomationTaskUnion for other modules
@@ -64,10 +65,7 @@ class LabelledTableRelationInput:
 
 def _ltr_from_dict(d: dict) -> LabelledTableRelation:
     dims = d.get("dimensions")
-    try:
-        tt = TableType(d["table_type"]) if d.get("table_type") else None
-    except ValueError:
-        tt = None
+    tt = _try_enum(TableType, d.get("table_type"))
     return LabelledTableRelation(
         identity=d.get("identity"),
         created=d.get("created"),

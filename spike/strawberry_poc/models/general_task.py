@@ -18,9 +18,20 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import GeneralTaskData
 
-from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
+from .common import (
+    EventResult,
+    KeyValueListPair,
+    KeyValueListPairInput,
+    KeyValuePair,
+    KeyValuePairInput,
+    ModelType,
+    TaskSubType,
+    _try_enum,
+)
 from .relations import (
     FileRelation,
+    FileRelationsConnection,
+    TaskRelationsConnection,
     TaskTaskRelation,
     build_file_relations_for_thing,
     build_task_children,
@@ -43,6 +54,7 @@ class GeneralTask(relay.Node):
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: TaskSubType | None = None
+    subtask_result: EventResult | None = None
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPair] | None = None
     meta: list[KeyValuePair] | None = None
@@ -51,15 +63,15 @@ class GeneralTask(relay.Node):
     children_raw: strawberry.Private[list | None] = None
     parents_raw: strawberry.Private[list | None] = None
 
-    @relay.connection(relay.ListConnection[FileRelation])
+    @relay.connection(FileRelationsConnection)
     def files(self, info: Info) -> list[FileRelation]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
-    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    @relay.connection(TaskRelationsConnection)
     def children(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_children(self.pk, self.children_raw or [])
 
-    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    @relay.connection(TaskRelationsConnection)
     def parents(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
@@ -93,8 +105,9 @@ class GeneralTask(relay.Node):
             updated=d.updated,
             notes=d.notes,
             subtask_count=d.subtask_count,
-            subtask_type=TaskSubType(d.subtask_type) if d.subtask_type else None,
-            model_type=ModelType(d.model_type) if d.model_type else None,
+            subtask_type=_try_enum(TaskSubType, d.subtask_type),
+            subtask_result=_try_enum(EventResult, d.subtask_result),
+            model_type=_try_enum(ModelType, d.model_type),
             argument_lists=[KeyValueListPair(k=i.k, v=i.v) for i in d.argument_lists] if d.argument_lists else None,
             meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
             files_raw=d.files,
@@ -112,6 +125,7 @@ class CreateGeneralTaskInput:
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: TaskSubType | None = None
+    subtask_result: EventResult | None = None
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPairInput] | None = None
     meta: list[KeyValuePairInput] | None = None
@@ -127,6 +141,7 @@ class UpdateGeneralTaskInput:
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: TaskSubType | None = None
+    subtask_result: EventResult | None = None
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPairInput] | None = None
     meta: list[KeyValuePairInput] | None = None
@@ -149,6 +164,7 @@ def mutate_create_general_task(info: Info, input: CreateGeneralTaskInput) -> Gen
         "notes": input.notes,
         "subtask_count": input.subtask_count,
         "subtask_type": input.subtask_type.value if input.subtask_type else None,
+        "subtask_result": input.subtask_result.value if input.subtask_result else None,
         "model_type": input.model_type.value if input.model_type else None,
         "argument_lists": _kvl(input.argument_lists),
         "meta": _kvl(input.meta),

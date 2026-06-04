@@ -42,6 +42,7 @@ class GeneralTaskData(BaseModel):
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: str | None = None
+    subtask_result: str | None = None
     model_type: str | None = None
     argument_lists: list[KVListPairModel] | None = None
     meta: list[KVPairModel] | None = None

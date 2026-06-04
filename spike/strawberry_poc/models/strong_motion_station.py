@@ -12,8 +12,8 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things
 from data.models import StrongMotionStationData
 
-from .common import SmsSiteClass, SmsSiteClassBasis
-from .relations import FileRelation, build_file_relations_for_thing
+from .common import SmsSiteClass, SmsSiteClassBasis, _try_enum
+from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_thing
 
 
 @strawberry.type
@@ -34,7 +34,7 @@ class StrongMotionStation(relay.Node):
 
     files_raw: strawberry.Private[list | None] = None
 
-    @relay.connection(relay.ListConnection[FileRelation])
+    @relay.connection(FileRelationsConnection)
     def files(self, info: Info) -> list[FileRelation]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
@@ -49,8 +49,8 @@ class StrongMotionStation(relay.Node):
         return cls(
             pk=d.object_id,
             site_code=d.site_code,
-            site_class=SmsSiteClass(d.site_class) if d.site_class else None,
-            site_class_basis=SmsSiteClassBasis(d.site_class_basis) if d.site_class_basis else None,
+            site_class=_try_enum(SmsSiteClass, d.site_class),
+            site_class_basis=_try_enum(SmsSiteClassBasis, d.site_class_basis),
             Vs30_mean=d.Vs30_mean,
             Vs30_std_dev=d.Vs30_std_dev,
             liquefiable=d.liquefiable,

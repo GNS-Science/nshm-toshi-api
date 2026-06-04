@@ -11,7 +11,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import AggregateInversionSolutionData
 
-from .common import AggregationFn, KeyValuePair, KeyValuePairInput
+from .common import AggregationFn, KeyValuePair, KeyValuePairInput, _try_enum
 from .file_interface import FileInterface
 from .inversion_solution import LabelledTableRelation, _ltr_from_dict
 from .inversion_solution_interface import InversionSolutionInterface
@@ -73,10 +73,7 @@ class AggregateInversionSolution(relay.Node, FileInterface, InversionSolutionInt
     @classmethod
     def from_dict(cls, data: dict) -> "AggregateInversionSolution":
         d = AggregateInversionSolutionData.model_validate(data)
-        try:
-            agg_fn = AggregationFn(d.aggregation_fn) if d.aggregation_fn else None
-        except ValueError:
-            agg_fn = None
+        agg_fn = _try_enum(AggregationFn, d.aggregation_fn)
         return cls(
             pk=d.object_id,
             file_name=d.file_name,

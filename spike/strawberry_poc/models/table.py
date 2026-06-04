@@ -9,7 +9,7 @@ from strawberry.types import Info
 from data.dynamo import create_table, get_table
 from data.models import TableData
 
-from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TableType
+from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TableType, _try_enum
 
 
 @strawberry.type
@@ -33,10 +33,7 @@ class Table(relay.Node):
     @classmethod
     def from_dict(cls, data: dict) -> "Table":
         d = TableData.model_validate(data)
-        try:
-            table_type = TableType(d.table_type) if d.table_type else None
-        except ValueError:
-            table_type = None
+        table_type = _try_enum(TableType, d.table_type)
         return cls(
             pk=d.object_id,
             object_id=strawberry.ID(d.object_id),
@@ -54,6 +51,7 @@ class Table(relay.Node):
 @strawberry.input
 class CreateTableInput:
     object_id: strawberry.ID
+    name: str | None = None
     created: str | None = None
     column_headers: list[str] | None = None
     column_types: list[str] | None = None
@@ -68,6 +66,7 @@ def mutate_create_table(info: Info, input: CreateTableInput) -> Table:
     dimensions = [{"k": i.k, "v": i.v} for i in input.dimensions] if input.dimensions else None
     payload = {
         "object_id": str(input.object_id),
+        "name": input.name,
         "created": input.created,
         "column_headers": input.column_headers,
         "column_types": input.column_types,

@@ -11,9 +11,11 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import OpenquakeHazardTaskData
 
-from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
+from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
 from .relations import (
     FileRelation,
+    FileRelationsConnection,
+    TaskRelationsConnection,
     TaskTaskRelation,
     build_file_relations_for_thing,
     build_task_children,
@@ -46,15 +48,15 @@ class OpenquakeHazardTask(relay.Node):
     children_raw: strawberry.Private[list | None] = None
     hazard_solution_raw_id: strawberry.Private[str | None] = None
 
-    @relay.connection(relay.ListConnection[FileRelation])
+    @relay.connection(FileRelationsConnection)
     def files(self, info: Info) -> list[FileRelation]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
-    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    @relay.connection(TaskRelationsConnection)
     def parents(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
-    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    @relay.connection(TaskRelationsConnection)
     def children(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_children(self.pk, self.children_raw or [])
 
@@ -81,10 +83,10 @@ class OpenquakeHazardTask(relay.Node):
         d = OpenquakeHazardTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
-            state=EventState(d.state) if d.state else None,
-            result=EventResult(d.result) if d.result else None,
-            task_type=TaskSubType(d.task_type) if d.task_type else None,
-            model_type=ModelType(d.model_type) if d.model_type else None,
+            state=_try_enum(EventState, d.state),
+            result=_try_enum(EventResult, d.result),
+            task_type=_try_enum(TaskSubType, d.task_type),
+            model_type=_try_enum(ModelType, d.model_type),
             created=d.created,
             duration=d.duration,
             general_task_id=strawberry.ID(d.general_task_id) if d.general_task_id else None,

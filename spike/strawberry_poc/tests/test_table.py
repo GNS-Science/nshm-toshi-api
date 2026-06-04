@@ -156,6 +156,69 @@ def test_node_lookup(created_table, gql_context):
     assert node["dimensions"][0]["k"] == "iml_periods"
 
 
+# ── name field (COVERAGE_GAPS.md gap 7) ───────────────────────────────────────
+
+CREATE_TABLE_WITH_NAME_MUTATION = """
+mutation CreateTable($input: CreateTableInput!) {
+    create_table(input: $input) {
+        ok
+        table { id name table_type }
+    }
+}
+"""
+
+NODE_NAME_QUERY = """
+query GetTable($id: ID!) {
+    node(id: $id) {
+        id
+        ... on Table { name table_type }
+    }
+}
+"""
+
+
+def test_create_table_with_name(gql_context, task_id):
+    """The name input field round-trips to Table.name."""
+    result = schema.execute_sync(
+        CREATE_TABLE_WITH_NAME_MUTATION,
+        variable_values={
+            "input": {
+                "object_id": task_id,
+                "name": "MFD Curves v2",
+                "table_type": "MFD_CURVES_V2",
+                "column_headers": ["mag"],
+                "rows": [["7.0"]],
+            }
+        },
+        context_value=gql_context,
+    )
+    assert result.errors is None, result.errors
+    table = result.data["create_table"]["table"]
+    assert table["name"] == "MFD Curves v2"
+
+
+def test_table_node_lookup_returns_name(gql_context, task_id):
+    create_result = schema.execute_sync(
+        CREATE_TABLE_WITH_NAME_MUTATION,
+        variable_values={
+            "input": {
+                "object_id": task_id,
+                "name": "Hazard Sites Grid",
+                "table_type": "HAZARD_SITES",
+            }
+        },
+        context_value=gql_context,
+    )
+    assert create_result.errors is None, create_result.errors
+    table_id = create_result.data["create_table"]["table"]["id"]
+
+    result = schema.execute_sync(
+        NODE_NAME_QUERY, variable_values={"id": table_id}, context_value=gql_context
+    )
+    assert result.errors is None, result.errors
+    assert result.data["node"]["name"] == "Hazard Sites Grid"
+
+
 def test_mfd_table_on_inversion_solution(gql_context, created_table):
     """InversionSolution.mfd_table resolves when a MFD_CURVES_V2 table entry is linked."""
     rgt_id = _seed_rgt(gql_context)

@@ -27,6 +27,7 @@ mutation CreateTask($input: CreateGeneralTaskInput!) {
             notes
             subtask_count
             subtask_type
+            subtask_result
             model_type
             meta { k v }
             argument_lists { k v }
@@ -71,7 +72,25 @@ query GetNode($id: ID!) {
             title
             description
             agent_name
+            subtask_result
+            children { total_count }
         }
+    }
+}
+"""
+
+CREATE_AUTOMATION_TASK_MUTATION = """
+mutation CreateTask($input: CreateAutomationTaskInput!) {
+    create_automation_task(input: $input) {
+        task_result { id }
+    }
+}
+"""
+
+CREATE_TASK_RELATION_MUTATION = """
+mutation CreateRelation($input: CreateTaskRelationInput!) {
+    create_task_relation(input: $input) {
+        ok
     }
 }
 """
@@ -91,6 +110,7 @@ def created_task(gql_context):
                 "notes": "initial notes",
                 "subtask_count": 3,
                 "subtask_type": "INVERSION",
+                "subtask_result": "SUCCESS",
                 "model_type": "CRUSTAL",
                 "meta": [{"k": "env", "v": "ci"}],
                 "argument_lists": [
@@ -192,3 +212,72 @@ def test_update_preserves_id(gql_context, created_task):
     )
     assert result.errors is None, result.errors
     assert result.data["update_general_task"]["general_task"]["id"] == created_task["id"]
+
+
+def test_subtask_result_field(created_task):
+    """subtask_result is stored and returned as an EventResult enum value."""
+    assert created_task["subtask_result"] == "SUCCESS"
+
+
+def test_children_total_count_zero(gql_context, created_task):
+    """children.total_count is 0 when no child tasks have been linked."""
+    result = schema.execute_sync(
+        NODE_QUERY, variable_values={"id": created_task["id"]}, context_value=gql_context
+    )
+    assert result.errors is None, result.errors
+    assert result.data["node"]["children"]["total_count"] == 0
+
+
+def test_children_total_count_after_relation(gql_context, created_task):
+    """children.total_count increments after a task relation is created."""
+    child_result = schema.execute_sync(
+        CREATE_AUTOMATION_TASK_MUTATION,
+        variable_values={
+            "input": {
+                "state": "DONE",
+                "result": "SUCCESS",
+                "task_type": "INVERSION",
+                "created": "2024-01-01T00:00:00Z",
+            }
+        },
+        context_value=gql_context,
+    )
+    assert child_result.errors is None, child_result.errors
+    child_id = child_result.data["create_automation_task"]["task_result"]["id"]
+
+    rel_result = schema.execute_sync(
+        CREATE_TASK_RELATION_MUTATION,
+        variable_values={"input": {"parent_id": created_task["id"], "child_id": child_id}},
+        context_value=gql_context,
+    )
+    assert rel_result.errors is None, rel_result.errors
+
+    result = schema.execute_sync(
+        NODE_QUERY, variable_values={"id": created_task["id"]}, context_value=gql_context
+    )
+    assert result.errors is None, result.errors
+    assert result.data["node"]["children"]["total_count"] == 1
+
+
+def test_unknown_enum_value_does_not_crash(gql_context):
+    """from_dict must survive unknown enum values in production data (returns None, not an error)."""
+    from data.dynamo import create_thing
+
+    raw = create_thing(
+        gql_context["dynamodb"],
+        "GeneralTask",
+        {
+            "title": "enum resilience test",
+            "subtask_type": "future_unknown_type",
+            "subtask_result": "future_unknown_result",
+            "model_type": "future_unknown_model",
+        },
+    )
+    import base64
+
+    gid = base64.b64encode(f"GeneralTask:{raw['object_id']}".encode()).decode()
+    result = schema.execute_sync(NODE_QUERY, variable_values={"id": gid}, context_value=gql_context)
+    assert result.errors is None, result.errors
+    node = result.data["node"]
+    assert node["title"] == "enum resilience test"
+    assert node["subtask_result"] is None

@@ -19,9 +19,11 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import AutomationTaskData
 
-from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType
+from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
 from .relations import (
     FileRelation,
+    FileRelationsConnection,
+    TaskRelationsConnection,
     TaskTaskRelation,
     build_file_relations_for_thing,
     build_task_children,
@@ -59,15 +61,15 @@ class AutomationTask(relay.Node):
     parents_raw: strawberry.Private[list | None] = None
     children_raw: strawberry.Private[list | None] = None
 
-    @relay.connection(relay.ListConnection[FileRelation])
+    @relay.connection(FileRelationsConnection)
     def files(self, info: Info) -> list[FileRelation]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
-    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    @relay.connection(TaskRelationsConnection)
     def parents(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
-    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    @relay.connection(TaskRelationsConnection)
     def children(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_children(self.pk, self.children_raw or [])
 
@@ -81,10 +83,10 @@ class AutomationTask(relay.Node):
         d = AutomationTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
-            state=EventState(d.state) if d.state else None,
-            result=EventResult(d.result) if d.result else None,
-            task_type=TaskSubType(d.task_type) if d.task_type else None,
-            model_type=ModelType(d.model_type) if d.model_type else None,
+            state=_try_enum(EventState, d.state),
+            result=_try_enum(EventResult, d.result),
+            task_type=_try_enum(TaskSubType, d.task_type),
+            model_type=_try_enum(ModelType, d.model_type),
             created=d.created,
             duration=d.duration,
             arguments=[KeyValuePair(k=i.k, v=i.v) for i in d.arguments] if d.arguments else None,
@@ -119,15 +121,15 @@ class RuptureGenerationTask(relay.Node):
     parents_raw: strawberry.Private[list | None] = None
     children_raw: strawberry.Private[list | None] = None
 
-    @relay.connection(relay.ListConnection[FileRelation])
+    @relay.connection(FileRelationsConnection)
     def files(self, info: Info) -> list[FileRelation]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
-    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    @relay.connection(TaskRelationsConnection)
     def parents(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
-    @relay.connection(relay.ListConnection[TaskTaskRelation])
+    @relay.connection(TaskRelationsConnection)
     def children(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_children(self.pk, self.children_raw or [])
 
@@ -141,9 +143,9 @@ class RuptureGenerationTask(relay.Node):
         d = AutomationTaskData.model_validate(data)
         return cls(
             pk=d.object_id,
-            state=EventState(d.state) if d.state else None,
-            result=EventResult(d.result) if d.result else None,
-            task_type=TaskSubType(d.task_type) if d.task_type else None,
+            state=_try_enum(EventState, d.state),
+            result=_try_enum(EventResult, d.result),
+            task_type=_try_enum(TaskSubType, d.task_type),
             created=d.created,
             duration=d.duration,
             arguments=[KeyValuePair(k=i.k, v=i.v) for i in d.arguments] if d.arguments else None,
@@ -220,6 +222,20 @@ def mutate_create_rupture_generation_task(info: Info, input: CreateAutomationTas
     payload = _build_payload(input, "RuptureGenerationTask")
     data = create_thing(info.context["dynamodb"], "RuptureGenerationTask", payload)
     return RuptureGenerationTask.from_dict(data)
+
+
+def mutate_update_automation_task(info: Info, input: UpdateAutomationTaskInput) -> AutomationTask | None:
+    gid = GlobalID.from_id(input.task_id)
+    payload = {
+        "state": input.state.value if input.state else None,
+        "result": input.result.value if input.result else None,
+        "duration": input.duration,
+        "arguments": _kv_input_to_list(input.arguments),
+        "environment": _kv_input_to_list(input.environment),
+        "metrics": _kv_input_to_list(input.metrics),
+    }
+    data = update_thing(info.context["dynamodb"], gid.node_id, payload)
+    return AutomationTask.from_dict(data) if data else None
 
 
 def mutate_update_rupture_generation_task(info: Info, input: UpdateAutomationTaskInput) -> RuptureGenerationTask | None:

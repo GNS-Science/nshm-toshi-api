@@ -331,3 +331,203 @@ def test_oq_config_node_lookup(gql_context, created_oq_config, template_archive_
     node = result.data["node"]
     assert node["created"] == "2024-04-15T00:00:00Z"
     assert node["template_archive"]["id"] == template_archive_id
+
+
+# ── DISAGG variant (COVERAGE_GAPS.md gap 4) ───────────────────────────────────
+
+CREATE_OQ_TASK_DISAGG_MUTATION = """
+mutation CreateDisaggTask($input: CreateOpenquakeHazardTaskInput!) {
+    create_openquake_hazard_task(input: $input) {
+        ok
+        task_result { id task_type state result }
+    }
+}
+"""
+
+NODE_TASK_TASK_TYPE_QUERY = """
+query GetNode($id: ID!) {
+    node(id: $id) {
+        id
+        ... on OpenquakeHazardTask { task_type state }
+    }
+}
+"""
+
+
+@pytest.fixture(scope="module")
+def disagg_oq_task(gql_context):
+    result = schema.execute_sync(
+        CREATE_OQ_TASK_DISAGG_MUTATION,
+        variable_values={
+            "input": {
+                "state": "DONE",
+                "result": "SUCCESS",
+                "created": "2024-06-01T00:00:00Z",
+                "task_type": "DISAGG",
+                "executor": "openquake-3.16",
+            }
+        },
+        context_value=gql_context,
+    )
+    assert result.errors is None, result.errors
+    return result.data["create_openquake_hazard_task"]["task_result"]
+
+
+def test_create_disagg_oq_task(disagg_oq_task):
+    """task_type DISAGG round-trips through create mutation."""
+    assert disagg_oq_task["task_type"] == "DISAGG"
+    assert disagg_oq_task["state"] == "DONE"
+
+
+def test_disagg_oq_task_node_lookup(gql_context, disagg_oq_task):
+    result = schema.execute_sync(
+        NODE_TASK_TASK_TYPE_QUERY,
+        variable_values={"id": disagg_oq_task["id"]},
+        context_value=gql_context,
+    )
+    assert result.errors is None, result.errors
+    assert result.data["node"]["task_type"] == "DISAGG"
+
+
+# ── JSON tree fields (COVERAGE_GAPS.md gap 5) ─────────────────────────────────
+
+CREATE_OQ_TASK_WITH_TREES_MUTATION = """
+mutation CreateTaskTrees($input: CreateOpenquakeHazardTaskInput!) {
+    create_openquake_hazard_task(input: $input) {
+        ok
+        task_result {
+            id
+            task_type
+            model_type
+            srm_logic_tree
+            gmcm_logic_tree
+            openquake_config
+        }
+    }
+}
+"""
+
+
+@pytest.fixture(scope="module")
+def oq_task_with_trees(gql_context):
+    import json
+
+    result = schema.execute_sync(
+        CREATE_OQ_TASK_WITH_TREES_MUTATION,
+        variable_values={
+            "input": {
+                "state": "DONE",
+                "result": "SUCCESS",
+                "created": "2024-06-02T00:00:00Z",
+                "task_type": "HAZARD",
+                "model_type": "CRUSTAL",
+                "srm_logic_tree": json.dumps({"srm": "tree"}),
+                "gmcm_logic_tree": json.dumps({"gmcm": "tree"}),
+                "openquake_config": json.dumps({"calc": "config"}),
+            }
+        },
+        context_value=gql_context,
+    )
+    assert result.errors is None, result.errors
+    return result.data["create_openquake_hazard_task"]["task_result"]
+
+
+def test_oq_task_srm_logic_tree_round_trip(oq_task_with_trees):
+    import json
+
+    assert json.loads(oq_task_with_trees["srm_logic_tree"]) == {"srm": "tree"}
+
+
+def test_oq_task_gmcm_logic_tree_round_trip(oq_task_with_trees):
+    import json
+
+    assert json.loads(oq_task_with_trees["gmcm_logic_tree"]) == {"gmcm": "tree"}
+
+
+def test_oq_task_openquake_config_round_trip(oq_task_with_trees):
+    import json
+
+    assert json.loads(oq_task_with_trees["openquake_config"]) == {"calc": "config"}
+
+
+def test_oq_task_model_type(oq_task_with_trees):
+    assert oq_task_with_trees["model_type"] == "CRUSTAL"
+
+
+# ── OpenquakeHazardSolution archive fields (COVERAGE_GAPS.md gap 6) ───────────
+
+CREATE_OQ_SOLUTION_FULL_MUTATION = """
+mutation CreateSolutionFull($input: CreateOpenquakeHazardSolutionInput!) {
+    create_openquake_hazard_solution(input: $input) {
+        ok
+        openquake_hazard_solution {
+            id
+            task_type
+            csv_archive { ... on ToshiFile { id file_name } }
+            hdf5_archive { ... on ToshiFile { id file_name } }
+            task_args { ... on ToshiFile { id file_name } }
+            predecessors { id depth relationship }
+        }
+    }
+}
+"""
+
+
+@pytest.fixture(scope="module")
+def csv_archive_id(gql_context):
+    return _seed_toshi_file(gql_context, "results.csv")
+
+
+@pytest.fixture(scope="module")
+def hdf5_archive_id(gql_context):
+    return _seed_toshi_file(gql_context, "results.hdf5")
+
+
+@pytest.fixture(scope="module")
+def task_args_id(gql_context):
+    return _seed_toshi_file(gql_context, "args.json")
+
+
+@pytest.fixture(scope="module")
+def oq_solution_with_archives(
+    gql_context, created_oq_task, csv_archive_id, hdf5_archive_id, task_args_id
+):
+    result = schema.execute_sync(
+        CREATE_OQ_SOLUTION_FULL_MUTATION,
+        variable_values={
+            "input": {
+                "produced_by": created_oq_task["id"],
+                "task_type": "HAZARD",
+                "created": "2024-06-03T00:00:00Z",
+                "csv_archive": csv_archive_id,
+                "hdf5_archive": hdf5_archive_id,
+                "task_args": task_args_id,
+                "predecessors": [{"id": csv_archive_id, "depth": -1}],
+            }
+        },
+        context_value=gql_context,
+    )
+    assert result.errors is None, result.errors
+    return result.data["create_openquake_hazard_solution"]["openquake_hazard_solution"]
+
+
+def test_oq_solution_csv_archive_resolves(oq_solution_with_archives, csv_archive_id):
+    assert oq_solution_with_archives["csv_archive"]["id"] == csv_archive_id
+    assert oq_solution_with_archives["csv_archive"]["file_name"] == "results.csv"
+
+
+def test_oq_solution_hdf5_archive_resolves(oq_solution_with_archives, hdf5_archive_id):
+    assert oq_solution_with_archives["hdf5_archive"]["id"] == hdf5_archive_id
+
+
+def test_oq_solution_task_args_resolves(oq_solution_with_archives, task_args_id):
+    assert oq_solution_with_archives["task_args"]["id"] == task_args_id
+
+
+def test_oq_solution_predecessors(oq_solution_with_archives, csv_archive_id):
+    preds = oq_solution_with_archives["predecessors"]
+    assert preds is not None
+    assert len(preds) == 1
+    assert preds[0]["id"] == csv_archive_id
+    assert preds[0]["depth"] == -1
+    assert preds[0]["relationship"].lower() == "parent"

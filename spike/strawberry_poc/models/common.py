@@ -1,8 +1,21 @@
 """Shared scalar types and enums used across schema types."""
 
 import enum
+from typing import TypeVar
 
 import strawberry
+
+_E = TypeVar("_E", bound=enum.Enum)
+
+
+def _try_enum(enum_cls: type[_E], value: str | None) -> _E | None:
+    """Construct an enum from a string value, returning None for unknown/missing values."""
+    if value is None:
+        return None
+    try:
+        return enum_cls(value)
+    except ValueError:
+        return None
 
 
 @strawberry.type

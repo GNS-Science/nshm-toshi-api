@@ -15,6 +15,7 @@ causing circular imports at schema build time.
 from typing import Annotated
 
 import strawberry
+from strawberry import relay
 from strawberry.relay import GlobalID
 from strawberry.types import Info
 
@@ -143,6 +144,49 @@ class TaskTaskRelation:
     def child(self, info: Info) -> ChildTaskUnion | None:
         data = get_thing(info.context["dynamodb"], self.child_raw_id)
         return _dispatch_thing(data) if data else None
+
+
+# ── Connection types with total_count ────────────────────────────────────────
+#
+# Strawberry optimisation: when the query does not request `edges`, it skips
+# building edges entirely (should_resolve_list_connection_edges → False).
+# Overriding resolve_connection lets us count BEFORE that optimisation fires.
+
+
+@strawberry.type
+class FileRelationsConnection(relay.ListConnection[FileRelation]):
+    """Relay connection for FileRelation that exposes total_count."""
+
+    _total: strawberry.Private[int] = 0
+
+    @strawberry.field
+    def total_count(self) -> int:
+        return self._total
+
+    @classmethod
+    def resolve_connection(cls, nodes, *, info, **kwargs):
+        nodes_list = list(nodes)
+        conn = super().resolve_connection(nodes_list, info=info, **kwargs)
+        conn._total = len(nodes_list)
+        return conn
+
+
+@strawberry.type
+class TaskRelationsConnection(relay.ListConnection[TaskTaskRelation]):
+    """Relay connection for TaskTaskRelation that exposes total_count."""
+
+    _total: strawberry.Private[int] = 0
+
+    @strawberry.field
+    def total_count(self) -> int:
+        return self._total
+
+    @classmethod
+    def resolve_connection(cls, nodes, *, info, **kwargs):
+        nodes_list = list(nodes)
+        conn = super().resolve_connection(nodes_list, info=info, **kwargs)
+        conn._total = len(nodes_list)
+        return conn
 
 
 # ── Dispatch helpers ──────────────────────────────────────────────────────────

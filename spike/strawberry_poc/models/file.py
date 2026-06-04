@@ -18,7 +18,7 @@ from data.models import ToshiFileData
 
 from .common import KeyValuePair, KeyValuePairInput
 from .file_interface import FileInterface
-from .relations import FileRelation, build_file_relations_for_file
+from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
 
 @strawberry.type
@@ -29,7 +29,7 @@ class ToshiFile(relay.Node, FileInterface):
 
     relations_raw: strawberry.Private[list | None] = None
 
-    @relay.connection(relay.ListConnection[FileRelation])
+    @relay.connection(FileRelationsConnection)
     def relations(self, info: Info) -> list[FileRelation]:
         return build_file_relations_for_file(self.pk, self.relations_raw or [])
 
