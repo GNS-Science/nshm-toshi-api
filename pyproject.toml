@@ -13,6 +13,8 @@ license = "AGPL-3.0-or-later"
 dependencies = [
     "backoff",
     "boto3>=1.24.57",
+    "mangum>=0.17",
+    "strawberry-graphql[fastapi]>=0.243.0",
     "elasticsearch>=9",
     "elasticsearch7-compatible",
     "flask>=3.0.3",
