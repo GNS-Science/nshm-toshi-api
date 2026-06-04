@@ -5,7 +5,7 @@ from strawberry.types import Info
 
 from data.s3 import presigned_download_url
 
-from .common import KeyValuePair
+from .common import BigInt, KeyValuePair
 
 
 @strawberry.interface
@@ -14,7 +14,7 @@ class FileInterface:
 
     file_name: str | None = None
     md5_digest: str | None = None
-    file_size: int | None = None
+    file_size: BigInt | None = None
     created: str | None = None
     meta: list[KeyValuePair] | None = None
 

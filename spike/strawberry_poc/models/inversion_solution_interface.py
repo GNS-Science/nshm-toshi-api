@@ -21,7 +21,7 @@ from strawberry.types import Info
 
 from data.dynamo import get_table, get_thing
 
-from .common import KeyValuePair, TableType
+from .common import BigInt, KeyValuePair, TableType
 from .relations import InversionSolutionRelations, build_file_relations_for_file
 
 # ── Lazy forward refs ─────────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ class InversionSolutionInterface:
     # is a valid GQL fragment selection.
     file_name: str | None = None
     md5_digest: str | None = None
-    file_size: int | None = None
+    file_size: BigInt | None = None
     created: str | None = None
     meta: list[KeyValuePair] | None = None
 

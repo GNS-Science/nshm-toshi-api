@@ -20,6 +20,7 @@ from data.dynamo import _file_table, create_file, get_file, list_files
 from data.models import InversionSolutionData
 
 from .common import (
+    BigInt,
     KeyValueListPair,
     KeyValueListPairInput,
     KeyValuePair,
@@ -135,7 +136,7 @@ class InversionSolution(relay.Node, FileInterface, InversionSolutionInterface, P
 class CreateInversionSolutionInput:
     file_name: str
     md5_digest: str | None = None
-    file_size: int | None = None
+    file_size: BigInt | None = None
     meta: list[KeyValuePairInput] | None = None
     created: str | None = None
     produced_by: strawberry.ID | None = None

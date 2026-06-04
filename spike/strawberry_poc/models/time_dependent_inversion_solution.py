@@ -11,7 +11,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import TimeDependentInversionSolutionData
 
-from .common import KeyValuePair, KeyValuePairInput
+from .common import BigInt, KeyValuePair, KeyValuePairInput
 from .file_interface import FileInterface
 from .inversion_solution import InversionSolution, LabelledTableRelation, _ltr_from_dict
 from .inversion_solution_interface import InversionSolutionInterface
@@ -74,7 +74,7 @@ class CreateTimeDependentInversionSolutionInput:
     source_solution: strawberry.ID
     produced_by: strawberry.ID | None = None
     md5_digest: str | None = None
-    file_size: int | None = None
+    file_size: BigInt | None = None
     meta: list[KeyValuePairInput] | None = None
     created: str | None = None
     predecessors: list[PredecessorInput] | None = None

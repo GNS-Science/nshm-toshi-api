@@ -16,7 +16,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import ToshiFileData
 
-from .common import KeyValuePair, KeyValuePairInput
+from .common import BigInt, KeyValuePair, KeyValuePairInput
 from .file_interface import FileInterface
 from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
@@ -62,7 +62,7 @@ class ToshiFile(relay.Node, FileInterface):
 class CreateFileInput:
     file_name: str
     md5_digest: str | None = None
-    file_size: int | None = None
+    file_size: BigInt | None = None
     meta: list[KeyValuePairInput] | None = None
     created: str | None = None
 

@@ -1,7 +1,7 @@
 """Shared scalar types and enums used across schema types."""
 
 import enum
-from typing import TypeVar
+from typing import NewType, TypeVar
 
 import strawberry
 
@@ -16,6 +16,17 @@ def _try_enum(enum_cls: type[_E], value: str | None) -> _E | None:
         return enum_cls(value)
     except ValueError:
         return None
+
+
+# ── Custom scalars ────────────────────────────────────────────────────────────
+
+BigInt = strawberry.scalar(
+    NewType("BigInt", int),
+    serialize=int,
+    parse_value=int,
+    description="A signed integer with arbitrary precision (not limited to GraphQL Int 32-bit). "
+    "Used for file_size where production values can exceed 2GB.",
+)
 
 
 @strawberry.type
