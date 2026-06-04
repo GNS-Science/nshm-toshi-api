@@ -23,7 +23,7 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | `test_sms_file_link_schema.py` | 2 | `test_sms_file.py` + `test_smoketest_ab.py` | 4+partial | ⚠️ |
 | `test_task_task_relations_db.py` | 1 | `test_general_task.py` + `test_smoketest_ab.py` | — | ⚠️ |
 | `test_file_relation_bugfix_126.py` | 5 | `test_file_relation.py` | 3 | ⚠️ |
-| `test_file_relation_compression.py` | 3 | — | — | ❌ |
+| `test_file_relation_compression.py` | 3 | — | — | ❌ (High — see Gap 6) |
 | `test_nodes_bugfix_220.py` | 3 | `test_inversion_solution.py` (partial) | — | ⚠️ |
 | `test_general_task_bugfix_29.py` | 1 | `test_general_task.py` | — | ⚠️ |
 | `test_general_task_bugfix_217.py` | 1 | — | — | ❌ |
@@ -346,7 +346,7 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | Field: `file_id` | Yes | Yes | Yes | implicit |
 | Field: `file` (resolved) | Yes | Yes | Yes | Yes |
 | Field: `thing` (resolved) | Yes | Yes | Yes | Yes |
-| Relation compression (large relation lists) | Yes | Yes (3 tests) | **No** | No |
+| Relation compression (>100 relations stored as compressed string) | Yes | Yes (3 tests) | **No — High-severity gap** | No |
 
 ### TaskTaskRelation
 
@@ -401,8 +401,14 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 
 - **Legacy file:** `test_file_relation_compression.py` — 3 tests: counting relations in a 390k-relation scenario; adding with compression; round-trip with compression
 - **What it exercises:** That the data layer compresses and decompresses large `relations` lists stored in DynamoDB
-- **Closest POC equivalent:** None — the POC stores relations differently (as normalised DynamoDB items) and does not need compression; this gap may be intentionally N/A in the POC architecture
-- **Gap severity:** **Low** — only relevant for legacy data migration; POC uses a different storage model
+- **Storage shape (corrected from earlier analysis):** Both legacy and POC store relations as an embedded array under `ToshiFileObject.object_content.relations`. The POC's storage shape is **identical** to legacy — only the compression behaviour differs.
+- **POC behaviour:** No compression on write (`data/dynamo.py` `_patch_file` appends unconditionally). No decompression on read (`get_file` returns `object_content` as-is). Pydantic `ToshiFileData.relations` is typed as `list[dict] | None`; a compressed-string value would fail validation.
+- **Concrete bugs this introduces in the POC:**
+  1. **Read failure on legacy data.** Any production File with >100 relations is currently stored as a base64-encoded zlib string (`compress_string(json.dumps(relations))`). The POC's `from_dict` will fail Pydantic validation on those rows, propagating as "Unexpected error" on every field of the affected node — same failure mode as the production GeneralTask incident, but for any RuptureSet that's been used by many tasks.
+  2. **Write failure at DynamoDB's 400KB item limit.** Without compression, a list of `{"id": "...", "role": "read"}` entries (~40 bytes each in JSON) hits the limit at roughly 10,000 entries. Legacy fits ~80,000 in the same space via compression. Files aggregating many tasks (RuptureSets in active inversion pipelines) will fail `put_item` with `ValidationException`.
+- **Closest POC equivalent:** None — needs implementation.
+- **Fix shape:** Port `nzshm_common.util.compress_string` / `decompress_string` calls; ~30 lines in `data/dynamo.py` (read-side `_ensure_decompressed` in `get_file`/`list_files`, write-side threshold check in `create_file_relation`).
+- **Gap severity:** **High** — this is required for read interoperability with production data, not just for archival migration. Was previously misclassified as Low/N/A.
 
 ### Gap 7: S3 fallback and DynamoDB + S3 combined queries
 
@@ -595,24 +601,21 @@ Fields present in legacy schema but absent or different in POC model classes.
 
 ## 6. Priorities for New POC Tests
 
-The following gaps represent the highest-value work to close, ordered by severity:
+The following gaps represent the highest-value work to close, ordered by severity.
 
-1. **`update_automation_task` mutation** — add the mutation to `schema.py` and create `tests/test_automation_task.py` covering state/result/duration/metrics update and ES re-indexing.
+### Closed in this round (PRs #296–#298)
 
-2. **`nodes(id_in: [...])` with deep interface expansion** — add a test that fetches a `ScaledInversionSolution` through `nodes`, expands `InversionSolutionInterface.produced_by`, then expands `AutomationTaskInterface.parents` to retrieve the parent `GeneralTask`. This directly mirrors the weka client query pattern from `test_nodes_bugfix_220.py`.
+1. ~~**`update_automation_task` mutation**~~ — done. Resolver + payload type wired in `schema.py`; `tests/test_automation_task.py` covers create + update + ES re-index monkeypatch.
+2. ~~**`nodes(id_in: [...])` with deep interface expansion**~~ — done. `tests/test_nodes_query.py` mirrors the weka batch traversal pattern (ScaledIS → produced_by → AutomationTask → parents → GeneralTask).
+3. ~~**`InversionSolutionNrml` test file**~~ — done. `tests/test_inversion_solution_nrml.py`: 6 tests covering all three source types + predecessors.
+4. ~~**DISAGG task type**~~ — done. New fixture in `tests/test_openquake.py`.
+5. ~~**JSON logic tree round-trips**~~ — done.
+6. ~~**`OpenquakeHazardSolution` archives**~~ — done.
+7. ~~**Table `name` field**~~ — done.
+8. ~~**`create_file` type coercion**~~ — done; BigInt scalar landed in `models/common.py` so >2GB file_size values now round-trip correctly.
+9. **Rupture set upload / `post_url`** — schema-level test only (post_url returns null in POC; real S3 wiring deferred).
+10. ~~**`update_automation_task` ES re-indexing**~~ — done; automatic via existing `update_thing` → `index_document` path, asserted via monkeypatch in test.
 
-3. **`InversionSolutionNrml` test file** — create `tests/test_inversion_solution_nrml.py` covering: create from IS, ScaledIS, TDIS; with predecessors; node lookup; verify `source_solution` union resolution.
+### Open — needs a follow-up PR
 
-4. **DISAGG task type** — add test for `create_openquake_hazard_task` with `task_type: DISAGG` to `test_openquake.py`.
-
-5. **`srm_logic_tree` / `gmcm_logic_tree` / `openquake_config` JSON round-trip** — extend `test_openquake.py` to set and verify these fields.
-
-6. **`OpenquakeHazardSolution` full fields** — extend `test_openquake.py` to test `csv_archive`, `hdf5_archive`, `task_args`, and predecessors.
-
-7. **Table `name` field** — add `name` to `CreateTableInput` and `Table` model, then add test.
-
-8. **`create_file` type coercion** — add a test asserting `file_size` accepts integer values and rejects non-numeric strings.
-
-9. **Rupture set upload / `post_url`** — if S3 integration is in scope, add a presigned URL test.
-
-10. **`update_automation_task` ES re-indexing** — verify the updated document body is sent to ES (mirrors `test_automation_task_mutation_deep.py`).
+11. **File relation compression (Gap 6)** — High severity (re-categorised from earlier "Low/N/A" misanalysis). Port `nzshm_common.util.compress_string` / `decompress_string` calls into `data/dynamo.py`. Two failure modes today: (a) the POC's Pydantic validation crashes on legacy compressed-string rows; (b) without compression on write, files with >~10,000 relations hit DynamoDB's 400KB item limit (legacy fits ~80,000 via compression). See Gap 6 detail above for exact patch shape.
