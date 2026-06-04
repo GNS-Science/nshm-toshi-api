@@ -1,0 +1,102 @@
+# Runs the Strawberry POC test suite (testcontainers DynamoDB Local + ES 7.1.0).
+#
+# Scope: only triggers on changes under spike/strawberry_poc/** so it doesn't
+# slow PRs that touch only legacy graphql_api code. Legacy CI lives in
+# run-tests-on-pull-request.yaml and is unaffected by this workflow.
+name: Strawberry POC Tests
+
+on:
+  pull_request:
+    branches: [deploy-test, main]
+    paths:
+      - 'spike/strawberry_poc/**'
+      - '.github/workflows/strawberry-poc-tests.yaml'
+  push:
+    branches:
+      - chore/strawberry-fields
+    paths:
+      - 'spike/strawberry_poc/**'
+      - '.github/workflows/strawberry-poc-tests.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: strawberry-poc-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pytest (testcontainers DDB + ES)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: spike/strawberry_poc
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Install uv (with Python 3.12)
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: spike/strawberry_poc/uv.lock
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --all-extras
+
+      # Pre-pull testcontainer images in parallel with dependency install.
+      # ES 7.1.0 ~600MB, DDB Local ~150MB. Without pre-pull, testcontainers
+      # does the pulls lazily on first fixture use, blocking the test process.
+      - name: Pre-pull testcontainer images
+        run: |
+          docker pull amazon/dynamodb-local:latest &
+          docker pull docker.elastic.co/elasticsearch/elasticsearch:7.1.0 &
+          wait
+          docker images
+
+      - name: Run pytest with JUnit + coverage reports
+        run: uv run pytest tests/ -v --junitxml=junit.xml
+        env:
+          # Match the test fixtures' expected environment (see tests/conftest.py).
+          # AWS_* values are dummy; testcontainers DDB doesn't validate them.
+          DEPLOYMENT_STAGE: TEST
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
+
+      - name: Upload pytest JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-junit
+          path: spike/strawberry_poc/junit.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-coverage
+          path: spike/strawberry_poc/coverage.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+      # On failure, dump container logs so we can diagnose testcontainers
+      # startup or runtime issues (port allocation flakes, ES OOM, etc.)
+      # without needing to reproduce locally.
+      - name: Dump Docker container logs on failure
+        if: failure()
+        run: |
+          echo "=== docker ps (all) ==="
+          docker ps -a
+          echo "=== container logs ==="
+          for id in $(docker ps -aq); do
+            echo "--- $id ---"
+            docker logs --tail 200 "$id" 2>&1 || true
+          done
