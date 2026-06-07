@@ -307,10 +307,13 @@ def list_files(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
 def get_table(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
     resp = _table_table(dynamodb, stage).get_item(Key={"object_id": object_id})
     item = resp.get("Item")
-    if not item:
-        return None
-    data = json.loads(item["object_content"])
-    data["object_id"] = object_id
+    if item:
+        data = json.loads(item["object_content"])
+        data["object_id"] = object_id
+        return data
+    data = _from_s3(object_id, "TableData")
+    if data is not None:
+        data["object_id"] = object_id
     return data
 
 
