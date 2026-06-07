@@ -257,6 +257,15 @@ functions:
       DB_READ_ONLY: "1"
       DEPLOYMENT_STAGE: ${self:custom.stage}
       GRAPHQL_PATH: /graphql-v2
+      # REGION + S3_BUCKET_NAME inherit from provider.environment but we set
+      # S3_BUCKET_NAME explicitly so the dependency for _from_s3 / S3 fallback
+      # paths in data/dynamo.py + data/s3.py is visible at function scope.
+      S3_BUCKET_NAME: ${self:custom.s3_bucket}
+      # Watermark for legacy_object_identities — IDs below this are S3-only.
+      # Tracks custom.first_dynamo_id so the POC and legacy stay in lockstep.
+      FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
+      # S3 IAM (s3:*) is inherited from provider.iamRoleStatements — covers
+      # the s3:GetObject + s3:ListBucket needed by the read fallback paths.
     warmup:
       lowConcurrencyWarmer:
         enabled: false
