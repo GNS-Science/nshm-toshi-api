@@ -75,6 +75,7 @@ exclude_lines = [
 [dependency-groups]
 dev = [
     "httpx>=0.27",
+    "moto>=5.0",
     "mypy>=2.1.0",
     "pytest>=8.0",
     "pytest-cov>=7.1.0",

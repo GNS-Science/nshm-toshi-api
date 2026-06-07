@@ -29,8 +29,8 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | `test_general_task_bugfix_217.py` | 1 | — | — | ❌ |
 | `test_schema.py` | 5 | `test_smoketest_ab.py` | 19 | ⚠️ |
 | `test_search_manager.py` | 9 | `test_smoketest_ab.py` (`@pytest.mark.integration`) | 5 integration | ⚠️ |
-| `test_dynamo_and_s3_queries.py` | 9 | — | — | ❌ |
-| `test_s3_fallback.py` | 2 | — | — | ❌ |
+| `test_dynamo_and_s3_queries.py` | 9 | `test_s3_fallback.py` (partial) | 7 of 16 | ⚠️ |
+| `test_s3_fallback.py` | 2 | `test_s3_fallback.py` | 16 | ✅ |
 | `test_api_init.py` | 3 | — | — | N/A |
 | `test_create_file_bugfix_159.py` | 4 | — | — | ❌ |
 | `test_inversion_solution_bug_93.py` | 1 | — | — | ❌ |
@@ -413,9 +413,22 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 ### Gap 7: S3 fallback and DynamoDB + S3 combined queries
 
 - **Legacy files:** `test_s3_fallback.py` (2 tests); `test_dynamo_and_s3_queries.py` (9 tests)
-- **What it exercises:** Reading legacy objects from S3 when not found in DynamoDB; combined queries that retrieve both DynamoDB and S3-backed objects in the same request; parent/child traversal with mixed storage
-- **Closest POC equivalent:** None — the POC uses only DynamoDB; S3 fallback is a legacy concern
-- **Gap severity:** **Low for new data; High for migration** — any migration tooling that reads existing production data from S3 will exercise this path
+- **What it exercises:** Reading legacy objects from S3 when not found in DynamoDB; combined queries that retrieve both DynamoDB and S3-backed objects in the same request; parent/child traversal with mixed storage.
+- **Severity (corrected from earlier analysis):** **High**, not "Low / Low for new data". Two reasons the earlier classification was wrong:
+  1. **The deployed `/graphql-v2` Lambda is silently broken for pre-DynamoDB-era data.** `data/dynamo.py` has `_from_s3()` wired into `get_thing` and `get_file`, but PR #297's serverless.yml doesn't set `S3_BUCKET_NAME` on the function env, and the function role doesn't grant `s3:GetObject`/`s3:ListBucket`. With `S3_BUCKET_NAME=""`, the helper short-circuits and any query for an ID below FIRST_DYNAMO_ID (100000) returns null — same "Unexpected error on every field" failure mode as the GeneralTask enum incident.
+  2. **`legacy_object_identities` is structurally broken even with the deploy fix.** The resolver returns `{object_type: "Thing" | "File" | "Table"}` instead of the concrete `clazz_name`, so clients can't construct relay GlobalIDs that `node()` will dispatch. It also lacks the `FIRST_DYNAMO_ID` watermark filter that legacy uses to avoid double-yielding File-prefixed IDs already in DynamoDB.
+- **POC state before this PR:**
+  - `data/dynamo._from_s3` existed, called from `get_thing` and `get_file` only (not `get_table`).
+  - `data/s3.scan_s3_paginated` listed `CommonPrefixes` but didn't fetch object JSON, so `object_type` was the store bucket instead of the class name.
+  - Zero test coverage on any of these paths.
+- **Closed in this PR (`strawberry-poc-s3-fallback`):**
+  - `data/s3.scan_s3_paginated` now fetches `clazz_name` from each candidate's `object.json` and applies the FIRST_DYNAMO_ID watermark for FileData (matches `graphql_api/data/base_data.py:178-187`).
+  - `data/dynamo.get_table` now mirrors `get_thing`/`get_file` for the S3-miss path.
+  - `tests/test_s3_fallback.py` adds 16 tests using moto: `_from_s3` round-trip, `get_thing`/`get_file`/`get_table` fallback, the `_is_pre_dynamo_file_id` watermark helper, `scan_s3_paginated` clazz_name surfacing, the FileData watermark filter, ThingData absence of watermark, and StartAfter pagination.
+- **Still deferred (separate concern, belongs in PR #297):**
+  - `/graphql-v2` Lambda env must set `S3_BUCKET_NAME` and IAM must grant `s3:GetObject`+`s3:ListBucket` on the bucket. Without this, the code fixed here never executes in deployment.
+  - First-touch write-back migration (`create_file_relation` against an S3-only file should materialise the file into DynamoDB before patching, like `graphql_api/data/file_relation_data.py:48-58`). Currently the POC raises `ValueError`. Read-only POC stage doesn't hit this; promote to High once the POC moves to read-write.
+- **Reference tests (legacy parity):** the test file mirrors `test_s3_fallback.py` + key cases from `test_dynamo_and_s3_queries.py`. Full DynamoDB+S3 mixed-traversal coverage (parent/child walking across both stores) is still open as a smaller follow-up.
 
 ### Gap 8: Elasticsearch search manager tests
 
