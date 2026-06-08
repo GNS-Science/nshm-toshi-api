@@ -13,11 +13,10 @@ from data.dynamo import create_thing, get_thing, list_things
 from data.models import StrongMotionStationData
 
 from .common import SmsSiteClass, SmsSiteClassBasis, _try_enum
-from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_thing
-
+from .thing import Thing
 
 @strawberry.type
-class StrongMotionStation(relay.Node):
+class StrongMotionStation(relay.Node, Thing):
     """An NSHM Strong Motion Station record."""
 
     pk: relay.NodeID[str]
@@ -32,11 +31,10 @@ class StrongMotionStation(relay.Node):
     created: str | None = None
     updated: str | None = None
 
-    files_raw: strawberry.Private[list | None] = None
-
-    @relay.connection(FileRelationsConnection)
-    def files(self, info: Info) -> list[FileRelation]:
-        return build_file_relations_for_thing(self.pk, self.files_raw or [])
+    # files_raw and the files resolver are inherited from Thing.
+    # We also inherit parents_raw, children_raw, parents and children — but
+    # StrongMotionStation doesn't actually have parent/child tasks; the empty
+    # _raw fields naturally return empty connections.
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["StrongMotionStation"]:

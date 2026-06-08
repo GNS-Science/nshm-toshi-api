@@ -20,6 +20,7 @@ from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import AutomationTaskData
 
 from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
+from .thing import AutomationTaskInterface, Thing
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -41,7 +42,7 @@ def _kv_input_to_list(items) -> list[dict] | None:
 
 
 @strawberry.type
-class AutomationTask(relay.Node):
+class AutomationTask(relay.Node, Thing, AutomationTaskInterface):
     """An automation task in the NSHM process."""
 
     pk: relay.NodeID[str]
@@ -103,7 +104,7 @@ class AutomationTask(relay.Node):
 
 
 @strawberry.type
-class RuptureGenerationTask(relay.Node):
+class RuptureGenerationTask(relay.Node, Thing, AutomationTaskInterface):
     """A rupture set generation task — stored identically to AutomationTask."""
 
     pk: relay.NodeID[str]

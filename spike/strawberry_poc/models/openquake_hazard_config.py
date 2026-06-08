@@ -12,6 +12,7 @@ from data.dynamo import create_thing, get_file, get_thing, list_things
 from data.models import OpenquakeHazardConfigData
 from models.file import ToshiFile
 from models.inversion_solution_nrml import InversionSolutionNrml
+from models.thing import Thing
 
 # ── OpenquakeNrmlUnion ────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ def dispatch_nrml(data: dict):
 
 
 @strawberry.type
-class OpenquakeHazardConfig(relay.Node):
+class OpenquakeHazardConfig(relay.Node, Thing):
     pk: relay.NodeID[str]
     created: str | None = None
 

@@ -37,10 +37,11 @@ from .relations import (
     build_task_children,
     build_task_parents,
 )
+from .thing import Thing
 
 
 @strawberry.type
-class GeneralTask(relay.Node):
+class GeneralTask(relay.Node, Thing):
     """
     A General Task captures metadata and related inputs/outputs for arbitrary tasks.
     """
@@ -49,7 +50,7 @@ class GeneralTask(relay.Node):
     title: str | None = None
     description: str | None = None
     agent_name: str | None = None
-    created: str | None = None
+    # `created` inherited from Thing
     updated: str | None = None
     notes: str | None = None
     subtask_count: int | None = None
@@ -58,10 +59,8 @@ class GeneralTask(relay.Node):
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPair] | None = None
     meta: list[KeyValuePair] | None = None
-
-    files_raw: strawberry.Private[list | None] = None
-    children_raw: strawberry.Private[list | None] = None
-    parents_raw: strawberry.Private[list | None] = None
+    # files_raw / parents_raw / children_raw and the @relay.connection
+    # resolvers for files / parents / children are inherited from Thing
 
     @relay.connection(FileRelationsConnection)
     def files(self, info: Info) -> list[FileRelation]:

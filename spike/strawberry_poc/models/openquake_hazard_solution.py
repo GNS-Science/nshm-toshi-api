@@ -14,6 +14,7 @@ from models.file import ToshiFile
 from models.openquake_hazard_task import OpenquakeHazardTask
 
 from .common import KeyValuePair, KeyValuePairInput, OpenquakeTaskType
+from .thing import Thing
 from .predecessor import PredecessorInput
 from .predecessors_interface import PredecessorsInterface
 
@@ -22,7 +23,7 @@ _ToshiFile = Annotated["ToshiFile", strawberry.lazy("models.file")]
 
 
 @strawberry.type
-class OpenquakeHazardSolution(relay.Node, PredecessorsInterface):
+class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):
     pk: relay.NodeID[str]
     created: str | None = None
     task_type: OpenquakeTaskType | None = None

@@ -12,6 +12,7 @@ from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import OpenquakeHazardTaskData
 
 from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
+from .thing import AutomationTaskInterface, Thing
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -26,7 +27,7 @@ _OpenquakeHazardSolution = Annotated["OpenquakeHazardSolution", strawberry.lazy(
 
 
 @strawberry.type
-class OpenquakeHazardTask(relay.Node):
+class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
     pk: relay.NodeID[str]
     state: EventState | None = None
     result: EventResult | None = None
