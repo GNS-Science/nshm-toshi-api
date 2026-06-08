@@ -81,3 +81,4 @@ leave the file in place).
 | # | Title | Status |
 |---|---|---|
 | [ADR-001](ADR-001-graphql-schema-evolution-strategy.md) | GraphQL Schema Evolution Strategy: Legacy Parity, Modern Defaults, Deprecation Aliases | Proposed |
+| [ADR-002](ADR-002-schema-interface-hierarchy-and-input-naming.md) | Schema Interface Hierarchy and Input Naming Conventions | Proposed |

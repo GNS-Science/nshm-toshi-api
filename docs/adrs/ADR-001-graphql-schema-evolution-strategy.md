@@ -276,12 +276,18 @@ alias.
 
 ## Related decisions
 
-- (Future) ADR-002: Custom scalar policy — naming, behaviour, and
-  on-disk representation for `DateTime`, `JSONString`, `BigInt`, and
-  any future scalars.
-- (Future) ADR-003: Schema interface hierarchy — `Thing` and
-  `AutomationTaskInterface` adoption in POC.
+- [ADR-002](ADR-002-schema-interface-hierarchy-and-input-naming.md):
+  Schema interface hierarchy and input naming conventions — covers
+  the remaining divergences after Phase 1+2 (`Thing` /
+  `AutomationTaskInterface` adoption, input type naming style,
+  auto-generated Edge types).
+- (Future) ADR-003: Custom scalar policy — naming, behaviour, and
+  on-disk representation conventions for `DateTime`, `JSONString`,
+  `BigInt`, and any future scalars (the specific decisions in this
+  ADR cover the existing scalars; an ADR is owed when we add the next).
 - (Future) ADR-004: Deprecation logging and sunset policy — how we
-  measure deprecated-field usage and when we remove.
+  measure deprecated-field usage and when we remove (Phase 3 of
+  this ADR's migration path).
 - (Future) ADR-005: snake_case vs camelCase for client-facing
-  fields — strategic call on whether to undertake the migration.
+  fields — strategic call on whether to undertake the broader
+  migration.
