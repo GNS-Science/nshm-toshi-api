@@ -22,6 +22,7 @@ from strawberry.types import Info
 from data.dynamo import create_file_relation, create_task_relation, get_file, get_thing
 
 from .common import FileRole
+from .page_info import CompatListConnection
 
 # ── Lazy forward references (break circular deps) ─────────────────────────────
 
@@ -154,8 +155,8 @@ class TaskTaskRelation:
 
 
 @strawberry.type
-class FileRelationsConnection(relay.ListConnection[FileRelation]):
-    """Relay connection for FileRelation that exposes total_count."""
+class FileRelationsConnection(CompatListConnection[FileRelation]):
+    """Relay connection for FileRelation that exposes total_count + camelCase PageInfo."""
 
     _total: strawberry.Private[int] = 0
 
@@ -172,8 +173,8 @@ class FileRelationsConnection(relay.ListConnection[FileRelation]):
 
 
 @strawberry.type
-class TaskRelationsConnection(relay.ListConnection[TaskTaskRelation]):
-    """Relay connection for TaskTaskRelation that exposes total_count."""
+class TaskRelationsConnection(CompatListConnection[TaskTaskRelation]):
+    """Relay connection for TaskTaskRelation that exposes total_count + camelCase PageInfo."""
 
     _total: strawberry.Private[int] = 0
 

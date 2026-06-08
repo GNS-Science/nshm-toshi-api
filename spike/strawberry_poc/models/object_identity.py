@@ -22,14 +22,39 @@ class ObjectIdentitiesEdge:
 
 @strawberry.type
 class ObjectIdentitiesPageInfo:
-    has_next_page: bool = False
-    end_cursor: str | None = None
+    # Modern Relay-spec camelCase (preferred)
+    has_next_page: bool = strawberry.field(name="hasNextPage", default=False)
+    end_cursor: str | None = strawberry.field(name="endCursor", default=None)
+
+    @strawberry.field(
+        name="has_next_page",
+        deprecation_reason="Use hasNextPage instead (Relay Cursor Connections Spec normative).",
+    )
+    def deprecated_has_next_page(self) -> bool:
+        return self.has_next_page
+
+    @strawberry.field(
+        name="end_cursor",
+        deprecation_reason="Use endCursor instead (Relay Cursor Connections Spec normative).",
+    )
+    def deprecated_end_cursor(self) -> str | None:
+        return self.end_cursor
 
 
 @strawberry.type
 class ObjectIdentitiesConnection:
     edges: list[ObjectIdentitiesEdge] = strawberry.field(default_factory=list)
-    page_info: ObjectIdentitiesPageInfo = strawberry.field(default_factory=ObjectIdentitiesPageInfo)
+    # Modern Relay-spec camelCase (preferred)
+    page_info: ObjectIdentitiesPageInfo = strawberry.field(
+        name="pageInfo", default_factory=ObjectIdentitiesPageInfo
+    )
+
+    @strawberry.field(
+        name="page_info",
+        deprecation_reason="Use pageInfo instead (Relay Cursor Connections Spec normative).",
+    )
+    def deprecated_page_info(self) -> ObjectIdentitiesPageInfo:
+        return self.page_info
 
 
 def encode_cursor(object_id: str) -> str:
