@@ -12,6 +12,8 @@ from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import OpenquakeHazardTaskData
 
 from .common import DateTime, EventResult, EventState, JSONString, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum, client_mutation_id_input_field
+
+from .thing import AutomationTaskInterface, Thing
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -24,9 +26,8 @@ from .relations import (
 
 _OpenquakeHazardSolution = Annotated["OpenquakeHazardSolution", strawberry.lazy("models.openquake_hazard_solution")]
 
-
 @strawberry.type
-class OpenquakeHazardTask(relay.Node):
+class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
     pk: relay.NodeID[str]
     state: EventState | None = None
     result: EventResult | None = None
@@ -103,7 +104,6 @@ class OpenquakeHazardTask(relay.Node):
             hazard_solution_raw_id=d.hazard_solution,
         )
 
-
 @strawberry.input
 class CreateOpenquakeHazardTaskInput:
     state: EventState
@@ -122,7 +122,6 @@ class CreateOpenquakeHazardTaskInput:
     hazard_solution: strawberry.ID | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
-
 @strawberry.input
 class UpdateOpenquakeHazardTaskInput:
     task_id: strawberry.ID
@@ -135,11 +134,9 @@ class UpdateOpenquakeHazardTaskInput:
     hazard_solution: strawberry.ID | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
-
 def resolve_openquake_hazard_tasks(info: Info) -> Iterable[OpenquakeHazardTask]:
     items = list_things(info.context["dynamodb"], "OpenquakeHazardTask")
     return [OpenquakeHazardTask.from_dict(item) for item in items]
-
 
 def mutate_create_openquake_hazard_task(info: Info, input: CreateOpenquakeHazardTaskInput) -> OpenquakeHazardTask:
     payload = {
@@ -160,7 +157,6 @@ def mutate_create_openquake_hazard_task(info: Info, input: CreateOpenquakeHazard
     }
     data = create_thing(info.context["dynamodb"], "OpenquakeHazardTask", payload)
     return OpenquakeHazardTask.from_dict(data)
-
 
 def mutate_update_openquake_hazard_task(
     info: Info, input: UpdateOpenquakeHazardTaskInput

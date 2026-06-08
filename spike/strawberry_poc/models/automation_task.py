@@ -20,6 +20,8 @@ from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import AutomationTaskData
 
 from .common import DateTime, EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum, client_mutation_id_input_field
+
+from .thing import AutomationTaskInterface, Thing
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -30,18 +32,15 @@ from .relations import (
     build_task_parents,
 )
 
-
 def _kv_input_to_list(items) -> list[dict] | None:
     if not items:
         return None
     return [{"k": i.k, "v": i.v} for i in items]
 
-
 # ── AutomationTask ─────────────────────────────────────────────────────────────
 
-
 @strawberry.type
-class AutomationTask(relay.Node):
+class AutomationTask(relay.Node, Thing, AutomationTaskInterface):
     """An automation task in the NSHM process."""
 
     pk: relay.NodeID[str]
@@ -98,12 +97,10 @@ class AutomationTask(relay.Node):
             children_raw=d.children,
         )
 
-
 # ── RuptureGenerationTask ──────────────────────────────────────────────────────
 
-
 @strawberry.type
-class RuptureGenerationTask(relay.Node):
+class RuptureGenerationTask(relay.Node, Thing, AutomationTaskInterface):
     """A rupture set generation task — stored identically to AutomationTask."""
 
     pk: relay.NodeID[str]
@@ -157,9 +154,7 @@ class RuptureGenerationTask(relay.Node):
             children_raw=d.children,
         )
 
-
 # ── Input types ───────────────────────────────────────────────────────────────
-
 
 @strawberry.input
 class CreateAutomationTaskInput:
@@ -174,7 +169,6 @@ class CreateAutomationTaskInput:
     metrics: list[KeyValuePairInput] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
-
 @strawberry.input
 class UpdateAutomationTaskInput:
     task_id: strawberry.ID
@@ -186,19 +180,15 @@ class UpdateAutomationTaskInput:
     metrics: list[KeyValuePairInput] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
-
 # ── Resolvers ─────────────────────────────────────────────────────────────────
-
 
 def resolve_automation_tasks(info: Info) -> Iterable[AutomationTask]:
     items = list_things(info.context["dynamodb"], "AutomationTask")
     return [AutomationTask.from_dict(item) for item in items]
 
-
 def resolve_rupture_generation_tasks(info: Info) -> Iterable[RuptureGenerationTask]:
     items = list_things(info.context["dynamodb"], "RuptureGenerationTask")
     return [RuptureGenerationTask.from_dict(item) for item in items]
-
 
 def _build_payload(input, clazz_name: str) -> dict:
     return {
@@ -213,18 +203,15 @@ def _build_payload(input, clazz_name: str) -> dict:
         "metrics": _kv_input_to_list(input.metrics) if input.metrics else None,
     }
 
-
 def mutate_create_automation_task(info: Info, input: CreateAutomationTaskInput) -> AutomationTask:
     payload = _build_payload(input, "AutomationTask")
     data = create_thing(info.context["dynamodb"], "AutomationTask", payload)
     return AutomationTask.from_dict(data)
 
-
 def mutate_create_rupture_generation_task(info: Info, input: CreateAutomationTaskInput) -> RuptureGenerationTask:
     payload = _build_payload(input, "RuptureGenerationTask")
     data = create_thing(info.context["dynamodb"], "RuptureGenerationTask", payload)
     return RuptureGenerationTask.from_dict(data)
-
 
 def mutate_update_automation_task(info: Info, input: UpdateAutomationTaskInput) -> AutomationTask | None:
     gid = GlobalID.from_id(input.task_id)
@@ -238,7 +225,6 @@ def mutate_update_automation_task(info: Info, input: UpdateAutomationTaskInput) 
     }
     data = update_thing(info.context["dynamodb"], gid.node_id, payload)
     return AutomationTask.from_dict(data) if data else None
-
 
 def mutate_update_rupture_generation_task(info: Info, input: UpdateAutomationTaskInput) -> RuptureGenerationTask | None:
     gid = GlobalID.from_id(input.task_id)

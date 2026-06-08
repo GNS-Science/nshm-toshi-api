@@ -13,6 +13,7 @@ from data.models import OpenquakeHazardConfigData
 from models.common import DateTime, client_mutation_id_input_field
 from models.file import ToshiFile
 from models.inversion_solution_nrml import InversionSolutionNrml
+from models.thing import Thing
 
 # ── OpenquakeNrmlUnion ────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ def dispatch_nrml(data: dict):
 
 
 @strawberry.type
-class OpenquakeHazardConfig(relay.Node):
+class OpenquakeHazardConfig(relay.Node, Thing):
     pk: relay.NodeID[str]
     created: DateTime | None = None
 
