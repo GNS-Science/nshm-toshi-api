@@ -11,7 +11,7 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import OpenquakeHazardTaskData
 
-from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
+from .common import client_mutation_id_input_field, EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -120,6 +120,7 @@ class CreateOpenquakeHazardTaskInput:
     gmcm_logic_tree: str | None = None
     openquake_config: str | None = None
     hazard_solution: strawberry.ID | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 @strawberry.input
@@ -132,6 +133,7 @@ class UpdateOpenquakeHazardTaskInput:
     environment: list[KeyValuePairInput] | None = None
     metrics: list[KeyValuePairInput] | None = None
     hazard_solution: strawberry.ID | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_openquake_hazard_tasks(info: Info) -> Iterable[OpenquakeHazardTask]:

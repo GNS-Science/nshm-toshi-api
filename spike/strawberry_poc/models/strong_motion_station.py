@@ -12,7 +12,7 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things
 from data.models import StrongMotionStationData
 
-from .common import SmsSiteClass, SmsSiteClassBasis, _try_enum
+from .common import client_mutation_id_input_field, SmsSiteClass, SmsSiteClassBasis, _try_enum
 from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_thing
 
 
@@ -74,6 +74,7 @@ class CreateStrongMotionStationInput:
     soft_clay_or_peat: bool | None = None
     created: str | None = None
     updated: str | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_strong_motion_stations(info: Info) -> Iterable[StrongMotionStation]:

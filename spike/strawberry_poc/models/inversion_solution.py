@@ -21,6 +21,7 @@ from data.models import InversionSolutionData
 
 from .common import (
     BigInt,
+    client_mutation_id_input_field,
     KeyValueListPair,
     KeyValueListPairInput,
     KeyValuePair,
@@ -143,12 +144,14 @@ class CreateInversionSolutionInput:
     metrics: list[KeyValuePairInput] | None = None
     tables: list[LabelledTableRelationInput] | None = None
     predecessors: list[PredecessorInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 @strawberry.input
 class AppendInversionSolutionTablesInput:
     id: strawberry.ID
     tables: list[LabelledTableRelationInput]
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 # ── Resolvers + mutations ─────────────────────────────────────────────────────

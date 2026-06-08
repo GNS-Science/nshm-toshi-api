@@ -10,6 +10,7 @@ from strawberry.types import Info
 
 from data.dynamo import create_thing, get_file, get_thing, list_things
 from data.models import OpenquakeHazardConfigData
+from models.common import client_mutation_id_input_field
 from models.file import ToshiFile
 from models.inversion_solution_nrml import InversionSolutionNrml
 
@@ -89,6 +90,7 @@ class CreateOpenquakeHazardConfigInput:
     template_archive: strawberry.ID
     source_models: list[strawberry.ID] | None = None
     created: str | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_openquake_hazard_configs(info: Info) -> Iterable[OpenquakeHazardConfig]:

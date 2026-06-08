@@ -19,7 +19,7 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import AutomationTaskData
 
-from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
+from .common import client_mutation_id_input_field, EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -172,6 +172,7 @@ class CreateAutomationTaskInput:
     arguments: list[KeyValuePairInput] | None = None
     environment: list[KeyValuePairInput] | None = None
     metrics: list[KeyValuePairInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 @strawberry.input
@@ -183,6 +184,7 @@ class UpdateAutomationTaskInput:
     arguments: list[KeyValuePairInput] | None = None
     environment: list[KeyValuePairInput] | None = None
     metrics: list[KeyValuePairInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 # ── Resolvers ─────────────────────────────────────────────────────────────────

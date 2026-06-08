@@ -11,7 +11,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import AggregateInversionSolutionData
 
-from .common import AggregationFn, BigInt, KeyValuePair, KeyValuePairInput, _try_enum
+from .common import AggregationFn, BigInt, client_mutation_id_input_field, KeyValuePair, KeyValuePairInput, _try_enum
 from .file_interface import FileInterface
 from .inversion_solution import LabelledTableRelation, _ltr_from_dict
 from .inversion_solution_interface import InversionSolutionInterface
@@ -104,6 +104,7 @@ class CreateAggregateInversionSolutionInput:
     meta: list[KeyValuePairInput] | None = None
     created: str | None = None
     predecessors: list[PredecessorInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_aggregate_inversion_solutions(info: Info) -> Iterable[AggregateInversionSolution]:
