@@ -1,4 +1,4 @@
-# ADR-0001: GraphQL Schema Evolution Strategy — Legacy Parity, Modern Defaults, Deprecation Aliases
+# ADR-001: GraphQL Schema Evolution Strategy — Legacy Parity, Modern Defaults, Deprecation Aliases
 
 ## Status
 
@@ -276,12 +276,12 @@ alias.
 
 ## Related decisions
 
-- (Future) ADR-0002: Custom scalar policy — naming, behaviour, and
+- (Future) ADR-002: Custom scalar policy — naming, behaviour, and
   on-disk representation for `DateTime`, `JSONString`, `BigInt`, and
   any future scalars.
-- (Future) ADR-0003: Schema interface hierarchy — `Thing` and
+- (Future) ADR-003: Schema interface hierarchy — `Thing` and
   `AutomationTaskInterface` adoption in POC.
-- (Future) ADR-0004: Deprecation logging and sunset policy — how we
+- (Future) ADR-004: Deprecation logging and sunset policy — how we
   measure deprecated-field usage and when we remove.
-- (Future) ADR-0005: snake_case vs camelCase for client-facing
+- (Future) ADR-005: snake_case vs camelCase for client-facing
   fields — strategic call on whether to undertake the migration.

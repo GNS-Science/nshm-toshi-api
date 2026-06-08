@@ -35,10 +35,10 @@ template](https://github.com/joelparkerhenderson/architecture-decision-record/bl
 extended for our project style:
 
 ```
-# ADR-NNNN: <Short title in title case>
+# ADR-NNN: <Short title in title case>
 
 ## Status
-Proposed | Accepted | Superseded by ADR-XXXX | Deprecated
+Proposed | Accepted | Superseded by ADR-NNN | Deprecated
 
 ## Context
 The problem and the relevant constraints. Include enough domain
@@ -59,16 +59,25 @@ Cross-links to other ADRs.
 
 When a decision touches multiple distinct areas (e.g. naming,
 scalars, deprecation policy), feel free to add a `## Specific
-decisions` section with a table — see `0001-graphql-schema-evolution.md`.
+decisions` section with a table — see
+`ADR-001-graphql-schema-evolution-strategy.md`.
 
-## Numbering
+## Numbering and filename
 
-Sequential, four-digit, zero-padded: `0001`, `0002`, etc. Once
-assigned, the number never changes — even if an ADR is superseded
-(mark it `Superseded by ADR-XXXX` and leave the file in place).
+Sequential, three-digit, zero-padded. Filename pattern:
+
+```
+ADR-NNN-{descriptive-name-in-kebab-case}.md
+```
+
+For example: `ADR-001-graphql-schema-evolution-strategy.md`.
+
+Once a number is assigned it never changes — even if an ADR is
+superseded (mark it `Superseded by ADR-NNN` in the Status section and
+leave the file in place).
 
 ## Index
 
 | # | Title | Status |
 |---|---|---|
-| [0001](0001-graphql-schema-evolution-strategy.md) | GraphQL Schema Evolution Strategy: Legacy Parity, Modern Defaults, Deprecation Aliases | Proposed |
+| [ADR-001](ADR-001-graphql-schema-evolution-strategy.md) | GraphQL Schema Evolution Strategy: Legacy Parity, Modern Defaults, Deprecation Aliases | Proposed |
