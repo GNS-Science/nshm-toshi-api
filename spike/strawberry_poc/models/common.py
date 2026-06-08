@@ -28,6 +28,26 @@ BigInt = strawberry.scalar(
     "Used for file_size where production values can exceed 2GB.",
 )
 
+# ADR-001 Phase 1: restore the legacy typed scalars. Wire format is an ISO 8601
+# string (DateTime) or a JSON-encoded string (JSONString). Python type stays as
+# `str` so we don't force every resolver to construct typed values; the scalar
+# rename is what fixes typed-client codegen parity with legacy.
+DateTime = strawberry.scalar(
+    NewType("DateTime", str),
+    serialize=str,
+    parse_value=str,
+    description="An ISO 8601 datetime string. Wire-compatible with the legacy graphene "
+    "DateTime scalar; typed clients get a `DateTime` rather than a plain `String`.",
+)
+
+JSONString = strawberry.scalar(
+    NewType("JSONString", str),
+    serialize=str,
+    parse_value=str,
+    description="A JSON-encoded string. Wire-compatible with the legacy graphene "
+    "JSONString scalar; used for embedded JSON payloads like Openquake logic trees.",
+)
+
 
 @strawberry.type
 class KeyValuePair:

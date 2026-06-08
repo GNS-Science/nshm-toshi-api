@@ -12,7 +12,7 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things
 from data.models import StrongMotionStationData
 
-from .common import SmsSiteClass, SmsSiteClassBasis, _try_enum
+from .common import DateTime, SmsSiteClass, SmsSiteClassBasis, _try_enum
 from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_thing
 
 
@@ -29,8 +29,8 @@ class StrongMotionStation(relay.Node):
     liquefiable: bool | None = None
     bedrock_encountered: bool | None = None
     soft_clay_or_peat: bool | None = None
-    created: str | None = None
-    updated: str | None = None
+    created: DateTime | None = None
+    updated: DateTime | None = None
 
     files_raw: strawberry.Private[list | None] = None
 
@@ -72,8 +72,8 @@ class CreateStrongMotionStationInput:
     liquefiable: bool | None = None
     bedrock_encountered: bool | None = None
     soft_clay_or_peat: bool | None = None
-    created: str | None = None
-    updated: str | None = None
+    created: DateTime | None = None
+    updated: DateTime | None = None
 
 
 def resolve_strong_motion_stations(info: Info) -> Iterable[StrongMotionStation]:

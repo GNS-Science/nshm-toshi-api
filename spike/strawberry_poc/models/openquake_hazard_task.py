@@ -11,7 +11,7 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import OpenquakeHazardTaskData
 
-from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
+from .common import DateTime, EventResult, EventState, JSONString, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -32,16 +32,16 @@ class OpenquakeHazardTask(relay.Node):
     result: EventResult | None = None
     task_type: TaskSubType | None = None
     model_type: ModelType | None = None
-    created: str | None = None
+    created: DateTime | None = None
     duration: float | None = None
     general_task_id: strawberry.ID | None = None
     arguments: list[KeyValuePair] | None = None
     environment: list[KeyValuePair] | None = None
     metrics: list[KeyValuePair] | None = None
     executor: str | None = None
-    srm_logic_tree: str | None = None  # JSON string
-    gmcm_logic_tree: str | None = None  # JSON string
-    openquake_config: str | None = None  # JSON string
+    srm_logic_tree: JSONString | None = None
+    gmcm_logic_tree: JSONString | None = None
+    openquake_config: JSONString | None = None
 
     files_raw: strawberry.Private[list | None] = None
     parents_raw: strawberry.Private[list | None] = None
@@ -108,7 +108,7 @@ class OpenquakeHazardTask(relay.Node):
 class CreateOpenquakeHazardTaskInput:
     state: EventState
     result: EventResult
-    created: str
+    created: DateTime
     task_type: TaskSubType
     duration: float | None = None
     model_type: ModelType | None = None
@@ -116,9 +116,9 @@ class CreateOpenquakeHazardTaskInput:
     environment: list[KeyValuePairInput] | None = None
     metrics: list[KeyValuePairInput] | None = None
     executor: str | None = None
-    srm_logic_tree: str | None = None
-    gmcm_logic_tree: str | None = None
-    openquake_config: str | None = None
+    srm_logic_tree: JSONString | None = None
+    gmcm_logic_tree: JSONString | None = None
+    openquake_config: JSONString | None = None
     hazard_solution: strawberry.ID | None = None
 
 

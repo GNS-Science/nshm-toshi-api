@@ -9,7 +9,7 @@ from strawberry.types import Info
 from data.dynamo import create_table, get_table
 from data.models import TableData
 
-from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TableType, _try_enum
+from .common import DateTime, KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TableType, _try_enum
 
 
 @strawberry.type
@@ -17,7 +17,7 @@ class Table(relay.Node):
     pk: relay.NodeID[str]
     object_id: strawberry.ID | None = None
     name: str | None = None
-    created: str | None = None
+    created: DateTime | None = None
     column_headers: list[str] | None = None
     column_types: list[str] | None = None
     rows: list[list[str]] | None = None
@@ -52,7 +52,7 @@ class Table(relay.Node):
 class CreateTableInput:
     object_id: strawberry.ID
     name: str | None = None
-    created: str | None = None
+    created: DateTime | None = None
     column_headers: list[str] | None = None
     column_types: list[str] | None = None
     rows: list[list[str]] | None = None

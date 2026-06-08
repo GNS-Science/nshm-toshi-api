@@ -5,7 +5,7 @@ from strawberry.types import Info
 
 from data.s3 import presigned_download_url
 
-from .common import BigInt, KeyValuePair
+from .common import BigInt, DateTime, JSONString, KeyValuePair
 
 
 @strawberry.interface
@@ -15,7 +15,7 @@ class FileInterface:
     file_name: str | None = None
     md5_digest: str | None = None
     file_size: BigInt | None = None
-    created: str | None = None
+    created: DateTime | None = None
     meta: list[KeyValuePair] | None = None
 
     @strawberry.field
@@ -31,5 +31,5 @@ class FileInterface:
         return None
 
     @strawberry.field
-    def post_data_v2(self) -> str | None:
+    def post_data_v2(self) -> JSONString | None:
         return None
