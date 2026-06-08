@@ -22,6 +22,7 @@ import data.search as _data_search
 from data.dynamo import es_key_for, get_object, scan_objects_paginated
 from data.s3 import scan_s3_paginated
 from data.search import search as es_search
+from models.page_info import CompatListConnection
 from models.aggregate_inversion_solution import (
     AggregateInversionSolution,
     CreateAggregateInversionSolutionInput,
@@ -353,65 +354,65 @@ class Query:
     def about(self) -> str:
         return "Hello, I am nshm_toshi_api (Strawberry POC)! [AUTH]"
 
-    @relay.connection(relay.ListConnection[GeneralTask])
+    @relay.connection(CompatListConnection[GeneralTask])
     def general_tasks(self, info: strawberry.types.Info) -> Iterable[GeneralTask]:
         return resolve_general_tasks(info)
 
-    @relay.connection(relay.ListConnection[RuptureSet])
+    @relay.connection(CompatListConnection[RuptureSet])
     def rupture_sets(self, info: strawberry.types.Info) -> Iterable[RuptureSet]:
         return resolve_rupture_sets(info)
 
-    @relay.connection(relay.ListConnection[ToshiFile])
+    @relay.connection(CompatListConnection[ToshiFile])
     def files(self, info: strawberry.types.Info) -> Iterable[ToshiFile]:
         return resolve_files(info)
 
-    @relay.connection(relay.ListConnection[SmsFile])
+    @relay.connection(CompatListConnection[SmsFile])
     def sms_files(self, info: strawberry.types.Info) -> Iterable[SmsFile]:
         return resolve_sms_files(info)
 
-    @relay.connection(relay.ListConnection[StrongMotionStation])
+    @relay.connection(CompatListConnection[StrongMotionStation])
     def strong_motion_stations(self, info: strawberry.types.Info) -> Iterable[StrongMotionStation]:
         return resolve_strong_motion_stations(info)
 
-    @relay.connection(relay.ListConnection[AutomationTask])
+    @relay.connection(CompatListConnection[AutomationTask])
     def automation_tasks(self, info: strawberry.types.Info) -> Iterable[AutomationTask]:
         return resolve_automation_tasks(info)
 
-    @relay.connection(relay.ListConnection[RuptureGenerationTask])
+    @relay.connection(CompatListConnection[RuptureGenerationTask])
     def rupture_generation_tasks(self, info: strawberry.types.Info) -> Iterable[RuptureGenerationTask]:
         return resolve_rupture_generation_tasks(info)
 
-    @relay.connection(relay.ListConnection[InversionSolution])
+    @relay.connection(CompatListConnection[InversionSolution])
     def inversion_solutions(self, info: strawberry.types.Info) -> Iterable[InversionSolution]:
         return resolve_inversion_solutions(info)
 
-    @relay.connection(relay.ListConnection[ScaledInversionSolution])
+    @relay.connection(CompatListConnection[ScaledInversionSolution])
     def scaled_inversion_solutions(self, info: strawberry.types.Info) -> Iterable[ScaledInversionSolution]:
         return resolve_scaled_inversion_solutions(info)
 
-    @relay.connection(relay.ListConnection[AggregateInversionSolution])
+    @relay.connection(CompatListConnection[AggregateInversionSolution])
     def aggregate_inversion_solutions(self, info: strawberry.types.Info) -> Iterable[AggregateInversionSolution]:
         return resolve_aggregate_inversion_solutions(info)
 
-    @relay.connection(relay.ListConnection[TimeDependentInversionSolution])
+    @relay.connection(CompatListConnection[TimeDependentInversionSolution])
     def time_dependent_inversion_solutions(
         self, info: strawberry.types.Info
     ) -> Iterable[TimeDependentInversionSolution]:
         return resolve_time_dependent_inversion_solutions(info)
 
-    @relay.connection(relay.ListConnection[InversionSolutionNrml])
+    @relay.connection(CompatListConnection[InversionSolutionNrml])
     def inversion_solution_nrmls(self, info: strawberry.types.Info) -> Iterable[InversionSolutionNrml]:
         return resolve_inversion_solution_nrmls(info)
 
-    @relay.connection(relay.ListConnection[OpenquakeHazardConfig])
+    @relay.connection(CompatListConnection[OpenquakeHazardConfig])
     def openquake_hazard_configs(self, info: strawberry.types.Info) -> Iterable[OpenquakeHazardConfig]:
         return resolve_openquake_hazard_configs(info)
 
-    @relay.connection(relay.ListConnection[OpenquakeHazardSolution])
+    @relay.connection(CompatListConnection[OpenquakeHazardSolution])
     def openquake_hazard_solutions(self, info: strawberry.types.Info) -> Iterable[OpenquakeHazardSolution]:
         return resolve_openquake_hazard_solutions(info)
 
-    @relay.connection(relay.ListConnection[OpenquakeHazardTask])
+    @relay.connection(CompatListConnection[OpenquakeHazardTask])
     def openquake_hazard_tasks(self, info: strawberry.types.Info) -> Iterable[OpenquakeHazardTask]:
         return resolve_openquake_hazard_tasks(info)
 
