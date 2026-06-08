@@ -16,7 +16,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import ToshiFileData
 
-from .common import BigInt, KeyValuePair, KeyValuePairInput
+from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput
 from .file_interface import FileInterface
 from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
@@ -64,7 +64,7 @@ class CreateFileInput:
     md5_digest: str | None = None
     file_size: BigInt | None = None
     meta: list[KeyValuePairInput] | None = None
-    created: str | None = None
+    created: DateTime | None = None
 
 
 def resolve_files(info: Info) -> Iterable[ToshiFile]:

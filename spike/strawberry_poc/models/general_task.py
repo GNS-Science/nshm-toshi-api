@@ -19,6 +19,7 @@ from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import GeneralTaskData
 
 from .common import (
+    DateTime,
     EventResult,
     KeyValueListPair,
     KeyValueListPairInput,
@@ -49,8 +50,8 @@ class GeneralTask(relay.Node):
     title: str | None = None
     description: str | None = None
     agent_name: str | None = None
-    created: str | None = None
-    updated: str | None = None
+    created: DateTime | None = None
+    updated: DateTime | None = None
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: TaskSubType | None = None
@@ -121,7 +122,7 @@ class CreateGeneralTaskInput:
     title: str | None = None
     description: str | None = None
     agent_name: str | None = None
-    created: str | None = None
+    created: DateTime | None = None
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: TaskSubType | None = None
@@ -137,7 +138,7 @@ class UpdateGeneralTaskInput:
     title: str | None = None
     description: str | None = None
     agent_name: str | None = None
-    updated: str | None = None
+    updated: DateTime | None = None
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: TaskSubType | None = None

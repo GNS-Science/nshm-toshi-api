@@ -21,6 +21,7 @@ from data.models import InversionSolutionData
 
 from .common import (
     BigInt,
+    DateTime,
     KeyValueListPair,
     KeyValueListPairInput,
     KeyValuePair,
@@ -47,7 +48,7 @@ class LabelledTableRelation:
     """A labelled reference to a ToshiTableObject, stored inline in the parent."""
 
     identity: str | None = None
-    created: str | None = None
+    created: DateTime | None = None
     produced_by_id: strawberry.ID | None = None
     label: str | None = None
     table_id: strawberry.ID | None = None
@@ -138,7 +139,7 @@ class CreateInversionSolutionInput:
     md5_digest: str | None = None
     file_size: BigInt | None = None
     meta: list[KeyValuePairInput] | None = None
-    created: str | None = None
+    created: DateTime | None = None
     produced_by: strawberry.ID | None = None
     metrics: list[KeyValuePairInput] | None = None
     tables: list[LabelledTableRelationInput] | None = None

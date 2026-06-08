@@ -11,7 +11,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import AggregateInversionSolutionData
 
-from .common import AggregationFn, BigInt, KeyValuePair, KeyValuePairInput, _try_enum
+from .common import AggregationFn, BigInt, DateTime, KeyValuePair, KeyValuePairInput, _try_enum
 from .file_interface import FileInterface
 from .inversion_solution import LabelledTableRelation, _ltr_from_dict
 from .inversion_solution_interface import InversionSolutionInterface
@@ -102,7 +102,7 @@ class CreateAggregateInversionSolutionInput:
     md5_digest: str | None = None
     file_size: BigInt | None = None
     meta: list[KeyValuePairInput] | None = None
-    created: str | None = None
+    created: DateTime | None = None
     predecessors: list[PredecessorInput] | None = None
 
 

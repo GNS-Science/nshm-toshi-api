@@ -18,7 +18,7 @@ from data.dynamo import create_file, get_file, get_thing, list_files
 from data.models import RuptureSetData
 
 from .automation_task import RuptureGenerationTask  # noqa: F401 — re-exported for schema.py
-from .common import BigInt, KeyValuePair, KeyValuePairInput
+from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput
 from .file_interface import FileInterface
 
 # ── RuptureSet ────────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ class CreateRuptureSetInput:
     produced_by: strawberry.ID
     md5_digest: str | None = None
     file_size: BigInt | None = None
-    created: str | None = None
+    created: DateTime | None = None
     fault_models: list[str] | None = None
     metrics: list[KeyValuePairInput] | None = None
 

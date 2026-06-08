@@ -19,7 +19,7 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import AutomationTaskData
 
-from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
+from .common import DateTime, EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -49,7 +49,7 @@ class AutomationTask(relay.Node):
     result: EventResult | None = None
     task_type: TaskSubType | None = None
     model_type: ModelType | None = None
-    created: str | None = None
+    created: DateTime | None = None
     duration: float | None = None
     general_task_id: strawberry.ID | None = None
     arguments: list[KeyValuePair] | None = None
@@ -110,7 +110,7 @@ class RuptureGenerationTask(relay.Node):
     state: EventState | None = None
     result: EventResult | None = None
     task_type: TaskSubType | None = None
-    created: str | None = None
+    created: DateTime | None = None
     duration: float | None = None
     general_task_id: strawberry.ID | None = None
     arguments: list[KeyValuePair] | None = None
@@ -165,7 +165,7 @@ class RuptureGenerationTask(relay.Node):
 class CreateAutomationTaskInput:
     state: EventState
     result: EventResult
-    created: str
+    created: DateTime
     task_type: TaskSubType
     duration: float | None = None
     model_type: ModelType | None = None

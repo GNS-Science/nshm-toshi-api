@@ -21,7 +21,7 @@ from strawberry.types import Info
 
 from data.dynamo import get_table, get_thing
 
-from .common import BigInt, KeyValuePair, TableType
+from .common import BigInt, DateTime, KeyValuePair, TableType
 from .relations import InversionSolutionRelations, build_file_relations_for_file
 
 # ── Lazy forward refs ─────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ class InversionSolutionInterface:
     file_name: str | None = None
     md5_digest: str | None = None
     file_size: BigInt | None = None
-    created: str | None = None
+    created: DateTime | None = None
     meta: list[KeyValuePair] | None = None
 
     @strawberry.field

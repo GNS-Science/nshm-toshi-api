@@ -13,7 +13,7 @@ from data.models import OpenquakeHazardSolutionData
 from models.file import ToshiFile
 from models.openquake_hazard_task import OpenquakeHazardTask
 
-from .common import KeyValuePair, KeyValuePairInput, OpenquakeTaskType
+from .common import DateTime, KeyValuePair, KeyValuePairInput, OpenquakeTaskType
 from .predecessor import PredecessorInput
 from .predecessors_interface import PredecessorsInterface
 
@@ -24,7 +24,7 @@ _ToshiFile = Annotated["ToshiFile", strawberry.lazy("models.file")]
 @strawberry.type
 class OpenquakeHazardSolution(relay.Node, PredecessorsInterface):
     pk: relay.NodeID[str]
-    created: str | None = None
+    created: DateTime | None = None
     task_type: OpenquakeTaskType | None = None
     metrics: list[KeyValuePair] | None = None
     meta: list[KeyValuePair] | None = None
@@ -98,7 +98,7 @@ class OpenquakeHazardSolution(relay.Node, PredecessorsInterface):
 class CreateOpenquakeHazardSolutionInput:
     produced_by: strawberry.ID
     task_type: OpenquakeTaskType
-    created: str | None = None
+    created: DateTime | None = None
     csv_archive: strawberry.ID | None = None
     hdf5_archive: strawberry.ID | None = None
     task_args: strawberry.ID | None = None
