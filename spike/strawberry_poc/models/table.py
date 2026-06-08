@@ -9,7 +9,7 @@ from strawberry.types import Info
 from data.dynamo import create_table, get_table
 from data.models import TableData
 
-from .common import DateTime, KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TableType, _try_enum
+from .common import DateTime, KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TableType, _try_enum, client_mutation_id_input_field
 
 
 @strawberry.type
@@ -59,6 +59,7 @@ class CreateTableInput:
     meta: list[KeyValuePairInput] | None = None
     table_type: TableType | None = None
     dimensions: list[KeyValueListPairInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def mutate_create_table(info: Info, input: CreateTableInput) -> Table:

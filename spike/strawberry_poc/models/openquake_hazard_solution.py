@@ -13,7 +13,7 @@ from data.models import OpenquakeHazardSolutionData
 from models.file import ToshiFile
 from models.openquake_hazard_task import OpenquakeHazardTask
 
-from .common import DateTime, KeyValuePair, KeyValuePairInput, OpenquakeTaskType
+from .common import DateTime, KeyValuePair, KeyValuePairInput, OpenquakeTaskType, client_mutation_id_input_field
 from .predecessor import PredecessorInput
 from .predecessors_interface import PredecessorsInterface
 
@@ -105,6 +105,7 @@ class CreateOpenquakeHazardSolutionInput:
     metrics: list[KeyValuePairInput] | None = None
     meta: list[KeyValuePairInput] | None = None
     predecessors: list[PredecessorInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_openquake_hazard_solutions(info: Info) -> Iterable[OpenquakeHazardSolution]:

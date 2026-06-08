@@ -11,7 +11,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import TimeDependentInversionSolutionData
 
-from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput
+from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
 from .file_interface import FileInterface
 from .inversion_solution import InversionSolution, LabelledTableRelation, _ltr_from_dict
 from .inversion_solution_interface import InversionSolutionInterface
@@ -78,6 +78,7 @@ class CreateTimeDependentInversionSolutionInput:
     meta: list[KeyValuePairInput] | None = None
     created: DateTime | None = None
     predecessors: list[PredecessorInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_time_dependent_inversion_solutions(info: Info) -> Iterable[TimeDependentInversionSolution]:

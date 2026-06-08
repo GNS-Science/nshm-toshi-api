@@ -11,7 +11,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import InversionSolutionNrmlData
 
-from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput
+from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
 from .file_interface import FileInterface
 from .predecessor import PredecessorInput
 from .predecessors_interface import PredecessorsInterface
@@ -65,6 +65,7 @@ class CreateInversionSolutionNrmlInput:
     meta: list[KeyValuePairInput] | None = None
     created: DateTime | None = None
     predecessors: list[PredecessorInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_inversion_solution_nrmls(info: Info) -> Iterable[InversionSolutionNrml]:

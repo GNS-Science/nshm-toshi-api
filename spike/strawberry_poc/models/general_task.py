@@ -20,6 +20,7 @@ from data.models import GeneralTaskData
 
 from .common import (
     DateTime,
+    client_mutation_id_input_field,
     EventResult,
     KeyValueListPair,
     KeyValueListPairInput,
@@ -130,6 +131,7 @@ class CreateGeneralTaskInput:
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPairInput] | None = None
     meta: list[KeyValuePairInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 @strawberry.input
@@ -146,6 +148,7 @@ class UpdateGeneralTaskInput:
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPairInput] | None = None
     meta: list[KeyValuePairInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_general_tasks(info: Info) -> Iterable[GeneralTask]:

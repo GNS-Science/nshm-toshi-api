@@ -23,6 +23,7 @@ from data.dynamo import create_file_relation, create_task_relation, get_file, ge
 
 from .common import FileRole
 from .page_info import CompatListConnection
+from .common import client_mutation_id_input_field, FileRole
 
 # ── Lazy forward references (break circular deps) ─────────────────────────────
 
@@ -269,12 +270,14 @@ class CreateFileRelationInput:
     thing_id: strawberry.ID
     file_id: strawberry.ID
     role: FileRole
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 @strawberry.input
 class CreateTaskRelationInput:
     parent_id: strawberry.ID
     child_id: strawberry.ID
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 # ── Builder helpers (called from Thing/File from_dict) ────────────────────────

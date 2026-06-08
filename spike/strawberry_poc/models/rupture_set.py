@@ -18,7 +18,7 @@ from data.dynamo import create_file, get_file, get_thing, list_files
 from data.models import RuptureSetData
 
 from .automation_task import RuptureGenerationTask  # noqa: F401 — re-exported for schema.py
-from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput
+from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
 from .file_interface import FileInterface
 
 # ── RuptureSet ────────────────────────────────────────────────────────────────
@@ -77,6 +77,7 @@ class CreateRuptureSetInput:
     created: DateTime | None = None
     fault_models: list[str] | None = None
     metrics: list[KeyValuePairInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_rupture_sets(info: Info) -> Iterable[RuptureSet]:
