@@ -81,7 +81,7 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage (open work)  ⛔ Documented e
 | `object_iteration/test_iterate_items.py` | 2 | ⛔ Ex-H — exercises Graphene's class-graph iteration; POC uses an explicit dispatch registry (`models/_dispatch.py`) | — | ⛔ |
 | `object_iteration/test_iterate_schema_types.py` | 1 | ⛔ Ex-H — same | — | ⛔ |
 | `swept_arguments/test_baseline_swept_arguments.py` | 2 | `test_general_task.py::test_swept_arguments` (computed swept_arguments field) | 1 | ✅ |
-| `swept_arguments/test_automation_task_swept_arg_validation.py` | 4 | — | — | ⚠️ Gap 14 — AT-vs-GT argument validation still open |
+| `swept_arguments/test_automation_task_swept_arg_validation.py` | 4 (15 parametrized) | `test_bugfix_gap14_swept_arg_validation.py` | 10 | ✅ |
 
 **Totals:**
 - Legacy total tests: ~178 (across all directories)
@@ -480,11 +480,21 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage (open work)  ⛔ Documented e
 - **Closest POC equivalent:** POC `schema.py` implements `nodes` query and it is exercised through individual mutations, but there is no dedicated test for the multi-fetch query with interface fragment expansion including parent traversal
 - **Gap severity:** **Critical** — weka uses `nodes(id_in: [...])` with deep `AutomationTaskInterface.parents` expansion as its primary batch data-retrieval pattern
 
-### Gap 14: Swept argument validation on AutomationTask creation
+### Gap 14: Swept argument validation on AutomationTask creation — **CLOSED**
 
-- **Legacy files:** `swept_arguments/test_automation_task_swept_arg_validation.py` (4 tests) — verifies that AutomationTask arguments must align with the parent GeneralTask's swept arguments; error cases when required swept arg is missing or value not in GT's list
-- **Closest POC equivalent:** `test_general_task.py::test_swept_arguments` tests the GT swept_arguments computation; no AT argument validation against GT exists in POC
-- **Gap severity:** **Medium** — validation was added to prevent malformed experiment data; clients set arguments explicitly so this rarely fails in practice
+- **Legacy file:** `swept_arguments/test_automation_task_swept_arg_validation.py` — 4 test methods, 15 parametrized cases. Covers: AT created with `general_task_id` set validates `arguments` against parent GT's `swept_arguments`; missing GT lookups fail; wrong-typed GT IDs fail; AT created without `general_task_id` skips validation entirely.
+- **Original POC divergences:**
+  - `CreateAutomationTaskInput` didn't expose `general_task_id` (legacy SDL: `general_task_id: ID`). Schema gap.
+  - `mutate_create_automation_task` performed no validation against the parent GT — even when an AT was clearly intended as a child of a swept GT, malformed `arguments` were silently accepted.
+- **Closed in this PR:**
+  - `models/automation_task.py::CreateAutomationTaskInput` now declares `general_task_id: strawberry.ID | None = None`.
+  - `_validate_at_arguments_against_gt(dynamodb, gt_id, at_arguments)` mirrors `graphql_api/schema/custom/automation_task.py:197-234`:
+    - Decodes the relay global ID; surfaces `is not a `GeneralTask`` if the type_name is wrong.
+    - Looks up the GT via `get_thing`; surfaces `was not found` on miss.
+    - Iterates the GT's swept keys (`argument_lists` items where `len(v) > 1`); surfaces `swept key X from GeneralTask.swept_arguments was not found in new AutomationTask.` if the AT lacks the key, and `not a member of GeneralTask.swept_arguments values` if the value isn't in the GT's list.
+  - `mutate_create_automation_task` calls the validator when `general_task_id` is set; when omitted, validation is skipped (matches legacy `test_argument_skip_validation_with_no_gt_OK`).
+  - `_build_payload` now threads `general_task_id` through so the AT record is persisted with the link.
+  - `tests/test_bugfix_gap14_swept_arg_validation.py` adds 10 tests across the four legacy groups: 2 OK cases, 3 skip-validation-when-no-gt cases, 3 expected-fail cases, 2 invalid-gt-id cases.
 
 ### Gap 15: `hazard/test_bugfix_167_missing_fileunion.py`
 
@@ -729,10 +739,9 @@ The following gaps represent the highest-value work to close, ordered by severit
 
 ### Open — needs follow-up work
 
-After the sweep, only two items remain genuinely-open (not Documented Exceptions):
+After Gap 14 closure, only one item remains genuinely-open (not a Documented Exception):
 
 - **Gap 8** — Elasticsearch search-manager unit tests (9). Integration smoketests cover the path; unit-level regression coverage on `_dispatch_search` is missing.
-- **Gap 14** — Swept-argument validation on AutomationTask creation (4 legacy tests).
 
 Low priority follow-ups (POC ship is not blocked on these):
 - `post_url`-family field coverage on file types other than RuptureSet — same `presigned_post_for_file` pattern from Gap 4 closure can be applied if a client surfaces a need.
