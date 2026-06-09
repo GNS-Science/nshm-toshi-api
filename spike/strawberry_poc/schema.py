@@ -324,7 +324,7 @@ class UpdateOpenquakeHazardTaskPayload:
     task_result: OpenquakeHazardTask | None = None
 
 
-@strawberry.type
+@strawberry.type(name="NodeFilter")
 class NodeFilterPayload:
     ok: bool = False
     result: SearchResultConnection = strawberry.field(default_factory=SearchResultConnection)

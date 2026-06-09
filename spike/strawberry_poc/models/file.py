@@ -21,7 +21,7 @@ from .file_interface import FileInterface
 from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
 
-@strawberry.type
+@strawberry.type(name="File")
 class ToshiFile(relay.Node, FileInterface):
     """A file stored in S3 and indexed in DynamoDB."""
 

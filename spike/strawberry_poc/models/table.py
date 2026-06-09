@@ -9,7 +9,15 @@ from strawberry.types import Info
 from data.dynamo import create_table, get_table
 from data.models import TableData
 
-from .common import KeyValueListPair, KeyValueListPairInput, KeyValuePair, KeyValuePairInput, TableType, _try_enum
+from .common import (
+    KeyValueListPair,
+    KeyValueListPairInput,
+    KeyValuePair,
+    KeyValuePairInput,
+    RowItemType,
+    TableType,
+    _try_enum,
+)
 
 
 @strawberry.type
@@ -19,7 +27,7 @@ class Table(relay.Node):
     name: str | None = None
     created: str | None = None
     column_headers: list[str] | None = None
-    column_types: list[str] | None = None
+    column_types: list[RowItemType] | None = None
     rows: list[list[str]] | None = None
     meta: list[KeyValuePair] | None = None
     table_type: TableType | None = None
@@ -40,7 +48,9 @@ class Table(relay.Node):
             name=d.name,
             created=d.created,
             column_headers=d.column_headers,
-            column_types=d.column_types,
+            column_types=[RowItemType[v] for v in d.column_types if v in RowItemType.__members__]
+            if d.column_types
+            else None,
             rows=d.rows,
             meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
             table_type=table_type,
@@ -54,7 +64,7 @@ class CreateTableInput:
     name: str | None = None
     created: str | None = None
     column_headers: list[str] | None = None
-    column_types: list[str] | None = None
+    column_types: list[RowItemType] | None = None
     rows: list[list[str]] | None = None
     meta: list[KeyValuePairInput] | None = None
     table_type: TableType | None = None
@@ -69,7 +79,7 @@ def mutate_create_table(info: Info, input: CreateTableInput) -> Table:
         "name": input.name,
         "created": input.created,
         "column_headers": input.column_headers,
-        "column_types": input.column_types,
+        "column_types": [v.name for v in input.column_types] if input.column_types else None,
         "rows": input.rows,
         "meta": meta,
         "table_type": input.table_type.value if input.table_type else None,

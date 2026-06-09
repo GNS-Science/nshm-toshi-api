@@ -132,7 +132,7 @@ def _seed_toshi_file(gql_context, label="table.hdf5"):
         {"file_name": label},
     )
     raw_id = data["object_id"]
-    return base64.b64encode(f"ToshiFile:{raw_id}".encode()).decode()
+    return base64.b64encode(f"File:{raw_id}".encode()).decode()
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────

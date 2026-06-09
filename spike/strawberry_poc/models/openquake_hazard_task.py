@@ -12,6 +12,7 @@ from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import OpenquakeHazardTaskData
 
 from .common import EventResult, EventState, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum
+from .inversion_solution_union import InversionSolutionUnion, resolve_task_inversion_solution
 from .relations import (
     FileRelation,
     FileRelationsConnection,
@@ -59,6 +60,10 @@ class OpenquakeHazardTask(relay.Node):
     @relay.connection(TaskRelationsConnection)
     def children(self, info: Info) -> list[TaskTaskRelation]:
         return build_task_children(self.pk, self.children_raw or [])
+
+    @strawberry.field
+    def inversion_solution(self, info: Info) -> InversionSolutionUnion | None:
+        return resolve_task_inversion_solution(info.context["dynamodb"], self.files_raw)
 
     @strawberry.field
     def hazard_solution(self, info: Info) -> _OpenquakeHazardSolution | None:
