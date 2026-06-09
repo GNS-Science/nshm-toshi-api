@@ -23,7 +23,7 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | `test_sms_file_link_schema.py` | 2 | `test_sms_file.py` + `test_smoketest_ab.py` | 4+partial | ⚠️ |
 | `test_task_task_relations_db.py` | 1 | `test_general_task.py` + `test_smoketest_ab.py` | — | ⚠️ |
 | `test_file_relation_bugfix_126.py` | 5 | `test_file_relation.py` | 3 | ⚠️ |
-| `test_file_relation_compression.py` | 3 | — | — | ❌ (High — see Gap 6) |
+| `test_file_relation_compression.py` | 3 | `test_file_relation_compression.py` | 6 | ✅ |
 | `test_nodes_bugfix_220.py` | 3 | `test_inversion_solution.py` (partial) | — | ⚠️ |
 | `test_general_task_bugfix_29.py` | 1 | `test_general_task.py` | — | ⚠️ |
 | `test_general_task_bugfix_217.py` | 1 | — | — | ❌ |
@@ -346,7 +346,7 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | Field: `file_id` | Yes | Yes | Yes | implicit |
 | Field: `file` (resolved) | Yes | Yes | Yes | Yes |
 | Field: `thing` (resolved) | Yes | Yes | Yes | Yes |
-| Relation compression (>100 relations stored as compressed string) | Yes | Yes (3 tests) | **No — High-severity gap** | No |
+| Relation compression (>100 relations stored as compressed string) | Yes | Yes (3 tests) | Yes | Yes (6 tests) |
 
 ### TaskTaskRelation
 
@@ -397,18 +397,17 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 - **Closest POC equivalent:** `test_table.py` tests create/lookup but does not use `name` and has no error case test
 - **Gap severity:** **High** — the `name` field is used by nzshm-runzi when creating tables; the error handling test protects a regression introduced by bugfix 252
 
-### Gap 6: File relation compression
+### Gap 6: File relation compression — **CLOSED**
 
 - **Legacy file:** `test_file_relation_compression.py` — 3 tests: counting relations in a 390k-relation scenario; adding with compression; round-trip with compression
-- **What it exercises:** That the data layer compresses and decompresses large `relations` lists stored in DynamoDB
-- **Storage shape (corrected from earlier analysis):** Both legacy and POC store relations as an embedded array under `ToshiFileObject.object_content.relations`. The POC's storage shape is **identical** to legacy — only the compression behaviour differs.
-- **POC behaviour:** No compression on write (`data/dynamo.py` `_patch_file` appends unconditionally). No decompression on read (`get_file` returns `object_content` as-is). Pydantic `ToshiFileData.relations` is typed as `list[dict] | None`; a compressed-string value would fail validation.
-- **Concrete bugs this introduces in the POC:**
-  1. **Read failure on legacy data.** Any production File with >100 relations is currently stored as a base64-encoded zlib string (`compress_string(json.dumps(relations))`). The POC's `from_dict` will fail Pydantic validation on those rows, propagating as "Unexpected error" on every field of the affected node — same failure mode as the production GeneralTask incident, but for any RuptureSet that's been used by many tasks.
-  2. **Write failure at DynamoDB's 400KB item limit.** Without compression, a list of `{"id": "...", "role": "read"}` entries (~40 bytes each in JSON) hits the limit at roughly 10,000 entries. Legacy fits ~80,000 in the same space via compression. Files aggregating many tasks (RuptureSets in active inversion pipelines) will fail `put_item` with `ValidationException`.
-- **Closest POC equivalent:** None — needs implementation.
-- **Fix shape:** Port `nzshm_common.util.compress_string` / `decompress_string` calls; ~30 lines in `data/dynamo.py` (read-side `_ensure_decompressed` in `get_file`/`list_files`, write-side threshold check in `create_file_relation`).
-- **Gap severity:** **High** — this is required for read interoperability with production data, not just for archival migration. Was previously misclassified as Low/N/A.
+- **Storage shape:** Both legacy and POC store relations as an embedded array under `ToshiFileObject.object_content.relations`. Storage shape is **identical** — only the compression behaviour differed.
+- **Original concrete bugs this would have introduced:**
+  1. **Read failure on legacy data.** Any production File with >100 relations is stored as a base64-encoded zlib string (`compress_string(json.dumps(relations))`). The POC's Pydantic validation on `ToshiFileData.relations: list[dict] | None` rejected strings — propagating as "Unexpected error" on every field of the affected node.
+  2. **Write failure at DynamoDB's 400KB item-size limit.** Without compression, a list of `{"id": "...", "role": "read"}` entries (~40 bytes each in JSON) hits the limit at roughly 10,000 entries. Legacy fits ~80,000 in the same space via compression.
+- **Closed in this PR (`strawberry-poc-compression`, commit 47bd09a):**
+  - Ported `nzshm_common.util.compress_string` / `decompress_string` into `data/dynamo.py` (`_ensure_decompressed`, `_decompress_file_relations` helpers wired into `get_file`, `list_files`, `create_file_relation`).
+  - Write-side threshold: `relations` is compressed to a string once `len(relations) > UNCOMPRESSED_LIMIT=100`, matching legacy semantics.
+  - Added `tests/test_file_relation_compression.py` (6 tests): legacy compressed-row decompression, GraphQL round-trip of >100-relation files, the threshold flip, and a 1000-relation stress test.
 
 ### Gap 7: S3 fallback and DynamoDB + S3 combined queries
 
@@ -629,6 +628,13 @@ The following gaps represent the highest-value work to close, ordered by severit
 9. **Rupture set upload / `post_url`** — schema-level test only (post_url returns null in POC; real S3 wiring deferred).
 10. ~~**`update_automation_task` ES re-indexing**~~ — done; automatic via existing `update_thing` → `index_document` path, asserted via monkeypatch in test.
 
-### Open — needs a follow-up PR
+11. ~~**File relation compression (Gap 6)**~~ — done in `strawberry-poc-compression` (commit 47bd09a, folded into #310). `nzshm_common.util.compress_string`/`decompress_string` wired into `get_file`/`list_files`/`create_file_relation`; write threshold at `UNCOMPRESSED_LIMIT=100` matches legacy. 6 tests in `tests/test_file_relation_compression.py`.
 
-11. **File relation compression (Gap 6)** — High severity (re-categorised from earlier "Low/N/A" misanalysis). Port `nzshm_common.util.compress_string` / `decompress_string` calls into `data/dynamo.py`. Two failure modes today: (a) the POC's Pydantic validation crashes on legacy compressed-string rows; (b) without compression on write, files with >~10,000 relations hit DynamoDB's 400KB item limit (legacy fits ~80,000 via compression). See Gap 6 detail above for exact patch shape.
+### Open — needs follow-up work
+
+The genuinely-open items after #310 + #313 are lower priority than the above:
+
+- **Gap 4** — Rupture set mutation-validation tests (4) and real S3 presigned-POST upload workflow (1).
+- **Gap 8** — Elasticsearch search-manager unit tests (9). Integration smoketests cover the path; unit-level regression coverage on `_dispatch_search` is missing.
+- **Gap 14** — Swept-argument validation on AutomationTask creation (4 legacy tests).
+- Low priority: Gap 9 (download URL bugfix 211; architecture-specific), Gap 15 (bug 167 fileunion regression), `post_url`-family field coverage on multiple types.
