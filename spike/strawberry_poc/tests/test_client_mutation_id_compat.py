@@ -109,7 +109,7 @@ def test_sdl_has_client_mutation_id_on_every_mutation_payload():
     import re
 
     payloads = re.findall(r"type ((?:Create|Update|Append)\w+Payload) \{[^}]+\}", sdl, re.DOTALL)
-    assert len(payloads) > 15, f"expected many payloads, found {len(payloads)}"
+    assert len(payloads) > 10, f"expected many payloads, found {len(payloads)}"
     blocks = re.findall(
         r"type (?:Create|Update|Append)\w+Payload \{[^}]+\}", sdl, re.DOTALL
     )

@@ -221,6 +221,14 @@ class TableType(enum.Enum):
 
 
 @strawberry.enum
+class RowItemType(enum.Enum):
+    integer = "INT"
+    double = "DBL"
+    string = "STR"
+    boolean = "BOO"
+
+
+@strawberry.enum
 class AncestryLabel(enum.Enum):
     SIBLING = 0
     PARENT = -1

@@ -44,7 +44,7 @@ query GetTask($id: ID!) {
                     node {
                         role
                         file {
-                            ... on ToshiFile { id }
+                            ... on File { id }
                         }
                     }
                 }

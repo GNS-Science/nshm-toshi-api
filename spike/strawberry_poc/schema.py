@@ -348,7 +348,7 @@ class UpdateOpenquakeHazardTaskPayload:
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
 
-@strawberry.type
+@strawberry.type(name="NodeFilter")
 class NodeFilterPayload:
     ok: bool = False
     result: SearchResultConnection = strawberry.field(default_factory=SearchResultConnection)

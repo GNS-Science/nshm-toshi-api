@@ -112,7 +112,7 @@ def _seed_mfd_table(gql_context, rgt_id: str) -> str:
                 "table_type": "MFD_CURVES_V2",
                 "created": "2024-01-01T00:00:00Z",
                 "column_headers": ["mag", "rate"],
-                "column_types": ["float", "float"],
+                "column_types": ["double", "double"],
                 "rows": [["7.0", "1e-5"], ["7.5", "5e-6"]],
             }
         },

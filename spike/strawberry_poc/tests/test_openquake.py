@@ -82,7 +82,7 @@ mutation CreateOQConfig($input: CreateOpenquakeHazardConfigInput!) {
                 file_name
             }
             source_models {
-                ... on ToshiFile {
+                ... on File {
                     id
                     file_name
                 }
@@ -127,7 +127,7 @@ def _seed_toshi_file(gql_context, name="archive.zip"):
 
     data = create_file(gql_context["dynamodb"], "ToshiFile", {"file_name": name})
     raw_id = data["object_id"]
-    return base64.b64encode(f"ToshiFile:{raw_id}".encode()).decode()
+    return base64.b64encode(f"File:{raw_id}".encode()).decode()
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -463,9 +463,9 @@ mutation CreateSolutionFull($input: CreateOpenquakeHazardSolutionInput!) {
         openquake_hazard_solution {
             id
             task_type
-            csv_archive { ... on ToshiFile { id file_name } }
-            hdf5_archive { ... on ToshiFile { id file_name } }
-            task_args { ... on ToshiFile { id file_name } }
+            csv_archive { ... on File { id file_name } }
+            hdf5_archive { ... on File { id file_name } }
+            task_args { ... on File { id file_name } }
             predecessors { id depth relationship }
         }
     }

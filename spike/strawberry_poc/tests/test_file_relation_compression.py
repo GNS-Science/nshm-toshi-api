@@ -48,7 +48,7 @@ mutation CreateFileRelation($input: CreateFileRelationInput!) {
 FILE_WITH_RELATIONS_QUERY = """
 query GetFile($id: ID!) {
     node(id: $id) {
-        ... on ToshiFile {
+        ... on File {
             id
             file_name
             relations {
