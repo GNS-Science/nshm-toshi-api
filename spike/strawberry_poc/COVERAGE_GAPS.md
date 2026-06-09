@@ -62,8 +62,8 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | Legacy test file | Tests | POC test file | POC tests | Status |
 |---|---|---|---|---|
 | `rupture_set/test_rupture_set_basic.py` | 4 | `test_rupture_set.py` | 7 | ✅ |
-| `rupture_set/test_rupture_set_mutation_checks.py` | 4 | — | — | ❌ |
-| `rupture_set/test_rupture_set_upload.py` | 1 | — | — | ❌ |
+| `rupture_set/test_rupture_set_mutation_checks.py` | 4 | `test_bugfix_gap4_rupture_set.py` (validation) | 4 | ✅ |
+| `rupture_set/test_rupture_set_upload.py` | 1 | `test_bugfix_gap4_rupture_set.py` (upload) | 3 | ✅ |
 | `rupture_set/test_handle_legacy_data.py` | 2 | — | — | N/A |
 
 ### `simpler_relationships/`, `legacy/`, `e2e_workflows/`, `object_iteration/`, `swept_arguments/`
@@ -234,8 +234,8 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | Field: `fault_models` | Yes | Yes | Yes | Yes |
 | Field: `metrics [k v]` | Yes | Yes | Yes | Yes |
 | Field: `produced_by` (union) | Yes | Yes | Yes | Yes |
-| Mutation checks (fault model validation, etc.) | Yes | Yes (4 tests) | **No** | No |
-| Presigned upload URL (`post_url`, `post_url_v2`) | Yes | Yes (1 test) | **No** | No |
+| Mutation checks (fault model validation, etc.) | Yes | Yes (4 tests) | Yes | Yes (4 tests) |
+| Presigned upload URL (`post_url`, `post_url_v2`) | Yes | Yes (1 test) | Yes | Yes (3 tests) |
 
 ### Table
 
@@ -383,12 +383,24 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 - **Closest POC equivalent:** `DISAGG` enum value exists in POC `OpenquakeTaskType`; `test_openquake.py` only tests `HAZARD` variant
 - **Gap severity:** **High** — disaggregation runs are a distinct and regular production workflow
 
-### Gap 4: Rupture set mutation validation and upload not tested
+### Gap 4: Rupture set mutation validation and upload — **CLOSED**
 
-- **Legacy files:** `rupture_set/test_rupture_set_mutation_checks.py` (4 tests: fault model field validation); `rupture_set/test_rupture_set_upload.py` (1 test: S3 presigned URL upload workflow with `post_url` / `post_url_v2`)
-- **What it exercises:** Validation of `fault_models` field; S3 pre-signed POST URL generation and upload using `requests` library; `post_url_v2` format
-- **Closest POC equivalent:** `test_rupture_set.py` tests basic create/lookup; no validation or upload tests
-- **Gap severity:** **High** — rupture set upload is the first step in every production inversion run; `post_url` is the mechanism clients use to transfer files
+- **Legacy files:** `rupture_set/test_rupture_set_mutation_checks.py` (4 tests, field validation); `rupture_set/test_rupture_set_upload.py` (1 test, S3 presigned-POST upload workflow with `post_url` / `post_url_v2`)
+- **Original POC divergences:**
+  - `CreateRuptureSetInput` declared `md5_digest`/`file_size` as nullable. Legacy SDL: `md5_digest: String!`, `file_size: BigInt!`. The POC silently accepted incomplete records.
+  - `FileInterface.post_url` / `post_url_v2` / `post_data_v2` returned `None` unconditionally — no presigned-POST generation at create time. Clients (nzshm-toshi-client, runzi) depend on these for the upload handshake.
+  - Input was missing the `meta` field (present in legacy `CreateRuptureSetInput`).
+- **Closed in this PR (commit on `strawberry-poc-code-fixes`):**
+  - `models/rupture_set.py::CreateRuptureSetInput` now requires `file_name`, `md5_digest`, `file_size`, `produced_by` — matching legacy SDL. Added `meta` field.
+  - `data/s3.py::presigned_post_for_file` generates a `{"url": ..., "fields": {...}}` payload via boto3 `generate_presigned_post`, mirroring `graphql_api/data/file_data.py:57-70`. Writes a `placeholder_to_be_overwritten` object at the key so the legacy "object exists" assumption holds before client PUTs the real bytes.
+  - `FileInterface` now stores presigned-POST data in a `post_url_data: strawberry.Private[dict | None]` field; the `post_url` / `post_url_v2` / `post_data_v2` resolvers surface the legacy `json.dumps(fields)` / `url` / `json.dumps(fields)` shape from that field.
+  - `mutate_create_rupture_set` calls `presigned_post_for_file` after writing to DynamoDB and populates `post_url_data` on the returned instance. When S3 is not configured, all three fields stay null (matches the FileInterface default).
+  - `tests/test_bugfix_gap4_rupture_set.py` adds 7 tests:
+    - 4 validation tests: missing-required-fields error, valid `created`, valid `fault_models`, scalar `fault_models` rejection.
+    - 3 upload tests: presigned-POST payload populated, full requests-based POST round-trip against moto, null-when-S3-unconfigured.
+- **Out of scope (separate concerns):**
+  - DateTime scalar input validation: ADR-001 Phase 1 deliberately picked `parse_value=str` for `DateTime`. The legacy parametrised tests for invalid `created` values (empty string, junk strings, ints) are not ported — separately tracked.
+  - Production S3 wiring on `/graphql-v2`: `S3_BUCKET_NAME` env var and `s3:PutObject`/`s3:GetObject` IAM permissions on the Lambda. Tracked alongside Gap 7's deferred IAM/env work.
 
 ### Gap 5: Table `name` field and exception handling (bugfix 252)
 
@@ -625,7 +637,7 @@ The following gaps represent the highest-value work to close, ordered by severit
 6. ~~**`OpenquakeHazardSolution` archives**~~ — done.
 7. ~~**Table `name` field**~~ — done.
 8. ~~**`create_file` type coercion**~~ — done; BigInt scalar landed in `models/common.py` so >2GB file_size values now round-trip correctly.
-9. **Rupture set upload / `post_url`** — schema-level test only (post_url returns null in POC; real S3 wiring deferred).
+9. ~~**Rupture set upload / `post_url`**~~ — done. `data/s3.presigned_post_for_file` wired into `mutate_create_rupture_set`; `FileInterface` resolvers surface `post_url` / `post_url_v2` / `post_data_v2` from a private field populated at create time. Full requests-based POST round-trip exercised against moto in `test_bugfix_gap4_rupture_set.py` (Gap 4).
 10. ~~**`update_automation_task` ES re-indexing**~~ — done; automatic via existing `update_thing` → `index_document` path, asserted via monkeypatch in test.
 
 11. ~~**File relation compression (Gap 6)**~~ — done in `strawberry-poc-compression` (commit 47bd09a, folded into #310). `nzshm_common.util.compress_string`/`decompress_string` wired into `get_file`/`list_files`/`create_file_relation`; write threshold at `UNCOMPRESSED_LIMIT=100` matches legacy. 6 tests in `tests/test_file_relation_compression.py`.
@@ -634,7 +646,6 @@ The following gaps represent the highest-value work to close, ordered by severit
 
 The genuinely-open items after #310 + #313 are lower priority than the above:
 
-- **Gap 4** — Rupture set mutation-validation tests (4) and real S3 presigned-POST upload workflow (1).
 - **Gap 8** — Elasticsearch search-manager unit tests (9). Integration smoketests cover the path; unit-level regression coverage on `_dispatch_search` is missing.
 - **Gap 14** — Swept-argument validation on AutomationTask creation (4 legacy tests).
-- Low priority: Gap 9 (download URL bugfix 211; architecture-specific), Gap 15 (bug 167 fileunion regression), `post_url`-family field coverage on multiple types.
+- Low priority: Gap 9 (download URL bugfix 211; architecture-specific), Gap 15 (bug 167 fileunion regression), `post_url`-family field coverage on file types other than RuptureSet.

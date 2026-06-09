@@ -37,6 +37,42 @@ def presigned_download_url(object_id: str, file_name: str | None) -> str | None:
     )
 
 
+def presigned_post_for_file(object_id: str, file_name: str, md5_digest: str | None) -> dict | None:
+    """Generate a presigned-POST payload for client-side upload to S3.
+
+    Mirrors `graphql_api/data/file_data.py:57-70`. Returns the boto3
+    `generate_presigned_post` dict `{"url": ..., "fields": {...}}` or
+    None when S3 is not configured.
+
+    Also writes a "placeholder_to_be_overwritten" object at the same key
+    so the legacy "object exists" assumption holds before the client
+    PUTs the real bytes (matches file_data.py:56).
+    """
+    if not S3_BUCKET_NAME or not file_name:
+        return None
+    key = f"FileData/{object_id}/{file_name}"
+    s3 = boto3.client("s3", region_name=REGION)
+    try:
+        s3.put_object(Bucket=S3_BUCKET_NAME, Key=key, Body="placeholder_to_be_overwritten")
+    except Exception as exc:
+        logger.debug("presigned_post_for_file: placeholder put failed for %s: %s", key, exc)
+        return None
+    return s3.generate_presigned_post(
+        Bucket=S3_BUCKET_NAME,
+        Key=key,
+        Fields={
+            "acl": "public-read",
+            "Content-MD5": md5_digest or "",
+            "Content-Type": "binary/octet-stream",
+        },
+        Conditions=[
+            {"acl": "public-read"},
+            ["starts-with", "$Content-Type", ""],
+            ["starts-with", "$Content-MD5", ""],
+        ],
+    )
+
+
 def _read_clazz_name(s3, bucket: str, key: str) -> str | None:
     """Fetch object.json and return its clazz_name field, or None on miss/error."""
     try:
