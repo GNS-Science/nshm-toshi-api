@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed.
+Accepted. Implemented in PR #308 (interface adoption) and PR #309
+(additional client-divergence fixes surfaced by the post-implementation
+audit; see "Post-implementation audit" below).
 
 ## Context
 
@@ -30,21 +32,36 @@ inform the accept/defer calls for (3) and (4).
 
 **1. Missing interfaces** — Legacy declares `Thing` and
 `AutomationTaskInterface` and has concrete types implement them.
-weka uses both via fragment queries:
+At drafting time we assumed both were wire-impacting. A subsequent
+client audit (see "Post-implementation audit" below) refined the
+picture:
 
-```graphql
-... on Thing { children { edges { node { ... } } } }
-... on AutomationTaskInterface { parents { edges { ... } } }
-```
+- `AutomationTaskInterface` is **heavily used by weka**:
+  `views/GeneralTask/InversionSolutionDiagnosticContainer.tsx`,
+  `views/GeneralTask/tabs/GeneralTaskChildrenTab.tsx`,
+  `views/AutomationTask/AutomationTaskPage.tsx`,
+  `views/Favourites/Favourites.tsx`, plus generated Relay codegen
+  files for each. Pattern:
+  ```graphql
+  ... on AutomationTaskInterface { state result task_type
+    arguments { k v }
+    parents { edges { node { parent { ... on GeneralTask { id title } } } } }
+  }
+  ```
+  Without the interface, these queries fail GraphQL validation.
+  **Real wire-level break.**
+
+- `Thing` is **not used by any inspected client** (weka, nzshm-runzi,
+  nzshm-model). Clients reach for concrete fragments instead
+  (`... on GeneralTask`, `... on AutomationTask`). Adopting `Thing`
+  in the POC remains defensive SDL-parity work rather than a
+  load-bearing fix — useful for future-proofing and for the parity
+  diff signal-to-noise, but no observed client query depends on it.
 
 POC has neither. The concrete types (`GeneralTask`, `AutomationTask`,
 etc.) already declare equivalent fields directly — the structural
 information is there, just not the interface declaration that lets
-fragment queries resolve. The first `...AutomationTaskInterface`
-query against the POC fails with `Cannot spread fragment AutomationTaskInterface
-on AutomationTask` or similar at GraphQL-validation time. **This is a
-real wire-level break for any client using the fragment-via-interface
-pattern.**
+fragment queries resolve.
 
 **2. Input type naming** — Legacy uses
 `<TypeName>Input` (for create) and `<TypeName>UpdateInput` (for update):
@@ -106,8 +123,11 @@ behaviour are fixed.
 #### Category 1 — Missing interfaces: **Adopt both**
 
 Both `Thing` and `AutomationTaskInterface` get added to the POC.
-This is a wire-impacting gap and the work is well-scoped because
-the concrete types already declare equivalent fields.
+`AutomationTaskInterface` is wire-impacting and confirmed
+load-bearing for weka; `Thing` is defensive parity (no observed
+client query, but cheap to add alongside and keeps the parity diff
+clean). The work is well-scoped because the concrete types already
+declare equivalent fields.
 
 #### Category 2 — Input type naming: **Accept the divergence**
 
@@ -316,6 +336,55 @@ preserving for future schema work:
    which are actually wire-breaking requires human judgement. This
    ADR's Category 1 (interfaces) vs Categories 2-4 (SDL cosmetics)
    illustrates the distinction.
+
+## Post-implementation audit (client divergence)
+
+After PR #308 landed the interface adoption, we audited real
+production GraphQL queries across three clients to verify the
+remaining "POC-only types" in the parity diff were genuinely
+acceptable:
+
+- `weka` (UI) — `../UI/weka/src/`
+- `nzshm-runzi` (Python automation) — `../MISC/nzshm-runzi`
+- `nzshm-model` (Python library) — `../LIB/nzshm-model`
+
+The audit confirmed Categories 2–4 are safe to accept, but surfaced
+**four additional wire-breaking divergences** that ADR-002's original
+analysis missed. All four are fixed in PR #309.
+
+| # | Divergence | Client evidence | Fix |
+|---|---|---|---|
+| A | POC SDL type `ToshiFile` (POC-only rename of legacy `File`) | weka × 4 source files (`... on File`), nzshm-model × 1 | Revert SDL name to `File`; keep Python class as `ToshiFile` via `@strawberry.type(name="File")` |
+| B | POC SDL type `NodeFilterPayload` (legacy is `NodeFilter`) | weka generated Relay codegen × 2 views (`concreteType: "NodeFilter"`) | Rename SDL type via `@strawberry.type(name="NodeFilter")` decorator |
+| C | POC `Table.column_types: [String]` vs legacy `[RowItemType]` | weka × 1, runzi × 1 (`$column_types: [RowItemType]!` in mutation variables) | Add `RowItemType` enum (`integer`/`double`/`string`/`boolean`) and use on both `Table.column_types` and `CreateTableInput.column_types` |
+| D | POC `AutomationTask` / `RuptureGenerationTask` / `OpenquakeHazardTask` missing `inversion_solution: InversionSolutionUnion` field | weka `AutomationTaskPage`, `GeneralTaskChildrenTab` | Add `InversionSolutionUnion` and a resolver that picks the `WRITE`-related `InversionSolution` subtype from `files_raw` |
+
+### What the audit confirmed (no action)
+
+- **`InversionSolutionUnion` / `PredecessorUnion`** — no observed
+  client query exercises these union types other than via the
+  concrete `... on InversionSolution { ... }` fragments. The union
+  declarations exist in the POC and are wire-equivalent; no client
+  breaks from the SDL difference.
+- **Category 2 (input naming)** — no observed query references the
+  input type name directly. Wire format identical. Decision stands.
+- **Category 3 (auto-generated Edge types)** — no observed query
+  references an Edge type by name. Wire format identical. Decision
+  stands.
+
+### Lesson added
+
+3. **An ADR drafted from a parity-diff sample needs an audit
+   against real client queries before close-out.** ADR-002's
+   original Category 1 framing assumed both `Thing` and
+   `AutomationTaskInterface` were equally wire-impacting because
+   both appeared in the legacy SDL. The client audit refined that:
+   `AutomationTaskInterface` is load-bearing; `Thing` is defensive.
+   Worse, the audit also surfaced **four breaking divergences this
+   ADR didn't catch at all** — they were lurking in the
+   "POC-only types" half of the parity diff that we'd partially
+   characterised as cosmetic. For future schema ADRs, run the
+   client-query audit *before* drafting decisions, not after.
 
 ## Related decisions
 
