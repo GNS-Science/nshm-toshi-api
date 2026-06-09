@@ -9,7 +9,7 @@ import os
 import random
 from decimal import Decimal
 
-STAGE = os.environ.get("DEPLOYMENT_STAGE", "dev")
+STAGE = os.environ.get("DEPLOYMENT_STAGE", "dev").upper()
 FIRST_ID = int(os.environ.get("FIRST_DYNAMO_ID", "100000"))
 
 _ALPHABET = list("23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz")

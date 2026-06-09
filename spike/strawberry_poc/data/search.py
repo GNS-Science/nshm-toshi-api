@@ -10,6 +10,7 @@ overridden per-call for testing.
 """
 
 import os
+from urllib.parse import quote
 
 import requests
 
@@ -77,7 +78,7 @@ def search(
     if not endpoint:
         return []
 
-    url = f"{endpoint}/{index}/_search?q={term}"
+    url = f"{endpoint}/{index}/_search?q={quote(term, safe='')}"
     try:
         resp = requests.get(url, timeout=_TIMEOUT).json()
         return [{"_id": hit["_id"], **hit["_source"]} for hit in resp.get("hits", {}).get("hits", [])]

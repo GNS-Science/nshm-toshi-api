@@ -10,6 +10,7 @@ This means all existing client query strings work unchanged against
 either the old (Graphene/Flask) or new (Strawberry/FastAPI) stack.
 """
 
+import logging
 from collections.abc import Iterable
 from typing import Annotated
 
@@ -20,6 +21,8 @@ from strawberry.schema.config import StrawberryConfig
 
 import data.search as _data_search
 from data.dynamo import es_key_for, get_object, scan_objects_paginated
+
+log = logging.getLogger(__name__)
 from data.s3 import scan_s3_paginated
 from data.search import search as es_search
 from models.page_info import CompatListConnection
@@ -195,7 +198,8 @@ def _dispatch_search(hit: dict) -> SearchResult | None:  # noqa: C901
             return InversionSolutionNrml.from_dict(hit)
         else:
             return ToshiFile.from_dict(hit)
-    except Exception:
+    except (KeyError, AttributeError, ValueError, TypeError) as e:
+        log.warning("_dispatch_search: failed to instantiate %s from hit: %s", clazz or "?", e)
         return None
 
 
@@ -474,8 +478,13 @@ class Query:
         for gid_str in id_in:
             try:
                 gid = GlobalID.from_id(str(gid_str))
+            except (ValueError, TypeError) as e:
+                log.warning("nodes: malformed GlobalID %r: %s", gid_str, e)
+                continue
+            try:
                 data = get_object(info.context["dynamodb"], gid.type_name, gid.node_id)
-            except Exception:
+            except (KeyError, AttributeError) as e:
+                log.warning("nodes: lookup failed for %s: %s", gid_str, e)
                 continue
             if data and (node := _dispatch_search(data)) is not None:
                 edges.append(SearchResultEdge(node=node))
