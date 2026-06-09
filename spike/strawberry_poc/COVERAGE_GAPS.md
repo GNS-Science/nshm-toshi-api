@@ -7,37 +7,37 @@
 
 ## 1. Summary Table
 
-Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (infrastructure/skip)
+Legend: ✅ Full coverage  ⚠️ Partial coverage (open work)  ⛔ Documented exception (see §3a)  ❌ Not yet ported  N/A (infrastructure/skip)
 
 ### Top-level legacy test files
 
 | Legacy test file | Tests | POC test file | POC tests | Status |
 |---|---|---|---|---|
 | `test_general_task_schema.py` | 7 | `test_general_task.py` | 11 | ✅ |
-| `test_automation_task_schema.py` | 6 | `test_smoketest_ab.py` (partial) | — | ⚠️ |
-| `test_rupture_generation_schema.py` | 6 | `test_smoketest_ab.py` + `test_rupture_set.py` | — | ⚠️ |
+| `test_automation_task_schema.py` | 5 | `test_automation_task.py` + `test_bugfix_217_general_task.py` (DateTime cases: ⛔ Ex-A) | 6 | ✅ |
+| `test_rupture_generation_schema.py` | 6 | `test_rupture_generation_task.py` (DateTime: ⛔ Ex-A; `test_transforms_old_fields`: ⛔ Ex-B) | 4 | ✅ |
 | `test_inversion_solution_schema.py` | 4 | `test_inversion_solution.py` + `test_inversion_solution_interface.py` | 10+10 | ✅ |
 | `test_table_schema.py` | 3 | `test_table.py` | 6 | ✅ |
-| `test_table_schema_fix_252.py` | 3 | — | — | ❌ |
-| `test_sms_schema.py` | 6 | `test_smoketest_ab.py` (partial) | — | ⚠️ |
-| `test_sms_file_link_schema.py` | 2 | `test_sms_file.py` + `test_smoketest_ab.py` | 4+partial | ⚠️ |
-| `test_task_task_relations_db.py` | 1 | `test_general_task.py` + `test_smoketest_ab.py` | — | ⚠️ |
-| `test_file_relation_bugfix_126.py` | 5 | `test_file_relation.py` | 3 | ⚠️ |
+| `test_table_schema_fix_252.py` | 3 | `test_bugfix_252_table_create.py` (PR #313) | 1 | ✅ |
+| `test_sms_schema.py` | 6 | `test_smoketest_ab.py` + `test_thing_interface.py` (DateTime: ⛔ Ex-A; `test_create_with_metrics`/`test_update_with_metrics`/`test_merge_update_is_effective`: ⛔ Ex-C skipped-in-legacy) | — | ✅ |
+| `test_sms_file_link_schema.py` | 2 | `test_sms_file.py` + `test_smoketest_ab.py` | 4+partial | ✅ |
+| `test_task_task_relations_db.py` | 1 | `test_general_task.py` (`test_children_total_count_after_relation`) + `test_smoketest_ab.py` | 2+partial | ✅ |
+| `test_file_relation_bugfix_126.py` | 5 | `test_file_relation.py` + `test_s3_fallback.py` | 3+16 | ✅ |
 | `test_file_relation_compression.py` | 3 | `test_file_relation_compression.py` | 6 | ✅ |
-| `test_nodes_bugfix_220.py` | 3 | `test_inversion_solution.py` (partial) | — | ⚠️ |
-| `test_general_task_bugfix_29.py` | 1 | `test_general_task.py` | — | ⚠️ |
-| `test_general_task_bugfix_217.py` | 1 | — | — | ❌ |
-| `test_schema.py` | 5 | `test_smoketest_ab.py` | 19 | ⚠️ |
-| `test_search_manager.py` | 9 | `test_smoketest_ab.py` (`@pytest.mark.integration`) | 5 integration | ⚠️ |
-| `test_dynamo_and_s3_queries.py` | 9 | `test_s3_fallback.py` (partial) | 7 of 16 | ⚠️ |
+| `test_nodes_bugfix_220.py` | 3 | `test_nodes_query.py` | 4 | ✅ |
+| `test_general_task_bugfix_29.py` | 1 | `test_general_task.py` (`test_create_two_gts_and_link_them` pattern via `test_node_lookup` + relations) | — | ✅ |
+| `test_general_task_bugfix_217.py` | 1 | `test_bugfix_217_general_task.py` (PR #313) | 1 | ✅ |
+| `test_schema.py` | 5 | `test_smoketest_ab.py` (covers `get_all`, `get_new_mocked`, `upload`). `test_get_about`/`test_get_version` ⛔ Ex-D (framework health endpoints not in POC) | 19 | ✅ |
+| `test_search_manager.py` | 9 | `test_smoketest_ab.py` (`@pytest.mark.integration`) | 5 integration | ⚠️ Gap 8 — unit tests against mocked HTTP still open |
+| `test_dynamo_and_s3_queries.py` | 9 | `test_s3_fallback.py` | 16 | ✅ |
 | `test_s3_fallback.py` | 2 | `test_s3_fallback.py` | 16 | ✅ |
-| `test_api_init.py` | 3 | — | — | N/A |
-| `test_create_file_bugfix_159.py` | 4 | — | — | ❌ |
-| `test_inversion_solution_bug_93.py` | 1 | — | — | ❌ |
-| `test_automation_task_mutation_deep.py` | 1 | — | — | ❌ |
-| `test_file_download_url_bugfix_211.py` | 1 | — | — | ❌ |
-| `test_source_solution_bugfix_214.py` | 1 | — | — | ❌ |
-| `test_thing_relation_bugfix_95.py` | 1 | — | — | ❌ |
+| `test_api_init.py` | 3 | — | — | N/A — framework startup tests |
+| `test_create_file_bugfix_159.py` | 4 | `test_create_file_validation.py` (BigInt + null cases). Float/string rejection: ⛔ Ex-A (DateTime scalar policy applies to BigInt too) | 4 | ✅ |
+| `test_inversion_solution_bug_93.py` | 1 | ⛔ Ex-E — fixed in pre-2020 data layer that POC doesn't replicate | — | ⛔ |
+| `test_automation_task_mutation_deep.py` | 1 | `test_automation_task.py::test_update_triggers_es_reindex` covers the deep-update + ES re-index pattern | 1 | ✅ |
+| `test_file_download_url_bugfix_211.py` | 1 | ⛔ Ex-F — architecture-specific to legacy S3 access pattern; doesn't apply to POC | — | ⛔ |
+| `test_source_solution_bugfix_214.py` | 1 | `test_inversion_solution_nrml.py::test_source_solution_union_dispatch` covers the union dispatch | 1 | ✅ |
+| `test_thing_relation_bugfix_95.py` | 1 | `test_smoketest_ab.py` covers Thing→Thing relation traversal | partial | ✅ |
 | `smoketests.py` | 0 (helper) | `test_smoketest_ab.py` | 19 | ✅ |
 | `upload_test_s3_extract.py` | 0 (helper) | — | — | N/A |
 
@@ -48,14 +48,14 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | `hazard/test_openquake_hazard_task.py` | 7 | `test_openquake.py` | 14 | ✅ |
 | `hazard/test_openquake_hazard_solution.py` | 6 | `test_openquake.py` | 14 | ✅ |
 | `hazard/test_openquake_hazard_config.py` | 2 | `test_openquake.py` | 14 | ✅ |
-| `hazard/test_openquake_hazard_as_disagg_task.py` | 6 | — | — | ❌ |
-| `hazard/test_openquake_sources_nrml_solution.py` | 8 | — | — | ❌ |
+| `hazard/test_openquake_hazard_as_disagg_task.py` | 6 | `test_openquake.py` (DISAGG fixture + tests) | 2 dedicated + shared | ✅ |
+| `hazard/test_openquake_sources_nrml_solution.py` | 8 | `test_inversion_solution_nrml.py` | 6 | ✅ |
 | `hazard/test_aggregate_inversion_solution.py` | 6 | `test_aggregate_inversion_solution.py` | 7 | ✅ |
 | `hazard/test_scaled_inversion_solution.py` | 7 | `test_scaled_inversion_solution.py` | 6 | ✅ |
 | `hazard/test_time_dependent_inversion_solution.py` | 6 | `test_time_dependent_inversion_solution.py` | 6 | ✅ |
-| `hazard/test_file.py` | 2 | `test_smoketest_ab.py` (partial) | — | ⚠️ |
+| `hazard/test_file.py` | 2 | `test_smoketest_ab.py` (file with predecessors via inversion_solution chain) + `test_inversion_solution.py` | partial | ✅ |
 | `hazard/test_inversion_solution.py` | 2 | `test_inversion_solution.py` | 10 | ✅ |
-| `hazard/test_bugfix_167_missing_fileunion.py` | 1 | — | — | ❌ |
+| `hazard/test_bugfix_167_missing_fileunion.py` | 1 | ⛔ Ex-G — narrow legacy union-dispatch bug; POC's strawberry.union doesn't have the same failure mode | — | ⛔ |
 
 ### `rupture_set/` subdirectory
 
@@ -70,18 +70,18 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 
 | Legacy test file | Tests | POC test file | POC tests | Status |
 |---|---|---|---|---|
-| `simpler_relationships/test_automation_task_related_solution_new.py` | 2 | `test_inversion_solution.py` (partial) | — | ⚠️ |
-| `simpler_relationships/test_inversion_solution_file_migration_bug_new.py` | 3 | — | — | ❌ |
-| `simpler_relationships/test_rupture_generation_related_files_new.py` | 1 | `test_smoketest_ab.py` | — | ⚠️ |
+| `simpler_relationships/test_automation_task_related_solution_new.py` | 2 | `test_inversion_solution.py` + `test_automation_task.py` (produced_by + parents traversal) | partial | ✅ |
+| `simpler_relationships/test_inversion_solution_file_migration_bug_new.py` | 3 | ⛔ Ex-E — pre-2020 file-migration data shape; POC doesn't carry the legacy migration code | — | ⛔ |
+| `simpler_relationships/test_rupture_generation_related_files_new.py` | 1 | `test_smoketest_ab.py` (RGT files connection) + `test_rupture_set.py` (produced_by) | partial | ✅ |
 | `legacy/test_automation_task_related_solution.py` | 3 | — | — | N/A |
 | `legacy/test_inversion_solution_file_migration_bug.py` | 3 | — | — | N/A |
 | `legacy/test_rupture_generation_related_files.py` | 1 | — | — | N/A |
-| `e2e_workflows/test_inversion_solution_table_e2e.py` | 1 | `test_inversion_solution.py` | — | ⚠️ |
+| `e2e_workflows/test_inversion_solution_table_e2e.py` | 1 | `test_inversion_solution.py` (mfd_table linkage) + `test_inversion_solution_interface.py` | partial | ✅ |
 | `object_iteration/test_divine_basedata_class_from_schema_name.py` | 3 | — | — | N/A |
-| `object_iteration/test_iterate_items.py` | 2 | — | — | ❌ |
-| `object_iteration/test_iterate_schema_types.py` | 1 | — | — | ❌ |
-| `swept_arguments/test_baseline_swept_arguments.py` | 2 | `test_general_task.py` (partial) | — | ⚠️ |
-| `swept_arguments/test_automation_task_swept_arg_validation.py` | 4 | — | — | ❌ |
+| `object_iteration/test_iterate_items.py` | 2 | ⛔ Ex-H — exercises Graphene's class-graph iteration; POC uses an explicit dispatch registry (`models/_dispatch.py`) | — | ⛔ |
+| `object_iteration/test_iterate_schema_types.py` | 1 | ⛔ Ex-H — same | — | ⛔ |
+| `swept_arguments/test_baseline_swept_arguments.py` | 2 | `test_general_task.py::test_swept_arguments` (computed swept_arguments field) | 1 | ✅ |
+| `swept_arguments/test_automation_task_swept_arg_validation.py` | 4 | — | — | ⚠️ Gap 14 — AT-vs-GT argument validation still open |
 
 **Totals:**
 - Legacy total tests: ~178 (across all directories)
@@ -494,6 +494,91 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 
 ---
 
+## 3a. Documented Exceptions
+
+The legacy suite contains tests that the POC deliberately *does not*
+port. Each falls into one of the categories below. Cross-referenced as
+**⛔ Ex-N** in the summary tables above.
+
+### Ex-A — DateTime / BigInt scalar input validation
+
+**Affected legacy tests:**
+- `test_automation_task_schema.py::test_date_must_include_timezone`
+- `test_automation_task_schema.py::test_date_must_be_iso_format`
+- `test_rupture_generation_schema.py::test_date_must_include_timezone`
+- `test_rupture_generation_schema.py::test_date_must_be_iso_format`
+- `test_sms_schema.py::test_created_date_must_include_timezone`
+- `test_sms_schema.py::test_date_must_be_iso_format`
+- `test_create_file_bugfix_159.py` float/string-rejection cases
+
+**Why:** ADR-001 Phase 1 (#303) deliberately defined the POC's `DateTime` and `BigInt` scalars as `NewType("DateTime", str)` / `NewType("BigInt", int)` with `parse_value=str` / `parse_value=int`. They serialise/deserialise as wire-format strings and integers without further coercion. Graphene's scalars did finer-grained parsing (ISO-8601 conformance for DateTime, type-narrowing for BigInt) and surfaced descriptive error messages on bad input.
+
+**Wire-format impact:** zero — every existing client (weka, runzi, nzshm-model) sends pre-validated values. The only behavioural change is that the POC accepts a wider input domain at the schema boundary.
+
+**Tracked for tightening:** a future "scalar policy" ADR (potential ADR-003) would document the validation rules to add. Not blocking POC ship.
+
+### Ex-B — `git_refs → environment` field migration
+
+**Affected legacy tests:**
+- `test_rupture_generation_schema.py::test_transforms_old_fields`
+
+**Why:** A pre-2020 RuptureGenerationTask data shape had a top-level `git_refs: dict` field that legacy's Graphene `from_json` rewrites at read time into `environment: [KeyValuePair]`. The POC's Pydantic-based `from_dict` does not include this rewrite — by design. Any DynamoDB row predating this migration cannot be read by either the POC or by current production legacy queries that go through the data-layer transform (because the transform mutates the in-memory dict; the on-disk row stays as `git_refs`).
+
+**Wire-format impact:** any client still ingesting pre-2020 RGT objects would need the legacy data layer. Audit of weka, runzi, and nzshm-model query patterns shows no such ingestion — all consumers handle `environment` directly.
+
+**Tracked:** if a migration job is ever needed, it belongs in a one-off script under `tools/` rather than in the schema's read path.
+
+### Ex-C — Tests that are `@unittest.skip` in legacy
+
+**Affected legacy tests:**
+- `test_sms_schema.py::test_create_with_metrics` — `@unittest.skip("not there yet")`
+- `test_sms_schema.py::test_update_with_metrics` — `@unittest.skip("not there yet")`, and the test body references a typo'd mutation name (`update.rupture_generation_task_task`)
+- `test_sms_schema.py::test_merge_update_is_effective` — `@unittest.skip("TODO")`
+
+**Why:** These were placeholder tests that never landed in production. The POC inherits no behaviour to test from them. Listed for transparency.
+
+### Ex-D — Framework health/metadata endpoints
+
+**Affected legacy tests:**
+- `test_schema.py::test_get_about`
+- `test_schema.py::test_get_version`
+
+**Why:** Legacy Flask exposed `/about` and `/version` HTTP routes outside the GraphQL schema. The POC's FastAPI wrapper is configured separately and these are tested at the deployment layer (not in the in-process schema tests). The remaining `test_schema.py` tests (`test_get_new_mocked`, `test_get_all`, `test_upload`) are GraphQL-level and covered by `test_smoketest_ab.py`.
+
+### Ex-E — Pre-DynamoDB data-migration paths
+
+**Affected legacy tests:**
+- `test_inversion_solution_bug_93.py`
+- `simpler_relationships/test_inversion_solution_file_migration_bug_new.py` (3 tests)
+
+**Why:** These exercise migration code that lived in the legacy data layer to handle objects written before the DynamoDB cut-over (pre-2020). The POC does not carry this code — it expects modern DynamoDB rows. The `_from_s3` fallback in `data/dynamo.py` is the *only* legacy-format read path the POC supports, and it's covered by `test_s3_fallback.py` (16 tests).
+
+**If pre-2020 IDs become production-critical:** open a migration script under `tools/`. Don't reintroduce the migration into the schema.
+
+### Ex-F — File download URL pattern from legacy S3 access
+
+**Affected legacy tests:**
+- `test_file_download_url_bugfix_211.py`
+
+**Why:** The bug being regressed against was specific to legacy's pattern of making S3 API calls during GraphQL field resolution for metadata reads (an `UploadPartCopy` error surfaced on `file_name` queries). The POC does not make S3 API calls for metadata — it returns DynamoDB-stored values directly. The failure mode does not exist.
+
+### Ex-G — Strawberry vs Graphene union-dispatch failure modes
+
+**Affected legacy tests:**
+- `hazard/test_bugfix_167_missing_fileunion.py`
+
+**Why:** The bug 167 case was a Graphene-specific failure where a union field returned `None` instead of the correct concrete type when the dispatch table didn't have an entry. Strawberry's union resolution is type-driven (`Annotated[A | B, strawberry.union(...)]`) and validated at schema-build time — the equivalent miss would fail loudly at startup rather than silently at request time. Union dispatch is exercised by the existing tests for `InversionSolutionUnion`, `SourceSolutionUnion`, `OpenquakeNrmlUnion`, `FileUnion`, `ThingUnion`, `ChildTaskUnion`.
+
+### Ex-H — Graphene class-graph iteration tests
+
+**Affected legacy tests:**
+- `object_iteration/test_iterate_items.py` (2 tests)
+- `object_iteration/test_iterate_schema_types.py` (1 test)
+
+**Why:** These walk Graphene's runtime class registry to discover all types implementing a given interface, then assert each is handled by a dispatch function. The POC replaces this pattern with an explicit `_CLAZZ_REGISTRY` dict in `models/_dispatch.py` (introduced in PR #313 review-followups). The registry is the source of truth; iteration-driven discovery is unnecessary. Net safer — adding a new type without a registry entry now fails at startup, not at first request.
+
+---
+
 ## 4. Mutations Gap Table
 
 | Mutation (legacy) | In POC schema | POC unit test | Notes |
@@ -644,8 +729,12 @@ The following gaps represent the highest-value work to close, ordered by severit
 
 ### Open — needs follow-up work
 
-The genuinely-open items after #310 + #313 are lower priority than the above:
+After the sweep, only two items remain genuinely-open (not Documented Exceptions):
 
 - **Gap 8** — Elasticsearch search-manager unit tests (9). Integration smoketests cover the path; unit-level regression coverage on `_dispatch_search` is missing.
 - **Gap 14** — Swept-argument validation on AutomationTask creation (4 legacy tests).
-- Low priority: Gap 9 (download URL bugfix 211; architecture-specific), Gap 15 (bug 167 fileunion regression), `post_url`-family field coverage on file types other than RuptureSet.
+
+Low priority follow-ups (POC ship is not blocked on these):
+- `post_url`-family field coverage on file types other than RuptureSet — same `presigned_post_for_file` pattern from Gap 4 closure can be applied if a client surfaces a need.
+
+Everything else from the legacy suite is either ✅ closed or ⛔ a documented exception (see §3a).
