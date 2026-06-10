@@ -478,10 +478,8 @@ resources:
                 - s3:ListBucket
                 - s3:PutObjectAcl
               Resource:
-                - arn:aws:s3:::nshm-runzi-output-*
-                - arn:aws:s3:::nshm-runzi-output-*/*
-                - arn:aws:s3:::nshm-runzi-jars
-                - arn:aws:s3:::nshm-runzi-jars/*
+                - arn:aws:s3:::ths-poc-arrow-test"
+                - arn:aws:s3:::ths-poc-arrow-test/*"
             - Sid: M2MSecretRead
               Effect: Allow
               Action: secretsmanager:GetSecretValue
