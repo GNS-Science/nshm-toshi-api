@@ -31,7 +31,7 @@ The agreed actors:
 | 4 | **Automation/Batch job (machine)** — runs in a Batch container, writes results (one shared M2M identity) | M2M `toshi/read`+`toshi/write` | none from Cognito (Batch job-definition role — see Deferred) |
 | 5 | **Internal read service (machine)** — query Toshi read-only (future: public/REST read) | M2M `toshi/read` only | none |
 
-**The AWS axis is a cumulative ladder: `local ⊂ batch ⊂ admin`.** A user belongs to **exactly one** tier — the highest they need. If they end up in several, the highest wins (see Q2).
+**The AWS axis is a cumulative ladder: `local ⊂ batch ⊂ admin`.** A user belongs to **exactly one** tier — the highest they need. (The rule ordering is only a safeguard so that *accidental* multi-membership still resolves to the highest tier — see Q2; it is not a reason to add a user to more than one `runzi-*` group.)
 
 ---
 
@@ -107,7 +107,7 @@ ToshiIdentityPoolRoleAttachment:
               RoleARN: !GetAtt ToshiRunziLocalRole.Arn
 ```
 
-These rules are evaluated **in order; the first match wins**, and a Cognito Identity Pool assigns exactly **one** role per login (it cannot union two). The rules are therefore ordered most-privileged-first (`admin → batch → local`) so a user in several `runzi-*` groups gets their **highest** tier. The three roles form a cumulative ladder (`local ⊂ batch ⊂ admin`): they share a common `AWS::IAM::ManagedPolicy` (`ToshiRunziBaseManagedPolicy` — ECR pull, S3 read/write, M2M secret read) via `ManagedPolicyArns`, and each role adds only its incremental inline policy (batch adds Batch submit; admin adds Batch/ECR admin). This pathway grants **no API access** — only direct AWS resource access via STS temporary credentials.
+These rules are evaluated **in order; the first match wins**, and a Cognito Identity Pool assigns exactly **one** role per login (it cannot union two). **A user should be a member of exactly one `runzi-*` group — the highest tier they need** (the three roles form a cumulative ladder `local ⊂ batch ⊂ admin`, so one membership is sufficient). The most-privileged-first ordering (`admin → batch → local`) is **only a safeguard**: if a user is *accidentally* placed in more than one `runzi-*` group, they still resolve to their highest tier instead of silently losing access (the bug this ordering fixed). It is **not** an invitation to stack `runzi-*` groups. The roles share a common `AWS::IAM::ManagedPolicy` (`ToshiRunziBaseManagedPolicy` — ECR pull, S3 read/write, M2M secret read) via `ManagedPolicyArns`, and each adds only its incremental inline policy (batch adds Batch submit; admin adds Batch/ECR admin). This pathway grants **no API access** — only direct AWS resource access via STS temporary credentials.
 
 ### To add a new permission level for the API
 
