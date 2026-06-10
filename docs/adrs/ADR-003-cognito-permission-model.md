@@ -85,8 +85,8 @@ explicit, while keeping the change inside this repo's `serverless.yml`.
    - Build the ladder by **composition of shared managed policies** so higher
      tiers cannot drift below lower ones. Each tier is one incremental
      `AWS::IAM::ManagedPolicy` — `ToshiRunziBaseManagedPolicy` (ECR pull, S3
-     read/write to the `ths-poc-arrow-test` Toshi Hazard Store dataset bucket,
-     M2M secret read),
+     read/write to the `ths-poc-arrow-test` (Toshi Hazard Store dataset) and
+     `nzshm22-static-reports-test` (reports) buckets, M2M secret read),
      `ToshiRunziBatchManagedPolicy` (Batch submit), and
      `ToshiRunziAdminManagedPolicy` (Batch + ECR administration). Each role
      attaches the base plus the increments of all lower tiers via
@@ -156,13 +156,13 @@ is deliberate — see the reference doc's "Deferred / future" section)**
 - **Compute environments, job queues, the ECR repos (the `nshm-runzi-*`
   repository glob), and the S3 buckets they use** are manual/external; only the
   IAM permissions to use them are defined here. The base policy currently grants
-  S3 read/write to a single bucket, `ths-poc-arrow-test` (the Toshi Hazard Store
-  Arrow dataset). Other buckets runzi touches — `nzshm22-toshi-api-<stage>` (the
-  Toshi object store, accessed via the API) and `nzshm22-static-reports[-<stage>]`
-  (reports, written directly by `runzi/aws/s3_folder_upload.py`) — are **not**
-  covered by the grant; the exact set of buckets the roles need should be
-  reconciled (and the bucket names confirmed against the env-configured THS
-  dataset URIs) when this becomes IaC.
+  S3 read/write to `ths-poc-arrow-test` (the Toshi Hazard Store Arrow dataset)
+  and `nzshm22-static-reports-test` (reports, written directly by
+  `runzi/aws/s3_folder_upload.py`). Both are hardcoded to the `-test` suffix
+  rather than `${stage}`-derived, and `nzshm22-toshi-api-<stage>` (the Toshi
+  object store) is reached via the API rather than direct S3 — so the exact
+  bucket set and stage handling should be reconciled (and names confirmed against
+  the env-configured THS dataset URIs) when this becomes IaC.
 - **A future split** of the compute-permission domain (Identity Pool +
   `runzi-*` roles + batch job role + compute resources) into a dedicated
   runzi-infra stack/repo.

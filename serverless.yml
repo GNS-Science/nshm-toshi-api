@@ -480,6 +480,8 @@ resources:
               Resource:
                 - arn:aws:s3:::ths-poc-arrow-test
                 - arn:aws:s3:::ths-poc-arrow-test/*
+                - arn:aws:s3:::nzshm22-static-reports-test
+                - arn:aws:s3:::nzshm22-static-reports-test/*
             - Sid: M2MSecretRead
               Effect: Allow
               Action: secretsmanager:GetSecretValue
