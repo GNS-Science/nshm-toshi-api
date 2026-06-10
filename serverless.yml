@@ -435,10 +435,19 @@ resources:
 
     # ── Runzi AWS-access tiers: a CUMULATIVE LADDER (local ⊂ batch ⊂ admin) ────
     # A Cognito Identity Pool assigns exactly ONE IAM role per login — it cannot
-    # union two. So each tier's role must be self-contained. The permissions every
-    # tier shares (ECR pull, S3 read/write, M2M secret read) live in this single
-    # managed policy; each role attaches it via ManagedPolicyArns and adds only its
-    # own incremental inline policy. This keeps the base perms in one place.
+    # union two. So each tier's role must be self-contained.
+    #
+    # The ladder is built by COMPOSITION of shared managed policies, so higher
+    # tiers cannot drift below lower ones: each tier is one incremental managed
+    # policy, and every role attaches the base plus the increments of all lower
+    # tiers via ManagedPolicyArns:
+    #   local = [base]
+    #   batch = [base, batch]
+    #   admin = [base, batch, admin]
+    # Because admin attaches the SAME ToshiRunziBatchManagedPolicy object that the
+    # batch role uses, `admin ⊇ batch ⊇ local` holds by construction — there are no
+    # duplicated statements to keep in sync. Add a new permission to a tier in one
+    # place and it automatically flows up to every higher tier.
     #
     # IMPORTANT: a user should belong to exactly ONE runzi-* group (the highest
     # tier they need). If they are in several, the HIGHEST tier wins — see the
@@ -478,6 +487,57 @@ resources:
               Action: secretsmanager:GetSecretValue
               Resource:
                 Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
+
+    # batch increment — submit/manage AWS Batch jobs (layered on top of base).
+    ToshiRunziBatchManagedPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        ManagedPolicyName: toshi-runzi-batch-${self:custom.stage}
+        Description: Incremental runzi-batch permissions (AWS Batch submit/describe); attached on top of the base policy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: BatchSubmit
+              Effect: Allow
+              Action:
+                - batch:SubmitJob
+                - batch:DescribeJobs
+                - batch:ListJobs
+                - batch:TerminateJob
+                - batch:DescribeJobQueues
+                - batch:DescribeComputeEnvironments
+                - batch:DescribeJobDefinitions
+              Resource: '*'
+
+    # admin increment — Batch/ECR administration (layered on top of base + batch).
+    ToshiRunziAdminManagedPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        ManagedPolicyName: toshi-runzi-admin-${self:custom.stage}
+        Description: Incremental runzi-admin permissions (Batch + ECR administration); attached on top of the base + batch policies
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: BatchAdmin
+              Effect: Allow
+              Action:
+                - batch:CreateComputeEnvironment
+                - batch:UpdateComputeEnvironment
+                - batch:DeleteComputeEnvironment
+                - batch:RegisterJobDefinition
+                - batch:DeregisterJobDefinition
+              Resource: '*'
+            - Sid: ECRAdmin
+              Effect: Allow
+              Action:
+                - ecr:CreateRepository
+                - ecr:PutImage
+                - ecr:InitiateLayerUpload
+                - ecr:UploadLayerPart
+                - ecr:CompleteLayerUpload
+                - ecr:BatchDeleteImage
+              Resource:
+                - arn:aws:ecr:*:*:repository/nshm-runzi-*
 
     # ── IAM roles (assumed via Identity Pool after Cognito login) ──────────────
     # local tier — base permissions only (ECR pull, S3 read/write).
@@ -523,22 +583,7 @@ resources:
                   'cognito-identity.amazonaws.com:amr': authenticated
         ManagedPolicyArns:
           - !Ref ToshiRunziBaseManagedPolicy
-        Policies:
-          - PolicyName: toshi-runzi-batch-policy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Sid: BatchSubmit
-                  Effect: Allow
-                  Action:
-                    - batch:SubmitJob
-                    - batch:DescribeJobs
-                    - batch:ListJobs
-                    - batch:TerminateJob
-                    - batch:DescribeJobQueues
-                    - batch:DescribeComputeEnvironments
-                    - batch:DescribeJobDefinitions
-                  Resource: '*'
+          - !Ref ToshiRunziBatchManagedPolicy
 
     # admin tier — base + Batch submit + Batch/ECR administration.
     ToshiRunziAdminRole:
@@ -561,42 +606,8 @@ resources:
                   'cognito-identity.amazonaws.com:amr': authenticated
         ManagedPolicyArns:
           - !Ref ToshiRunziBaseManagedPolicy
-        Policies:
-          - PolicyName: toshi-runzi-admin-policy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Sid: BatchSubmit
-                  Effect: Allow
-                  Action:
-                    - batch:SubmitJob
-                    - batch:DescribeJobs
-                    - batch:ListJobs
-                    - batch:TerminateJob
-                    - batch:DescribeJobQueues
-                    - batch:DescribeComputeEnvironments
-                    - batch:DescribeJobDefinitions
-                  Resource: '*'
-                - Sid: BatchAdmin
-                  Effect: Allow
-                  Action:
-                    - batch:CreateComputeEnvironment
-                    - batch:UpdateComputeEnvironment
-                    - batch:DeleteComputeEnvironment
-                    - batch:RegisterJobDefinition
-                    - batch:DeregisterJobDefinition
-                  Resource: '*'
-                - Sid: ECRAdmin
-                  Effect: Allow
-                  Action:
-                    - ecr:CreateRepository
-                    - ecr:PutImage
-                    - ecr:InitiateLayerUpload
-                    - ecr:UploadLayerPart
-                    - ecr:CompleteLayerUpload
-                    - ecr:BatchDeleteImage
-                  Resource:
-                    - arn:aws:ecr:*:*:repository/nshm-runzi-*
+          - !Ref ToshiRunziBatchManagedPolicy
+          - !Ref ToshiRunziAdminManagedPolicy
 
     # ── Identity Pool role attachment (rules-based by Cognito group) ───────────
     ToshiIdentityPoolRoleAttachment:

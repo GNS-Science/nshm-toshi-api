@@ -82,14 +82,19 @@ explicit, while keeping the change inside this repo's `serverless.yml`.
    - Order the role-mapping rules **most-privileged-first**
      (`admin → batch → local`) so that if a user is in several tiers, the
      highest matches first.
-   - Eliminate the policy duplication: a shared
-     `AWS::IAM::ManagedPolicy` (`ToshiRunziBaseManagedPolicy`: ECR pull,
-     S3 read/write to `nshm-runzi-output-*` (intended for compute outputs)
-     and `nshm-runzi-jars` (intended for OpenSHA fat-jars), M2M secret read)
-     is attached to all three roles via `ManagedPolicyArns`;
-     each role then declares only its **incremental** inline policy
-     (`batch` adds Batch submit; `admin` adds Batch + ECR administration).
-     The ladder is now structural, with the base permissions defined once.
+   - Build the ladder by **composition of shared managed policies** so higher
+     tiers cannot drift below lower ones. Each tier is one incremental
+     `AWS::IAM::ManagedPolicy` — `ToshiRunziBaseManagedPolicy` (ECR pull, S3
+     read/write to `nshm-runzi-output-*` (intended for compute outputs) and
+     `nshm-runzi-jars` (intended for OpenSHA fat-jars), M2M secret read),
+     `ToshiRunziBatchManagedPolicy` (Batch submit), and
+     `ToshiRunziAdminManagedPolicy` (Batch + ECR administration). Each role
+     attaches the base plus the increments of all lower tiers via
+     `ManagedPolicyArns`: `local=[base]`, `batch=[base, batch]`,
+     `admin=[base, batch, admin]`. Because admin attaches the *same* batch
+     policy object the batch role uses, `admin ⊇ batch ⊇ local` holds by
+     construction — no duplicated statements to keep in sync, and a new
+     permission added to a tier automatically flows up to every higher tier.
 
 4. **The API read/write axis is left as-is** — it already works. Group →
    scope derivation lives in `validate_cognito_token`; enforcement
@@ -108,7 +113,7 @@ explicit, while keeping the change inside this repo's `serverless.yml`.
 |---|---|---|
 | AWS-tier semantics | One tier per user; cumulative; highest wins | An Identity Pool grants one role; cannot union |
 | Rule ordering | `admin → batch → local` (most-privileged first) | First-match-wins must surface the highest tier |
-| Base permissions | Single shared managed policy | One source of truth; no copy-paste drift |
+| Tier permissions | Layered shared managed policies (base / +batch / +admin), composed via `ManagedPolicyArns` | Guarantees `admin ⊇ batch ⊇ local` by construction; one source of truth per tier, no copy-paste drift |
 | Attribution of Batch writes | One shared automation M2M identity | No per-user attribution requirement today |
 | Read-only machine identity | Deferred | Outside of scope |
 | Legacy `x-api-key` | Retained (full read+write) | Backward-compat; retiring it is out of scope |
@@ -167,7 +172,8 @@ is deliberate — see the reference doc's "Deferred / future" section)**
 - `uv run pytest auth/tests/` passes (50), including new tests for the
   group→scope derivation and the read/write enforcement gate.
 - The `serverless.yml` template was validated structurally (parses; roles
-  attach the shared managed policy; rule order `admin → batch → local`).
+  attach the layered managed policies — `local`=1, `batch`=2, `admin`=3, with no
+  inline policies; rule order `admin → batch → local`).
 - `yarn sls package` was **not** completed in the authoring environment
   (Serverless v4 requires valid AWS credentials even to package, which
   were unavailable). **Run `yarn sls package --stage <stage>` with valid
