@@ -16,9 +16,10 @@ from strawberry.types import Info
 
 from data.dynamo import create_file, get_file, get_thing, list_files
 from data.models import RuptureSetData
+from data.s3 import presigned_post_for_file
 
 from .automation_task import RuptureGenerationTask  # noqa: F401 — re-exported for schema.py
-from .common import BigInt, KeyValuePair, KeyValuePairInput
+from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
 from .file_interface import FileInterface
 
 # ── RuptureSet ────────────────────────────────────────────────────────────────
@@ -70,13 +71,20 @@ class RuptureSet(relay.Node, FileInterface):
 
 @strawberry.input
 class CreateRuptureSetInput:
+    # Required-by-legacy-schema fields. Wire-format parity: legacy clients
+    # always send these; making them required here matches `input CreateRuptureSetInput`
+    # in the Graphene SDL (`file_name: String!`, `md5_digest: String!`,
+    # `file_size: BigInt!`, `produced_by: ID!`).
     file_name: str
+    md5_digest: str
+    file_size: BigInt
     produced_by: strawberry.ID
-    md5_digest: str | None = None
-    file_size: BigInt | None = None
-    created: str | None = None
+    # Optional in legacy.
+    created: DateTime | None = None
+    meta: list[KeyValuePairInput] | None = None
     fault_models: list[str] | None = None
     metrics: list[KeyValuePairInput] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_rupture_sets(info: Info) -> Iterable[RuptureSet]:
@@ -90,14 +98,21 @@ def mutate_create_rupture_set(info: Info, input: CreateRuptureSetInput) -> Ruptu
     assert gid.type_name == "RuptureGenerationTask", f"produced_by must be a RuptureGenerationTask, got {gid.type_name}"
 
     metrics = [{"k": i.k, "v": i.v} for i in input.metrics] if input.metrics else None
+    meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
     payload = {
         "file_name": input.file_name,
         "produced_by": str(input.produced_by),
         "md5_digest": input.md5_digest,
         "file_size": input.file_size,
         "created": input.created,
+        "meta": meta,
         "fault_models": input.fault_models,
         "metrics": metrics,
     }
     data = create_file(info.context["dynamodb"], "RuptureSet", payload)
-    return RuptureSet.from_dict(data)
+    instance = RuptureSet.from_dict(data)
+    # Generate presigned-POST for client-side upload (legacy parity).
+    # Returns None if S3 is not configured — schema-level callers still see
+    # post_url* as nullable fields.
+    instance.post_url_data = presigned_post_for_file(instance.pk, input.file_name, input.md5_digest)
+    return instance

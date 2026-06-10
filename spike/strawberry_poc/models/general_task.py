@@ -19,6 +19,8 @@ from data.dynamo import create_thing, get_thing, list_things, update_thing
 from data.models import GeneralTaskData
 
 from .common import (
+    DateTime,
+    client_mutation_id_input_field,
     EventResult,
     KeyValueListPair,
     KeyValueListPairInput,
@@ -37,10 +39,10 @@ from .relations import (
     build_task_children,
     build_task_parents,
 )
-
+from .thing import Thing
 
 @strawberry.type
-class GeneralTask(relay.Node):
+class GeneralTask(relay.Node, Thing):
     """
     A General Task captures metadata and related inputs/outputs for arbitrary tasks.
     """
@@ -49,7 +51,9 @@ class GeneralTask(relay.Node):
     title: str | None = None
     description: str | None = None
     agent_name: str | None = None
-    created: str | None = None
+    created: DateTime | None = None
+    updated: DateTime | None = None
+    # `created` inherited from Thing
     updated: str | None = None
     notes: str | None = None
     subtask_count: int | None = None
@@ -58,10 +62,8 @@ class GeneralTask(relay.Node):
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPair] | None = None
     meta: list[KeyValuePair] | None = None
-
-    files_raw: strawberry.Private[list | None] = None
-    children_raw: strawberry.Private[list | None] = None
-    parents_raw: strawberry.Private[list | None] = None
+    # files_raw / parents_raw / children_raw and the @relay.connection
+    # resolvers for files / parents / children are inherited from Thing
 
     @relay.connection(FileRelationsConnection)
     def files(self, info: Info) -> list[FileRelation]:
@@ -115,13 +117,12 @@ class GeneralTask(relay.Node):
             parents_raw=d.parents,
         )
 
-
 @strawberry.input
 class CreateGeneralTaskInput:
     title: str | None = None
     description: str | None = None
     agent_name: str | None = None
-    created: str | None = None
+    created: DateTime | None = None
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: TaskSubType | None = None
@@ -129,7 +130,7 @@ class CreateGeneralTaskInput:
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPairInput] | None = None
     meta: list[KeyValuePairInput] | None = None
-
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 @strawberry.input
 class UpdateGeneralTaskInput:
@@ -137,7 +138,7 @@ class UpdateGeneralTaskInput:
     title: str | None = None
     description: str | None = None
     agent_name: str | None = None
-    updated: str | None = None
+    updated: DateTime | None = None
     notes: str | None = None
     subtask_count: int | None = None
     subtask_type: TaskSubType | None = None
@@ -145,12 +146,11 @@ class UpdateGeneralTaskInput:
     model_type: ModelType | None = None
     argument_lists: list[KeyValueListPairInput] | None = None
     meta: list[KeyValuePairInput] | None = None
-
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 def resolve_general_tasks(info: Info) -> Iterable[GeneralTask]:
     items = list_things(info.context["dynamodb"], "GeneralTask")
     return [GeneralTask.from_dict(item) for item in items]
-
 
 def mutate_create_general_task(info: Info, input: CreateGeneralTaskInput) -> GeneralTask:
     def _kvl(items):
@@ -171,7 +171,6 @@ def mutate_create_general_task(info: Info, input: CreateGeneralTaskInput) -> Gen
     }
     data = create_thing(info.context["dynamodb"], "GeneralTask", payload)
     return GeneralTask.from_dict(data)
-
 
 def mutate_update_general_task(info: Info, input: UpdateGeneralTaskInput) -> GeneralTask | None:
     # Decode relay global ID → raw object_id

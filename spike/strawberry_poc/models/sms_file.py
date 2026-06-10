@@ -12,7 +12,7 @@ from strawberry.types import Info
 from data.dynamo import create_file, get_file, list_files
 from data.models import SmsFileData
 
-from .common import BigInt, KeyValuePair, SmsFileType, _try_enum
+from .common import BigInt, DateTime, KeyValuePair, SmsFileType, _try_enum, client_mutation_id_input_field
 from .file_interface import FileInterface
 from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
@@ -56,7 +56,9 @@ class CreateSmsFileInput:
     file_type: SmsFileType
     md5_digest: str | None = None
     file_size: BigInt | None = None
+    created: DateTime | None = None
     created: str | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_sms_files(info: Info) -> Iterable[SmsFile]:

@@ -28,6 +28,68 @@ BigInt = strawberry.scalar(
     "Used for file_size where production values can exceed 2GB.",
 )
 
+# ADR-001 Phase 1: restore the legacy typed scalars. Wire format is an ISO 8601
+# string (DateTime) or a JSON-encoded string (JSONString). Python type stays as
+# `str` so we don't force every resolver to construct typed values; the scalar
+# rename is what fixes typed-client codegen parity with legacy.
+DateTime = strawberry.scalar(
+    NewType("DateTime", str),
+    serialize=str,
+    parse_value=str,
+    description="An ISO 8601 datetime string. Wire-compatible with the legacy graphene "
+    "DateTime scalar; typed clients get a `DateTime` rather than a plain `String`.",
+)
+
+JSONString = strawberry.scalar(
+    NewType("JSONString", str),
+    serialize=str,
+    parse_value=str,
+    description="A JSON-encoded string. Wire-compatible with the legacy graphene "
+    "JSONString scalar; used for embedded JSON payloads like Openquake logic trees.",
+)
+
+
+# ADR-001 Phase 1: Relay 1 clientMutationId backwards-compatibility.
+# Every mutation input and payload exposes `clientMutationId: String` as a
+# deprecated field. Inputs accept it (legacy Relay 1 clients send it); payloads
+# echo it back (legacy clients read it). Modern Relay 2 / Apollo / urql clients
+# can omit it entirely. Helpers below return fresh strawberry.field metadata so
+# each class definition gets its own field instance (Strawberry's field()
+# returns mutable metadata, sharing it across classes confuses the framework).
+
+
+def client_mutation_id_input_field():
+    """Field metadata for `clientMutationId: String` on mutation INPUT types.
+
+    Accepted from Relay 1 clients; passed through to the payload unchanged.
+    Marked deprecated so introspection / IDE autocomplete shows a warning.
+    """
+    return strawberry.field(
+        name="clientMutationId",
+        default=None,
+        deprecation_reason=(
+            "Relay 1 ClientIDMutation holdover — modern Relay 2 / Apollo / urql clients "
+            "can omit this. When provided, the value is echoed back unchanged in the "
+            "mutation payload's clientMutationId field."
+        ),
+    )
+
+
+def client_mutation_id_payload_field():
+    """Field metadata for `clientMutationId: String` on mutation PAYLOAD types.
+
+    Echoes back the value from the input when provided. Marked deprecated.
+    """
+    return strawberry.field(
+        name="clientMutationId",
+        default=None,
+        deprecation_reason=(
+            "Relay 1 ClientIDMutation holdover — echoes the value passed to the input's "
+            "clientMutationId field, or null if none was sent. Modern Relay 2 / Apollo / "
+            "urql clients can ignore."
+        ),
+    )
+
 
 @strawberry.type
 class KeyValuePair:
@@ -156,6 +218,14 @@ class TableType(enum.Enum):
     MFD_CURVES = "mfd_curves"
     MFD_CURVES_V2 = "mfd_curves_v2"
     GENERAL = "general"
+
+
+@strawberry.enum
+class RowItemType(enum.Enum):
+    integer = "INT"
+    double = "DBL"
+    string = "STR"
+    boolean = "BOO"
 
 
 @strawberry.enum

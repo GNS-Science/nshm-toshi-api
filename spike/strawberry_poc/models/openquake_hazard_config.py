@@ -10,8 +10,10 @@ from strawberry.types import Info
 
 from data.dynamo import create_thing, get_file, get_thing, list_things
 from data.models import OpenquakeHazardConfigData
+from models.common import DateTime, client_mutation_id_input_field
 from models.file import ToshiFile
 from models.inversion_solution_nrml import InversionSolutionNrml
+from models.thing import Thing
 
 # ── OpenquakeNrmlUnion ────────────────────────────────────────────────────────
 
@@ -35,9 +37,9 @@ def dispatch_nrml(data: dict):
 
 
 @strawberry.type
-class OpenquakeHazardConfig(relay.Node):
+class OpenquakeHazardConfig(relay.Node, Thing):
     pk: relay.NodeID[str]
-    created: str | None = None
+    created: DateTime | None = None
 
     source_models_raw_ids: strawberry.Private[list[str] | None] = None
     template_archive_raw_id: strawberry.Private[str | None] = None
@@ -88,7 +90,9 @@ class OpenquakeHazardConfig(relay.Node):
 class CreateOpenquakeHazardConfigInput:
     template_archive: strawberry.ID
     source_models: list[strawberry.ID] | None = None
+    created: DateTime | None = None
     created: str | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 def resolve_openquake_hazard_configs(info: Info) -> Iterable[OpenquakeHazardConfig]:

@@ -12,12 +12,13 @@ from strawberry.types import Info
 from data.dynamo import create_thing, get_thing, list_things
 from data.models import StrongMotionStationData
 
-from .common import SmsSiteClass, SmsSiteClassBasis, _try_enum
+from .common import DateTime, SmsSiteClass, SmsSiteClassBasis, _try_enum, client_mutation_id_input_field
 from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_thing
 
+from .thing import Thing
 
 @strawberry.type
-class StrongMotionStation(relay.Node):
+class StrongMotionStation(relay.Node, Thing):
     """An NSHM Strong Motion Station record."""
 
     pk: relay.NodeID[str]
@@ -29,14 +30,13 @@ class StrongMotionStation(relay.Node):
     liquefiable: bool | None = None
     bedrock_encountered: bool | None = None
     soft_clay_or_peat: bool | None = None
-    created: str | None = None
-    updated: str | None = None
+    created: DateTime | None = None
+    updated: DateTime | None = None
 
-    files_raw: strawberry.Private[list | None] = None
-
-    @relay.connection(FileRelationsConnection)
-    def files(self, info: Info) -> list[FileRelation]:
-        return build_file_relations_for_thing(self.pk, self.files_raw or [])
+    # files_raw and the files resolver are inherited from Thing.
+    # We also inherit parents_raw, children_raw, parents and children — but
+    # StrongMotionStation doesn't actually have parent/child tasks; the empty
+    # _raw fields naturally return empty connections.
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["StrongMotionStation"]:
@@ -61,7 +61,6 @@ class StrongMotionStation(relay.Node):
             files_raw=d.files,
         )
 
-
 @strawberry.input
 class CreateStrongMotionStationInput:
     site_code: str | None = None
@@ -72,14 +71,15 @@ class CreateStrongMotionStationInput:
     liquefiable: bool | None = None
     bedrock_encountered: bool | None = None
     soft_clay_or_peat: bool | None = None
+    created: DateTime | None = None
+    updated: DateTime | None = None
     created: str | None = None
     updated: str | None = None
-
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 def resolve_strong_motion_stations(info: Info) -> Iterable[StrongMotionStation]:
     items = list_things(info.context["dynamodb"], "StrongMotionStation")
     return [StrongMotionStation.from_dict(item) for item in items]
-
 
 def mutate_create_strong_motion_station(info: Info, input: CreateStrongMotionStationInput) -> StrongMotionStation:
     payload = {

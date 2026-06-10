@@ -13,18 +13,19 @@ from data.models import OpenquakeHazardSolutionData
 from models.file import ToshiFile
 from models.openquake_hazard_task import OpenquakeHazardTask
 
-from .common import KeyValuePair, KeyValuePairInput, OpenquakeTaskType
+from .common import DateTime, KeyValuePair, KeyValuePairInput, OpenquakeTaskType, client_mutation_id_input_field
+
+from .thing import Thing
 from .predecessor import PredecessorInput
 from .predecessors_interface import PredecessorsInterface
 
 _OpenquakeHazardTask = Annotated["OpenquakeHazardTask", strawberry.lazy("models.openquake_hazard_task")]
 _ToshiFile = Annotated["ToshiFile", strawberry.lazy("models.file")]
 
-
 @strawberry.type
-class OpenquakeHazardSolution(relay.Node, PredecessorsInterface):
+class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):
     pk: relay.NodeID[str]
-    created: str | None = None
+    created: DateTime | None = None
     task_type: OpenquakeTaskType | None = None
     metrics: list[KeyValuePair] | None = None
     meta: list[KeyValuePair] | None = None
@@ -93,24 +94,22 @@ class OpenquakeHazardSolution(relay.Node, PredecessorsInterface):
             predecessors_raw=[p.model_dump() for p in d.predecessors] if d.predecessors else None,
         )
 
-
 @strawberry.input
 class CreateOpenquakeHazardSolutionInput:
     produced_by: strawberry.ID
     task_type: OpenquakeTaskType
-    created: str | None = None
+    created: DateTime | None = None
     csv_archive: strawberry.ID | None = None
     hdf5_archive: strawberry.ID | None = None
     task_args: strawberry.ID | None = None
     metrics: list[KeyValuePairInput] | None = None
     meta: list[KeyValuePairInput] | None = None
     predecessors: list[PredecessorInput] | None = None
-
+    client_mutation_id: str | None = client_mutation_id_input_field()
 
 def resolve_openquake_hazard_solutions(info: Info) -> Iterable[OpenquakeHazardSolution]:
     items = list_things(info.context["dynamodb"], "OpenquakeHazardSolution")
     return [OpenquakeHazardSolution.from_dict(item) for item in items]
-
 
 def mutate_create_openquake_hazard_solution(
     info: Info, input: CreateOpenquakeHazardSolutionInput

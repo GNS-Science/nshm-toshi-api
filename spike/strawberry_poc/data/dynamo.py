@@ -18,6 +18,7 @@ from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
+from nzshm_common.util import compress_string, decompress_string
 
 from .ids import append_uniq, read_current_id
 from .search import index_document
@@ -29,10 +30,38 @@ REGION = os.environ.get("REGION", "ap-southeast-2")
 S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", "")
 DB_READ_ONLY = os.environ.get("DB_READ_ONLY", "") not in ("", "0")
 
+# Matches graphql_api/data/file_relation_data.py — when a File's relations list
+# grows beyond this, the legacy stores it as a base64-encoded zlib string to
+# stay under DynamoDB's 400KB item-size limit. The POC must use the same value
+# (and the same compress_string/decompress_string from nzshm_common) so that
+# data written by either side is readable by the other.
+UNCOMPRESSED_LIMIT = 100
+
 
 def _assert_writable() -> None:
     if DB_READ_ONLY:
         raise RuntimeError("Aborting write: DB_READ_ONLY is set")
+
+
+def _ensure_decompressed(maybe: str | list | None) -> list:
+    """Decompress a File.relations field that may be stored as a string.
+
+    Legacy storage: relations is a list[dict] for small lists, or a
+    compressed string once len(relations) > UNCOMPRESSED_LIMIT. Always
+    returns a list (empty list if None).
+    """
+    if maybe is None:
+        return []
+    if isinstance(maybe, str):
+        return json.loads(decompress_string(maybe))
+    return maybe
+
+
+def _decompress_file_relations(data: dict | None) -> dict | None:
+    """In-place normalise a file dict so callers always see relations as list[dict]."""
+    if data is not None and "relations" in data:
+        data["relations"] = _ensure_decompressed(data["relations"])
+    return data
 
 
 def _dynamodb(endpoint_url: str | None = None):
@@ -263,10 +292,11 @@ def get_file(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
     if item:
         data = json.loads(item["object_content"])
         data["object_id"] = object_id
-        return data
+        return _decompress_file_relations(data)
     data = _from_s3(object_id, "FileData")
     if data is not None:
         data["object_id"] = object_id
+        _decompress_file_relations(data)
     return data
 
 
@@ -293,7 +323,7 @@ def list_files(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
         for item in resp.get("Items", []):
             data = json.loads(item["object_content"])
             data["object_id"] = item["object_id"]
-            results.append(data)
+            results.append(_decompress_file_relations(data))
         last = resp.get("LastEvaluatedKey")
         if not last:
             break
@@ -307,10 +337,13 @@ def list_files(dynamodb, clazz_name: str, stage: str = STAGE) -> list[dict]:
 def get_table(dynamodb, object_id: str, stage: str = STAGE) -> dict | None:
     resp = _table_table(dynamodb, stage).get_item(Key={"object_id": object_id})
     item = resp.get("Item")
-    if not item:
-        return None
-    data = json.loads(item["object_content"])
-    data["object_id"] = object_id
+    if item:
+        data = json.loads(item["object_content"])
+        data["object_id"] = object_id
+        return data
+    data = _from_s3(object_id, "TableData")
+    if data is not None:
+        data["object_id"] = object_id
     return data
 
 
@@ -444,13 +477,24 @@ def create_file_relation(dynamodb, thing_id: str, file_id: str, role: str, stage
 
     Thing.files  → [..., {"file_id": file_id, "file_role": role}]
     File.relations → [..., {"id": thing_id, "role": role}]
+
+    When the file's relations list grows beyond UNCOMPRESSED_LIMIT, it is
+    stored as a compressed string — matches the legacy storage format so
+    data written here is readable by the legacy API and vice versa.
     """
+
+    def _append_file_relation(d: dict) -> None:
+        rels = _ensure_decompressed(d.get("relations"))
+        rels.append({"id": thing_id, "role": role})
+        if len(rels) > UNCOMPRESSED_LIMIT:
+            d["relations"] = compress_string(json.dumps(rels))
+        else:
+            d["relations"] = rels
+
     _patch_thing(
         dynamodb, thing_id, lambda d: d.setdefault("files", []).append({"file_id": file_id, "file_role": role}), stage
     )
-    _patch_file(
-        dynamodb, file_id, lambda d: d.setdefault("relations", []).append({"id": thing_id, "role": role}), stage
-    )
+    _patch_file(dynamodb, file_id, _append_file_relation, stage)
     thing_data = get_thing(dynamodb, thing_id, stage)
     if thing_data:
         index_document(f"ThingData_{thing_id}", thing_data)

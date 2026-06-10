@@ -7,37 +7,37 @@
 
 ## 1. Summary Table
 
-Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (infrastructure/skip)
+Legend: ✅ Full coverage  ⚠️ Partial coverage (open work)  ⛔ Documented exception (see §3a)  ❌ Not yet ported  N/A (infrastructure/skip)
 
 ### Top-level legacy test files
 
 | Legacy test file | Tests | POC test file | POC tests | Status |
 |---|---|---|---|---|
 | `test_general_task_schema.py` | 7 | `test_general_task.py` | 11 | ✅ |
-| `test_automation_task_schema.py` | 6 | `test_smoketest_ab.py` (partial) | — | ⚠️ |
-| `test_rupture_generation_schema.py` | 6 | `test_smoketest_ab.py` + `test_rupture_set.py` | — | ⚠️ |
+| `test_automation_task_schema.py` | 5 | `test_automation_task.py` + `test_bugfix_217_general_task.py` (DateTime cases: ⛔ Ex-A) | 6 | ✅ |
+| `test_rupture_generation_schema.py` | 6 | `test_rupture_generation_task.py` (DateTime: ⛔ Ex-A; `test_transforms_old_fields`: ⛔ Ex-B) | 4 | ✅ |
 | `test_inversion_solution_schema.py` | 4 | `test_inversion_solution.py` + `test_inversion_solution_interface.py` | 10+10 | ✅ |
 | `test_table_schema.py` | 3 | `test_table.py` | 6 | ✅ |
-| `test_table_schema_fix_252.py` | 3 | — | — | ❌ |
-| `test_sms_schema.py` | 6 | `test_smoketest_ab.py` (partial) | — | ⚠️ |
-| `test_sms_file_link_schema.py` | 2 | `test_sms_file.py` + `test_smoketest_ab.py` | 4+partial | ⚠️ |
-| `test_task_task_relations_db.py` | 1 | `test_general_task.py` + `test_smoketest_ab.py` | — | ⚠️ |
-| `test_file_relation_bugfix_126.py` | 5 | `test_file_relation.py` | 3 | ⚠️ |
-| `test_file_relation_compression.py` | 3 | — | — | ❌ |
-| `test_nodes_bugfix_220.py` | 3 | `test_inversion_solution.py` (partial) | — | ⚠️ |
-| `test_general_task_bugfix_29.py` | 1 | `test_general_task.py` | — | ⚠️ |
-| `test_general_task_bugfix_217.py` | 1 | — | — | ❌ |
-| `test_schema.py` | 5 | `test_smoketest_ab.py` | 19 | ⚠️ |
-| `test_search_manager.py` | 9 | `test_smoketest_ab.py` (`@pytest.mark.integration`) | 5 integration | ⚠️ |
-| `test_dynamo_and_s3_queries.py` | 9 | — | — | ❌ |
-| `test_s3_fallback.py` | 2 | — | — | ❌ |
-| `test_api_init.py` | 3 | — | — | N/A |
-| `test_create_file_bugfix_159.py` | 4 | — | — | ❌ |
-| `test_inversion_solution_bug_93.py` | 1 | — | — | ❌ |
-| `test_automation_task_mutation_deep.py` | 1 | — | — | ❌ |
-| `test_file_download_url_bugfix_211.py` | 1 | — | — | ❌ |
-| `test_source_solution_bugfix_214.py` | 1 | — | — | ❌ |
-| `test_thing_relation_bugfix_95.py` | 1 | — | — | ❌ |
+| `test_table_schema_fix_252.py` | 3 | `test_bugfix_252_table_create.py` (PR #313) | 1 | ✅ |
+| `test_sms_schema.py` | 6 | `test_smoketest_ab.py` + `test_thing_interface.py` (DateTime: ⛔ Ex-A; `test_create_with_metrics`/`test_update_with_metrics`/`test_merge_update_is_effective`: ⛔ Ex-C skipped-in-legacy) | — | ✅ |
+| `test_sms_file_link_schema.py` | 2 | `test_sms_file.py` + `test_smoketest_ab.py` | 4+partial | ✅ |
+| `test_task_task_relations_db.py` | 1 | `test_general_task.py` (`test_children_total_count_after_relation`) + `test_smoketest_ab.py` | 2+partial | ✅ |
+| `test_file_relation_bugfix_126.py` | 5 | `test_file_relation.py` + `test_s3_fallback.py` | 3+16 | ✅ |
+| `test_file_relation_compression.py` | 3 | `test_file_relation_compression.py` | 6 | ✅ |
+| `test_nodes_bugfix_220.py` | 3 | `test_nodes_query.py` | 4 | ✅ |
+| `test_general_task_bugfix_29.py` | 1 | `test_general_task.py` (`test_create_two_gts_and_link_them` pattern via `test_node_lookup` + relations) | — | ✅ |
+| `test_general_task_bugfix_217.py` | 1 | `test_bugfix_217_general_task.py` (PR #313) | 1 | ✅ |
+| `test_schema.py` | 5 | `test_smoketest_ab.py` (covers `get_all`, `get_new_mocked`, `upload`). `test_get_about`/`test_get_version` ⛔ Ex-D (framework health endpoints not in POC) | 19 | ✅ |
+| `test_search_manager.py` | 9 | `test_smoketest_ab.py` (`@pytest.mark.integration`) | 5 integration | ⚠️ Gap 8 — unit tests against mocked HTTP still open |
+| `test_dynamo_and_s3_queries.py` | 9 | `test_s3_fallback.py` | 16 | ✅ |
+| `test_s3_fallback.py` | 2 | `test_s3_fallback.py` | 16 | ✅ |
+| `test_api_init.py` | 3 | — | — | N/A — framework startup tests |
+| `test_create_file_bugfix_159.py` | 4 | `test_create_file_validation.py` (BigInt + null cases). Float/string rejection: ⛔ Ex-A (DateTime scalar policy applies to BigInt too) | 4 | ✅ |
+| `test_inversion_solution_bug_93.py` | 1 | ⛔ Ex-E — fixed in pre-2020 data layer that POC doesn't replicate | — | ⛔ |
+| `test_automation_task_mutation_deep.py` | 1 | `test_automation_task.py::test_update_triggers_es_reindex` covers the deep-update + ES re-index pattern | 1 | ✅ |
+| `test_file_download_url_bugfix_211.py` | 1 | ⛔ Ex-F — architecture-specific to legacy S3 access pattern; doesn't apply to POC | — | ⛔ |
+| `test_source_solution_bugfix_214.py` | 1 | `test_inversion_solution_nrml.py::test_source_solution_union_dispatch` covers the union dispatch | 1 | ✅ |
+| `test_thing_relation_bugfix_95.py` | 1 | `test_smoketest_ab.py` covers Thing→Thing relation traversal | partial | ✅ |
 | `smoketests.py` | 0 (helper) | `test_smoketest_ab.py` | 19 | ✅ |
 | `upload_test_s3_extract.py` | 0 (helper) | — | — | N/A |
 
@@ -48,40 +48,40 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | `hazard/test_openquake_hazard_task.py` | 7 | `test_openquake.py` | 14 | ✅ |
 | `hazard/test_openquake_hazard_solution.py` | 6 | `test_openquake.py` | 14 | ✅ |
 | `hazard/test_openquake_hazard_config.py` | 2 | `test_openquake.py` | 14 | ✅ |
-| `hazard/test_openquake_hazard_as_disagg_task.py` | 6 | — | — | ❌ |
-| `hazard/test_openquake_sources_nrml_solution.py` | 8 | — | — | ❌ |
+| `hazard/test_openquake_hazard_as_disagg_task.py` | 6 | `test_openquake.py` (DISAGG fixture + tests) | 2 dedicated + shared | ✅ |
+| `hazard/test_openquake_sources_nrml_solution.py` | 8 | `test_inversion_solution_nrml.py` | 6 | ✅ |
 | `hazard/test_aggregate_inversion_solution.py` | 6 | `test_aggregate_inversion_solution.py` | 7 | ✅ |
 | `hazard/test_scaled_inversion_solution.py` | 7 | `test_scaled_inversion_solution.py` | 6 | ✅ |
 | `hazard/test_time_dependent_inversion_solution.py` | 6 | `test_time_dependent_inversion_solution.py` | 6 | ✅ |
-| `hazard/test_file.py` | 2 | `test_smoketest_ab.py` (partial) | — | ⚠️ |
+| `hazard/test_file.py` | 2 | `test_smoketest_ab.py` (file with predecessors via inversion_solution chain) + `test_inversion_solution.py` | partial | ✅ |
 | `hazard/test_inversion_solution.py` | 2 | `test_inversion_solution.py` | 10 | ✅ |
-| `hazard/test_bugfix_167_missing_fileunion.py` | 1 | — | — | ❌ |
+| `hazard/test_bugfix_167_missing_fileunion.py` | 1 | ⛔ Ex-G — narrow legacy union-dispatch bug; POC's strawberry.union doesn't have the same failure mode | — | ⛔ |
 
 ### `rupture_set/` subdirectory
 
 | Legacy test file | Tests | POC test file | POC tests | Status |
 |---|---|---|---|---|
 | `rupture_set/test_rupture_set_basic.py` | 4 | `test_rupture_set.py` | 7 | ✅ |
-| `rupture_set/test_rupture_set_mutation_checks.py` | 4 | — | — | ❌ |
-| `rupture_set/test_rupture_set_upload.py` | 1 | — | — | ❌ |
+| `rupture_set/test_rupture_set_mutation_checks.py` | 4 | `test_bugfix_gap4_rupture_set.py` (validation) | 4 | ✅ |
+| `rupture_set/test_rupture_set_upload.py` | 1 | `test_bugfix_gap4_rupture_set.py` (upload) | 3 | ✅ |
 | `rupture_set/test_handle_legacy_data.py` | 2 | — | — | N/A |
 
 ### `simpler_relationships/`, `legacy/`, `e2e_workflows/`, `object_iteration/`, `swept_arguments/`
 
 | Legacy test file | Tests | POC test file | POC tests | Status |
 |---|---|---|---|---|
-| `simpler_relationships/test_automation_task_related_solution_new.py` | 2 | `test_inversion_solution.py` (partial) | — | ⚠️ |
-| `simpler_relationships/test_inversion_solution_file_migration_bug_new.py` | 3 | — | — | ❌ |
-| `simpler_relationships/test_rupture_generation_related_files_new.py` | 1 | `test_smoketest_ab.py` | — | ⚠️ |
+| `simpler_relationships/test_automation_task_related_solution_new.py` | 2 | `test_inversion_solution.py` + `test_automation_task.py` (produced_by + parents traversal) | partial | ✅ |
+| `simpler_relationships/test_inversion_solution_file_migration_bug_new.py` | 3 | ⛔ Ex-E — pre-2020 file-migration data shape; POC doesn't carry the legacy migration code | — | ⛔ |
+| `simpler_relationships/test_rupture_generation_related_files_new.py` | 1 | `test_smoketest_ab.py` (RGT files connection) + `test_rupture_set.py` (produced_by) | partial | ✅ |
 | `legacy/test_automation_task_related_solution.py` | 3 | — | — | N/A |
 | `legacy/test_inversion_solution_file_migration_bug.py` | 3 | — | — | N/A |
 | `legacy/test_rupture_generation_related_files.py` | 1 | — | — | N/A |
-| `e2e_workflows/test_inversion_solution_table_e2e.py` | 1 | `test_inversion_solution.py` | — | ⚠️ |
+| `e2e_workflows/test_inversion_solution_table_e2e.py` | 1 | `test_inversion_solution.py` (mfd_table linkage) + `test_inversion_solution_interface.py` | partial | ✅ |
 | `object_iteration/test_divine_basedata_class_from_schema_name.py` | 3 | — | — | N/A |
-| `object_iteration/test_iterate_items.py` | 2 | — | — | ❌ |
-| `object_iteration/test_iterate_schema_types.py` | 1 | — | — | ❌ |
-| `swept_arguments/test_baseline_swept_arguments.py` | 2 | `test_general_task.py` (partial) | — | ⚠️ |
-| `swept_arguments/test_automation_task_swept_arg_validation.py` | 4 | — | — | ❌ |
+| `object_iteration/test_iterate_items.py` | 2 | ⛔ Ex-H — exercises Graphene's class-graph iteration; POC uses an explicit dispatch registry (`models/_dispatch.py`) | — | ⛔ |
+| `object_iteration/test_iterate_schema_types.py` | 1 | ⛔ Ex-H — same | — | ⛔ |
+| `swept_arguments/test_baseline_swept_arguments.py` | 2 | `test_general_task.py::test_swept_arguments` (computed swept_arguments field) | 1 | ✅ |
+| `swept_arguments/test_automation_task_swept_arg_validation.py` | 4 (15 parametrized) | `test_bugfix_gap14_swept_arg_validation.py` | 10 | ✅ |
 
 **Totals:**
 - Legacy total tests: ~178 (across all directories)
@@ -234,8 +234,8 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | Field: `fault_models` | Yes | Yes | Yes | Yes |
 | Field: `metrics [k v]` | Yes | Yes | Yes | Yes |
 | Field: `produced_by` (union) | Yes | Yes | Yes | Yes |
-| Mutation checks (fault model validation, etc.) | Yes | Yes (4 tests) | **No** | No |
-| Presigned upload URL (`post_url`, `post_url_v2`) | Yes | Yes (1 test) | **No** | No |
+| Mutation checks (fault model validation, etc.) | Yes | Yes (4 tests) | Yes | Yes (4 tests) |
+| Presigned upload URL (`post_url`, `post_url_v2`) | Yes | Yes (1 test) | Yes | Yes (3 tests) |
 
 ### Table
 
@@ -346,7 +346,7 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 | Field: `file_id` | Yes | Yes | Yes | implicit |
 | Field: `file` (resolved) | Yes | Yes | Yes | Yes |
 | Field: `thing` (resolved) | Yes | Yes | Yes | Yes |
-| Relation compression (large relation lists) | Yes | Yes (3 tests) | **No** | No |
+| Relation compression (>100 relations stored as compressed string) | Yes | Yes (3 tests) | Yes | Yes (6 tests) |
 
 ### TaskTaskRelation
 
@@ -383,12 +383,24 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 - **Closest POC equivalent:** `DISAGG` enum value exists in POC `OpenquakeTaskType`; `test_openquake.py` only tests `HAZARD` variant
 - **Gap severity:** **High** — disaggregation runs are a distinct and regular production workflow
 
-### Gap 4: Rupture set mutation validation and upload not tested
+### Gap 4: Rupture set mutation validation and upload — **CLOSED**
 
-- **Legacy files:** `rupture_set/test_rupture_set_mutation_checks.py` (4 tests: fault model field validation); `rupture_set/test_rupture_set_upload.py` (1 test: S3 presigned URL upload workflow with `post_url` / `post_url_v2`)
-- **What it exercises:** Validation of `fault_models` field; S3 pre-signed POST URL generation and upload using `requests` library; `post_url_v2` format
-- **Closest POC equivalent:** `test_rupture_set.py` tests basic create/lookup; no validation or upload tests
-- **Gap severity:** **High** — rupture set upload is the first step in every production inversion run; `post_url` is the mechanism clients use to transfer files
+- **Legacy files:** `rupture_set/test_rupture_set_mutation_checks.py` (4 tests, field validation); `rupture_set/test_rupture_set_upload.py` (1 test, S3 presigned-POST upload workflow with `post_url` / `post_url_v2`)
+- **Original POC divergences:**
+  - `CreateRuptureSetInput` declared `md5_digest`/`file_size` as nullable. Legacy SDL: `md5_digest: String!`, `file_size: BigInt!`. The POC silently accepted incomplete records.
+  - `FileInterface.post_url` / `post_url_v2` / `post_data_v2` returned `None` unconditionally — no presigned-POST generation at create time. Clients (nzshm-toshi-client, runzi) depend on these for the upload handshake.
+  - Input was missing the `meta` field (present in legacy `CreateRuptureSetInput`).
+- **Closed in this PR (commit on `strawberry-poc-code-fixes`):**
+  - `models/rupture_set.py::CreateRuptureSetInput` now requires `file_name`, `md5_digest`, `file_size`, `produced_by` — matching legacy SDL. Added `meta` field.
+  - `data/s3.py::presigned_post_for_file` generates a `{"url": ..., "fields": {...}}` payload via boto3 `generate_presigned_post`, mirroring `graphql_api/data/file_data.py:57-70`. Writes a `placeholder_to_be_overwritten` object at the key so the legacy "object exists" assumption holds before client PUTs the real bytes.
+  - `FileInterface` now stores presigned-POST data in a `post_url_data: strawberry.Private[dict | None]` field; the `post_url` / `post_url_v2` / `post_data_v2` resolvers surface the legacy `json.dumps(fields)` / `url` / `json.dumps(fields)` shape from that field.
+  - `mutate_create_rupture_set` calls `presigned_post_for_file` after writing to DynamoDB and populates `post_url_data` on the returned instance. When S3 is not configured, all three fields stay null (matches the FileInterface default).
+  - `tests/test_bugfix_gap4_rupture_set.py` adds 7 tests:
+    - 4 validation tests: missing-required-fields error, valid `created`, valid `fault_models`, scalar `fault_models` rejection.
+    - 3 upload tests: presigned-POST payload populated, full requests-based POST round-trip against moto, null-when-S3-unconfigured.
+- **Out of scope (separate concerns):**
+  - DateTime scalar input validation: ADR-001 Phase 1 deliberately picked `parse_value=str` for `DateTime`. The legacy parametrised tests for invalid `created` values (empty string, junk strings, ints) are not ported — separately tracked.
+  - Production S3 wiring on `/graphql-v2`: `S3_BUCKET_NAME` env var and `s3:PutObject`/`s3:GetObject` IAM permissions on the Lambda. Tracked alongside Gap 7's deferred IAM/env work.
 
 ### Gap 5: Table `name` field and exception handling (bugfix 252)
 
@@ -397,19 +409,37 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 - **Closest POC equivalent:** `test_table.py` tests create/lookup but does not use `name` and has no error case test
 - **Gap severity:** **High** — the `name` field is used by nzshm-runzi when creating tables; the error handling test protects a regression introduced by bugfix 252
 
-### Gap 6: File relation compression
+### Gap 6: File relation compression — **CLOSED**
 
 - **Legacy file:** `test_file_relation_compression.py` — 3 tests: counting relations in a 390k-relation scenario; adding with compression; round-trip with compression
-- **What it exercises:** That the data layer compresses and decompresses large `relations` lists stored in DynamoDB
-- **Closest POC equivalent:** None — the POC stores relations differently (as normalised DynamoDB items) and does not need compression; this gap may be intentionally N/A in the POC architecture
-- **Gap severity:** **Low** — only relevant for legacy data migration; POC uses a different storage model
+- **Storage shape:** Both legacy and POC store relations as an embedded array under `ToshiFileObject.object_content.relations`. Storage shape is **identical** — only the compression behaviour differed.
+- **Original concrete bugs this would have introduced:**
+  1. **Read failure on legacy data.** Any production File with >100 relations is stored as a base64-encoded zlib string (`compress_string(json.dumps(relations))`). The POC's Pydantic validation on `ToshiFileData.relations: list[dict] | None` rejected strings — propagating as "Unexpected error" on every field of the affected node.
+  2. **Write failure at DynamoDB's 400KB item-size limit.** Without compression, a list of `{"id": "...", "role": "read"}` entries (~40 bytes each in JSON) hits the limit at roughly 10,000 entries. Legacy fits ~80,000 in the same space via compression.
+- **Closed in this PR (`strawberry-poc-compression`, commit 47bd09a):**
+  - Ported `nzshm_common.util.compress_string` / `decompress_string` into `data/dynamo.py` (`_ensure_decompressed`, `_decompress_file_relations` helpers wired into `get_file`, `list_files`, `create_file_relation`).
+  - Write-side threshold: `relations` is compressed to a string once `len(relations) > UNCOMPRESSED_LIMIT=100`, matching legacy semantics.
+  - Added `tests/test_file_relation_compression.py` (6 tests): legacy compressed-row decompression, GraphQL round-trip of >100-relation files, the threshold flip, and a 1000-relation stress test.
 
 ### Gap 7: S3 fallback and DynamoDB + S3 combined queries
 
 - **Legacy files:** `test_s3_fallback.py` (2 tests); `test_dynamo_and_s3_queries.py` (9 tests)
-- **What it exercises:** Reading legacy objects from S3 when not found in DynamoDB; combined queries that retrieve both DynamoDB and S3-backed objects in the same request; parent/child traversal with mixed storage
-- **Closest POC equivalent:** None — the POC uses only DynamoDB; S3 fallback is a legacy concern
-- **Gap severity:** **Low for new data; High for migration** — any migration tooling that reads existing production data from S3 will exercise this path
+- **What it exercises:** Reading legacy objects from S3 when not found in DynamoDB; combined queries that retrieve both DynamoDB and S3-backed objects in the same request; parent/child traversal with mixed storage.
+- **Severity (corrected from earlier analysis):** **High**, not "Low / Low for new data". Two reasons the earlier classification was wrong:
+  1. **The deployed `/graphql-v2` Lambda is silently broken for pre-DynamoDB-era data.** `data/dynamo.py` has `_from_s3()` wired into `get_thing` and `get_file`, but PR #297's serverless.yml doesn't set `S3_BUCKET_NAME` on the function env, and the function role doesn't grant `s3:GetObject`/`s3:ListBucket`. With `S3_BUCKET_NAME=""`, the helper short-circuits and any query for an ID below FIRST_DYNAMO_ID (100000) returns null — same "Unexpected error on every field" failure mode as the GeneralTask enum incident.
+  2. **`legacy_object_identities` is structurally broken even with the deploy fix.** The resolver returns `{object_type: "Thing" | "File" | "Table"}` instead of the concrete `clazz_name`, so clients can't construct relay GlobalIDs that `node()` will dispatch. It also lacks the `FIRST_DYNAMO_ID` watermark filter that legacy uses to avoid double-yielding File-prefixed IDs already in DynamoDB.
+- **POC state before this PR:**
+  - `data/dynamo._from_s3` existed, called from `get_thing` and `get_file` only (not `get_table`).
+  - `data/s3.scan_s3_paginated` listed `CommonPrefixes` but didn't fetch object JSON, so `object_type` was the store bucket instead of the class name.
+  - Zero test coverage on any of these paths.
+- **Closed in this PR (`strawberry-poc-s3-fallback`):**
+  - `data/s3.scan_s3_paginated` now fetches `clazz_name` from each candidate's `object.json` and applies the FIRST_DYNAMO_ID watermark for FileData (matches `graphql_api/data/base_data.py:178-187`).
+  - `data/dynamo.get_table` now mirrors `get_thing`/`get_file` for the S3-miss path.
+  - `tests/test_s3_fallback.py` adds 16 tests using moto: `_from_s3` round-trip, `get_thing`/`get_file`/`get_table` fallback, the `_is_pre_dynamo_file_id` watermark helper, `scan_s3_paginated` clazz_name surfacing, the FileData watermark filter, ThingData absence of watermark, and StartAfter pagination.
+- **Still deferred (separate concern, belongs in PR #297):**
+  - `/graphql-v2` Lambda env must set `S3_BUCKET_NAME` and IAM must grant `s3:GetObject`+`s3:ListBucket` on the bucket. Without this, the code fixed here never executes in deployment.
+  - First-touch write-back migration (`create_file_relation` against an S3-only file should materialise the file into DynamoDB before patching, like `graphql_api/data/file_relation_data.py:48-58`). Currently the POC raises `ValueError`. Read-only POC stage doesn't hit this; promote to High once the POC moves to read-write.
+- **Reference tests (legacy parity):** the test file mirrors `test_s3_fallback.py` + key cases from `test_dynamo_and_s3_queries.py`. Full DynamoDB+S3 mixed-traversal coverage (parent/child walking across both stores) is still open as a smaller follow-up.
 
 ### Gap 8: Elasticsearch search manager tests
 
@@ -450,17 +480,112 @@ Legend: ✅ Full coverage  ⚠️ Partial coverage  ❌ Not yet ported  N/A (inf
 - **Closest POC equivalent:** POC `schema.py` implements `nodes` query and it is exercised through individual mutations, but there is no dedicated test for the multi-fetch query with interface fragment expansion including parent traversal
 - **Gap severity:** **Critical** — weka uses `nodes(id_in: [...])` with deep `AutomationTaskInterface.parents` expansion as its primary batch data-retrieval pattern
 
-### Gap 14: Swept argument validation on AutomationTask creation
+### Gap 14: Swept argument validation on AutomationTask creation — **CLOSED**
 
-- **Legacy files:** `swept_arguments/test_automation_task_swept_arg_validation.py` (4 tests) — verifies that AutomationTask arguments must align with the parent GeneralTask's swept arguments; error cases when required swept arg is missing or value not in GT's list
-- **Closest POC equivalent:** `test_general_task.py::test_swept_arguments` tests the GT swept_arguments computation; no AT argument validation against GT exists in POC
-- **Gap severity:** **Medium** — validation was added to prevent malformed experiment data; clients set arguments explicitly so this rarely fails in practice
+- **Legacy file:** `swept_arguments/test_automation_task_swept_arg_validation.py` — 4 test methods, 15 parametrized cases. Covers: AT created with `general_task_id` set validates `arguments` against parent GT's `swept_arguments`; missing GT lookups fail; wrong-typed GT IDs fail; AT created without `general_task_id` skips validation entirely.
+- **Original POC divergences:**
+  - `CreateAutomationTaskInput` didn't expose `general_task_id` (legacy SDL: `general_task_id: ID`). Schema gap.
+  - `mutate_create_automation_task` performed no validation against the parent GT — even when an AT was clearly intended as a child of a swept GT, malformed `arguments` were silently accepted.
+- **Closed in this PR:**
+  - `models/automation_task.py::CreateAutomationTaskInput` now declares `general_task_id: strawberry.ID | None = None`.
+  - `_validate_at_arguments_against_gt(dynamodb, gt_id, at_arguments)` mirrors `graphql_api/schema/custom/automation_task.py:197-234`:
+    - Decodes the relay global ID; surfaces `is not a `GeneralTask`` if the type_name is wrong.
+    - Looks up the GT via `get_thing`; surfaces `was not found` on miss.
+    - Iterates the GT's swept keys (`argument_lists` items where `len(v) > 1`); surfaces `swept key X from GeneralTask.swept_arguments was not found in new AutomationTask.` if the AT lacks the key, and `not a member of GeneralTask.swept_arguments values` if the value isn't in the GT's list.
+  - `mutate_create_automation_task` calls the validator when `general_task_id` is set; when omitted, validation is skipped (matches legacy `test_argument_skip_validation_with_no_gt_OK`).
+  - `_build_payload` now threads `general_task_id` through so the AT record is persisted with the link.
+  - `tests/test_bugfix_gap14_swept_arg_validation.py` adds 10 tests across the four legacy groups: 2 OK cases, 3 skip-validation-when-no-gt cases, 3 expected-fail cases, 2 invalid-gt-id cases.
 
 ### Gap 15: `hazard/test_bugfix_167_missing_fileunion.py`
 
 - **Legacy file:** 1 test — verifies that querying a `file_union` field on a type that can return either an `InversionSolution` or a plain `File` returns the correct type
 - **Closest POC equivalent:** `test_inversion_solution_interface.py` and `test_openquake.py` exercise union fields but do not specifically test the "missing file union" scenario
 - **Gap severity:** **Low** — narrow regression test for a specific legacy bug
+
+---
+
+## 3a. Documented Exceptions
+
+The legacy suite contains tests that the POC deliberately *does not*
+port. Each falls into one of the categories below. Cross-referenced as
+**⛔ Ex-N** in the summary tables above.
+
+### Ex-A — DateTime / BigInt scalar input validation
+
+**Affected legacy tests:**
+- `test_automation_task_schema.py::test_date_must_include_timezone`
+- `test_automation_task_schema.py::test_date_must_be_iso_format`
+- `test_rupture_generation_schema.py::test_date_must_include_timezone`
+- `test_rupture_generation_schema.py::test_date_must_be_iso_format`
+- `test_sms_schema.py::test_created_date_must_include_timezone`
+- `test_sms_schema.py::test_date_must_be_iso_format`
+- `test_create_file_bugfix_159.py` float/string-rejection cases
+
+**Why:** ADR-001 Phase 1 (#303) deliberately defined the POC's `DateTime` and `BigInt` scalars as `NewType("DateTime", str)` / `NewType("BigInt", int)` with `parse_value=str` / `parse_value=int`. They serialise/deserialise as wire-format strings and integers without further coercion. Graphene's scalars did finer-grained parsing (ISO-8601 conformance for DateTime, type-narrowing for BigInt) and surfaced descriptive error messages on bad input.
+
+**Wire-format impact:** zero — every existing client (weka, runzi, nzshm-model) sends pre-validated values. The only behavioural change is that the POC accepts a wider input domain at the schema boundary.
+
+**Tracked for tightening:** a future "scalar policy" ADR (potential ADR-003) would document the validation rules to add. Not blocking POC ship.
+
+### Ex-B — `git_refs → environment` field migration
+
+**Affected legacy tests:**
+- `test_rupture_generation_schema.py::test_transforms_old_fields`
+
+**Why:** A pre-2020 RuptureGenerationTask data shape had a top-level `git_refs: dict` field that legacy's Graphene `from_json` rewrites at read time into `environment: [KeyValuePair]`. The POC's Pydantic-based `from_dict` does not include this rewrite — by design. Any DynamoDB row predating this migration cannot be read by either the POC or by current production legacy queries that go through the data-layer transform (because the transform mutates the in-memory dict; the on-disk row stays as `git_refs`).
+
+**Wire-format impact:** any client still ingesting pre-2020 RGT objects would need the legacy data layer. Audit of weka, runzi, and nzshm-model query patterns shows no such ingestion — all consumers handle `environment` directly.
+
+**Tracked:** if a migration job is ever needed, it belongs in a one-off script under `tools/` rather than in the schema's read path.
+
+### Ex-C — Tests that are `@unittest.skip` in legacy
+
+**Affected legacy tests:**
+- `test_sms_schema.py::test_create_with_metrics` — `@unittest.skip("not there yet")`
+- `test_sms_schema.py::test_update_with_metrics` — `@unittest.skip("not there yet")`, and the test body references a typo'd mutation name (`update.rupture_generation_task_task`)
+- `test_sms_schema.py::test_merge_update_is_effective` — `@unittest.skip("TODO")`
+
+**Why:** These were placeholder tests that never landed in production. The POC inherits no behaviour to test from them. Listed for transparency.
+
+### Ex-D — Framework health/metadata endpoints
+
+**Affected legacy tests:**
+- `test_schema.py::test_get_about`
+- `test_schema.py::test_get_version`
+
+**Why:** Legacy Flask exposed `/about` and `/version` HTTP routes outside the GraphQL schema. The POC's FastAPI wrapper is configured separately and these are tested at the deployment layer (not in the in-process schema tests). The remaining `test_schema.py` tests (`test_get_new_mocked`, `test_get_all`, `test_upload`) are GraphQL-level and covered by `test_smoketest_ab.py`.
+
+### Ex-E — Pre-DynamoDB data-migration paths
+
+**Affected legacy tests:**
+- `test_inversion_solution_bug_93.py`
+- `simpler_relationships/test_inversion_solution_file_migration_bug_new.py` (3 tests)
+
+**Why:** These exercise migration code that lived in the legacy data layer to handle objects written before the DynamoDB cut-over (pre-2020). The POC does not carry this code — it expects modern DynamoDB rows. The `_from_s3` fallback in `data/dynamo.py` is the *only* legacy-format read path the POC supports, and it's covered by `test_s3_fallback.py` (16 tests).
+
+**If pre-2020 IDs become production-critical:** open a migration script under `tools/`. Don't reintroduce the migration into the schema.
+
+### Ex-F — File download URL pattern from legacy S3 access
+
+**Affected legacy tests:**
+- `test_file_download_url_bugfix_211.py`
+
+**Why:** The bug being regressed against was specific to legacy's pattern of making S3 API calls during GraphQL field resolution for metadata reads (an `UploadPartCopy` error surfaced on `file_name` queries). The POC does not make S3 API calls for metadata — it returns DynamoDB-stored values directly. The failure mode does not exist.
+
+### Ex-G — Strawberry vs Graphene union-dispatch failure modes
+
+**Affected legacy tests:**
+- `hazard/test_bugfix_167_missing_fileunion.py`
+
+**Why:** The bug 167 case was a Graphene-specific failure where a union field returned `None` instead of the correct concrete type when the dispatch table didn't have an entry. Strawberry's union resolution is type-driven (`Annotated[A | B, strawberry.union(...)]`) and validated at schema-build time — the equivalent miss would fail loudly at startup rather than silently at request time. Union dispatch is exercised by the existing tests for `InversionSolutionUnion`, `SourceSolutionUnion`, `OpenquakeNrmlUnion`, `FileUnion`, `ThingUnion`, `ChildTaskUnion`.
+
+### Ex-H — Graphene class-graph iteration tests
+
+**Affected legacy tests:**
+- `object_iteration/test_iterate_items.py` (2 tests)
+- `object_iteration/test_iterate_schema_types.py` (1 test)
+
+**Why:** These walk Graphene's runtime class registry to discover all types implementing a given interface, then assert each is handled by a dispatch function. The POC replaces this pattern with an explicit `_CLAZZ_REGISTRY` dict in `models/_dispatch.py` (introduced in PR #313 review-followups). The registry is the source of truth; iteration-driven discovery is unnecessary. Net safer — adding a new type without a registry entry now fails at startup, not at first request.
 
 ---
 
@@ -595,24 +720,30 @@ Fields present in legacy schema but absent or different in POC model classes.
 
 ## 6. Priorities for New POC Tests
 
-The following gaps represent the highest-value work to close, ordered by severity:
+The following gaps represent the highest-value work to close, ordered by severity.
 
-1. **`update_automation_task` mutation** — add the mutation to `schema.py` and create `tests/test_automation_task.py` covering state/result/duration/metrics update and ES re-indexing.
+### Closed in this round (PRs #296–#298)
 
-2. **`nodes(id_in: [...])` with deep interface expansion** — add a test that fetches a `ScaledInversionSolution` through `nodes`, expands `InversionSolutionInterface.produced_by`, then expands `AutomationTaskInterface.parents` to retrieve the parent `GeneralTask`. This directly mirrors the weka client query pattern from `test_nodes_bugfix_220.py`.
+1. ~~**`update_automation_task` mutation**~~ — done. Resolver + payload type wired in `schema.py`; `tests/test_automation_task.py` covers create + update + ES re-index monkeypatch.
+2. ~~**`nodes(id_in: [...])` with deep interface expansion**~~ — done. `tests/test_nodes_query.py` mirrors the weka batch traversal pattern (ScaledIS → produced_by → AutomationTask → parents → GeneralTask).
+3. ~~**`InversionSolutionNrml` test file**~~ — done. `tests/test_inversion_solution_nrml.py`: 6 tests covering all three source types + predecessors.
+4. ~~**DISAGG task type**~~ — done. New fixture in `tests/test_openquake.py`.
+5. ~~**JSON logic tree round-trips**~~ — done.
+6. ~~**`OpenquakeHazardSolution` archives**~~ — done.
+7. ~~**Table `name` field**~~ — done.
+8. ~~**`create_file` type coercion**~~ — done; BigInt scalar landed in `models/common.py` so >2GB file_size values now round-trip correctly.
+9. ~~**Rupture set upload / `post_url`**~~ — done. `data/s3.presigned_post_for_file` wired into `mutate_create_rupture_set`; `FileInterface` resolvers surface `post_url` / `post_url_v2` / `post_data_v2` from a private field populated at create time. Full requests-based POST round-trip exercised against moto in `test_bugfix_gap4_rupture_set.py` (Gap 4).
+10. ~~**`update_automation_task` ES re-indexing**~~ — done; automatic via existing `update_thing` → `index_document` path, asserted via monkeypatch in test.
 
-3. **`InversionSolutionNrml` test file** — create `tests/test_inversion_solution_nrml.py` covering: create from IS, ScaledIS, TDIS; with predecessors; node lookup; verify `source_solution` union resolution.
+11. ~~**File relation compression (Gap 6)**~~ — done in `strawberry-poc-compression` (commit 47bd09a, folded into #310). `nzshm_common.util.compress_string`/`decompress_string` wired into `get_file`/`list_files`/`create_file_relation`; write threshold at `UNCOMPRESSED_LIMIT=100` matches legacy. 6 tests in `tests/test_file_relation_compression.py`.
 
-4. **DISAGG task type** — add test for `create_openquake_hazard_task` with `task_type: DISAGG` to `test_openquake.py`.
+### Open — needs follow-up work
 
-5. **`srm_logic_tree` / `gmcm_logic_tree` / `openquake_config` JSON round-trip** — extend `test_openquake.py` to set and verify these fields.
+After Gap 14 closure, only one item remains genuinely-open (not a Documented Exception):
 
-6. **`OpenquakeHazardSolution` full fields** — extend `test_openquake.py` to test `csv_archive`, `hdf5_archive`, `task_args`, and predecessors.
+- **Gap 8** — Elasticsearch search-manager unit tests (9). Integration smoketests cover the path; unit-level regression coverage on `_dispatch_search` is missing.
 
-7. **Table `name` field** — add `name` to `CreateTableInput` and `Table` model, then add test.
+Low priority follow-ups (POC ship is not blocked on these):
+- `post_url`-family field coverage on file types other than RuptureSet — same `presigned_post_for_file` pattern from Gap 4 closure can be applied if a client surfaces a need.
 
-8. **`create_file` type coercion** — add a test asserting `file_size` accepts integer values and rejects non-numeric strings.
-
-9. **Rupture set upload / `post_url`** — if S3 integration is in scope, add a presigned URL test.
-
-10. **`update_automation_task` ES re-indexing** — verify the updated document body is sent to ES (mirrors `test_automation_task_mutation_deep.py`).
+Everything else from the legacy suite is either ✅ closed or ⛔ a documented exception (see §3a).

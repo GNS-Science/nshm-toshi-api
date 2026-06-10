@@ -339,7 +339,7 @@ def test_node_file_with_relations(ids, gql_context):
         """
         query GetFile($id: ID!) {
             node(id: $id) {
-                ... on ToshiFile {
+                ... on File {
                     file_name
                     file_size
                     meta { k v }
@@ -440,7 +440,7 @@ def test_node_general_task_children_and_files(ids, gql_context):
                                     role
                                     file {
                                         __typename
-                                        ... on ToshiFile { file_name file_size }
+                                        ... on File { file_name file_size }
                                         ... on SmsFile { file_name file_size file_type }
                                     }
                                 }
@@ -473,7 +473,7 @@ def test_node_general_task_children_and_files(ids, gql_context):
     assert "READ" in roles
     assert "UNDEFINED" in roles
     typenames = {e["node"]["file"]["__typename"] for e in file_edges}
-    assert "ToshiFile" in typenames
+    assert "File" in typenames
     assert "SmsFile" in typenames
 
 
@@ -490,7 +490,7 @@ def test_node_rgt_files_and_parents(ids, gql_context):
                             node {
                                 ... on FileRelation {
                                     role
-                                    file { ... on ToshiFile { file_name } }
+                                    file { ... on File { file_name } }
                                 }
                             }
                         }
@@ -641,7 +641,7 @@ def test_list_automation_tasks(ids, gql_context):
 SEARCH_FRAGMENT = """
 fragment sr on SearchResult {
     __typename
-    ... on ToshiFile {
+    ... on File {
         id
         file_name
         relations {
@@ -687,7 +687,7 @@ fragment sr on SearchResult {
                     ... on FileRelation {
                         role
                         file {
-                            ... on ToshiFile { id file_name file_size }
+                            ... on File { id file_name file_size }
                         }
                     }
                 }
@@ -744,7 +744,7 @@ fragment sr on SearchResult {
                         role
                         file {
                             __typename
-                            ... on ToshiFile { file_name file_size }
+                            ... on File { file_name file_size }
                             ... on SmsFile { file_name file_size file_type }
                         }
                     }
