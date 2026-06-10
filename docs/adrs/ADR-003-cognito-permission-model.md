@@ -161,14 +161,7 @@ is deliberate — see the reference doc's "Deferred / future" section)**
   work.
 - **A future split** of the compute-permission domain (Identity Pool +
   `runzi-*` roles + batch job role + compute resources) into a dedicated
-  runzi-infra stack/repo, separate from Toshi API auth which legitimately
-  couples to the API.
-- **Cross-account flag — confirm before any compute-IaC work.** runzi's
-  container build defaults target account `461564345538` / `us-east-1`,
-  while Cognito and the `runzi-*` roles live in `595842668254` /
-  `ap-southeast-2`. CloudFormation is single-account/region; if the Batch
-  compute genuinely lives in another account, the batch job role *cannot*
-  live in the API stack and a split is forced.
+  runzi-infra stack/repo.
 
 **Verification**
 - `uv run pytest auth/tests/` passes (50), including new tests for the
