@@ -84,8 +84,9 @@ explicit, while keeping the change inside this repo's `serverless.yml`.
      highest matches first.
    - Eliminate the policy duplication: a shared
      `AWS::IAM::ManagedPolicy` (`ToshiRunziBaseManagedPolicy`: ECR pull,
-     S3 read/write to `nshm-runzi-output-*` / `nshm-runzi-jars`, M2M
-     secret read) is attached to all three roles via `ManagedPolicyArns`;
+     S3 read/write to `nshm-runzi-output-*` (intended for compute outputs)
+     and `nshm-runzi-jars` (intended for OpenSHA fat-jars), M2M secret read)
+     is attached to all three roles via `ManagedPolicyArns`;
      each role then declares only its **incremental** inline policy
      (`batch` adds Batch submit; `admin` adds Batch + ECR administration).
      The ladder is now structural, with the base permissions defined once.
@@ -109,7 +110,7 @@ explicit, while keeping the change inside this repo's `serverless.yml`.
 | Rule ordering | `admin → batch → local` (most-privileged first) | First-match-wins must surface the highest tier |
 | Base permissions | Single shared managed policy | One source of truth; no copy-paste drift |
 | Attribution of Batch writes | One shared automation M2M identity | No per-user attribution requirement today |
-| Read-only machine identity | Deferred (no dedicated client yet) | No concrete read-only consumer yet |
+| Read-only machine identity | Deferred | Outside of scope |
 | Legacy `x-api-key` | Retained (full read+write) | Backward-compat; retiring it is out of scope |
 
 ## Consequences
@@ -140,17 +141,24 @@ is deliberate — see the reference doc's "Deferred / future" section)**
   `ToshiAutomationClient` holds both scopes, so read-only services share
   read+write creds or use the full-access legacy key. A
   `ToshiReadOnlyAutomationClient` (scope `toshi/read` only) is a small
-  follow-up when a concrete consumer — or the future public/REST read
-  path — appears.
+  follow-up.
 - **Batch-container permissions are not IaC.** A container's AWS
   permissions come from the Batch job definition's `jobRoleArn`, which is
   copied wholesale from a manually console-created job definition
   (`nzshm-runzi/runzi/cli/build_and_deploy_container.py`) — invisible to
   any IaC. This is distinct from the workstation S3 grant (the Cognito
   `runzi-*` role, which *is* IaC).
-- **Compute environments, job queues, ECR repos, and `nshm-runzi-*`
-  buckets** are manual/external; only the IAM permissions to use them are
-  defined here.
+- **Compute environments, job queues, the ECR repos (the `nshm-runzi-*`
+  repository glob), and the S3 buckets `nshm-runzi-output-*` /
+  `nshm-runzi-jars`** are manual/external; only the IAM permissions to use
+  them are defined here. Note these bucket names appear *only* in this IAM
+  policy — they are not referenced by runzi's code/config, which instead uses
+  `nzshm22-toshi-api-<stage>` (the Toshi object store, accessed via the API)
+  and `nzshm22-static-reports[-<stage>]` (reports, written directly by
+  `runzi/aws/s3_folder_upload.py`). So the grant currently does **not** cover
+  the report bucket runzi writes to today; reconciling the IAM resource names
+  with the buckets actually used should be verified alongside the compute-IaC
+  work.
 - **A future split** of the compute-permission domain (Identity Pool +
   `runzi-*` roles + batch job role + compute resources) into a dedicated
   runzi-infra stack/repo, separate from Toshi API auth which legitimately
