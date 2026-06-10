@@ -85,8 +85,8 @@ explicit, while keeping the change inside this repo's `serverless.yml`.
    - Build the ladder by **composition of shared managed policies** so higher
      tiers cannot drift below lower ones. Each tier is one incremental
      `AWS::IAM::ManagedPolicy` — `ToshiRunziBaseManagedPolicy` (ECR pull, S3
-     read/write to `nshm-runzi-output-*` (intended for compute outputs) and
-     `nshm-runzi-jars` (intended for OpenSHA fat-jars), M2M secret read),
+     read/write to the `ths-poc-arrow-test` Toshi Hazard Store dataset bucket,
+     M2M secret read),
      `ToshiRunziBatchManagedPolicy` (Batch submit), and
      `ToshiRunziAdminManagedPolicy` (Batch + ECR administration). Each role
      attaches the base plus the increments of all lower tiers via
@@ -154,16 +154,15 @@ is deliberate — see the reference doc's "Deferred / future" section)**
   any IaC. This is distinct from the workstation S3 grant (the Cognito
   `runzi-*` role, which *is* IaC).
 - **Compute environments, job queues, the ECR repos (the `nshm-runzi-*`
-  repository glob), and the S3 buckets `nshm-runzi-output-*` /
-  `nshm-runzi-jars`** are manual/external; only the IAM permissions to use
-  them are defined here. Note these bucket names appear *only* in this IAM
-  policy — they are not referenced by runzi's code/config, which instead uses
-  `nzshm22-toshi-api-<stage>` (the Toshi object store, accessed via the API)
-  and `nzshm22-static-reports[-<stage>]` (reports, written directly by
-  `runzi/aws/s3_folder_upload.py`). So the grant currently does **not** cover
-  the report bucket runzi writes to today; reconciling the IAM resource names
-  with the buckets actually used should be verified alongside the compute-IaC
-  work.
+  repository glob), and the S3 buckets they use** are manual/external; only the
+  IAM permissions to use them are defined here. The base policy currently grants
+  S3 read/write to a single bucket, `ths-poc-arrow-test` (the Toshi Hazard Store
+  Arrow dataset). Other buckets runzi touches — `nzshm22-toshi-api-<stage>` (the
+  Toshi object store, accessed via the API) and `nzshm22-static-reports[-<stage>]`
+  (reports, written directly by `runzi/aws/s3_folder_upload.py`) — are **not**
+  covered by the grant; the exact set of buckets the roles need should be
+  reconciled (and the bucket names confirmed against the env-configured THS
+  dataset URIs) when this becomes IaC.
 - **A future split** of the compute-permission domain (Identity Pool +
   `runzi-*` roles + batch job role + compute resources) into a dedicated
   runzi-infra stack/repo.
