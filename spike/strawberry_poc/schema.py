@@ -21,8 +21,6 @@ from strawberry.schema.config import StrawberryConfig
 
 import data.search as _data_search
 from data.dynamo import es_key_for, get_object, scan_objects_paginated
-
-log = logging.getLogger(__name__)
 from data.s3 import scan_s3_paginated
 from data.search import search as es_search
 from models.page_info import CompatListConnection
@@ -127,6 +125,9 @@ from models.time_dependent_inversion_solution import (
     resolve_time_dependent_inversion_solutions,
 )
 
+log = logging.getLogger(__name__)
+
+
 # ── SearchResult union + connection ───────────────────────────────────────────
 
 SearchResult = Annotated[
@@ -164,42 +165,18 @@ class SearchPayload:
     search_result: SearchResultConnection | None = None
 
 
-def _dispatch_search(hit: dict) -> SearchResult | None:  # noqa: C901
-    """Instantiate the right Strawberry type from an ES _source dict."""
-    clazz = hit.get("clazz_name", "")
+def _dispatch_search(hit: dict) -> SearchResult | None:
+    """Instantiate the right Strawberry type from an ES _source dict.
+
+    Delegates to the shared clazz_name → type registry in models/_dispatch.py.
+    Unknown clazz values fall back to ToshiFile, matching legacy behaviour.
+    """
+    from models._dispatch import dispatch_search  # noqa: PLC0415
+
     try:
-        if clazz == "GeneralTask":
-            return GeneralTask.from_dict(hit)
-        elif clazz == "RuptureGenerationTask":
-            return RuptureGenerationTask.from_dict(hit)
-        elif clazz == "AutomationTask":
-            return AutomationTask.from_dict(hit)
-        elif clazz == "StrongMotionStation":
-            return StrongMotionStation.from_dict(hit)
-        elif clazz == "OpenquakeHazardTask":
-            return OpenquakeHazardTask.from_dict(hit)
-        elif clazz == "OpenquakeHazardSolution":
-            return OpenquakeHazardSolution.from_dict(hit)
-        elif clazz == "OpenquakeHazardConfig":
-            return OpenquakeHazardConfig.from_dict(hit)
-        elif clazz == "SmsFile":
-            return SmsFile.from_dict(hit)
-        elif clazz == "RuptureSet":
-            return RuptureSet.from_dict(hit)
-        elif clazz == "InversionSolution":
-            return InversionSolution.from_dict(hit)
-        elif clazz == "ScaledInversionSolution":
-            return ScaledInversionSolution.from_dict(hit)
-        elif clazz == "AggregateInversionSolution":
-            return AggregateInversionSolution.from_dict(hit)
-        elif clazz == "TimeDependentInversionSolution":
-            return TimeDependentInversionSolution.from_dict(hit)
-        elif clazz == "InversionSolutionNrml":
-            return InversionSolutionNrml.from_dict(hit)
-        else:
-            return ToshiFile.from_dict(hit)
+        return dispatch_search(hit)
     except (KeyError, AttributeError, ValueError, TypeError) as e:
-        log.warning("_dispatch_search: failed to instantiate %s from hit: %s", clazz or "?", e)
+        log.warning("_dispatch_search: failed to instantiate %s from hit: %s", hit.get("clazz_name") or "?", e)
         return None
 
 
@@ -511,119 +488,182 @@ class Mutation:
     def create_general_task(
         self, info: strawberry.types.Info, input: CreateGeneralTaskInput
     ) -> CreateGeneralTaskPayload:
-        return CreateGeneralTaskPayload(general_task=mutate_create_general_task(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateGeneralTaskPayload(
+            general_task=mutate_create_general_task(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def update_general_task(
         self, info: strawberry.types.Info, input: UpdateGeneralTaskInput
     ) -> UpdateGeneralTaskPayload:
-        return UpdateGeneralTaskPayload(general_task=mutate_update_general_task(info, input), client_mutation_id=input.client_mutation_id)
+        return UpdateGeneralTaskPayload(
+            general_task=mutate_update_general_task(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def create_rupture_set(self, info: strawberry.types.Info, input: CreateRuptureSetInput) -> CreateRuptureSetPayload:
-        return CreateRuptureSetPayload(ok=True, rupture_set=mutate_create_rupture_set(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateRuptureSetPayload(
+            ok=True, rupture_set=mutate_create_rupture_set(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def create_file(self, info: strawberry.types.Info, input: CreateFileInput) -> CreateFilePayload:
-        return CreateFilePayload(ok=True, file_result=mutate_create_file(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateFilePayload(
+            ok=True, file_result=mutate_create_file(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def create_sms_file(self, info: strawberry.types.Info, input: CreateSmsFileInput) -> CreateSmsFilePayload:
-        return CreateSmsFilePayload(ok=True, file_result=mutate_create_sms_file(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateSmsFilePayload(
+            ok=True, file_result=mutate_create_sms_file(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def create_strong_motion_station(
         self, info: strawberry.types.Info, input: CreateStrongMotionStationInput
     ) -> CreateStrongMotionStationPayload:
-        return CreateStrongMotionStationPayload(strong_motion_station=mutate_create_strong_motion_station(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateStrongMotionStationPayload(
+            strong_motion_station=mutate_create_strong_motion_station(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_automation_task(
         self, info: strawberry.types.Info, input: CreateAutomationTaskInput
     ) -> CreateAutomationTaskPayload:
-        return CreateAutomationTaskPayload(task_result=mutate_create_automation_task(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateAutomationTaskPayload(
+            task_result=mutate_create_automation_task(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def create_rupture_generation_task(
         self, info: strawberry.types.Info, input: CreateAutomationTaskInput
     ) -> CreateRuptureGenerationTaskPayload:
-        return CreateRuptureGenerationTaskPayload(task_result=mutate_create_rupture_generation_task(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateRuptureGenerationTaskPayload(
+            task_result=mutate_create_rupture_generation_task(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def update_rupture_generation_task(
         self, info: strawberry.types.Info, input: UpdateAutomationTaskInput
     ) -> UpdateRuptureGenerationTaskPayload:
-        return UpdateRuptureGenerationTaskPayload(task_result=mutate_update_rupture_generation_task(info, input), client_mutation_id=input.client_mutation_id)
+        return UpdateRuptureGenerationTaskPayload(
+            task_result=mutate_update_rupture_generation_task(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def update_automation_task(
         self, info: strawberry.types.Info, input: UpdateAutomationTaskInput
     ) -> UpdateAutomationTaskPayload:
-        return UpdateAutomationTaskPayload(task_result=mutate_update_automation_task(info, input), client_mutation_id=input.client_mutation_id)
+        return UpdateAutomationTaskPayload(
+            task_result=mutate_update_automation_task(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def create_inversion_solution(
         self, info: strawberry.types.Info, input: CreateInversionSolutionInput
     ) -> CreateInversionSolutionPayload:
-        return CreateInversionSolutionPayload(ok=True, inversion_solution=mutate_create_inversion_solution(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateInversionSolutionPayload(
+            ok=True,
+            inversion_solution=mutate_create_inversion_solution(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_table(self, info: strawberry.types.Info, input: CreateTableInput) -> CreateTablePayload:
-        return CreateTablePayload(ok=True, table=mutate_create_table(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateTablePayload(
+            ok=True, table=mutate_create_table(info, input), client_mutation_id=input.client_mutation_id
+        )
 
     @strawberry.mutation
     def append_inversion_solution_tables(
         self, info: strawberry.types.Info, input: AppendInversionSolutionTablesInput
     ) -> AppendInversionSolutionTablesPayload:
-        return AppendInversionSolutionTablesPayload(ok=True, inversion_solution=mutate_append_inversion_solution_tables(info, input), client_mutation_id=input.client_mutation_id)
+        return AppendInversionSolutionTablesPayload(
+            ok=True,
+            inversion_solution=mutate_append_inversion_solution_tables(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_scaled_inversion_solution(
         self, info: strawberry.types.Info, input: CreateScaledInversionSolutionInput
     ) -> CreateScaledInversionSolutionPayload:
-        return CreateScaledInversionSolutionPayload(ok=True, solution=mutate_create_scaled_inversion_solution(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateScaledInversionSolutionPayload(
+            ok=True,
+            solution=mutate_create_scaled_inversion_solution(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_aggregate_inversion_solution(
         self, info: strawberry.types.Info, input: CreateAggregateInversionSolutionInput
     ) -> CreateAggregateInversionSolutionPayload:
-        return CreateAggregateInversionSolutionPayload(ok=True, solution=mutate_create_aggregate_inversion_solution(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateAggregateInversionSolutionPayload(
+            ok=True,
+            solution=mutate_create_aggregate_inversion_solution(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_time_dependent_inversion_solution(
         self, info: strawberry.types.Info, input: CreateTimeDependentInversionSolutionInput
     ) -> CreateTimeDependentInversionSolutionPayload:
-        return CreateTimeDependentInversionSolutionPayload(ok=True, solution=mutate_create_time_dependent_inversion_solution(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateTimeDependentInversionSolutionPayload(
+            ok=True,
+            solution=mutate_create_time_dependent_inversion_solution(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_inversion_solution_nrml(
         self, info: strawberry.types.Info, input: CreateInversionSolutionNrmlInput
     ) -> CreateInversionSolutionNrmlPayload:
-        return CreateInversionSolutionNrmlPayload(ok=True, inversion_solution_nrml=mutate_create_inversion_solution_nrml(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateInversionSolutionNrmlPayload(
+            ok=True,
+            inversion_solution_nrml=mutate_create_inversion_solution_nrml(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_openquake_hazard_config(
         self, info: strawberry.types.Info, input: CreateOpenquakeHazardConfigInput
     ) -> CreateOpenquakeHazardConfigPayload:
-        return CreateOpenquakeHazardConfigPayload(ok=True, config=mutate_create_openquake_hazard_config(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateOpenquakeHazardConfigPayload(
+            ok=True,
+            config=mutate_create_openquake_hazard_config(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_openquake_hazard_solution(
         self, info: strawberry.types.Info, input: CreateOpenquakeHazardSolutionInput
     ) -> CreateOpenquakeHazardSolutionPayload:
-        return CreateOpenquakeHazardSolutionPayload(ok=True, openquake_hazard_solution=mutate_create_openquake_hazard_solution(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateOpenquakeHazardSolutionPayload(
+            ok=True,
+            openquake_hazard_solution=mutate_create_openquake_hazard_solution(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_openquake_hazard_task(
         self, info: strawberry.types.Info, input: CreateOpenquakeHazardTaskInput
     ) -> CreateOpenquakeHazardTaskPayload:
-        return CreateOpenquakeHazardTaskPayload(ok=True, task_result=mutate_create_openquake_hazard_task(info, input), client_mutation_id=input.client_mutation_id)
+        return CreateOpenquakeHazardTaskPayload(
+            ok=True,
+            task_result=mutate_create_openquake_hazard_task(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def update_openquake_hazard_task(
         self, info: strawberry.types.Info, input: UpdateOpenquakeHazardTaskInput
     ) -> UpdateOpenquakeHazardTaskPayload:
-        return UpdateOpenquakeHazardTaskPayload(ok=True, task_result=mutate_update_openquake_hazard_task(info, input), client_mutation_id=input.client_mutation_id)
+        return UpdateOpenquakeHazardTaskPayload(
+            ok=True,
+            task_result=mutate_update_openquake_hazard_task(info, input),
+            client_mutation_id=input.client_mutation_id,
+        )
 
     @strawberry.mutation
     def create_file_relation(

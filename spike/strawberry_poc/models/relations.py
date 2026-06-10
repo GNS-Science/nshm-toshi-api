@@ -194,72 +194,8 @@ class TaskRelationsConnection(CompatListConnection[TaskTaskRelation]):
 # ── Dispatch helpers ──────────────────────────────────────────────────────────
 
 
-def _dispatch_file(data: dict):
-    """Instantiate the right Strawberry file type from a raw data dict."""
-    clazz = data.get("clazz_name", "")
-    if clazz == "SmsFile":
-        from models.sms_file import SmsFile  # noqa: PLC0415
-
-        return SmsFile.from_dict(data)
-    if clazz == "RuptureSet":
-        from models.rupture_set import RuptureSet  # noqa: PLC0415
-
-        return RuptureSet.from_dict(data)
-    if clazz == "InversionSolution":
-        from models.inversion_solution import InversionSolution  # noqa: PLC0415
-
-        return InversionSolution.from_dict(data)
-    if clazz == "ScaledInversionSolution":
-        from models.scaled_inversion_solution import ScaledInversionSolution  # noqa: PLC0415
-
-        return ScaledInversionSolution.from_dict(data)
-    if clazz == "AggregateInversionSolution":
-        from models.aggregate_inversion_solution import AggregateInversionSolution  # noqa: PLC0415
-
-        return AggregateInversionSolution.from_dict(data)
-    if clazz == "TimeDependentInversionSolution":
-        from models.time_dependent_inversion_solution import TimeDependentInversionSolution  # noqa: PLC0415
-
-        return TimeDependentInversionSolution.from_dict(data)
-    if clazz == "InversionSolutionNrml":
-        from models.inversion_solution_nrml import InversionSolutionNrml  # noqa: PLC0415
-
-        return InversionSolutionNrml.from_dict(data)
-    from models.file import ToshiFile  # noqa: PLC0415
-
-    return ToshiFile.from_dict(data)
-
-
-def _dispatch_thing(data: dict):
-    """Instantiate the right Strawberry thing type from a raw data dict."""
-    clazz = data.get("clazz_name", "")
-    if clazz == "RuptureGenerationTask":
-        from models.automation_task import RuptureGenerationTask  # noqa: PLC0415
-
-        return RuptureGenerationTask.from_dict(data)
-    if clazz == "AutomationTask":
-        from models.automation_task import AutomationTask  # noqa: PLC0415
-
-        return AutomationTask.from_dict(data)
-    if clazz == "StrongMotionStation":
-        from models.strong_motion_station import StrongMotionStation  # noqa: PLC0415
-
-        return StrongMotionStation.from_dict(data)
-    if clazz == "OpenquakeHazardTask":
-        from models.openquake_hazard_task import OpenquakeHazardTask  # noqa: PLC0415
-
-        return OpenquakeHazardTask.from_dict(data)
-    if clazz == "OpenquakeHazardSolution":
-        from models.openquake_hazard_solution import OpenquakeHazardSolution  # noqa: PLC0415
-
-        return OpenquakeHazardSolution.from_dict(data)
-    if clazz == "OpenquakeHazardConfig":
-        from models.openquake_hazard_config import OpenquakeHazardConfig  # noqa: PLC0415
-
-        return OpenquakeHazardConfig.from_dict(data)
-    from models.general_task import GeneralTask  # noqa: PLC0415
-
-    return GeneralTask.from_dict(data)
+from ._dispatch import dispatch_file as _dispatch_file
+from ._dispatch import dispatch_thing as _dispatch_thing
 
 
 # ── Input types for mutations ─────────────────────────────────────────────────
