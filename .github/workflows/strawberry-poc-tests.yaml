@@ -1,0 +1,42 @@
+# Runs the Strawberry POC test suite via the GNS-Science shared workflow.
+#
+# Delegates to nshm-github-actions/python-run-tests-uv.yml, which handles
+# uv install + tox + Codecov upload + Slack alerts. The shared workflow
+# expects a tox config at the working-directory root — see
+# spike/strawberry_poc/setup.cfg.
+#
+# Scope: only triggers on changes under spike/strawberry_poc/** so it
+# doesn't slow PRs that touch only legacy graphql_api code. Legacy CI
+# (run-tests-on-pull-request.yaml) is unaffected.
+name: Strawberry POC Tests
+
+on:
+  pull_request:
+    branches: [deploy-test, main]
+    paths:
+      - 'spike/strawberry_poc/**'
+      - '.github/workflows/strawberry-poc-tests.yaml'
+  push:
+    branches: [deploy-test, main]
+    paths:
+      - 'spike/strawberry_poc/**'
+      - '.github/workflows/strawberry-poc-tests.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: strawberry-poc-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  call-test-workflow:
+    uses: GNS-Science/nshm-github-actions/.github/workflows/python-run-tests-uv.yml@main
+    with:
+      operating-systems: "['ubuntu-latest']"
+      python-versions: "['3.12']"
+      working-directory: spike/strawberry_poc
+      optional-dependency-groups: dev
+      timeout-minutes: 20
+    secrets: inherit
