@@ -433,7 +433,54 @@ resources:
             ClientId: !Ref ToshiScientistClient
             ServerSideTokenCheck: false
 
+    # ── Runzi AWS-access tiers: a CUMULATIVE LADDER (local ⊂ batch ⊂ admin) ────
+    # A Cognito Identity Pool assigns exactly ONE IAM role per login — it cannot
+    # union two. So each tier's role must be self-contained. The permissions every
+    # tier shares (ECR pull, S3 read/write, M2M secret read) live in this single
+    # managed policy; each role attaches it via ManagedPolicyArns and adds only its
+    # own incremental inline policy. This keeps the base perms in one place.
+    #
+    # IMPORTANT: a user should belong to exactly ONE runzi-* group (the highest
+    # tier they need). If they are in several, the HIGHEST tier wins — see the
+    # ToshiIdentityPoolRoleAttachment rules below, which are ordered
+    # most-privileged-first (admin → batch → local) so the first match is correct.
+    ToshiRunziBaseManagedPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        ManagedPolicyName: toshi-runzi-base-${self:custom.stage}
+        Description: Base runzi permissions (ECR pull, S3 read/write, M2M secret read) shared by all runzi tiers
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Sid: ECRRead
+              Effect: Allow
+              Action:
+                - ecr:GetAuthorizationToken
+                - ecr:BatchGetImage
+                - ecr:GetDownloadUrlForLayer
+                - ecr:DescribeRepositories
+                - ecr:ListImages
+              Resource: '*'
+            - Sid: S3ReadWrite
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+                - s3:ListBucket
+                - s3:PutObjectAcl
+              Resource:
+                - arn:aws:s3:::nshm-runzi-output-*
+                - arn:aws:s3:::nshm-runzi-output-*/*
+                - arn:aws:s3:::nshm-runzi-jars
+                - arn:aws:s3:::nshm-runzi-jars/*
+            - Sid: M2MSecretRead
+              Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource:
+                Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
+
     # ── IAM roles (assumed via Identity Pool after Cognito login) ──────────────
+    # local tier — base permissions only (ECR pull, S3 read/write).
     ToshiRunziLocalRole:
       Type: AWS::IAM::Role
       Properties:
@@ -452,43 +499,15 @@ resources:
                   'cognito-identity.amazonaws.com:aud': !Ref ToshiIdentityPool
                 ForAnyValue:StringLike:
                   'cognito-identity.amazonaws.com:amr': authenticated
-        Policies:
-          - PolicyName: toshi-runzi-local-policy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Sid: ECRRead
-                  Effect: Allow
-                  Action:
-                    - ecr:GetAuthorizationToken
-                    - ecr:BatchGetImage
-                    - ecr:GetDownloadUrlForLayer
-                    - ecr:DescribeRepositories
-                    - ecr:ListImages
-                  Resource: '*'
-                - Sid: S3ReadWrite
-                  Effect: Allow
-                  Action:
-                    - s3:GetObject
-                    - s3:PutObject
-                    - s3:ListBucket
-                    - s3:PutObjectAcl
-                  Resource:
-                    - arn:aws:s3:::nshm-runzi-output-*
-                    - arn:aws:s3:::nshm-runzi-output-*/*
-                    - arn:aws:s3:::nshm-runzi-jars
-                    - arn:aws:s3:::nshm-runzi-jars/*
-                - Sid: M2MSecretRead
-                  Effect: Allow
-                  Action: secretsmanager:GetSecretValue
-                  Resource:
-                    Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
+        ManagedPolicyArns:
+          - !Ref ToshiRunziBaseManagedPolicy
 
+    # batch tier — base + submit/manage AWS Batch jobs.
     ToshiRunziBatchRole:
       Type: AWS::IAM::Role
       Properties:
         RoleName: toshi-runzi-batch-${self:custom.stage}
-        Description: Runzi batch job access (ECR pull, S3, Batch submit)
+        Description: Runzi batch job access (base + Batch submit)
         MaxSessionDuration: 3600
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
@@ -502,32 +521,13 @@ resources:
                   'cognito-identity.amazonaws.com:aud': !Ref ToshiIdentityPool
                 ForAnyValue:StringLike:
                   'cognito-identity.amazonaws.com:amr': authenticated
+        ManagedPolicyArns:
+          - !Ref ToshiRunziBaseManagedPolicy
         Policies:
           - PolicyName: toshi-runzi-batch-policy
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
-                - Sid: ECRRead
-                  Effect: Allow
-                  Action:
-                    - ecr:GetAuthorizationToken
-                    - ecr:BatchGetImage
-                    - ecr:GetDownloadUrlForLayer
-                    - ecr:DescribeRepositories
-                    - ecr:ListImages
-                  Resource: '*'
-                - Sid: S3ReadWrite
-                  Effect: Allow
-                  Action:
-                    - s3:GetObject
-                    - s3:PutObject
-                    - s3:ListBucket
-                    - s3:PutObjectAcl
-                  Resource:
-                    - arn:aws:s3:::nshm-runzi-output-*
-                    - arn:aws:s3:::nshm-runzi-output-*/*
-                    - arn:aws:s3:::nshm-runzi-jars
-                    - arn:aws:s3:::nshm-runzi-jars/*
                 - Sid: BatchSubmit
                   Effect: Allow
                   Action:
@@ -539,17 +539,13 @@ resources:
                     - batch:DescribeComputeEnvironments
                     - batch:DescribeJobDefinitions
                   Resource: '*'
-                - Sid: M2MSecretRead
-                  Effect: Allow
-                  Action: secretsmanager:GetSecretValue
-                  Resource:
-                    Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
 
+    # admin tier — base + Batch submit + Batch/ECR administration.
     ToshiRunziAdminRole:
       Type: AWS::IAM::Role
       Properties:
         RoleName: toshi-runzi-admin-${self:custom.stage}
-        Description: Runzi admin access (ECR push/create, Batch configure)
+        Description: Runzi admin access (base + Batch submit + Batch/ECR admin)
         MaxSessionDuration: 3600
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
@@ -563,32 +559,13 @@ resources:
                   'cognito-identity.amazonaws.com:aud': !Ref ToshiIdentityPool
                 ForAnyValue:StringLike:
                   'cognito-identity.amazonaws.com:amr': authenticated
+        ManagedPolicyArns:
+          - !Ref ToshiRunziBaseManagedPolicy
         Policies:
           - PolicyName: toshi-runzi-admin-policy
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
-                - Sid: ECRRead
-                  Effect: Allow
-                  Action:
-                    - ecr:GetAuthorizationToken
-                    - ecr:BatchGetImage
-                    - ecr:GetDownloadUrlForLayer
-                    - ecr:DescribeRepositories
-                    - ecr:ListImages
-                  Resource: '*'
-                - Sid: S3ReadWrite
-                  Effect: Allow
-                  Action:
-                    - s3:GetObject
-                    - s3:PutObject
-                    - s3:ListBucket
-                    - s3:PutObjectAcl
-                  Resource:
-                    - arn:aws:s3:::nshm-runzi-output-*
-                    - arn:aws:s3:::nshm-runzi-output-*/*
-                    - arn:aws:s3:::nshm-runzi-jars
-                    - arn:aws:s3:::nshm-runzi-jars/*
                 - Sid: BatchSubmit
                   Effect: Allow
                   Action:
@@ -620,11 +597,6 @@ resources:
                     - ecr:BatchDeleteImage
                   Resource:
                     - arn:aws:ecr:*:*:repository/nshm-runzi-*
-                - Sid: M2MSecretRead
-                  Effect: Allow
-                  Action: secretsmanager:GetSecretValue
-                  Resource:
-                    Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
 
     # ── Identity Pool role attachment (rules-based by Cognito group) ───────────
     ToshiIdentityPoolRoleAttachment:
@@ -643,19 +615,24 @@ resources:
             Type: Rules
             AmbiguousRoleResolution: AuthenticatedRole
             RulesConfiguration:
+              # Rules are evaluated in order and the FIRST match wins (the Identity
+              # Pool can only assign one role). They MUST be ordered most-privileged
+              # first so a user in several runzi-* groups gets their HIGHEST tier.
+              # Each tier's role is cumulative (admin ⊃ batch ⊃ local), so one role
+              # is sufficient — do not reorder these without understanding that.
               Rules:
                 - Claim: cognito:groups
                   MatchType: Contains
-                  Value: runzi-local
-                  RoleARN: !GetAtt ToshiRunziLocalRole.Arn
+                  Value: runzi-admin
+                  RoleARN: !GetAtt ToshiRunziAdminRole.Arn
                 - Claim: cognito:groups
                   MatchType: Contains
                   Value: runzi-batch
                   RoleARN: !GetAtt ToshiRunziBatchRole.Arn
                 - Claim: cognito:groups
                   MatchType: Contains
-                  Value: runzi-admin
-                  RoleARN: !GetAtt ToshiRunziAdminRole.Arn
+                  Value: runzi-local
+                  RoleARN: !GetAtt ToshiRunziLocalRole.Arn
 
     # ── Secrets Manager: Cognito M2M client_id/client_secret container ─────────
     # Populated out-of-band by `auth/create_m2m_secret.py` after the Cognito
