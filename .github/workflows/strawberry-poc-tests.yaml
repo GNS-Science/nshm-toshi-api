@@ -17,8 +17,7 @@ on:
       - 'spike/strawberry_poc/**'
       - '.github/workflows/strawberry-poc-tests.yaml'
   push:
-    branches:
-      - chore/strawberry-fields
+    branches: [deploy-test, main]
     paths:
       - 'spike/strawberry_poc/**'
       - '.github/workflows/strawberry-poc-tests.yaml'
