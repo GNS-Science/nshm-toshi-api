@@ -125,6 +125,15 @@ custom:
           - resourcee.Resources.ElasticSearchInstance
           - provider.iamrolestatements.1
           - functions.app.environment.0
+          # Mini Phase 4 (test only): the POC becomes the read-write primary.
+          # Drop its DB_READ_ONLY guard so writes succeed.
+          - functions.strawberry-poc.environment.DB_READ_ONLY
+        Set:
+          # Mini Phase 4 (test only): legacy app becomes read-only. Any client
+          # still POSTing mutations to /graphql will get a clear RuntimeError
+          # from graphql_api/data/base_data.py:347, forcing the cutover to
+          # /graphql-v2. Reads on /graphql still work.
+          functions.app.environment.DB_READ_ONLY: "1"
 
 provider:
   name: aws
