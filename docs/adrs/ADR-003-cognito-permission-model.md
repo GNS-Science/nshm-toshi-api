@@ -196,6 +196,16 @@ is deliberate — see the reference doc's "Deferred / future" section)**
     `iam:AttachRolePolicy`, `iam:DetachRolePolicy`,
     `iam:ListAttachedRolePolicies`, `iam:ListRolePolicies`,
     `iam:PutRolePolicy`, `iam:DeleteRolePolicy`, `iam:TagRole`, `iam:UntagRole`
+- **Two ARN scopes are needed, not just the runzi one.** Besides the
+  `toshi-runzi-*` policies/roles above, a full `serverless deploy` also reads and
+  manages the Lambda **execution roles** that Serverless itself creates —
+  `arn:aws:iam::<account>:role/nzshm22-toshi-api-<stage>-<region>-*` (e.g. the
+  default `lambdaRole` and the WarmUp plugin's `lowconcurrencywarmer-role`).
+  CloudFormation calls `iam:GetRolePolicy` / `iam:GetRole` on these to resolve
+  their ARNs during an update, so the deployer needs the role-management actions
+  above (plus `iam:PassRole`) on the `role/nzshm22-toshi-api-*` prefix as well.
+  Omitting it fails with `Unable to retrieve Arn attribute for AWS::IAM::Role ...
+  not authorized to perform: iam:GetRolePolicy`.
 - The deployer user's own policy is **not** managed in this repo, so this grant
   is applied out-of-band by an account admin. Each new resource *type* added to
   the template (this is the same gap that previously blocked

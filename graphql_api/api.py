@@ -15,7 +15,8 @@ from .library_version_check import log_library_info
 
 # Redeploy trigger: force a new Lambda artifact so Serverless does not skip the
 # CloudFormation stack update that provisions the runzi IAM policies/roles
-# (see docs/adrs/ADR-003 "Deployer IAM permissions required").
+# (see docs/adrs/ADR-003 "Deployer IAM permissions required"). Re-bumped after
+# broadening the deployer grant to the nzshm22-toshi-api-* execution roles.
 
 # from flask_graphql import GraphQLView
 
