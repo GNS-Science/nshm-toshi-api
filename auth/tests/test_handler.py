@@ -243,5 +243,65 @@ class TestHandlerBearerJWT(unittest.TestCase):
         self.assertEqual(result['policyDocument']['Statement'][0]['Effect'], 'Allow')
 
 
+# ---------------------------------------------------------------------------
+# validate_cognito_token — group → scope derivation (the API read/write axis)
+# ---------------------------------------------------------------------------
+
+
+class TestGroupToScopeDerivation(unittest.TestCase):
+    """USER_PASSWORD_AUTH (scientist) tokens carry the 'aws.cognito.signin.user.admin'
+    scope, not our resource-server scopes, so the handler derives toshi/read|write
+    from Cognito group membership. M2M tokens carry the real scope claim and pass
+    through unchanged. This is the source of truth for the API permission axis."""
+
+    SCIENTIST_SCOPE = 'aws.cognito.signin.user.admin'
+
+    def _validate(self, payload):
+        env = {'COGNITO_USER_POOL_ID': 'pool', 'COGNITO_REGION': 'ap-southeast-2', 'COGNITO_CLIENT_ID': 'client123'}
+        with (
+            mock.patch.object(handler_module, 'get_jwks_client') as gjc,
+            mock.patch.object(handler_module.jwt, 'decode', return_value=payload),
+            mock.patch.dict(os.environ, env),
+        ):
+            gjc.return_value.get_signing_key_from_jwt.return_value = mock.Mock(key='signing-key')
+            return handler_module.validate_cognito_token('faketoken')
+
+    def _scientist_payload(self, groups):
+        return {
+            'token_use': 'access',
+            'client_id': 'client123',
+            'username': 'alice@example.com',
+            'scope': self.SCIENTIST_SCOPE,
+            'cognito:groups': groups,
+        }
+
+    def test_reader_group_gets_read_only(self):
+        _, scopes, _ = self._validate(self._scientist_payload(['toshi-readers']))
+        self.assertEqual(scopes, 'toshi/read')
+
+    def test_writer_group_gets_read_and_write(self):
+        _, scopes, _ = self._validate(self._scientist_payload(['toshi-writers']))
+        self.assertEqual(scopes.split(), ['toshi/read', 'toshi/write'])
+
+    def test_runzi_groups_do_not_affect_api_scopes(self):
+        """The AWS axis (runzi-*) is independent of the API axis: a writer who is
+        also in runzi-batch still gets exactly toshi/read + toshi/write."""
+        _, scopes, _ = self._validate(self._scientist_payload(['toshi-writers', 'runzi-batch', 'runzi-local']))
+        self.assertEqual(scopes.split(), ['toshi/read', 'toshi/write'])
+
+    def test_no_toshi_group_grants_no_toshi_scopes(self):
+        """A user in no toshi-* group keeps the bare signin scope — the middleware
+        then denies them for lacking toshi/read."""
+        _, scopes, _ = self._validate(self._scientist_payload([]))
+        self.assertNotIn('toshi/read', scopes)
+        self.assertNotIn('toshi/write', scopes)
+
+    def test_m2m_read_only_scope_passes_through(self):
+        """A read-only M2M token (no signin scope) keeps its scope claim verbatim."""
+        payload = {'token_use': 'access', 'client_id': 'client123', 'sub': 'svc', 'scope': 'toshi/read'}
+        _, scopes, _ = self._validate(payload)
+        self.assertEqual(scopes, 'toshi/read')
+
+
 if __name__ == '__main__':
     unittest.main()

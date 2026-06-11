@@ -12,6 +12,27 @@ A condensed walk-through of how `nshm-toshi-api` translates Cognito identity int
 
 The three systems are *disjoint by design* — adding a user to a `toshi-*` group never affects their IAM role, and vice versa.
 
+## The user model — two axes + an allowlist
+
+A human's access is the combination of an independent choice on each of **two axes**; the audience allowlist (system 3) is an orthogonal gate, not an axis. Machines only have the API axis.
+
+| Axis | Question | Tokens | Groups |
+|---|---|---|---|
+| **API access** | "what GraphQL ops can I do?" | carried in the JWT, enforced by authorizer + middleware | `toshi-readers` / `toshi-writers` |
+| **AWS session access** | "what AWS resources can I touch?" | IAM role via Identity Pool → STS creds | `runzi-local` / `runzi-batch` / `runzi-admin` |
+
+The agreed actors:
+
+| # | Actor | API axis | AWS axis |
+|---|---|---|---|
+| 1 | **Scientist (default)** — log in, run runzi locally, read/write Toshi + S3, pull ECR | `toshi-writers` | `runzi-local` |
+| 2 | **Power user** — scientist + submit cloud Batch runs (a few named now; maybe any scientist later) | `toshi-writers` | `runzi-batch` |
+| 3 | **Operator/admin** — power user + manage Batch compute envs & ECR images | `toshi-writers` | `runzi-admin` |
+| 4 | **Automation/Batch job (machine)** — runs in a Batch container, writes results (one shared M2M identity) | M2M `toshi/read`+`toshi/write` | none from Cognito (Batch job-definition role — see Deferred) |
+| 5 | **Internal read service (machine)** — query Toshi read-only (future: public/REST read) | M2M `toshi/read` only | none |
+
+**The AWS axis is a cumulative ladder: `local ⊂ batch ⊂ admin`.** A user belongs to **exactly one** tier — the highest they need. (The rule ordering is only a safeguard so that *accidental* multi-membership still resolves to the highest tier — see Q2; it is not a reason to add a user to more than one `runzi-*` group.)
+
 ---
 
 ## Q1: Where are the permissions set for a particular Cognito group?
@@ -71,22 +92,22 @@ ToshiIdentityPoolRoleAttachment:
         Type: Rules
         AmbiguousRoleResolution: AuthenticatedRole
         RulesConfiguration:
-          Rules:
+          Rules:                              # ordered MOST-PRIVILEGED FIRST
             - Claim: cognito:groups
               MatchType: Contains
-              Value: runzi-local
-              RoleARN: !GetAtt ToshiRunziLocalRole.Arn
+              Value: runzi-admin
+              RoleARN: !GetAtt ToshiRunziAdminRole.Arn
             - Claim: cognito:groups
               MatchType: Contains
               Value: runzi-batch
               RoleARN: !GetAtt ToshiRunziBatchRole.Arn
             - Claim: cognito:groups
               MatchType: Contains
-              Value: runzi-admin
-              RoleARN: !GetAtt ToshiRunziAdminRole.Arn
+              Value: runzi-local
+              RoleARN: !GetAtt ToshiRunziLocalRole.Arn
 ```
 
-These rules are evaluated **in order**; the first match wins. The IAM role's policies (defined elsewhere in `serverless.yml`) determine what AWS resources the user can touch. This pathway grants **no API access** — only direct AWS resource access via STS temporary credentials.
+These rules are evaluated **in order; the first match wins**, and a Cognito Identity Pool assigns exactly **one** role per login (it cannot union two). **A user should be a member of exactly one `runzi-*` group — the highest tier they need** (the three roles form a cumulative ladder `local ⊂ batch ⊂ admin`, so one membership is sufficient). The most-privileged-first ordering (`admin → batch → local`) is **only a safeguard**: if a user is *accidentally* placed in more than one `runzi-*` group, they still resolve to their highest tier instead of silently losing access (the bug this ordering fixed). It is **not** an invitation to stack `runzi-*` groups. The ladder is built by **composition of shared managed policies**, so higher tiers cannot drift below lower ones: each tier is one incremental `AWS::IAM::ManagedPolicy` (`ToshiRunziBaseManagedPolicy` = ECR pull + S3 read/write + M2M secret read; `ToshiRunziBatchManagedPolicy` = Batch submit; `ToshiRunziAdminManagedPolicy` = Batch/ECR admin), and each role attaches the base plus the increments of all lower tiers via `ManagedPolicyArns` — `local=[base]`, `batch=[base, batch]`, `admin=[base, batch, admin]`. Because admin attaches the *same* batch policy object the batch role uses, `admin ⊇ batch ⊇ local` holds by construction (no duplicated statements to keep in sync). This pathway grants **no API access** — only direct AWS resource access via STS temporary credentials.
 
 ### To add a new permission level for the API
 
@@ -127,7 +148,9 @@ The Identity Pool ID is exported as `serverless.yml::Outputs.IdentityPoolId`.
 
 ### One subtlety: multiple `runzi-*` groups
 
-If a user is in two `runzi-*` groups (e.g. both `runzi-local` and `runzi-batch`), the role-mapping rules are evaluated in order and the **first match wins**. `runzi-local` is listed first, so it would always shadow `runzi-batch` for that user. `AmbiguousRoleResolution: AuthenticatedRole` is the fallback (which is `ToshiRunziLocalRole`, per `serverless.yml::ToshiIdentityPoolRoleAttachment.Properties.Roles.authenticated`). This doesn't bite mixed `toshi-*` + single `runzi-*` setups — only when stacking `runzi-*` groups.
+A Cognito Identity Pool hands out exactly **one** role per login — it cannot union two. So if a user is in several `runzi-*` groups, only one rule's role applies (first match wins). Because the rules are ordered **most-privileged-first** (`admin → batch → local`) and each role is **cumulative** (`local ⊂ batch ⊂ admin`), a user in both `runzi-local` and `runzi-batch` correctly matches the `runzi-batch` rule first and assumes `ToshiRunziBatchRole` — which already contains the local ECR/S3 permissions. The recommended convention is still: **put a user in exactly one `runzi-*` tier** (the highest they need); the ordering only protects against accidental multi-membership.
+
+> **History:** this ordering is the fix for a real bug — the rules were previously ordered `local → batch → admin`, so a user in both `runzi-local` and `runzi-batch` always matched `runzi-local` first and could never submit Batch jobs. Do **not** reorder these rules without understanding the "one role, highest tier wins" invariant (it is commented in `serverless.yml`).
 
 ---
 
@@ -195,7 +218,7 @@ M2M clients **cannot** access AWS resources via the Cognito Identity Pool path. 
 |---|---|
 | User can run GraphQL queries | Cognito group `toshi-readers` |
 | User can run GraphQL queries + mutations | Cognito group `toshi-writers` |
-| User can also touch AWS resources from their own machine | Additionally add `runzi-local` / `runzi-batch` / `runzi-admin` |
+| User can also touch AWS resources from their own machine | Additionally add **exactly one** of `runzi-local` / `runzi-batch` / `runzi-admin` (the highest tier needed — they are cumulative) |
 | New service/script needs API access (no human) | `auth/create_m2m_secret.py --scopes "toshi/read toshi/write"`, store the returned ARN in `NZSHM22_TOSHI_M2M_SECRET_ARN`, add the new `client_id` to authorizer `COGNITO_CLIENT_ID` allowlist |
 | New service should be read-only | Same, but `--scopes "toshi/read"` |
 | New service also needs direct AWS access | Give the *host* (Lambda, EC2, etc.) its own IAM role — Cognito M2M won't help here |
@@ -215,6 +238,15 @@ Decode a JWT with:
 echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | python -m json.tool
 ```
 
+## Deferred / future work
+
+These were identified while refining the permission model but deliberately left out of the current change (which stayed within this repo's `serverless.yml`). Captured here so the next step is deliberate.
+
+- **Dedicated read-only M2M client (actor #5).** There is no least-privilege read-only service identity today: the single `ToshiAutomationClient` holds both `toshi/read`+`toshi/write`, so internal read services either share those read+write creds or use the full-access legacy `x-api-key` (which the authorizer hardcodes to `toshi/read toshi/write`). Adding a `ToshiReadOnlyAutomationClient` (scope `toshi/read` only) and allowlisting its `client_id` in `COGNITO_CLIENT_ID` is a small, self-contained follow-up for when a concrete read-only consumer — or the future public/REST read path — appears. (Note: a caller can already *request* `scope=toshi/read` from the dual-scope client, but that is advisory, not a boundary — the same credentials can request `toshi/write`.)
+- **Batch-container permissions are not IaC.** Containers get their AWS permissions (incl. S3 write) from the Batch job definition's `jobRoleArn`, which is **copied wholesale from a manually console-created job definition** (`nzshm-runzi/runzi/cli/build_and_deploy_container.py` `update_job_definition`) and re-applied on every revision; the submit call never sets a role (`nzshm-runzi/runzi/aws/aws.py` `get_ecs_job_config`). This is distinct from the workstation S3 grant (the Cognito `runzi-*` role, which *is* IaC here). Bringing it into IaC needs an IaC-defined Batch task role + a declarative job definition (or `build_and_deploy` setting `jobRoleArn` from the known role).
+- **Compute env, job queue, ECR repos (the `nshm-runzi-*` repository glob), and the S3 buckets they use** are manual/external — no IaC in either repo (only the IAM *permissions* to use/manage them exist here). The base policy currently grants S3 read/write to `ths-poc-arrow-test` (the Toshi Hazard Store Arrow dataset) and `nzshm22-static-reports-test` (reports, written directly by `runzi/aws/s3_folder_upload.py`). Both are hardcoded to the `-test` suffix rather than `${stage}`-derived, and `nzshm22-toshi-api-<stage>` (Toshi object store) is reached via the API rather than direct S3 — reconcile the role's bucket set and stage handling (and confirm names against the env-configured THS dataset URIs) when this becomes IaC.
+- **The compute-permission domain** (Identity Pool + `runzi-*` roles + the batch job role + compute resources) arguably belongs in a dedicated runzi-infra stack/repo.
+
 ## Key files referenced
 
 - `auth/authorizer/handler.py::validate_cognito_token` + `auth/authorizer/handler.py::handler` — JWT validation + scope derivation
@@ -224,6 +256,7 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | python -m json.tool
 - `serverless.yml::ToshiResourceServer` — defines `toshi/read`, `toshi/write` scopes
 - `serverless.yml::ToshiScientistClient` + `serverless.yml::ToshiAutomationClient`
 - `serverless.yml` — `AWS::Cognito::UserPoolGroup` resources (`ToshiGroupWriters`, `ToshiGroupReaders`, `ToshiGroupRunziLocal`, `ToshiGroupRunziBatch`, `ToshiGroupRunziAdmin`)
-- `serverless.yml::ToshiIdentityPoolRoleAttachment` — Identity Pool role-mapping rules
+- `serverless.yml::ToshiIdentityPoolRoleAttachment` — Identity Pool role-mapping rules (ordered most-privileged-first)
+- `serverless.yml::ToshiRunziBaseManagedPolicy` / `ToshiRunziBatchManagedPolicy` / `ToshiRunziAdminManagedPolicy` — the layered managed policies composing the cumulative `runzi-*` role ladder (`local=[base]`, `batch=[base, batch]`, `admin=[base, batch, admin]`)
 - `serverless.yml::ToshiM2MSecret` — Secrets Manager container
 - `docs/AUTH_GUIDE.md` — the canonical user-facing auth guide
