@@ -71,6 +71,23 @@ def _dynamodb(endpoint_url: str | None = None):
     return boto3.resource("dynamodb", **kwargs)
 
 
+# Low-level DynamoDB client cache, keyed by endpoint URL. The Lambda runtime
+# reuses module state across warm invocations, so this builds at most one
+# client per endpoint per cold start instead of one per write. Required by
+# `_atomic_put` — see note in that function for why we can't reuse the
+# resource's `.meta.client`. Tests use DynamoDB Local at a different endpoint
+# than production AWS, so we key by endpoint to keep both paths happy.
+_DYNAMODB_CLIENT_CACHE: dict[str, Any] = {}
+
+
+def _get_dynamodb_client(endpoint_url: str):
+    client = _DYNAMODB_CLIENT_CACHE.get(endpoint_url)
+    if client is None:
+        client = boto3.client("dynamodb", endpoint_url=endpoint_url, region_name=REGION)
+        _DYNAMODB_CLIENT_CACHE[endpoint_url] = client
+    return client
+
+
 def _thing_table(dynamodb, stage: str = STAGE):
     return dynamodb.Table(f"ToshiThingObject-{stage}")
 
@@ -173,10 +190,17 @@ def _atomic_put(dynamodb, dest_table_name: str, clazz_name: str, payload: dict, 
     Requires real DynamoDB (Local or AWS) — moto 5.x does not support
     transact_write_items across two tables.
     """
-    # boto3 resource.meta.client has a serialization issue when used for raw
-    # low-level calls — create a fresh client from the same endpoint instead.
-    endpoint_url = str(dynamodb.meta.client.meta.endpoint_url)
-    client = boto3.client("dynamodb", endpoint_url=endpoint_url, region_name=REGION)
+    # We use a low-level boto3 client (not the resource's `.meta.client`)
+    # because the call below passes raw dynamodb-native type-wrapped payloads
+    # (`{"S": ...}`, `{"N": ...}`). The resource's client has DynamoDB
+    # high-level handlers wired into its session that re-marshal the already-
+    # wrapped payload, producing `ValidationException: operand type: M` on the
+    # UpdateExpression. See GH issue #312 concern 2.
+    #
+    # Caching by endpoint URL at module scope means at most one client per
+    # cold start instead of one per write, saving ~tens of ms on every Lambda
+    # invocation that mutates state.
+    client = _get_dynamodb_client(str(dynamodb.meta.client.meta.endpoint_url))
 
     for attempt in range(10):
         current_id = read_current_id(dynamodb, stage)
