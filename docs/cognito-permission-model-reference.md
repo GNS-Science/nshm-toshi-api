@@ -231,6 +231,7 @@ M2M clients **cannot** access AWS resources via the Cognito Identity Pool path. 
 | `403 Missing required scope: toshi/read` | User not in `toshi-readers`/`toshi-writers`, or M2M client requested fewer scopes than needed | Decode the JWT, check `cognito:groups` and `scope` claims |
 | `403 GraphQL mutations require scope: toshi/write` | User in `toshi-readers` only, or M2M token didn't include `toshi/write` | Same — decode the JWT |
 | Token validates but AWS resource calls fail | `cognito:groups` lacks a `runzi-*` entry, or the Identity Pool role mapping doesn't cover the resource | `serverless.yml::ToshiIdentityPoolRoleAttachment`, then the IAM role policy itself |
+| Deploy fails `AccessDenied` on `iam:CreatePolicy`/`iam:UpdateRoleDescription`; new `toshi-runzi-*` policies never appear; stack stuck `UPDATE_ROLLBACK_FAILED` | Deployer user `nshm-serverless-tosh-api-agent` lacks IAM-management perms for the runzi policies/roles (granted out-of-band, not in this repo) | `aws cloudformation describe-stack-events --stack-name nzshm22-toshi-api-<stage>`; see ADR-003 "Deployer IAM permissions required". Recover with `continue-update-rollback`, grant perms, redeploy |
 
 Decode a JWT with:
 

@@ -13,6 +13,10 @@ from graphql_api.schema import root_schema
 
 from .library_version_check import log_library_info
 
+# Redeploy trigger: force a new Lambda artifact so Serverless does not skip the
+# CloudFormation stack update that provisions the runzi IAM policies/roles
+# (see docs/adrs/ADR-003 "Deployer IAM permissions required").
+
 # from flask_graphql import GraphQLView
 
 

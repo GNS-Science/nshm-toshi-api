@@ -180,6 +180,31 @@ is deliberate — see the reference doc's "Deferred / future" section)**
   by having a `{runzi-local, runzi-batch}` user assume the batch role and
   perform both `s3:PutObject` and `batch:SubmitJob`.
 
+**Deployer IAM permissions required**
+- Because the runzi policies and roles are provisioned by `serverless.yml`,
+  the Serverless deployer user (`nshm-serverless-tosh-api-agent`) must hold the
+  IAM-management actions for them — otherwise the deploy fails with
+  `AccessDenied` on `iam:CreatePolicy` / `iam:UpdateRoleDescription`, and a
+  partially-applied update can wedge the stack in `UPDATE_ROLLBACK_FAILED`.
+  Required actions, scoped to `arn:aws:iam::<account>:policy/toshi-runzi-*` and
+  `.../role/toshi-runzi-*`:
+  - policies: `iam:CreatePolicy`, `iam:DeletePolicy`, `iam:GetPolicy`,
+    `iam:GetPolicyVersion`, `iam:ListPolicyVersions`, `iam:CreatePolicyVersion`,
+    `iam:DeletePolicyVersion`, `iam:TagPolicy`, `iam:UntagPolicy`
+  - roles: `iam:CreateRole`, `iam:DeleteRole`, `iam:GetRole`, `iam:UpdateRole`,
+    `iam:UpdateRoleDescription`, `iam:UpdateAssumeRolePolicy`,
+    `iam:AttachRolePolicy`, `iam:DetachRolePolicy`,
+    `iam:ListAttachedRolePolicies`, `iam:ListRolePolicies`,
+    `iam:PutRolePolicy`, `iam:DeleteRolePolicy`, `iam:TagRole`, `iam:UntagRole`
+- The deployer user's own policy is **not** managed in this repo, so this grant
+  is applied out-of-band by an account admin. Each new resource *type* added to
+  the template (this is the same gap that previously blocked
+  `secretsmanager:CreateSecret` and `cognito-idp:CreateUserPool`) needs a
+  matching deployer grant before it will deploy.
+- Recovery from `UPDATE_ROLLBACK_FAILED`: grant the missing permissions, then
+  `aws cloudformation continue-update-rollback --stack-name nzshm22-toshi-api-<stage>`
+  to return the stack to `UPDATE_ROLLBACK_COMPLETE`, then redeploy.
+
 ## Related decisions
 
 - `auth/IMPLEMENTATION_PLAN.md` — the decision to provision Cognito/IAM
