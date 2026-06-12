@@ -55,7 +55,26 @@ class LabelledTableRelation:
     label: str | None = None
     table_id: strawberry.ID | None = None
     table_type: TableType | None = None
-    dimensions: list[KeyValueListPair] | None = None
+    dimensions: list[KeyValueListPair | None] | None = None
+
+    @strawberry.field
+    def table(self, info: Info) -> Optional["Table"]:
+        """Resolved Table reference matching legacy SDL (chris's Problem 2 #4).
+
+        Without this field, runzi queries that select `tables { table { id } }`
+        on InversionSolution fail validation.
+        """
+        if not self.table_id:
+            return None
+        from data.dynamo import get_table  # noqa: PLC0415
+        from models.table import Table  # noqa: PLC0415
+
+        try:
+            raw_id = GlobalID.from_id(str(self.table_id)).node_id
+        except Exception:
+            raw_id = str(self.table_id)
+        data = get_table(info.context["dynamodb"], raw_id)
+        return Table.from_dict(data) if data else None
 
 
 @strawberry.input
@@ -64,7 +83,7 @@ class LabelledTableRelationInput:
     table_type: TableType
     label: str | None = None
     produced_by_id: strawberry.ID | None = None
-    dimensions: list[KeyValueListPairInput] | None = None
+    dimensions: list[KeyValueListPairInput | None] | None = None
 
 
 def _ltr_from_dict(d: dict) -> LabelledTableRelation:
@@ -101,7 +120,7 @@ class InversionSolution(relay.Node, FileInterface, InversionSolutionInterface, P
     """An Inversion Solution file produced by an automation task."""
 
     pk: relay.NodeID[str]
-    metrics: list[KeyValuePair] | None = None
+    metrics: list[KeyValuePair | None] | None = None
     # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id, relations
     # are all inherited from InversionSolutionInterface.
 
@@ -140,19 +159,24 @@ class CreateInversionSolutionInput:
     file_name: str
     md5_digest: str | None = None
     file_size: BigInt | None = None
-    meta: list[KeyValuePairInput] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
     created: DateTime | None = None
+    # Legacy SDL preserves both deprecated table-id fields on input (chris's
+    # Problem 2 #5). Runzi may still send `mfd_table_id`; accept it silently.
+    # Transient fields — resolver may consume them but they're not persisted.
+    mfd_table_id: strawberry.ID | None = None
+    hazard_table_id: strawberry.ID | None = None
     produced_by: strawberry.ID | None = None
-    metrics: list[KeyValuePairInput] | None = None
-    tables: list[LabelledTableRelationInput] | None = None
-    predecessors: list[PredecessorInput] | None = None
+    metrics: list[KeyValuePairInput | None] | None = None
+    tables: list[LabelledTableRelationInput | None] | None = None
+    predecessors: list[PredecessorInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 
 @strawberry.input
 class AppendInversionSolutionTablesInput:
     id: strawberry.ID
-    tables: list[LabelledTableRelationInput]
+    tables: list[LabelledTableRelationInput | None]
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 

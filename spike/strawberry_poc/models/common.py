@@ -106,13 +106,16 @@ class KeyValuePairInput:
 @strawberry.type
 class KeyValueListPair:
     k: str
-    v: list[str]
+    v: list[str | None] | None = None
 
 
 @strawberry.input
 class KeyValueListPairInput:
     k: str
-    v: list[str]
+    # `v` matches legacy `[String]` exactly — nullable outer list, nullable
+    # elements — so client variables typed `[String]!` validate at this
+    # position. See docs/smoke-test-learnings.md §1.
+    v: list[str | None] | None = None
 
 
 # ── Task enums ────────────────────────────────────────────────────────────────

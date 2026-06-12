@@ -88,8 +88,8 @@ mutation CreateTask($input: CreateAutomationTaskInput!) {
 """
 
 CREATE_TASK_RELATION_MUTATION = """
-mutation CreateRelation($input: CreateTaskRelationInput!) {
-    create_task_relation(input: $input) {
+mutation CreateRelation($child_id: ID!, $parent_id: ID!) {
+    create_task_relation(child_id: $child_id, parent_id: $parent_id) {
         ok
     }
 }
@@ -247,7 +247,7 @@ def test_children_total_count_after_relation(gql_context, created_task):
 
     rel_result = schema.execute_sync(
         CREATE_TASK_RELATION_MUTATION,
-        variable_values={"input": {"parent_id": created_task["id"], "child_id": child_id}},
+        variable_values={"parent_id": created_task["id"], "child_id": child_id},
         context_value=gql_context,
     )
     assert rel_result.errors is None, rel_result.errors

@@ -18,7 +18,7 @@ class FileInterface:
     md5_digest: str | None = None
     file_size: BigInt | None = None
     created: DateTime | None = None
-    meta: list[KeyValuePair] | None = None
+    meta: list[KeyValuePair | None] | None = None
 
     # Populated at create-time by mutate_create_<file_type> when S3 is configured.
     # Legacy semantics: presigned-POST is generated once and surfaced on the

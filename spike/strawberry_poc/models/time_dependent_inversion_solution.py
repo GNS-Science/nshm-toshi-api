@@ -25,7 +25,7 @@ _InversionSolution = Annotated["InversionSolution", strawberry.lazy("models.inve
 @strawberry.type
 class TimeDependentInversionSolution(relay.Node, FileInterface, InversionSolutionInterface, PredecessorsInterface):
     pk: relay.NodeID[str]
-    metrics: list[KeyValuePair] | None = None
+    metrics: list[KeyValuePair | None] | None = None
     # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id, relations
     # are all inherited from InversionSolutionInterface.
 
@@ -76,9 +76,9 @@ class CreateTimeDependentInversionSolutionInput:
     produced_by: strawberry.ID | None = None
     md5_digest: str | None = None
     file_size: BigInt | None = None
-    meta: list[KeyValuePairInput] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
     created: DateTime | None = None
-    predecessors: list[PredecessorInput] | None = None
+    predecessors: list[PredecessorInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 

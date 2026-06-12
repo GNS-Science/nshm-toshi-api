@@ -10,7 +10,7 @@ class PredecessorsInterface:
     """Shared by types that carry an inline provenance chain."""
 
     @strawberry.field
-    def predecessors(self) -> list[Predecessor] | None:
+    def predecessors(self) -> list[Predecessor | None] | None:
         if not self.predecessors_raw:  # type: ignore[attr-defined]
             return None
         return [Predecessor(id=p["id"], depth=p["depth"]) for p in self.predecessors_raw]  # type: ignore[attr-defined]

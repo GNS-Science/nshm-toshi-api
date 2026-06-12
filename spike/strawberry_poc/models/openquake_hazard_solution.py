@@ -27,8 +27,8 @@ class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):
     pk: relay.NodeID[str]
     created: DateTime | None = None
     task_type: OpenquakeTaskType | None = None
-    metrics: list[KeyValuePair] | None = None
-    meta: list[KeyValuePair] | None = None
+    metrics: list[KeyValuePair | None] | None = None
+    meta: list[KeyValuePair | None] | None = None
 
     produced_by_raw_id: strawberry.Private[str | None] = None
     csv_archive_raw_id: strawberry.Private[str | None] = None
@@ -102,9 +102,9 @@ class CreateOpenquakeHazardSolutionInput:
     csv_archive: strawberry.ID | None = None
     hdf5_archive: strawberry.ID | None = None
     task_args: strawberry.ID | None = None
-    metrics: list[KeyValuePairInput] | None = None
-    meta: list[KeyValuePairInput] | None = None
-    predecessors: list[PredecessorInput] | None = None
+    metrics: list[KeyValuePairInput | None] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
+    predecessors: list[PredecessorInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 def resolve_openquake_hazard_solutions(info: Info) -> Iterable[OpenquakeHazardSolution]:

@@ -163,7 +163,9 @@ class SearchResultEdge:
 
 @strawberry.type
 class SearchResultConnection:
-    edges: list[SearchResultEdge] = strawberry.field(default_factory=list)
+    # Matches legacy `[SearchResultEdge]!` — non-null outer list, nullable elements.
+    # See docs/smoke-test-learnings.md §1 on Strawberry's `list[T] → [T!]` default.
+    edges: list[SearchResultEdge | None] = strawberry.field(default_factory=list)
 
 
 @strawberry.type(name="Search")
@@ -324,14 +326,22 @@ class CreateOpenquakeHazardSolutionPayload:
 @strawberry.type(name="CreateOpenquakeHazardTask")
 class CreateOpenquakeHazardTaskPayload:
     ok: bool | None = None
-    task_result: OpenquakeHazardTask | None = None
+    # Field name matches legacy SDL — `openquake_hazard_task`, not the
+    # POC-original `task_result` (chris's audit Problem 2 #1).
+    openquake_hazard_task: OpenquakeHazardTask | None = strawberry.field(
+        default=None, name="openquake_hazard_task"
+    )
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
 
 @strawberry.type(name="UpdateOpenquakeHazardTask")
 class UpdateOpenquakeHazardTaskPayload:
     ok: bool | None = None
-    task_result: OpenquakeHazardTask | None = None
+    # Legacy uses `openquake_hazard_task` not `task_result` on the OQ task
+    # payloads (chris's Problem 2 #1).
+    openquake_hazard_task: OpenquakeHazardTask | None = strawberry.field(
+        default=None, name="openquake_hazard_task"
+    )
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
 
@@ -678,7 +688,7 @@ class Mutation:
     ) -> CreateOpenquakeHazardTaskPayload:
         return CreateOpenquakeHazardTaskPayload(
             ok=True,
-            task_result=mutate_create_openquake_hazard_task(info, input),
+            openquake_hazard_task=mutate_create_openquake_hazard_task(info, input),
             client_mutation_id=input.client_mutation_id,
         )
 
@@ -688,7 +698,7 @@ class Mutation:
     ) -> UpdateOpenquakeHazardTaskPayload:
         return UpdateOpenquakeHazardTaskPayload(
             ok=True,
-            task_result=mutate_update_openquake_hazard_task(info, input),
+            openquake_hazard_task=mutate_update_openquake_hazard_task(info, input),
             client_mutation_id=input.client_mutation_id,
         )
 
@@ -709,10 +719,16 @@ class Mutation:
 
     @strawberry.mutation
     def create_task_relation(
-        self, info: strawberry.types.Info, input: CreateTaskRelationInput
+        self,
+        info: strawberry.types.Info,
+        child_id: strawberry.ID,
+        parent_id: strawberry.ID,
     ) -> CreateTaskRelationPayload:
-        relation = mutate_create_task_relation(info, input)
-        return CreateTaskRelationPayload(ok=True, thing_relation=relation, client_mutation_id=input.client_mutation_id)
+        # Positional signature mirrors legacy `create_task_relation(child_id, parent_id)`.
+        # Sibling to create_file_relation (which #320 fixed) — runzi sends both.
+        input_obj = CreateTaskRelationInput(parent_id=parent_id, child_id=child_id)
+        relation = mutate_create_task_relation(info, input_obj)
+        return CreateTaskRelationPayload(ok=True, thing_relation=relation, client_mutation_id=None)
 
     @strawberry.mutation
     def reindex(self, info: strawberry.types.Info, id_in: list[strawberry.ID]) -> ReindexPayload:

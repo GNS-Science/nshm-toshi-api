@@ -41,11 +41,11 @@ class OpenquakeHazardConfig(relay.Node, Thing):
     pk: relay.NodeID[str]
     created: DateTime | None = None
 
-    source_models_raw_ids: strawberry.Private[list[str] | None] = None
+    source_models_raw_ids: strawberry.Private[list[str | None] | None] = None
     template_archive_raw_id: strawberry.Private[str | None] = None
 
     @strawberry.field
-    def source_models(self, info: Info) -> list[OpenquakeNrmlUnion] | None:
+    def source_models(self, info: Info) -> list[OpenquakeNrmlUnion | None] | None:
         if not self.source_models_raw_ids:
             return None
         results = []
@@ -89,7 +89,7 @@ class OpenquakeHazardConfig(relay.Node, Thing):
 @strawberry.input
 class CreateOpenquakeHazardConfigInput:
     template_archive: strawberry.ID
-    source_models: list[strawberry.ID] | None = None
+    source_models: list[strawberry.ID | None] | None = None
     created: DateTime | None = None
     created: str | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()

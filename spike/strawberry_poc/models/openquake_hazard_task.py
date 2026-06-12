@@ -38,9 +38,9 @@ class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
     created: DateTime | None = None
     duration: float | None = None
     general_task_id: strawberry.ID | None = None
-    arguments: list[KeyValuePair] | None = None
-    environment: list[KeyValuePair] | None = None
-    metrics: list[KeyValuePair] | None = None
+    arguments: list[KeyValuePair | None] | None = None
+    environment: list[KeyValuePair | None] | None = None
+    metrics: list[KeyValuePair | None] | None = None
     executor: str | None = None
     srm_logic_tree: JSONString | None = None
     gmcm_logic_tree: JSONString | None = None
@@ -52,15 +52,15 @@ class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
     hazard_solution_raw_id: strawberry.Private[str | None] = None
 
     @relay.connection(FileRelationsConnection)
-    def files(self, info: Info) -> list[FileRelation]:
+    def files(self, info: Info) -> list[FileRelation | None]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def parents(self, info: Info) -> list[TaskTaskRelation]:
+    def parents(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def children(self, info: Info) -> list[TaskTaskRelation]:
+    def children(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_children(self.pk, self.children_raw or [])
 
     @strawberry.field
@@ -118,9 +118,9 @@ class CreateOpenquakeHazardTaskInput:
     task_type: TaskSubType
     duration: float | None = None
     model_type: ModelType | None = None
-    arguments: list[KeyValuePairInput] | None = None
-    environment: list[KeyValuePairInput] | None = None
-    metrics: list[KeyValuePairInput] | None = None
+    arguments: list[KeyValuePairInput | None] | None = None
+    environment: list[KeyValuePairInput | None] | None = None
+    metrics: list[KeyValuePairInput | None] | None = None
     executor: str | None = None
     srm_logic_tree: JSONString | None = None
     gmcm_logic_tree: JSONString | None = None
@@ -134,9 +134,9 @@ class UpdateOpenquakeHazardTaskInput:
     state: EventState | None = None
     result: EventResult | None = None
     duration: float | None = None
-    arguments: list[KeyValuePairInput] | None = None
-    environment: list[KeyValuePairInput] | None = None
-    metrics: list[KeyValuePairInput] | None = None
+    arguments: list[KeyValuePairInput | None] | None = None
+    environment: list[KeyValuePairInput | None] | None = None
+    metrics: list[KeyValuePairInput | None] | None = None
     hazard_solution: strawberry.ID | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 

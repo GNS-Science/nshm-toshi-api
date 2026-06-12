@@ -64,15 +64,15 @@ class Thing:
     children_raw: strawberry.Private[list | None] = None
 
     @relay.connection(FileRelationsConnection)
-    def files(self, info: Info) -> list[FileRelation]:
+    def files(self, info: Info) -> list[FileRelation | None]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def parents(self, info: Info) -> list[TaskTaskRelation]:
+    def parents(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def children(self, info: Info) -> list[TaskTaskRelation]:
+    def children(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_children(self.pk, self.children_raw or [])
 
 
@@ -103,12 +103,12 @@ class AutomationTaskInterface:
     general_task_id: strawberry.ID | None = None
     task_type: TaskSubType | None = None
     model_type: ModelType | None = None
-    arguments: list[KeyValuePair] | None = None
-    environment: list[KeyValuePair] | None = None
-    metrics: list[KeyValuePair] | None = None
+    arguments: list[KeyValuePair | None] | None = None
+    environment: list[KeyValuePair | None] | None = None
+    metrics: list[KeyValuePair | None] | None = None
 
     parents_raw: strawberry.Private[list | None] = None
 
     @relay.connection(TaskRelationsConnection)
-    def parents(self, info: Info) -> list[TaskTaskRelation]:
+    def parents(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_parents(self.pk, self.parents_raw or [])

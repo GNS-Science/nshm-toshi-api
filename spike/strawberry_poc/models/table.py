@@ -27,12 +27,12 @@ class Table(relay.Node):
     object_id: strawberry.ID | None = None
     name: str | None = None
     created: DateTime | None = None
-    column_headers: list[str] | None = None
-    column_types: list[RowItemType] | None = None
-    rows: list[list[str]] | None = None
-    meta: list[KeyValuePair] | None = None
+    column_headers: list[str | None] | None = None
+    column_types: list[RowItemType | None] | None = None
+    rows: list[list[str | None] | None] | None = None
+    meta: list[KeyValuePair | None] | None = None
     table_type: TableType | None = None
-    dimensions: list[KeyValueListPair] | None = None
+    dimensions: list[KeyValueListPair | None] | None = None
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["Table"]:
@@ -63,12 +63,12 @@ class CreateTableInput:
     object_id: strawberry.ID
     name: str | None = None
     created: DateTime | None = None
-    column_headers: list[str] | None = None
-    column_types: list[RowItemType] | None = None
-    rows: list[list[str]] | None = None
-    meta: list[KeyValuePairInput] | None = None
+    column_headers: list[str | None] | None = None
+    column_types: list[RowItemType | None] | None = None
+    rows: list[list[str | None] | None] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
     table_type: TableType | None = None
-    dimensions: list[KeyValueListPairInput] | None = None
+    dimensions: list[KeyValueListPairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 def mutate_create_table(info: Info, input: CreateTableInput) -> Table:
