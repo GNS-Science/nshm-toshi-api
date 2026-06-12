@@ -10,6 +10,7 @@ from strawberry.types import Info
 
 from data.dynamo import create_file, get_file, list_files
 from data.models import TimeDependentInversionSolutionData
+from data.s3 import presigned_post_for_file
 
 from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
 from .file_interface import FileInterface
@@ -102,4 +103,8 @@ def mutate_create_time_dependent_inversion_solution(
         "predecessors": predecessors,
     }
     data = create_file(info.context["dynamodb"], "TimeDependentInversionSolution", payload)
-    return TimeDependentInversionSolution.from_dict(data)
+    instance = TimeDependentInversionSolution.from_dict(data)
+    # Surface a presigned-POST so nshm-toshi-client / runzi can upload the
+    # file bytes via the standard FileInterface handshake.
+    instance.post_url_data = presigned_post_for_file(instance.pk, input.file_name, input.md5_digest)
+    return instance
