@@ -18,8 +18,8 @@ mutation CreateTask($input: CreateAutomationTaskInput!) {
 """
 
 CREATE_FILE_MUTATION = """
-mutation CreateFile($input: CreateFileInput!) {
-    create_file(input: $input) {
+mutation CreateFile($file_name: String!, $md5_digest: String!, $file_size: BigInt!, $created: DateTime = null, $meta: [KeyValuePairInput!] = null) {
+    create_file(file_name: $file_name, md5_digest: $md5_digest, file_size: $file_size, created: $created, meta: $meta) {
         ok
         file_result { id }
     }
@@ -27,8 +27,8 @@ mutation CreateFile($input: CreateFileInput!) {
 """
 
 CREATE_FILE_RELATION_MUTATION = """
-mutation CreateFileRelation($input: CreateFileRelationInput!) {
-    create_file_relation(input: $input) {
+mutation CreateFileRelation($file_id: ID!, $role: FileRole!, $thing_id: ID!) {
+    create_file_relation(file_id: $file_id, role: $role, thing_id: $thing_id) {
         ok
     }
 }
@@ -81,13 +81,11 @@ def file_id(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "output_data.zip",
                 "md5_digest": "99aabbcc",
                 "file_size": 2048,
                 "created": "2024-08-01T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
@@ -98,7 +96,7 @@ def file_id(gql_context):
 def created_relation(gql_context, task_id, file_id):
     result = schema.execute_sync(
         CREATE_FILE_RELATION_MUTATION,
-        variable_values={"input": {"thing_id": task_id, "file_id": file_id, "role": "READ"}},
+        variable_values={"thing_id": task_id, "file_id": file_id, "role": "READ"},
         context_value=gql_context,
     )
     assert result.errors is None, result.errors

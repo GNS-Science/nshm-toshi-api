@@ -73,8 +73,8 @@ mutation CreateSIS($input: CreateScaledInversionSolutionInput!) {
 """
 
 CREATE_FILE_RELATION_MUTATION = """
-mutation CreateFileRelation($input: CreateFileRelationInput!) {
-    create_file_relation(input: $input) {
+mutation CreateFileRelation($file_id: ID!, $role: FileRole!, $thing_id: ID!) {
+    create_file_relation(file_id: $file_id, role: $role, thing_id: $thing_id) {
         ok
     }
 }
@@ -269,7 +269,7 @@ def test_relations_total_count_after_create_file_relation(gql_context, is_with_m
     task_id = _seed_automation_task(gql_context)
     rel_result = schema.execute_sync(
         CREATE_FILE_RELATION_MUTATION,
-        variable_values={"input": {"thing_id": task_id, "file_id": is_with_mfd_table, "role": "READ"}},
+        variable_values={"thing_id": task_id, "file_id": is_with_mfd_table, "role": "READ"},
         context_value=gql_context,
     )
     assert rel_result.errors is None, rel_result.errors

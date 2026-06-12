@@ -23,7 +23,7 @@ mutation { create_general_task(input: { title: "Reindex Me", created: "2024-01-0
 """
 
 CREATE_FILE = """
-mutation { create_file(input: { file_name: "reindex.txt", file_size: 1, md5_digest: "abc" }) {
+mutation { create_file(file_name: "reindex.txt", file_size: 1, md5_digest: "abc") {
     file_result { id }
 } }
 """

@@ -10,6 +10,7 @@ from strawberry.types import Info
 
 from data.dynamo import create_file, get_file, list_files
 from data.models import AggregateInversionSolutionData
+from data.s3 import presigned_post_for_file
 
 from .common import AggregationFn, BigInt, DateTime, KeyValuePair, KeyValuePairInput, _try_enum, client_mutation_id_input_field
 from .file_interface import FileInterface
@@ -130,4 +131,8 @@ def mutate_create_aggregate_inversion_solution(
         "predecessors": predecessors,
     }
     data = create_file(info.context["dynamodb"], "AggregateInversionSolution", payload)
-    return AggregateInversionSolution.from_dict(data)
+    instance = AggregateInversionSolution.from_dict(data)
+    # Surface a presigned-POST so nshm-toshi-client / runzi can upload the
+    # file bytes via the standard FileInterface handshake.
+    instance.post_url_data = presigned_post_for_file(instance.pk, input.file_name, input.md5_digest)
+    return instance

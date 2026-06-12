@@ -31,8 +31,8 @@ mutation CreateTask($input: CreateAutomationTaskInput!) {
 """
 
 CREATE_FILE_MUTATION = """
-mutation CreateFile($input: CreateFileInput!) {
-    create_file(input: $input) {
+mutation CreateFile($file_name: String!, $md5_digest: String!, $file_size: BigInt!, $created: DateTime = null, $meta: [KeyValuePairInput!] = null) {
+    create_file(file_name: $file_name, md5_digest: $md5_digest, file_size: $file_size, created: $created, meta: $meta) {
         ok
         file_result { id file_name }
     }
@@ -40,8 +40,8 @@ mutation CreateFile($input: CreateFileInput!) {
 """
 
 CREATE_FILE_RELATION_MUTATION = """
-mutation CreateFileRelation($input: CreateFileRelationInput!) {
-    create_file_relation(input: $input) { ok }
+mutation CreateFileRelation($file_id: ID!, $role: FileRole!, $thing_id: ID!) {
+    create_file_relation(file_id: $file_id, role: $role, thing_id: $thing_id) { ok }
 }
 """
 
@@ -96,13 +96,11 @@ def test_relations_stored_as_list_under_threshold(gql_context, lower_threshold):
     file_result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "compression_under.zip",
                 "md5_digest": "00aa",
                 "file_size": 1024,
                 "created": "2024-07-01T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert file_result.errors is None, file_result.errors
@@ -127,9 +125,7 @@ def test_relations_stored_as_list_under_threshold(gql_context, lower_threshold):
         thing_gid = at.data["create_automation_task"]["task_result"]["id"]
         rel = schema.execute_sync(
             CREATE_FILE_RELATION_MUTATION,
-            variable_values={
-                "input": {"thing_id": thing_gid, "file_id": file_gid, "role": "READ"}
-            },
+            variable_values={"thing_id": thing_gid, "file_id": file_gid, "role": "READ"},
             context_value=gql_context,
         )
         assert rel.errors is None, rel.errors
@@ -145,13 +141,11 @@ def test_relations_compressed_above_threshold(gql_context, lower_threshold):
     file_result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "compression_over.zip",
                 "md5_digest": "01bb",
                 "file_size": 1024,
                 "created": "2024-07-02T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert file_result.errors is None, file_result.errors
@@ -176,9 +170,7 @@ def test_relations_compressed_above_threshold(gql_context, lower_threshold):
         thing_gid = at.data["create_automation_task"]["task_result"]["id"]
         rel = schema.execute_sync(
             CREATE_FILE_RELATION_MUTATION,
-            variable_values={
-                "input": {"thing_id": thing_gid, "file_id": file_gid, "role": "READ"}
-            },
+            variable_values={"thing_id": thing_gid, "file_id": file_gid, "role": "READ"},
             context_value=gql_context,
         )
         assert rel.errors is None, rel.errors
@@ -198,13 +190,11 @@ def test_relations_round_trip_through_graphql(gql_context, lower_threshold):
     file_result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "compression_roundtrip.zip",
                 "md5_digest": "02cc",
                 "file_size": 1024,
                 "created": "2024-07-03T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert file_result.errors is None, file_result.errors
@@ -229,9 +219,7 @@ def test_relations_round_trip_through_graphql(gql_context, lower_threshold):
         thing_gids.append(thing_gid)
         rel = schema.execute_sync(
             CREATE_FILE_RELATION_MUTATION,
-            variable_values={
-                "input": {"thing_id": thing_gid, "file_id": file_gid, "role": "READ"}
-            },
+            variable_values={"thing_id": thing_gid, "file_id": file_gid, "role": "READ"},
             context_value=gql_context,
         )
         assert rel.errors is None, rel.errors
@@ -255,13 +243,11 @@ def test_pre_compressed_legacy_data_reads_correctly(gql_context):
     file_result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "legacy_compressed.zip",
                 "md5_digest": "03dd",
                 "file_size": 1024,
                 "created": "2024-07-04T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert file_result.errors is None, file_result.errors

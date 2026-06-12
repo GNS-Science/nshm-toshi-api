@@ -23,8 +23,6 @@ import data.search as _data_search
 from data.dynamo import es_key_for, get_object, scan_objects_paginated
 from data.s3 import scan_s3_paginated
 from data.search import search as es_search
-from models.page_info import CompatListConnection
-from models.common import client_mutation_id_payload_field
 from models.aggregate_inversion_solution import (
     AggregateInversionSolution,
     CreateAggregateInversionSolutionInput,
@@ -42,6 +40,13 @@ from models.automation_task import (
     mutate_update_rupture_generation_task,
     resolve_automation_tasks,
     resolve_rupture_generation_tasks,
+)
+from models.common import (
+    BigInt,
+    DateTime,
+    FileRole,
+    KeyValuePairInput,
+    client_mutation_id_payload_field,
 )
 from models.file import CreateFileInput, ToshiFile, mutate_create_file, resolve_files
 from models.general_task import (
@@ -91,6 +96,7 @@ from models.openquake_hazard_task import (
     mutate_update_openquake_hazard_task,
     resolve_openquake_hazard_tasks,
 )
+from models.page_info import CompatListConnection
 from models.relations import (
     CreateFileRelationInput,
     CreateTaskRelationInput,
@@ -507,10 +513,31 @@ class Mutation:
         )
 
     @strawberry.mutation
-    def create_file(self, info: strawberry.types.Info, input: CreateFileInput) -> CreateFilePayload:
-        return CreateFilePayload(
-            ok=True, file_result=mutate_create_file(info, input), client_mutation_id=input.client_mutation_id
+    def create_file(
+        self,
+        info: strawberry.types.Info,
+        file_name: str,
+        md5_digest: str,
+        file_size: BigInt,
+        created: DateTime | None = None,
+        meta: list[KeyValuePairInput] | None = None,
+    ) -> CreateFilePayload:
+        # Positional signature mirrors the legacy SDL `create_file(file_name,
+        # md5_digest, file_size, created, meta, predecessors): CreateFile`.
+        # nshm-toshi-client sends this shape directly; the `input:` wrapper
+        # form would reject the client's query at validation time.
+        #
+        # `predecessors` is in legacy SDL but no current client (nshm-toshi-
+        # client/runzi/weka) uses it on plain File create — omitted for now;
+        # add back if a client surfaces a need.
+        input_obj = CreateFileInput(
+            file_name=file_name,
+            md5_digest=md5_digest,
+            file_size=file_size,
+            created=created,
+            meta=meta,
         )
+        return CreateFilePayload(ok=True, file_result=mutate_create_file(info, input_obj), client_mutation_id=None)
 
     @strawberry.mutation
     def create_sms_file(self, info: strawberry.types.Info, input: CreateSmsFileInput) -> CreateSmsFilePayload:
@@ -667,10 +694,18 @@ class Mutation:
 
     @strawberry.mutation
     def create_file_relation(
-        self, info: strawberry.types.Info, input: CreateFileRelationInput
+        self,
+        info: strawberry.types.Info,
+        file_id: strawberry.ID,
+        role: FileRole,
+        thing_id: strawberry.ID,
     ) -> CreateFileRelationPayload:
-        mutate_create_file_relation(info, input)
-        return CreateFileRelationPayload(ok=True, client_mutation_id=input.client_mutation_id)
+        # Positional signature mirrors legacy `create_file_relation(file_id,
+        # role, thing_id): CreateFileRelation`. nshm-toshi-client and runzi
+        # both send this shape; the `input:` wrapper form would be rejected.
+        input_obj = CreateFileRelationInput(file_id=file_id, role=role, thing_id=thing_id)
+        mutate_create_file_relation(info, input_obj)
+        return CreateFileRelationPayload(ok=True, client_mutation_id=None)
 
     @strawberry.mutation
     def create_task_relation(

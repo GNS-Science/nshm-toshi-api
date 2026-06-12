@@ -13,8 +13,8 @@ from schema import schema
 MAX_INT32 = 2**31 - 1  # 2_147_483_647
 
 CREATE_FILE_MUTATION = """
-mutation($input: CreateFileInput!) {
-    create_file(input: $input) {
+mutation($file_name: String!, $md5_digest: String!, $file_size: BigInt!, $created: DateTime = null, $meta: [KeyValuePairInput!] = null) {
+    create_file(file_name: $file_name, md5_digest: $md5_digest, file_size: $file_size, created: $created, meta: $meta) {
         ok
         file_result {
             id
@@ -31,13 +31,11 @@ def test_create_file_with_int_file_size(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "small.zip",
                 "md5_digest": "00",
                 "file_size": 1024,
                 "created": "2024-05-01T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
@@ -49,13 +47,11 @@ def test_create_file_with_max_int32_file_size(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "near_max.zip",
                 "md5_digest": "01a",
                 "file_size": MAX_INT32,
                 "created": "2024-05-01T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
@@ -68,13 +64,11 @@ def test_create_file_with_large_file_size_bigint(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "big.zip",
                 "md5_digest": "01",
                 "file_size": big,
                 "created": "2024-05-01T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
@@ -86,31 +80,32 @@ def test_create_file_rejects_string_file_size(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
                 "file_name": "bad.zip",
                 "md5_digest": "02",
                 "file_size": "not-a-number",
                 "created": "2024-05-01T00:00:00Z",
-            }
-        },
+            },
         context_value=gql_context,
     )
     assert result.errors is not None
     assert any("file_size" in str(e).lower() or "int" in str(e).lower() for e in result.errors)
 
 
-def test_create_file_with_null_file_size(gql_context):
-    """file_size omitted (null) is acceptable; the field is optional."""
+def test_create_file_rejects_missing_file_size(gql_context):
+    """file_size omitted is rejected — the field is required (matches legacy SDL).
+
+    Previously this test asserted the opposite (POC had file_size as nullable),
+    but legacy SDL has `file_size: BigInt!`. After the positional-args
+    realignment (PR-after-#320), POC follows suit.
+    """
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-            "input": {
-                "file_name": "nofsize.zip",
-                "md5_digest": "03",
-                "created": "2024-05-01T00:00:00Z",
-            }
+            "file_name": "nofsize.zip",
+            "md5_digest": "03",
+            "created": "2024-05-01T00:00:00Z",
         },
         context_value=gql_context,
     )
-    assert result.errors is None, result.errors
-    assert result.data["create_file"]["file_result"]["file_size"] is None
+    assert result.errors is not None
+    assert any("file_size" in str(e) for e in result.errors)
