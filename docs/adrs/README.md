@@ -83,3 +83,4 @@ leave the file in place).
 | [ADR-001](ADR-001-graphql-schema-evolution-strategy.md) | GraphQL Schema Evolution Strategy: Legacy Parity, Modern Defaults, Deprecation Aliases | Proposed |
 | [ADR-002](ADR-002-schema-interface-hierarchy-and-input-naming.md) | Schema Interface Hierarchy and Input Naming Conventions | Accepted |
 | [ADR-003](ADR-003-cognito-permission-model.md) | Cognito Permission Model: Two Axes and a Cumulative AWS Ladder | Accepted |
+| [ADR-004](ADR-004-code-reorganization.md) | Code Reorganization — Promote the Strawberry POC to a Top-Level Package | Proposed |
