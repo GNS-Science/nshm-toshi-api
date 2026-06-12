@@ -41,8 +41,8 @@ query GetFile($id: ID!) {
 """
 
 CREATE_FILE_MUTATION = """
-mutation CreateFile($input: CreateFileInput!) {
-    create_file(input: $input) {
+mutation CreateFile($file_name: String!, $md5_digest: String!, $file_size: BigInt!, $created: DateTime = null, $meta: [KeyValuePairInput!] = null) {
+    create_file(file_name: $file_name, md5_digest: $md5_digest, file_size: $file_size, created: $created, meta: $meta) {
         ok
         file_result { id file_name }
     }
@@ -53,7 +53,7 @@ mutation CreateFile($input: CreateFileInput!) {
 def test_file_sdl_typename(gql_context):
     res = schema.execute_sync(
         CREATE_FILE_MUTATION,
-        variable_values={"input": {"file_name": "weka.zip"}},
+        variable_values={"file_name": "weka.zip", "md5_digest": "abc", "file_size": 100},
         context_value=gql_context,
     )
     assert res.errors is None, res.errors
@@ -96,7 +96,7 @@ def test_nodes_payload_sdl_name():
 def test_nodes_works(gql_context):
     create_res = schema.execute_sync(
         CREATE_FILE_MUTATION,
-        variable_values={"input": {"file_name": "nodes-test.zip"}},
+        variable_values={"file_name": "nodes-test.zip", "md5_digest": "abc", "file_size": 100},
         context_value=gql_context,
     )
     fid = create_res.data["create_file"]["file_result"]["id"]
@@ -195,8 +195,8 @@ mutation CreateIS($input: CreateInversionSolutionInput!) {
 """
 
 CREATE_FILE_RELATION = """
-mutation CreateRel($input: CreateFileRelationInput!) {
-    create_file_relation(input: $input) { ok }
+mutation CreateRel($file_id: ID!, $role: FileRole!, $thing_id: ID!) {
+    create_file_relation(file_id: $file_id, role: $role, thing_id: $thing_id) { ok }
 }
 """
 
@@ -231,7 +231,7 @@ def test_automation_task_inversion_solution_resolves(gql_context, task_id):
 
     rel_res = schema.execute_sync(
         CREATE_FILE_RELATION,
-        variable_values={"input": {"thing_id": task_id, "file_id": is_id, "role": "WRITE"}},
+        variable_values={"thing_id": task_id, "file_id": is_id, "role": "WRITE"},
         context_value=gql_context,
     )
     assert rel_res.errors is None, rel_res.errors

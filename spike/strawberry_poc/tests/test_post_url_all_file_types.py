@@ -94,8 +94,8 @@ def _assert_post_url_is_valid_json(payload: dict, file_node_key: str):
 
 def test_create_file_post_url(gql_context, s3_bucket):
     mutation = """
-    mutation CreateFile($input: CreateFileInput!) {
-        create_file(input: $input) {
+    mutation CreateFile($file_name: String!, $md5_digest: String!, $file_size: BigInt!, $created: DateTime = null, $meta: [KeyValuePairInput!] = null) {
+        create_file(file_name: $file_name, md5_digest: $md5_digest, file_size: $file_size, created: $created, meta: $meta) {
             ok
             file_result { id post_url }
         }
@@ -103,7 +103,7 @@ def test_create_file_post_url(gql_context, s3_bucket):
     """
     result = _create(
         mutation,
-        {"input": {"file_name": "f.zip", "md5_digest": "abc==", "file_size": 100}},
+        {"file_name": "f.zip", "md5_digest": "abc==", "file_size": 100},
         gql_context,
     )
     assert result.errors is None, result.errors

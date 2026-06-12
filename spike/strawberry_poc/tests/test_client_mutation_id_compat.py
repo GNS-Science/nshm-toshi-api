@@ -7,10 +7,8 @@ echoed back unchanged in the payload. Modern Relay 2 / Apollo clients can
 omit it entirely.
 """
 
-import pytest
 
 from schema import schema
-
 
 CREATE_WITH_CMI_MUTATION = """
 mutation CreateWithCMI($input: CreateGeneralTaskInput!) {
@@ -30,11 +28,15 @@ mutation CreateWithoutCMI($input: CreateGeneralTaskInput!) {
 }
 """
 
-CREATE_FILE_WITH_CMI_MUTATION = """
-mutation CreateFileWithCMI($input: CreateFileInput!) {
-    create_file(input: $input) {
+# Note: this test originally targeted `create_file`, but `create_file` was
+# realigned to legacy's positional-arg SDL (no `input:` wrapper, no
+# clientMutationId — see PR-after-#320). Picking another file-create mutation
+# that still uses the input-wrapper form (and therefore still supports CMI).
+CREATE_IS_WITH_CMI_MUTATION = """
+mutation CreateISWithCMI($input: CreateInversionSolutionInput!) {
+    create_inversion_solution(input: $input) {
         ok
-        file_result { id file_name }
+        inversion_solution { id file_name }
         clientMutationId
     }
 }
@@ -69,22 +71,41 @@ def test_omitted_client_mutation_id_yields_null_in_payload(gql_context):
 
 
 def test_round_trip_works_on_other_mutations(gql_context):
-    """The CMI compat field works on more than just GeneralTask mutations."""
-    cmi = "file-create-cmi"
+    """The CMI compat field works on more than just GeneralTask mutations.
+
+    Switched from create_file → create_inversion_solution because create_file
+    was realigned to legacy SDL's positional-arg shape (no input wrapper, no
+    CMI — matches what nshm-toshi-client/runzi actually send).
+    """
+    # Need a parent AutomationTask for the produced_by field.
+    import base64  # noqa: PLC0415
+
+    from data.dynamo import create_thing  # noqa: PLC0415
+
+    at_data = create_thing(
+        gql_context["dynamodb"],
+        "AutomationTask",
+        {"state": "done", "result": "success", "task_type": "INVERSION", "created": "2026-01-01T00:00:00Z"},
+    )
+    at_id = base64.b64encode(f"AutomationTask:{at_data['object_id']}".encode()).decode()
+
+    cmi = "is-create-cmi"
     result = schema.execute_sync(
-        CREATE_FILE_WITH_CMI_MUTATION,
+        CREATE_IS_WITH_CMI_MUTATION,
         variable_values={
             "input": {
                 "file_name": "cmi-test.zip",
                 "md5_digest": "abc",
                 "file_size": 1024,
+                "produced_by": at_id,
+                "created": "2026-01-01T00:00:00Z",
                 "clientMutationId": cmi,
             }
         },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
-    payload = result.data["create_file"]
+    payload = result.data["create_inversion_solution"]
     assert payload["ok"] is True
     assert payload["clientMutationId"] == cmi
 

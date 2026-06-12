@@ -92,12 +92,10 @@ def ids(gql_context):
     # 4. File — mirrors "new_rupt_file"
     data = run("""
         mutation new_rupt_file {
-            create_file(input: {
-                file_name: "myfile2.txt"
+            create_file(file_name: "myfile2.txt"
                 file_size: 2000
                 md5_digest: "abc123"
-                meta: [{ k: "encoding", v: "utf8" }]
-            }) {
+                meta: [{ k: "encoding", v: "utf8" }]) {
                 file_result { id meta { k v } }
             }
         }
@@ -108,11 +106,9 @@ def ids(gql_context):
     data = run(
         """
         mutation new_rupt_file_relation($file_id: ID!, $thing_id: ID!) {
-            create_file_relation(input: {
-                file_id: $file_id
+            create_file_relation(file_id: $file_id
                 thing_id: $thing_id
-                role: WRITE
-            }) { ok }
+                role: WRITE) { ok }
         }
     """,
         {"file_id": collected["file_id"], "thing_id": collected["rgt1_id"]},
@@ -138,11 +134,9 @@ def ids(gql_context):
     data = run(
         """
         mutation new_sms_file_relation($file_id: ID!, $thing_id: ID!) {
-            create_file_relation(input: {
-                file_id: $file_id
+            create_file_relation(file_id: $file_id
                 thing_id: $thing_id
-                role: UNDEFINED
-            }) { ok }
+                role: UNDEFINED) { ok }
         }
     """,
         {"file_id": collected["sms_file_id"], "thing_id": collected["sms_id"]},
@@ -168,11 +162,9 @@ def ids(gql_context):
     data = run(
         """
         mutation new_gt_file_relation($file_id: ID!, $thing_id: ID!) {
-            create_file_relation(input: {
-                file_id: $file_id
+            create_file_relation(file_id: $file_id
                 thing_id: $thing_id
-                role: READ
-            }) { ok }
+                role: READ) { ok }
         }
     """,
         {"file_id": collected["file_id"], "thing_id": collected["gt_id"]},
@@ -183,11 +175,9 @@ def ids(gql_context):
     data = run(
         """
         mutation new_gt_smsfile_relation($file_id: ID!, $thing_id: ID!) {
-            create_file_relation(input: {
-                file_id: $file_id
+            create_file_relation(file_id: $file_id
                 thing_id: $thing_id
-                role: UNDEFINED
-            }) { ok }
+                role: UNDEFINED) { ok }
         }
     """,
         {"file_id": collected["sms_file_id"], "thing_id": collected["gt_id"]},
