@@ -25,7 +25,10 @@ class KVPairModel(BaseModel):
 
 class KVListPairModel(BaseModel):
     k: str
-    v: list[str]
+    # Legacy data shape allows null elements inside `v` (e.g. `v: [null]` for
+    # an unswept argument with no recorded value). Mirror that here so the
+    # Pydantic validator doesn't reject what the SDL `list[str | None]` accepts.
+    v: list[str | None]
 
 
 # ── Thing types (ToshiThingObject) ────────────────────────────────────────────
