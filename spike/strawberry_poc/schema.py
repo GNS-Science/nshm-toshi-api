@@ -100,6 +100,7 @@ from models.page_info import CompatListConnection
 from models.relations import (
     CreateFileRelationInput,
     CreateTaskRelationInput,
+    FileRelation,
     TaskTaskRelation,
     mutate_create_file_relation,
     mutate_create_task_relation,
@@ -257,6 +258,7 @@ class CreateRuptureSetPayload:
 @strawberry.type(name="CreateFileRelation")
 class CreateFileRelationPayload:
     ok: bool | None = None
+    file_relation: FileRelation | None = None
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
 
@@ -715,7 +717,14 @@ class Mutation:
         # both send this shape; the `input:` wrapper form would be rejected.
         input_obj = CreateFileRelationInput(file_id=file_id, role=role, thing_id=thing_id)
         mutate_create_file_relation(info, input_obj)
-        return CreateFileRelationPayload(ok=True, client_mutation_id=None)
+        # Legacy returns the constructed FileRelation so clients can introspect
+        # the link before requerying.
+        relation = FileRelation(
+            role=role,
+            file_raw_id=GlobalID.from_id(str(file_id)).node_id,
+            thing_raw_id=GlobalID.from_id(str(thing_id)).node_id,
+        )
+        return CreateFileRelationPayload(ok=True, file_relation=relation, client_mutation_id=None)
 
     @strawberry.mutation
     def create_task_relation(

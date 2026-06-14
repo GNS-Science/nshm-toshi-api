@@ -131,6 +131,26 @@ class InversionSolutionInterface:
         return None
 
     @strawberry.field
+    def hazard_table(self, info: Info) -> _Table | None:
+        """Resolved Table reference for the embedded HAZARD_* table, if any.
+        Mirrors `mfd_table` — legacy SDL ships both.
+        """
+        if not self.tables:
+            return None
+        for t in self.tables:  # type: ignore[union-attr]
+            if t.table_type in (TableType.HAZARD_GRIDDED, TableType.HAZARD_SITES) and t.table_id:  # type: ignore[attr-defined]
+                try:
+                    raw_id = GlobalID.from_id(str(t.table_id)).node_id  # type: ignore[attr-defined]
+                except Exception:
+                    raw_id = str(t.table_id)  # type: ignore[attr-defined]
+                data = get_table(info.context["dynamodb"], raw_id)
+                if data:
+                    from models.table import Table  # noqa: PLC0415
+
+                    return Table.from_dict(data)
+        return None
+
+    @strawberry.field
     def hazard_table_id(self) -> str | None:
         if not self.tables:
             return None

@@ -111,6 +111,16 @@ class FileRelation:
     thing_raw_id: strawberry.Private[str]
 
     @strawberry.field
+    def file_id(self) -> str | None:
+        """Raw file ID. Legacy SDL exposes this as a public String."""
+        return self.file_raw_id
+
+    @strawberry.field
+    def thing_id(self) -> str | None:
+        """Raw thing ID. Legacy SDL exposes this as a public String."""
+        return self.thing_raw_id
+
+    @strawberry.field
     def file(self, info: Info) -> FileUnion | None:
         data = get_file(info.context["dynamodb"], self.file_raw_id)
         return _dispatch_file(data) if data else None
@@ -134,6 +144,18 @@ class TaskTaskRelation:
     parent_raw_id: strawberry.Private[str]
     child_raw_id: strawberry.Private[str]
     child_clazz: strawberry.Private[str]
+
+    @strawberry.field
+    def parent_id(self) -> str | None:
+        """Raw parent ID. Legacy SDL exposes this as a public String;
+        clients read it without traversing through `parent { id }`.
+        """
+        return self.parent_raw_id
+
+    @strawberry.field
+    def child_id(self) -> str | None:
+        """Raw child ID. Legacy SDL exposes this as a public String."""
+        return self.child_raw_id
 
     @strawberry.field
     def parent(self, info: Info) -> _GeneralTask | None:
