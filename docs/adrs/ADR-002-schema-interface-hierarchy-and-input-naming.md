@@ -159,7 +159,8 @@ Per ADR-001. No new action.
 | `AutomationTaskInterface` | Declared, implemented by 3 concrete types | Missing | **Adopt** — same pattern |
 | Input naming `<Type>Input` | snake-Graphene convention | `Create<Type>Input` (Strawberry-modern) | **Accept divergence** — wire-equivalent, modern preferred |
 | Edge types per node | Shared `FileEdge` / `ThingEdge` etc. | Per-type `<Node>Edge` | **Accept divergence** — wire-equivalent, structural cost too high |
-| `FileRelationsConnection` etc. | `FileRelationConnection` | Already POC-named | **Already resolved** (ADR-001) |
+| `FileRelationsConnection` etc. | `FileRelationConnection` | POC-named (no decorator) | **Revised by round-2 audit** — adopt legacy SDL names via `@strawberry.type(name="FileRelationConnection")` / `(name="TaskTaskRelationConnection")` decorators; Python class names retain plural form. See Post-implementation audit, round 2 |
+| List-typed input fields | `[T]` (nullable elements) | `[T!]` (Strawberry default) | **Revised by round-2 audit** — convert to `list[T \| None]` everywhere to match legacy. Variable-type subsumption is wire-impacting |
 
 ## Implementation plan for the interface adoptions
 
@@ -385,6 +386,74 @@ analysis missed. All four are fixed in PR #309.
    "POC-only types" half of the parity diff that we'd partially
    characterised as cosmetic. For future schema ADRs, run the
    client-query audit *before* drafting decisions, not after.
+
+## Post-implementation audit, round 2 (June 2026 — runzi smoke test)
+
+After PR #309 landed the four wire-breaking divergences above,
+chrisdicaprio drove a runzi end-to-end smoke test that surfaced a
+second, larger class of regressions the audit also missed. PR #321
+(`docs/smoke-test-learnings.md`) is the writeup of how this slipped
+through; the comprehensive fixes ship in this PR.
+
+The root cause: **§3a above conflated wire-equivalence of *response*
+JSON with wire-equivalence of *input variable types*.** GraphQL
+applies a strict subsumption check on variable types — `$x: [T]!`
+is not accepted at a `[T!]!` position even though the JSON values
+sent on the wire are identical. Strawberry's `list[T]` emits
+`[T!]` by default; legacy Graphene emits `[T]`. Every list-typed
+input field that we declared as `list[T]` in the POC was a latent
+runzi/weka break.
+
+| # | Divergence | Wire-impact path | Fix |
+|---|---|---|---|
+| E | All `@strawberry.input` list fields used non-null elements (`[T!]`) | runzi sends `$meta: [KeyValuePair]!` → rejected by variable-type subsumption against `[KeyValuePair!]!` position | Convert every `list[T] \| None = None` to `list[T \| None] \| None = None` in input types (~35 files) |
+| F | All `@strawberry.type` list output fields used non-null elements | Older clients expect `[T]` on responses; new typed clients regenerated against POC SDL would treat nullable items as a build error | Same `list[T \| None]` treatment in output types |
+| G | `FileRelationsConnection` / `TaskRelationsConnection` SDL names | runzi/weka fragments spell `... on FileRelationConnection` / `... on TaskTaskRelationConnection` | Add `@strawberry.type(name="FileRelationConnection")` / `(name="TaskTaskRelationConnection")` decorators |
+| H | `create_task_relation(input: CreateTaskRelationInput!)` wrapper | nshm-toshi-client sends `create_task_relation(child_id:, parent_id:)` positional | Convert to positional args, matching `create_file` / `create_file_relation` |
+| I | `CreateOpenquakeHazardTaskPayload.task_result` / `UpdateOpenquakeHazardTaskPayload.task_result` | runzi selects `openquake_hazard_task { id }` per legacy contract | Rename via `strawberry.field(name="openquake_hazard_task")` |
+| J | `LabelledTableRelation` missing `table: Table` resolver | runzi queries `tables { table { id } }` on InversionSolution | Add `@strawberry.field def table(...)` resolver |
+| K | `CreateInversionSolutionInput` missing `mfd_table_id` / `hazard_table_id` | runzi still sends them as deprecated transient fields | Add to input; resolver tolerates and ignores |
+
+### Revised principle (supersedes §3a)
+
+> Wire compat is the contract. **Wire compat covers both response
+> JSON shapes and the input variable types declared in the SDL** —
+> not just the JSON sent over the wire. Variable-type subsumption
+> means `[T]` vs `[T!]` differs at the schema-validation layer
+> even when the JSON payload is identical. SDL differences that
+> change validation behaviour are not "cosmetic"; they break
+> existing clients before any bytes are exchanged.
+
+### What changed in the decisions table
+
+- **Connection naming (`FileRelationConnection`,
+  `TaskTaskRelationConnection`)** moves from "Already resolved
+  (ADR-001)" to **"Adopt legacy names via
+  `@strawberry.type(name=...)` decorators"**. The Python class
+  names keep their POC spelling (with the extra "s") to avoid
+  colliding with Strawberry's per-node auto-generated Connection
+  type, but the SDL emits the legacy name. ADR-001's assumption
+  that POC-side naming was already adopted by clients was wrong —
+  both weka and runzi spell the legacy name in fragments.
+- **Category 2 (input naming)** decision still stands for the
+  *Input vs no-suffix* difference (e.g. `CreateFileInput` vs
+  legacy `FileInput`). What does **not** stand is allowing
+  Strawberry's default list-element nullability to leak into
+  inputs. Input list fields must match legacy element-nullability
+  even though the wrapper-type name may differ.
+
+### Lesson added
+
+4. **"Wire-equivalent" is not just JSON payload shape.** The
+   variable-type subsumption check, the validation rules around
+   `Connection` fragment spreads, and any decorator-only SDL rename
+   (`@strawberry.type(name=...)`) all live at the schema layer,
+   not the bytes layer. A round of automated SDL-text comparison
+   is necessary but not sufficient — a query-validation test
+   harness (runzi or auto-extracted client queries against the POC
+   SDL) is the actual gate. `test_sdl_emission_invariants.py` and
+   the schema-parity CI step added in this PR are the durable
+   defenses.
 
 ## Related decisions
 

@@ -64,9 +64,9 @@ class AutomationTask(relay.Node, Thing, AutomationTaskInterface):
     created: DateTime | None = None
     duration: float | None = None
     general_task_id: strawberry.ID | None = None
-    arguments: list[KeyValuePair] | None = None
-    environment: list[KeyValuePair] | None = None
-    metrics: list[KeyValuePair] | None = None
+    arguments: list[KeyValuePair | None] | None = None
+    environment: list[KeyValuePair | None] | None = None
+    metrics: list[KeyValuePair | None] | None = None
 
     # Embedded relation arrays — hidden from schema, resolved lazily
     files_raw: strawberry.Private[list | None] = None
@@ -74,15 +74,15 @@ class AutomationTask(relay.Node, Thing, AutomationTaskInterface):
     children_raw: strawberry.Private[list | None] = None
 
     @relay.connection(FileRelationsConnection)
-    def files(self, info: Info) -> list[FileRelation]:
+    def files(self, info: Info) -> list[FileRelation | None]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def parents(self, info: Info) -> list[TaskTaskRelation]:
+    def parents(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def children(self, info: Info) -> list[TaskTaskRelation]:
+    def children(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_children(self.pk, self.children_raw or [])
 
     @strawberry.field
@@ -129,24 +129,24 @@ class RuptureGenerationTask(relay.Node, Thing, AutomationTaskInterface):
     created: DateTime | None = None
     duration: float | None = None
     general_task_id: strawberry.ID | None = None
-    arguments: list[KeyValuePair] | None = None
-    environment: list[KeyValuePair] | None = None
-    metrics: list[KeyValuePair] | None = None
+    arguments: list[KeyValuePair | None] | None = None
+    environment: list[KeyValuePair | None] | None = None
+    metrics: list[KeyValuePair | None] | None = None
 
     files_raw: strawberry.Private[list | None] = None
     parents_raw: strawberry.Private[list | None] = None
     children_raw: strawberry.Private[list | None] = None
 
     @relay.connection(FileRelationsConnection)
-    def files(self, info: Info) -> list[FileRelation]:
+    def files(self, info: Info) -> list[FileRelation | None]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def parents(self, info: Info) -> list[TaskTaskRelation]:
+    def parents(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def children(self, info: Info) -> list[TaskTaskRelation]:
+    def children(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_children(self.pk, self.children_raw or [])
 
     @strawberry.field
@@ -193,9 +193,9 @@ class CreateAutomationTaskInput:
     # validates the AT's `arguments` against the GT's swept_arguments
     # (mirrors graphql_api/schema/custom/automation_task.py:197-234).
     general_task_id: strawberry.ID | None = None
-    arguments: list[KeyValuePairInput] | None = None
-    environment: list[KeyValuePairInput] | None = None
-    metrics: list[KeyValuePairInput] | None = None
+    arguments: list[KeyValuePairInput | None] | None = None
+    environment: list[KeyValuePairInput | None] | None = None
+    metrics: list[KeyValuePairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 
@@ -205,9 +205,9 @@ class UpdateAutomationTaskInput:
     state: EventState | None = None
     result: EventResult | None = None
     duration: float | None = None
-    arguments: list[KeyValuePairInput] | None = None
-    environment: list[KeyValuePairInput] | None = None
-    metrics: list[KeyValuePairInput] | None = None
+    arguments: list[KeyValuePairInput | None] | None = None
+    environment: list[KeyValuePairInput | None] | None = None
+    metrics: list[KeyValuePairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 

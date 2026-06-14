@@ -60,25 +60,25 @@ class GeneralTask(relay.Node, Thing):
     subtask_type: TaskSubType | None = None
     subtask_result: EventResult | None = None
     model_type: ModelType | None = None
-    argument_lists: list[KeyValueListPair] | None = None
-    meta: list[KeyValuePair] | None = None
+    argument_lists: list[KeyValueListPair | None] | None = None
+    meta: list[KeyValuePair | None] | None = None
     # files_raw / parents_raw / children_raw and the @relay.connection
     # resolvers for files / parents / children are inherited from Thing
 
     @relay.connection(FileRelationsConnection)
-    def files(self, info: Info) -> list[FileRelation]:
+    def files(self, info: Info) -> list[FileRelation | None]:
         return build_file_relations_for_thing(self.pk, self.files_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def children(self, info: Info) -> list[TaskTaskRelation]:
+    def children(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_children(self.pk, self.children_raw or [])
 
     @relay.connection(TaskRelationsConnection)
-    def parents(self, info: Info) -> list[TaskTaskRelation]:
+    def parents(self, info: Info) -> list[TaskTaskRelation | None]:
         return build_task_parents(self.pk, self.parents_raw or [])
 
     @strawberry.field
-    def swept_arguments(self) -> list[str]:
+    def swept_arguments(self) -> list[str | None] | None:
         """Keys with >1 value in argument_lists."""
         if not self.argument_lists:
             return []
@@ -128,8 +128,8 @@ class CreateGeneralTaskInput:
     subtask_type: TaskSubType | None = None
     subtask_result: EventResult | None = None
     model_type: ModelType | None = None
-    argument_lists: list[KeyValueListPairInput] | None = None
-    meta: list[KeyValuePairInput] | None = None
+    argument_lists: list[KeyValueListPairInput | None] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 @strawberry.input
@@ -144,8 +144,8 @@ class UpdateGeneralTaskInput:
     subtask_type: TaskSubType | None = None
     subtask_result: EventResult | None = None
     model_type: ModelType | None = None
-    argument_lists: list[KeyValueListPairInput] | None = None
-    meta: list[KeyValuePairInput] | None = None
+    argument_lists: list[KeyValueListPairInput | None] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 def resolve_general_tasks(info: Info) -> Iterable[GeneralTask]:

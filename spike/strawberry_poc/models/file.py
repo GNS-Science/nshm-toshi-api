@@ -31,7 +31,7 @@ class ToshiFile(relay.Node, FileInterface):
     relations_raw: strawberry.Private[list | None] = None
 
     @relay.connection(FileRelationsConnection)
-    def relations(self, info: Info) -> list[FileRelation]:
+    def relations(self, info: Info) -> list[FileRelation | None]:
         return build_file_relations_for_file(self.pk, self.relations_raw or [])
 
     @classmethod
@@ -64,7 +64,7 @@ class CreateFileInput:
     file_name: str
     md5_digest: str | None = None
     file_size: BigInt | None = None
-    meta: list[KeyValuePairInput] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
     created: DateTime | None = None
     created: str | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()

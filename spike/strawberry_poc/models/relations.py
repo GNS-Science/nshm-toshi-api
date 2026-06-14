@@ -155,9 +155,15 @@ class TaskTaskRelation:
 # Overriding resolve_connection lets us count BEFORE that optimisation fires.
 
 
-@strawberry.type
+@strawberry.type(name="FileRelationConnection")
 class FileRelationsConnection(CompatListConnection[FileRelation]):
-    """Relay connection for FileRelation that exposes total_count + camelCase PageInfo."""
+    """Relay connection for FileRelation that exposes total_count + camelCase PageInfo.
+
+    SDL name `FileRelationConnection` (no plural "s") matches legacy. The Python
+    class keeps the "Relations" name because the un-plural form collides with
+    Strawberry's auto-generated per-node Connection type.
+    See docs/smoke-test-learnings.md.
+    """
 
     _total: strawberry.Private[int] = 0
 
@@ -173,9 +179,12 @@ class FileRelationsConnection(CompatListConnection[FileRelation]):
         return conn
 
 
-@strawberry.type
+@strawberry.type(name="TaskTaskRelationConnection")
 class TaskRelationsConnection(CompatListConnection[TaskTaskRelation]):
-    """Relay connection for TaskTaskRelation that exposes total_count + camelCase PageInfo."""
+    """Relay connection for TaskTaskRelation that exposes total_count + camelCase PageInfo.
+
+    SDL name `TaskTaskRelationConnection` (double "Task") matches legacy.
+    """
 
     _total: strawberry.Private[int] = 0
 

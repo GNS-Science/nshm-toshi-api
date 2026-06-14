@@ -24,8 +24,8 @@ mutation($input: CreateAutomationTaskInput!) {
 """
 
 CREATE_TASK_RELATION_MUTATION = """
-mutation($input: CreateTaskRelationInput!) {
-    create_task_relation(input: $input) { ok }
+mutation($child_id: ID!, $parent_id: ID!) {
+    create_task_relation(child_id: $child_id, parent_id: $parent_id) { ok }
 }
 """
 
@@ -93,7 +93,7 @@ def gt_with_child_at(gql_context):
 
     rel = schema.execute_sync(
         CREATE_TASK_RELATION_MUTATION,
-        variable_values={"input": {"parent_id": gt_id, "child_id": at_id}},
+        variable_values={"parent_id": gt_id, "child_id": at_id},
         context_value=gql_context,
     )
     assert rel.errors is None, rel.errors

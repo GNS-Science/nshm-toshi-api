@@ -30,8 +30,8 @@ class RuptureSet(relay.Node, FileInterface):
     """A RuptureSet file produced by a RuptureGenerationTask."""
 
     pk: relay.NodeID[str]
-    fault_models: list[str] | None = None
-    metrics: list[KeyValuePair] | None = None
+    fault_models: list[str | None] | None = None
+    metrics: list[KeyValuePair | None] | None = None
     # stored as raw object_id; resolved lazily (hidden from GraphQL schema)
     produced_by_raw_id: strawberry.Private[str | None] = None
 
@@ -81,9 +81,9 @@ class CreateRuptureSetInput:
     produced_by: strawberry.ID
     # Optional in legacy.
     created: DateTime | None = None
-    meta: list[KeyValuePairInput] | None = None
-    fault_models: list[str] | None = None
-    metrics: list[KeyValuePairInput] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
+    fault_models: list[str | None] | None = None
+    metrics: list[KeyValuePairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 

@@ -74,7 +74,7 @@ class InversionSolutionInterface:
     md5_digest: str | None = None
     file_size: BigInt | None = None
     created: DateTime | None = None
-    meta: list[KeyValuePair] | None = None
+    meta: list[KeyValuePair | None] | None = None
 
     @strawberry.field
     def file_url(self) -> str | None:
@@ -82,7 +82,7 @@ class InversionSolutionInterface:
 
     # ── IS-specific fields ────────────────────────────────────────────────────
 
-    tables: list[_LabelledTableRelation] | None = None
+    tables: list[_LabelledTableRelation | None] | None = None
 
     @strawberry.field
     def relations(self, info: Info) -> InversionSolutionRelations | None:

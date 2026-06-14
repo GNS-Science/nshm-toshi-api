@@ -21,7 +21,7 @@ CREATE_OQ_TASK_MUTATION = """
 mutation CreateOQTask($input: CreateOpenquakeHazardTaskInput!) {
     create_openquake_hazard_task(input: $input) {
         ok
-        task_result {
+        openquake_hazard_task {
             id
             state
             result
@@ -57,7 +57,7 @@ UPDATE_OQ_TASK_MUTATION = """
 mutation UpdateOQTask($input: UpdateOpenquakeHazardTaskInput!) {
     update_openquake_hazard_task(input: $input) {
         ok
-        task_result {
+        openquake_hazard_task {
             id
             state
             result
@@ -150,7 +150,7 @@ def created_oq_task(gql_context):
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
-    return result.data["create_openquake_hazard_task"]["task_result"]
+    return result.data["create_openquake_hazard_task"]["openquake_hazard_task"]
 
 
 @pytest.fixture(scope="module")
@@ -241,7 +241,7 @@ def updated_oq_task(gql_context, created_oq_task, created_oq_solution):
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
-    return result.data["update_openquake_hazard_task"]["task_result"]
+    return result.data["update_openquake_hazard_task"]["openquake_hazard_task"]
 
 
 def test_update_oq_task_state(updated_oq_task):
@@ -339,7 +339,7 @@ CREATE_OQ_TASK_DISAGG_MUTATION = """
 mutation CreateDisaggTask($input: CreateOpenquakeHazardTaskInput!) {
     create_openquake_hazard_task(input: $input) {
         ok
-        task_result { id task_type state result }
+        openquake_hazard_task { id task_type state result }
     }
 }
 """
@@ -370,7 +370,7 @@ def disagg_oq_task(gql_context):
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
-    return result.data["create_openquake_hazard_task"]["task_result"]
+    return result.data["create_openquake_hazard_task"]["openquake_hazard_task"]
 
 
 def test_create_disagg_oq_task(disagg_oq_task):
@@ -395,7 +395,7 @@ CREATE_OQ_TASK_WITH_TREES_MUTATION = """
 mutation CreateTaskTrees($input: CreateOpenquakeHazardTaskInput!) {
     create_openquake_hazard_task(input: $input) {
         ok
-        task_result {
+        openquake_hazard_task {
             id
             task_type
             model_type
@@ -429,7 +429,7 @@ def oq_task_with_trees(gql_context):
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
-    return result.data["create_openquake_hazard_task"]["task_result"]
+    return result.data["create_openquake_hazard_task"]["openquake_hazard_task"]
 
 
 def test_oq_task_srm_logic_tree_round_trip(oq_task_with_trees):

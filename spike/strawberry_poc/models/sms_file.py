@@ -27,7 +27,7 @@ class SmsFile(relay.Node, FileInterface):
     relations_raw: strawberry.Private[list | None] = None
 
     @relay.connection(FileRelationsConnection)
-    def relations(self, info: Info) -> list[FileRelation]:
+    def relations(self, info: Info) -> list[FileRelation | None]:
         return build_file_relations_for_file(self.pk, self.relations_raw or [])
 
     @classmethod

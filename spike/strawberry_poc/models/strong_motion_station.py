@@ -25,8 +25,8 @@ class StrongMotionStation(relay.Node, Thing):
     site_code: str | None = None
     site_class: SmsSiteClass | None = None
     site_class_basis: SmsSiteClassBasis | None = None
-    Vs30_mean: list[float] | None = None
-    Vs30_std_dev: list[float] | None = None
+    Vs30_mean: list[float | None] | None = None
+    Vs30_std_dev: list[float | None] | None = None
     liquefiable: bool | None = None
     bedrock_encountered: bool | None = None
     soft_clay_or_peat: bool | None = None
@@ -66,8 +66,8 @@ class CreateStrongMotionStationInput:
     site_code: str | None = None
     site_class: SmsSiteClass | None = None
     site_class_basis: SmsSiteClassBasis | None = None
-    Vs30_mean: list[float] | None = None
-    Vs30_std_dev: list[float] | None = None
+    Vs30_mean: list[float | None] | None = None
+    Vs30_std_dev: list[float | None] | None = None
     liquefiable: bool | None = None
     bedrock_encountered: bool | None = None
     soft_clay_or_peat: bool | None = None

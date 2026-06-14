@@ -27,14 +27,14 @@ _RuptureSet = Annotated["RuptureSet", strawberry.lazy("models.rupture_set")]
 @strawberry.type
 class AggregateInversionSolution(relay.Node, FileInterface, InversionSolutionInterface, PredecessorsInterface):
     pk: relay.NodeID[str]
-    metrics: list[KeyValuePair] | None = None
+    metrics: list[KeyValuePair | None] | None = None
     aggregation_fn: AggregationFn | None = None
     # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id, relations
     # are all inherited from InversionSolutionInterface.
 
     produced_by_raw_id: strawberry.Private[str | None] = None
     common_rupture_set_raw_id: strawberry.Private[str | None] = None
-    source_solutions_raw_ids: strawberry.Private[list[str] | None] = None
+    source_solutions_raw_ids: strawberry.Private[list[str | None] | None] = None
     relations_raw: strawberry.Private[list | None] = None
     predecessors_raw: strawberry.Private[list | None] = None
 
@@ -52,7 +52,7 @@ class AggregateInversionSolution(relay.Node, FileInterface, InversionSolutionInt
         return RuptureSet.from_dict(data)
 
     @strawberry.field
-    def source_solutions(self, info: Info) -> list[SourceSolutionUnion] | None:
+    def source_solutions(self, info: Info) -> list[SourceSolutionUnion | None] | None:
         if not self.source_solutions_raw_ids:
             return None
         results = []
@@ -97,14 +97,14 @@ class AggregateInversionSolution(relay.Node, FileInterface, InversionSolutionInt
 class CreateAggregateInversionSolutionInput:
     file_name: str
     common_rupture_set: strawberry.ID
-    source_solutions: list[strawberry.ID]
+    source_solutions: list[strawberry.ID | None]
     aggregation_fn: AggregationFn
     produced_by: strawberry.ID | None = None
     md5_digest: str | None = None
     file_size: BigInt | None = None
-    meta: list[KeyValuePairInput] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
     created: DateTime | None = None
-    predecessors: list[PredecessorInput] | None = None
+    predecessors: list[PredecessorInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 

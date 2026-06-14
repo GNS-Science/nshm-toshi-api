@@ -188,10 +188,8 @@ def ids(gql_context):
     data = run(
         """
         mutation new_task_subtask_relation($child_id: ID!, $parent_id: ID!) {
-            create_task_relation(input: {
-                child_id: $child_id
-                parent_id: $parent_id
-            }) {
+            create_task_relation(child_id: $child_id
+                parent_id: $parent_id) {
                 thing_relation {
                     parent { ... on GeneralTask { id } }
                     child  { ... on RuptureGenerationTask { id } }
