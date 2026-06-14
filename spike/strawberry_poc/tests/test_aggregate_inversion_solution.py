@@ -239,4 +239,4 @@ def test_with_predecessors(gql_context, automation_task_id, source_solution_ids,
     preds = result.data["create_aggregate_inversion_solution"]["solution"]["predecessors"]
     assert len(preds) == 1
     assert preds[0]["id"] == source_solution_ids[0]
-    assert preds[0]["relationship"] == "parent"
+    assert preds[0]["relationship"] == "Parent"

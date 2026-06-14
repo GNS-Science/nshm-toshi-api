@@ -209,4 +209,4 @@ def test_with_predecessors(gql_context, automation_task_id, source_solution_id):
     assert len(preds) == 1
     assert preds[0]["id"] == source_solution_id
     assert preds[0]["depth"] == -1
-    assert preds[0]["relationship"] == "parent"
+    assert preds[0]["relationship"] == "Parent"

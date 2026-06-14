@@ -468,7 +468,7 @@ class Query:
         return make_object_identities_connection(items, has_more, last_id)
 
     @strawberry.field
-    def nodes(self, info: strawberry.types.Info, id_in: list[strawberry.ID]) -> NodeFilterPayload:
+    def nodes(self, info: strawberry.types.Info, id_in: list[strawberry.ID | None] | None = None) -> NodeFilterPayload:
         edges = []
         for gid_str in id_in:
             try:
@@ -532,7 +532,7 @@ class Mutation:
         md5_digest: str,
         file_size: BigInt,
         created: DateTime | None = None,
-        meta: list[KeyValuePairInput] | None = None,
+        meta: list[KeyValuePairInput | None] | None = None,
     ) -> CreateFilePayload:
         # Positional signature mirrors the legacy SDL `create_file(file_name,
         # md5_digest, file_size, created, meta, predecessors): CreateFile`.
@@ -740,7 +740,7 @@ class Mutation:
         return CreateTaskRelationPayload(ok=True, thing_relation=relation, client_mutation_id=None)
 
     @strawberry.mutation
-    def reindex(self, info: strawberry.types.Info, id_in: list[strawberry.ID]) -> ReindexPayload:
+    def reindex(self, info: strawberry.types.Info, id_in: list[strawberry.ID | None] | None = None) -> ReindexPayload:
         ctx = info.context
         dynamodb = ctx["dynamodb"]
         ep = ctx.get("es_endpoint", "")

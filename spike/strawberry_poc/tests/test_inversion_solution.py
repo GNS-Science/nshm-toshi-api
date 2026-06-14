@@ -302,4 +302,4 @@ def test_scaled_predecessor_relationship(created_scaled, created_inversion_solut
     assert p["id"] == created_inversion_solution["id"]
     assert p["depth"] == -1
     assert p["typename"] == "InversionSolution"
-    assert p["relationship"] == "parent"
+    assert p["relationship"] == "Parent"
