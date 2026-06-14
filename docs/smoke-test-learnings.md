@@ -203,13 +203,157 @@ When shipping a "drop-in replacement" of an existing API in future:
    description text, scalar coercion behaviour). Write them down somewhere
    contributors actually read.
 
+## What actually happened in round 2 (PR #322) and round 3 (PR #323)
+
+**Date appended:** 2026-06-15
+
+After this doc was written, two follow-up PRs implemented the plan above
+and went further. What follows is what those PRs actually found —
+relevant to the future-self checklist because some of it could not have
+been predicted from the round-1 analysis alone.
+
+### Round 2 = PR #322 (comprehensive parity)
+
+The plan was straightforward: clean the 87 list-nullability mismatches
+plus the ~118 other-type mismatches. The execution surfaced one
+substantive surprise:
+
+- The schema_parity tool's list of "~118 other type mismatches" was
+  noisier than expected. Many were vestigial auto-gen Connection types
+  that no client touches. The handful that did break runzi/weka were
+  the ones already named: Connection renames, `create_task_relation`
+  positional, OQ task payload field, `LabelledTableRelation.table`,
+  `CreateInversionSolutionInput.mfd_table_id`. Closing those alone
+  resolved the user-visible breakage.
+- ADR-002 §3a was updated. Connection-naming and list-element
+  nullability moved out of "accepted divergence" into the
+  Post-implementation audit round-2 section as wire-breaking.
+- `test_sdl_emission_invariants.py` landed (8 tests). The CI gate
+  via `schema_parity.py --fail-on-diff` was **deferred** — the tool
+  has no allowlist mechanism and the ~90 surviving output-type
+  divergences (Edge/Connection auto-gen) would block every merge
+  until they're enumerated. The SDL invariants test acts as the
+  practical gate.
+
+### Round 3 = PR #323 (legacy-test porting as parity validation)
+
+This was the surprise. After #322 we ran the schema_parity tool, the
+SDL invariants test, and the diff-against-ADR-002. All looked clean.
+Then we ported one legacy test — `test_thing_relation_bugfix_95.py` —
+and it immediately surfaced a parity gap that none of the above had
+caught: `TaskTaskRelation.parent_id / child_id` were `strawberry.Private`
+in POC, public `String` in legacy.
+
+We kept going. Across 17 legacy test files ported (yielding 65 new
+POC tests), **10 distinct parity gaps surfaced**, spanning three
+categories that #322 alone wouldn't have closed:
+
+| # | Category | Gap |
+|---|---|---|
+| 1 | Missing public field | `TaskTaskRelation.parent_id` / `child_id` (Private in POC, public in legacy) |
+| 2 | Missing resolver | `InversionSolutionInterface.hazard_table` (mfd_table existed; sibling missing) |
+| 3 | Missing public field | `FileRelation.file_id` / `thing_id` (same shape as #1) |
+| 4 | Missing payload field | `CreateFileRelationPayload.file_relation` (legacy returns the constructed link; POC returned only `ok`) |
+| 5 | Data-layer stricter than SDL | Pydantic `KVListPairModel.v: list[str]` rejected `[null]` after the SDL widened to `[String]` in #322 |
+| 6 | Scalar accepting invalid values | `DateTime` scalar was `parse_value=str` (no validation) — accepted naive datetimes and `"September 5th, 1999"` |
+| 7a | Missing resolver | `Predecessor.node: PredecessorUnion` (clients can't traverse from a predecessor to the underlying file) |
+| 7b | Wrong-cased output | `Predecessor.relationship` returned lowercase `"parent"`; legacy returns `"Parent"` |
+| 8 | Mutation-arg signatures missed by #322 | `create_file.meta`, `nodes.id_in`, `reindex.id_in` declared in `schema.py` (not inside an `@strawberry.input`) so the #322 sweep missed them |
+| 10 | Whole missing interface | Plain `File` did not implement `PredecessorsInterface`; `CreateFile.predecessors` was omitted |
+
+(Gap #9 was reserved during sequencing and absorbed into others.)
+
+### What these gaps have in common
+
+**Three distinct categories**:
+
+1. **SDL-layer gaps** (#1–4, #7, #8, #10) — fields, resolvers, payloads,
+   and interfaces that exist in legacy but not in POC.
+2. **Data-layer gaps** (#5) — Pydantic validators stricter than the SDL,
+   silently rejecting payloads the schema accepts.
+3. **Scalar-layer gaps** (#6) — scalar serializers/parsers with different
+   semantics than legacy (POC's DateTime accepted everything).
+
+None of the three categories were on the round-1 checklist. The schema
+parity tool catches SDL-layer drift but is blind to data-layer and
+scalar-layer drift entirely.
+
+### The "explicit-omit" pattern (worth its own callout)
+
+Three gaps (#7a, #7b, #10) were explicit choices made during POC
+construction with comments like *"no current client uses it — omitted
+for now"* or *"close enough"*. Each one masked a real legacy parity
+hole — the comment was the bug.
+
+> **Lesson:** "we don't need this" claims made during POC construction
+> are unreliable unless anchored to a real client-query audit. In #323,
+> 30% of the gaps caught were of this pattern — not "we forgot" but
+> "we deliberately skipped, and were wrong."
+
+Code review for parity work should treat any "omitted for now" comment
+as a citation needed: which audit said no client needs this? If no
+audit, the omission is a guess.
+
+### Why legacy-test porting found what other gates missed
+
+The auto-extracted client-query corpus (the #1 future-self item in the
+original checklist) is still the right long-term answer. But porting
+the existing legacy test suite was a near-substitute that **shipped in
+days, not weeks**, and surfaced things the parity tool didn't:
+
+- It exercises **resolver behaviour**, not just SDL type shape.
+  Gap #7b (`"Parent"` vs `"parent"`) is a string-comparison bug that
+  no SDL diff tool can catch — it lives in resolver code.
+- It exercises **end-to-end create+read paths**, surfacing
+  data-layer drift (#5) and scalar-layer drift (#6) that schema-only
+  tools never see.
+- It uses **real legacy query strings** verbatim, including the
+  Relay codegen shapes (`__isNode: __typename`, multi-fragment
+  narrowing) that weka emits.
+- The existing legacy suite is **a pre-vetted corpus** that already
+  passed against the legacy SDL. Skipped tests on POC side are
+  inherently regression signals.
+
+In 11 porting batches the yield rate dropped from 100% in the early
+batches to ~25% in batches 6–10 — when the new ports stopped finding
+gaps, that was a meaningful signal. The full sweep across all 54
+legacy test files (17 ported, 37 categorised as already-covered or
+out-of-scope) sets a defensible bound: every legacy test that could
+exercise wire-impacting behaviour has been verified to either pass
+against POC or surface a now-fixed gap.
+
+### Updated future-self checklist
+
+The original 5-item checklist still stands. Add:
+
+6. **Port the existing test suite of the API you're replacing —
+   verbatim, end-to-end — before declaring parity.** Auto-extracting
+   client queries is a great long-term gate, but the API's own legacy
+   tests are a pre-vetted corpus you can run in a day. Each failure
+   is a real gap; each pass is genuine regression coverage. The yield
+   rate trending toward zero is the right signal to stop.
+
+7. **Audit for "no client uses this" comments in the new API.** Each
+   is a citation needed. Without an audit anchoring the claim to a
+   real client-query trace, "we don't need this" was a guess that
+   worked out wrong 30% of the time on this project.
+
+8. **The schema-parity tool doesn't see data-layer or scalar-layer
+   drift.** A passing SDL diff is necessary but not sufficient. The
+   Pydantic-models-vs-SDL drift (#5) and scalar-parses-everything (#6)
+   surface only when real data flows through real resolvers — which
+   means end-to-end test execution, not static analysis.
+
 ## References
 
 - PR #318 — mini Phase 4 (the flip that surfaced this)
 - PR #320 — round 1 fixes (post_url + positional args)
-- (Upcoming) PR — round 2 comprehensive parity fixes + CI gate + ADR-002
-  update
+- PR #322 — round 2 comprehensive parity fixes + ADR-002 §3a update +
+  SDL emission invariants test
+- PR #323 — round 3 legacy-test porting (the stack PR that surfaced
+  the 10 follow-up gaps via verbatim legacy queries against POC)
 - ADR-002 §3a — the audit footer that conflated wire-equivalence with
-  input-variable type-system equivalence
+  input-variable type-system equivalence (now updated; see the
+  Post-implementation audit round-2 section there)
 - ADR-004 — code reorganization (separate gating decision)
 - `spike/strawberry_poc/tools/schema_parity.py` — the parity tool
