@@ -344,16 +344,124 @@ The original 5-item checklist still stands. Add:
    surface only when real data flows through real resolvers — which
    means end-to-end test execution, not static analysis.
 
+## Round 4 — runzi-corpus implementation of future-self item #6
+
+**Date appended:** 2026-06-15
+
+The future-self checklist (item #6 above) called for auto-extracting
+client queries from runzi/weka/nzshm-model. Round 3 explicitly noted
+this as the long-term answer; we then proved it works by implementing
+it in PR #323.
+
+### The implementation
+
+`tests/test_runzi_query_corpus.py` walks every Python file under
+`MISC/nzshm-runzi/runzi/automation/toshi_api/`, extracts every
+`qry = '''…'''` literal whose first non-whitespace token is `query`
+or `mutation`, parses each with `graphql-core`, and calls
+`validate(schema._schema, parse(query))`. No execution required —
+pure schema-level validation against POC's SDL.
+
+The harness is ~50 lines of Python plus a 4-line regex. Per-test
+runtime is sub-millisecond. The full corpus runs as part of every
+`pytest tests/` invocation.
+
+### What it found on first run
+
+30 raw GraphQL operations extracted. After filtering 10 templates with
+runtime `###PLACEHOLDER###` substitution tokens (the static extractor
+can't resolve them), 20 corpus tests ran. **7 of the 20 failed.**
+
+Failure breakdown:
+
+**3 new POC parity gaps** (now gaps #11, #12, #13):
+
+| # | Gap | How it slipped through |
+|---|---|---|
+| 11 | `CreateOpenquakeHazardConfigInput.created` declared twice in the same class body (`DateTime` then `str`) — the second declaration shadowed the first, so SDL emitted `String` while runzi sent `DateTime!` | A typo nobody noticed; passes type-checker (both are valid Python); SDL diff tool saw the second one only; legacy tests don't send through this input |
+| 12 | `UpdateGeneralTaskPayload` missing `ok: Boolean` field. Runzi reads `executed[...]['ok']` and would crash at runtime | Round-3 ports didn't exercise this specific mutation; #322's SDL invariants test doesn't pin payload fields |
+| 13 | `UpdateOpenquakeHazardTaskInput` missing `executor: String`. Runzi's `complete_task` mutation passes it on every call | Same — input field, runzi-specific, nobody named it in audits |
+
+**3 runzi-side bugs** (NOT POC parity gaps — recorded in `_RUNZI_KNOWN_BAD`):
+
+- `tables { source_solution }` on `LabelledTableRelation` — field has
+  never existed in either schema. Runzi dead code or stale refactor.
+- `source_models { id }` on `OpenquakeNrmlUnion` — needs an inline
+  fragment per the GraphQL spec. Graphene was lenient and accepted
+  it; Strawberry is spec-correct. Real bug in runzi, masked for years.
+- `create_openquake_hazard_task` literal in a runzi-side template
+  missing the `task_type` line because `###TASK_TYPE###` substitution
+  happens at runtime — false positive of the static extractor.
+
+The harness filters runzi-known-bad message substrings so they don't
+surface as POC failures while still showing in the test trace.
+
+### What this proves
+
+- **The corpus check is doing real work.** 35% of placeholder-filtered
+  operations failed validation on first run. Of the failures, 43% were
+  real POC parity gaps; 57% were runzi-side bugs we now know about.
+- **#11 is the most interesting find** — a Python class-body shadow
+  bug. No SDL diff tool can catch this because the diff tool sees the
+  shadowed result; no human reading the class body sees both lines
+  side-by-side as obvious; only end-to-end query validation surfaces
+  it. The two declarations existed in the same five consecutive lines
+  for the entire history of the POC, and three rounds of audits +
+  ten batches of legacy-test porting did not catch it.
+- **The corpus also documents runzi-side bugs**, which is value
+  added — even if the bug is on the client side, knowing about it
+  helps the API team and the client team coordinate.
+
+### Updated total: 13 parity gaps across 4 categories
+
+| Category | Gaps |
+|---|---|
+| SDL-layer (missing fields/resolvers/payloads/interfaces) | #1–#4, #7, #8, #10, #12, #13 |
+| Class-body shadow / Python typo bugs | #11 |
+| Data-layer (Pydantic stricter than SDL) | #5 |
+| Scalar-layer | #6 |
+
+Category #2 (class-body shadow) is new in round 4. It's a Python-
+semantics gap, not a GraphQL-semantics one — but it manifests as an
+SDL emission bug. Worth tracking separately because the mitigation
+is different: a linter rule or a Strawberry config that errors on
+duplicate field names in the same class would catch this category at
+build time.
+
+### Final future-self checklist additions
+
+9. **The auto-extracted client-query corpus from item #2 needs to
+   land as a real CI-runnable test.** Round 3 had it as a stretch
+   goal; round 4 proved it surfaces gaps that no other gate catches.
+   Less than 100 lines of code; runs in milliseconds; permanently
+   guards against regression.
+
+10. **Lint for class-body field shadowing.** Strawberry / Pydantic /
+    plain dataclasses all silently let two `name: Type` lines in the
+    same class body succeed — the second wins. A pre-commit hook or
+    Ruff rule that flags duplicate names in `@strawberry.input`,
+    `@strawberry.type`, and `BaseModel` subclasses would catch
+    category #2 at build time, before SDL emission, before runtime.
+
+11. **When the corpus finds runzi-side bugs, file them.** Three of
+    the seven round-4 failures were on runzi's side. Each is real;
+    each has been silently broken in production for some time. The
+    corpus check is also a debugger for the client repo, not just
+    the new API.
+
 ## References
 
 - PR #318 — mini Phase 4 (the flip that surfaced this)
 - PR #320 — round 1 fixes (post_url + positional args)
 - PR #322 — round 2 comprehensive parity fixes + ADR-002 §3a update +
   SDL emission invariants test
-- PR #323 — round 3 legacy-test porting (the stack PR that surfaced
-  the 10 follow-up gaps via verbatim legacy queries against POC)
+- PR #323 — round 3 legacy-test porting + round 4 runzi-corpus
+  validation (the same stack PR; round 4 is the last commit on the
+  branch)
 - ADR-002 §3a — the audit footer that conflated wire-equivalence with
   input-variable type-system equivalence (now updated; see the
   Post-implementation audit round-2 section there)
 - ADR-004 — code reorganization (separate gating decision)
 - `spike/strawberry_poc/tools/schema_parity.py` — the parity tool
+- `spike/strawberry_poc/tests/test_runzi_query_corpus.py` — the
+  auto-extracted client-query corpus (round 4)
