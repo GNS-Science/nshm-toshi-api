@@ -49,6 +49,7 @@ from models.common import (
     client_mutation_id_payload_field,
 )
 from models.file import CreateFileInput, ToshiFile, mutate_create_file, resolve_files
+from models.predecessor import PredecessorInput
 from models.general_task import (
     CreateGeneralTaskInput,
     GeneralTask,
@@ -533,21 +534,19 @@ class Mutation:
         file_size: BigInt,
         created: DateTime | None = None,
         meta: list[KeyValuePairInput | None] | None = None,
+        predecessors: list[PredecessorInput | None] | None = None,
     ) -> CreateFilePayload:
         # Positional signature mirrors the legacy SDL `create_file(file_name,
         # md5_digest, file_size, created, meta, predecessors): CreateFile`.
         # nshm-toshi-client sends this shape directly; the `input:` wrapper
         # form would reject the client's query at validation time.
-        #
-        # `predecessors` is in legacy SDL but no current client (nshm-toshi-
-        # client/runzi/weka) uses it on plain File create — omitted for now;
-        # add back if a client surfaces a need.
         input_obj = CreateFileInput(
             file_name=file_name,
             md5_digest=md5_digest,
             file_size=file_size,
             created=created,
             meta=meta,
+            predecessors=predecessors,
         )
         return CreateFilePayload(ok=True, file_result=mutate_create_file(info, input_obj), client_mutation_id=None)
 
