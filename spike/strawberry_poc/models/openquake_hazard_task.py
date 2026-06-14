@@ -138,6 +138,8 @@ class UpdateOpenquakeHazardTaskInput:
     environment: list[KeyValuePairInput | None] | None = None
     metrics: list[KeyValuePairInput | None] | None = None
     hazard_solution: strawberry.ID | None = None
+    # Legacy parity: runzi's `complete_task` mutation sets executor on update.
+    executor: str | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 def resolve_openquake_hazard_tasks(info: Info) -> Iterable[OpenquakeHazardTask]:
@@ -176,6 +178,7 @@ def mutate_update_openquake_hazard_task(
         "environment": [{"k": i.k, "v": i.v} for i in input.environment] if input.environment else None,
         "metrics": [{"k": i.k, "v": i.v} for i in input.metrics] if input.metrics else None,
         "hazard_solution": str(input.hazard_solution) if input.hazard_solution else None,
+        "executor": input.executor,
     }
     data = update_thing(info.context["dynamodb"], gid.node_id, payload)
     return OpenquakeHazardTask.from_dict(data) if data else None

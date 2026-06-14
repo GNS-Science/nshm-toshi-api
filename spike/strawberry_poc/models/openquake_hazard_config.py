@@ -91,7 +91,6 @@ class CreateOpenquakeHazardConfigInput:
     template_archive: strawberry.ID
     source_models: list[strawberry.ID | None] | None = None
     created: DateTime | None = None
-    created: str | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 

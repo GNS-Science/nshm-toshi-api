@@ -201,6 +201,7 @@ class CreateGeneralTaskPayload:
 
 @strawberry.type(name="UpdateGeneralTaskPayload")
 class UpdateGeneralTaskPayload:
+    ok: bool | None = None
     general_task: GeneralTask | None = None
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
