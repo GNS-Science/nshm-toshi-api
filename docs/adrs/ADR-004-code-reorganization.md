@@ -67,10 +67,13 @@ diff is large but mechanical.
 Preserves blame and `git log --follow`. Strawberry interface tracing
 and ADR-002 back-references depend on it.
 
-### 4. `spike/` stays for `spike/auth/`
+### 4. `auth/` is unchanged
 
-`spike/auth/` is still active and out of scope here. Whether it
-graduates to a top-level location is a separate decision.
+The top-level `auth/` package (Lambda authorizer, Cognito CLIs,
+m2m secret tooling) is unchanged by this reorg. `auth/middleware.py`
+— the Flask `before_request` hook that enforces `toshi/read` on every
+request and `toshi/write` on mutations — has no equivalent in the
+POC today and is a hard prerequisite (see *Prerequisites* below).
 
 ## Consequences
 
@@ -90,10 +93,28 @@ graduates to a top-level location is a separate decision.
 
 ## Prerequisites
 
-1. Test-stage cutover complete: `/graphql` migrated off legacy.
-2. mini Phase 4 testing concluded.
+1. **Auth-middleware parity in the POC**, validated on test stage.
+   The legacy `app` Lambda runs `auth/middleware.py`, which
+   enforces:
+   - `toshi/read` required on every authenticated request
+   - `toshi/write` required for GraphQL mutations (parses the AST,
+     fails closed on parse error)
+   - attaches `{userId, scopes, authMethod}` to request context
+   - audit-logs userId/scopes/authMethod per request
 
-Both are tracked in #295.
+   The `strawberry-poc` Lambda runs the same `jwtAuthorizer` (so
+   unauthenticated callers are rejected at API Gateway) but does
+   **no scope enforcement**, no request-context attachment, and no
+   per-request audit log. Deleting the `app` Lambda without porting
+   this layer would silently downgrade authorization: any holder of
+   a `toshi/read`-only token could mutate.
+
+   Port + tests required before this reorg can land.
+
+2. Test-stage cutover complete: `/graphql` migrated off legacy.
+3. mini Phase 4 testing concluded.
+
+(2) and (3) are tracked in #295. (1) needs its own ticket.
 
 ## Related decisions
 
