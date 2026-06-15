@@ -531,3 +531,81 @@ def test_oq_solution_predecessors(oq_solution_with_archives, csv_archive_id):
     assert preds[0]["id"] == csv_archive_id
     assert preds[0]["depth"] == -1
     assert preds[0]["relationship"].lower() == "parent"
+
+
+# ── Legacy OpenquakeHazardTask.config field ───────────────────────────────────
+#
+# Old OpenquakeHazardTask records (created before the field was deprecated in
+# Graphene) carry a `config` attribute holding the relay GlobalID of an
+# OpenquakeHazardConfig. Runzi's AutomationTaskPageQuery still selects
+# `config { id created source_models { ... } template_archive { ... } }` on
+# those tasks. The Strawberry schema needs to keep that field around (as
+# deprecated, read-only) for drop-in client parity. Regression test for the
+# error reproduced on the test deployment: "Cannot query field 'config' on
+# type 'OpenquakeHazardTask'."
+
+OQ_TASK_LEGACY_CONFIG_QUERY = """
+query GetTaskWithLegacyConfig($id: ID!) {
+    node(id: $id) {
+        id
+        ... on OpenquakeHazardTask {
+            config {
+                id
+                created
+                template_archive { id file_name }
+                source_models {
+                    ... on File { id file_name }
+                }
+            }
+        }
+    }
+}
+"""
+
+
+@pytest.fixture(scope="module")
+def legacy_oq_task_with_config(gql_context, created_oq_config):
+    """Seed a legacy-shape OpenquakeHazardTask carrying the deprecated `config`
+    GlobalID directly via create_thing (the field is no longer accepted by the
+    create mutation)."""
+    from data.dynamo import create_thing  # noqa: PLC0415
+
+    data = create_thing(
+        gql_context["dynamodb"],
+        "OpenquakeHazardTask",
+        {
+            "state": "DONE",
+            "result": "SUCCESS",
+            "created": "2024-05-01T00:00:00Z",
+            "task_type": "HAZARD",
+            "config": created_oq_config["id"],
+        },
+    )
+    return base64.b64encode(f"OpenquakeHazardTask:{data['object_id']}".encode()).decode()
+
+
+def test_oq_task_legacy_config_field_resolves(
+    gql_context, legacy_oq_task_with_config, created_oq_config, template_archive_id
+):
+    result = schema.execute_sync(
+        OQ_TASK_LEGACY_CONFIG_QUERY,
+        variable_values={"id": legacy_oq_task_with_config},
+        context_value=gql_context,
+    )
+    assert result.errors is None, result.errors
+    config = result.data["node"]["config"]
+    assert config is not None
+    assert config["id"] == created_oq_config["id"]
+    assert config["template_archive"]["id"] == template_archive_id
+
+
+def test_oq_task_config_null_when_absent(gql_context, created_oq_task):
+    """Tasks created via the modern mutation have no `config` — it must
+    resolve to null without erroring."""
+    result = schema.execute_sync(
+        OQ_TASK_LEGACY_CONFIG_QUERY,
+        variable_values={"id": created_oq_task["id"]},
+        context_value=gql_context,
+    )
+    assert result.errors is None, result.errors
+    assert result.data["node"]["config"] is None
