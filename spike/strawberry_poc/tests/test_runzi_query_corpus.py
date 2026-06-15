@@ -7,8 +7,28 @@ GraphQL operation against POC's schema.
 
 If POC validates them all, runzi can talk to POC without breaking on
 the wire. Each new gap that ever ships gets caught here automatically.
+
+## CI / local-dev split
+
+CI runners don't have a runzi clone, so this whole file SKIPS cleanly
+in that environment. The check is opt-in by checking out the sibling
+runzi repo at the default path (or pointing at it via
+$RUNZI_CORPUS_PATH).
+
+To run the corpus check in CI, the workflow would have to clone runzi
+explicitly:
+
+  - run: git clone https://github.com/GNS-Science/nzshm-runzi.git \
+         "$RUNNER_TEMP/runzi"
+    env:
+      RUNZI_CORPUS_PATH: ${RUNNER_TEMP}/runzi/runzi/automation/toshi_api
+
+That's not wired today — local dev catches gaps, and the runzi-side
+bug reports already filed (GNS-Science/nzshm-runzi#307) cover the
+known cases.
 """
 
+import os
 import re
 from pathlib import Path
 
@@ -18,19 +38,32 @@ from graphql import parse, validate
 from schema import schema
 
 
-# Anchor relative to the repo root: this file lives at
-# spike/strawberry_poc/tests/, so .parents[3] is the nshm-toshi-api repo,
-# and the sibling runzi clone is up two more levels under MISC/.
-_RUNZI_ROOT = (
-    Path(__file__).resolve().parents[3]
-    / ".."
-    / ".."
-    / "MISC"
-    / "nzshm-runzi"
-    / "runzi"
-    / "automation"
-    / "toshi_api"
-).resolve()
+def _find_runzi_root() -> Path | None:
+    """Locate the runzi `toshi_api` package.
+
+    Resolution order:
+      1. $RUNZI_CORPUS_PATH if set and is_dir
+      2. Sibling clone at ../../MISC/nzshm-runzi (local-dev convention)
+      3. None — corpus check is skipped
+    """
+    env = os.environ.get("RUNZI_CORPUS_PATH")
+    if env:
+        p = Path(env).resolve()
+        return p if p.is_dir() else None
+    default = (
+        Path(__file__).resolve().parents[3]
+        / ".."
+        / ".."
+        / "MISC"
+        / "nzshm-runzi"
+        / "runzi"
+        / "automation"
+        / "toshi_api"
+    ).resolve()
+    return default if default.is_dir() else None
+
+
+_RUNZI_ROOT = _find_runzi_root()
 
 
 # A triple-quoted block whose first non-whitespace token is `query`,
@@ -53,8 +86,8 @@ def _has_unresolved_placeholders(op: str) -> bool:
 
 def _extract_operations():
     """Yield (origin, operation_text) tuples from every .py under runzi/toshi_api."""
-    if not _RUNZI_ROOT.is_dir():
-        return  # explicit skip handled at test collection time
+    if _RUNZI_ROOT is None:
+        return  # caller checks _RUNZI_ROOT separately and skips
     for py in sorted(_RUNZI_ROOT.rglob("*.py")):
         text = py.read_text(encoding="utf-8")
         for m in _GQL_LITERAL.finditer(text):
@@ -68,6 +101,19 @@ def _extract_operations():
 
 
 _OPERATIONS = list(_extract_operations())
+
+
+# Whole-module skip when runzi isn't on the filesystem. Local dev with a
+# sibling runzi clone (or $RUNZI_CORPUS_PATH pointing somewhere valid)
+# runs the corpus check; CI without runzi cleanly skips.
+pytestmark = pytest.mark.skipif(
+    _RUNZI_ROOT is None,
+    reason=(
+        "runzi clone not found. Set $RUNZI_CORPUS_PATH or clone "
+        "GNS-Science/nzshm-runzi into ../../MISC/nzshm-runzi to enable "
+        "the auto-extracted client-query corpus check. See module docstring."
+    ),
+)
 
 
 # Runzi has a couple of queries that select fields nobody implements (`source_solution`
@@ -85,12 +131,14 @@ _RUNZI_KNOWN_BAD = {
 
 
 def test_runzi_clone_is_discoverable():
-    """If the runzi sibling repo isn't checked out, fail loudly."""
-    assert _RUNZI_ROOT.is_dir(), (
-        f"runzi clone not found at {_RUNZI_ROOT}. "
-        "Clone GNS-Science/nzshm-runzi into ../../MISC/nzshm-runzi so this "
-        "corpus test can find real client queries."
-    )
+    """When this test runs at all, the runzi clone is present.
+
+    Module-level `pytestmark` skips the whole file if not. This test
+    just confirms the resolved path resolves to a directory — defensive
+    against `_find_runzi_root` returning a non-dir Path (which can't
+    happen today but might if the helper logic changes).
+    """
+    assert _RUNZI_ROOT is not None and _RUNZI_ROOT.is_dir()
 
 
 def test_extracted_at_least_some_operations():
