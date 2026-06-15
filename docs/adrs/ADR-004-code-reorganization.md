@@ -43,13 +43,18 @@ route is no longer load-bearing, a single PR:
   from `pyproject.toml`.
 - `git mv spike/strawberry_poc/* graphql_api/` (preserving subdirs:
   `models/`, `data/`, `tests/`, `tools/`).
-- Moves `strawberry_poc_handler.py` → `graphql_api/handler.py` and
-  updates the serverless function block.
+- Moves `strawberry_poc_handler.py` → `graphql_api/handler.py`.
+- Renames the serverless function `strawberry-poc` → `graphql` and
+  updates `package.include` accordingly. The URL path `/graphql-v2`
+  is unchanged — path promotion is Phase 5.
 - Replaces `spike.strawberry_poc.*` imports with `graphql_api.*`.
 - Updates CI workflow `working-directory`, pyproject coverage source,
   CLAUDE.md, and ADR-002's audit footer paths.
 - Consolidates `spike/strawberry_poc/pyproject.toml` into the top-level
   one.
+
+Both `spike` and `poc` naming disappear from source, deploy config,
+and Lambda function names in this PR.
 
 The previous draft of this ADR split this into three PRs (prune,
 rename, cleanup) on the assumption a side-by-side review window was
