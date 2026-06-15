@@ -49,6 +49,7 @@ from models.common import (
     client_mutation_id_payload_field,
 )
 from models.file import CreateFileInput, ToshiFile, mutate_create_file, resolve_files
+from models.predecessor import PredecessorInput
 from models.general_task import (
     CreateGeneralTaskInput,
     GeneralTask,
@@ -100,6 +101,7 @@ from models.page_info import CompatListConnection
 from models.relations import (
     CreateFileRelationInput,
     CreateTaskRelationInput,
+    FileRelation,
     TaskTaskRelation,
     mutate_create_file_relation,
     mutate_create_task_relation,
@@ -199,6 +201,7 @@ class CreateGeneralTaskPayload:
 
 @strawberry.type(name="UpdateGeneralTaskPayload")
 class UpdateGeneralTaskPayload:
+    ok: bool | None = None
     general_task: GeneralTask | None = None
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
@@ -257,6 +260,7 @@ class CreateRuptureSetPayload:
 @strawberry.type(name="CreateFileRelation")
 class CreateFileRelationPayload:
     ok: bool | None = None
+    file_relation: FileRelation | None = None
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
 
@@ -466,7 +470,7 @@ class Query:
         return make_object_identities_connection(items, has_more, last_id)
 
     @strawberry.field
-    def nodes(self, info: strawberry.types.Info, id_in: list[strawberry.ID]) -> NodeFilterPayload:
+    def nodes(self, info: strawberry.types.Info, id_in: list[strawberry.ID | None] | None = None) -> NodeFilterPayload:
         edges = []
         for gid_str in id_in:
             try:
@@ -530,22 +534,20 @@ class Mutation:
         md5_digest: str,
         file_size: BigInt,
         created: DateTime | None = None,
-        meta: list[KeyValuePairInput] | None = None,
+        meta: list[KeyValuePairInput | None] | None = None,
+        predecessors: list[PredecessorInput | None] | None = None,
     ) -> CreateFilePayload:
         # Positional signature mirrors the legacy SDL `create_file(file_name,
         # md5_digest, file_size, created, meta, predecessors): CreateFile`.
         # nshm-toshi-client sends this shape directly; the `input:` wrapper
         # form would reject the client's query at validation time.
-        #
-        # `predecessors` is in legacy SDL but no current client (nshm-toshi-
-        # client/runzi/weka) uses it on plain File create — omitted for now;
-        # add back if a client surfaces a need.
         input_obj = CreateFileInput(
             file_name=file_name,
             md5_digest=md5_digest,
             file_size=file_size,
             created=created,
             meta=meta,
+            predecessors=predecessors,
         )
         return CreateFilePayload(ok=True, file_result=mutate_create_file(info, input_obj), client_mutation_id=None)
 
@@ -715,7 +717,14 @@ class Mutation:
         # both send this shape; the `input:` wrapper form would be rejected.
         input_obj = CreateFileRelationInput(file_id=file_id, role=role, thing_id=thing_id)
         mutate_create_file_relation(info, input_obj)
-        return CreateFileRelationPayload(ok=True, client_mutation_id=None)
+        # Legacy returns the constructed FileRelation so clients can introspect
+        # the link before requerying.
+        relation = FileRelation(
+            role=role,
+            file_raw_id=GlobalID.from_id(str(file_id)).node_id,
+            thing_raw_id=GlobalID.from_id(str(thing_id)).node_id,
+        )
+        return CreateFileRelationPayload(ok=True, file_relation=relation, client_mutation_id=None)
 
     @strawberry.mutation
     def create_task_relation(
@@ -731,7 +740,7 @@ class Mutation:
         return CreateTaskRelationPayload(ok=True, thing_relation=relation, client_mutation_id=None)
 
     @strawberry.mutation
-    def reindex(self, info: strawberry.types.Info, id_in: list[strawberry.ID]) -> ReindexPayload:
+    def reindex(self, info: strawberry.types.Info, id_in: list[strawberry.ID | None] | None = None) -> ReindexPayload:
         ctx = info.context
         dynamodb = ctx["dynamodb"]
         ep = ctx.get("es_endpoint", "")

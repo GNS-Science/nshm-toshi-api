@@ -1,9 +1,36 @@
 """Predecessor — embedded provenance type (not a relay.Node)."""
 
+from typing import Annotated
+
 import strawberry
 from strawberry.relay import GlobalID
+from strawberry.types import Info
 
 from .common import AncestryLabel
+
+# Legacy PredecessorUnion = (File, InversionSolution, ScaledInversionSolution,
+# AggregateInversionSolution, TimeDependentInversionSolution, InversionSolutionNrml).
+# All file-like; reuse the lazy refs pattern from relations.py.
+_File = Annotated["ToshiFile", strawberry.lazy("models.file")]
+_InversionSolution = Annotated["InversionSolution", strawberry.lazy("models.inversion_solution")]
+_ScaledInversionSolution = Annotated["ScaledInversionSolution", strawberry.lazy("models.scaled_inversion_solution")]
+_AggregateInversionSolution = Annotated[
+    "AggregateInversionSolution", strawberry.lazy("models.aggregate_inversion_solution")
+]
+_TimeDependentInversionSolution = Annotated[
+    "TimeDependentInversionSolution", strawberry.lazy("models.time_dependent_inversion_solution")
+]
+_InversionSolutionNrml = Annotated["InversionSolutionNrml", strawberry.lazy("models.inversion_solution_nrml")]
+
+PredecessorUnion = Annotated[
+    _File
+    | _InversionSolution
+    | _ScaledInversionSolution
+    | _AggregateInversionSolution
+    | _TimeDependentInversionSolution
+    | _InversionSolutionNrml,
+    strawberry.union(name="PredecessorUnion"),
+]
 
 
 @strawberry.type
@@ -22,10 +49,33 @@ class Predecessor:
 
     @strawberry.field
     def relationship(self) -> str | None:
+        """Title-cased ancestry label. Matches legacy `.name.title()` output —
+        e.g. depth=-1 → "Parent", not "parent". Clients (legacy + nshm) expect
+        the Title Case form.
+        """
         try:
-            return AncestryLabel(self.depth).name.lower()
+            return AncestryLabel(self.depth).name.title()
         except ValueError:
             return None
+
+    @strawberry.field
+    def node(self, info: Info) -> PredecessorUnion | None:
+        """Resolved node behind the predecessor id. Legacy SDL ships this on
+        Predecessor; clients use it to selection-spread into the underlying
+        file's fields without a separate node(id:) lookup.
+        """
+        from data.dynamo import get_file  # noqa: PLC0415
+
+        try:
+            raw_id = GlobalID.from_id(str(self.id)).node_id
+        except Exception:
+            raw_id = str(self.id)
+        data = get_file(info.context["dynamodb"], raw_id)
+        if not data:
+            return None
+        from ._dispatch import dispatch_file as _dispatch_file  # noqa: PLC0415
+
+        return _dispatch_file(data)
 
 
 @strawberry.input

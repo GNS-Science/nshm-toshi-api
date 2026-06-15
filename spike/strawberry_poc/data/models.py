@@ -25,7 +25,10 @@ class KVPairModel(BaseModel):
 
 class KVListPairModel(BaseModel):
     k: str
-    v: list[str]
+    # Legacy data shape allows null elements inside `v` (e.g. `v: [null]` for
+    # an unswept argument with no recorded value). Mirror that here so the
+    # Pydantic validator doesn't reject what the SDL `list[str | None]` accepts.
+    v: list[str | None]
 
 
 # ── Thing types (ToshiThingObject) ────────────────────────────────────────────
@@ -88,6 +91,11 @@ class StrongMotionStationData(BaseModel):
 # ── File types (ToshiFileObject) ──────────────────────────────────────────────
 
 
+class PredecessorEntry(BaseModel):
+    id: str  # relay GlobalID string
+    depth: int
+
+
 class ToshiFileData(BaseModel):
     object_id: str
     clazz_name: str | None = None
@@ -97,6 +105,9 @@ class ToshiFileData(BaseModel):
     meta: list[KVPairModel] | None = None
     created: str | None = None
     relations: list[dict] | None = None
+    # Plain File supports predecessors (legacy parity — File ships
+    # `PredecessorsInterface` and `create_file(predecessors:)` accepts them).
+    predecessors: list[PredecessorEntry] | None = None
 
 
 class SmsFileData(ToshiFileData):
@@ -111,11 +122,6 @@ class LabelledTableRelationEntry(BaseModel):
     table_id: str | None = None
     table_type: str | None = None
     dimensions: list[KVListPairModel] | None = None
-
-
-class PredecessorEntry(BaseModel):
-    id: str  # relay GlobalID string
-    depth: int
 
 
 class InversionSolutionData(ToshiFileData):

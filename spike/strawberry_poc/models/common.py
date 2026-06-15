@@ -28,6 +28,31 @@ BigInt = strawberry.scalar(
     "Used for file_size where production values can exceed 2GB.",
 )
 
+def _parse_datetime(value):
+    """Validate an inbound DateTime value, matching legacy Graphene semantics:
+      - must parse as ISO 8601
+      - must be timezone-aware (naive datetimes are rejected)
+    Returns the string unchanged so downstream resolvers see a `str` (the rest
+    of the codebase treats DateTime values as strings end-to-end).
+    """
+    import datetime as _dt  # noqa: PLC0415
+
+    if value is None:
+        return None
+    if isinstance(value, _dt.datetime):
+        if value.tzinfo is None or value.tzinfo.utcoffset(value) is None:
+            raise ValueError("DateTime value must have a timezone (naive datetimes are rejected)")
+        return value.isoformat()
+    s = str(value)
+    try:
+        parsed = _dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError(f"DateTime value {value!r} is not a valid ISO 8601 datetime") from exc
+    if parsed.tzinfo is None or parsed.tzinfo.utcoffset(parsed) is None:
+        raise ValueError("DateTime value must have a timezone (naive datetimes are rejected)")
+    return s
+
+
 # ADR-001 Phase 1: restore the legacy typed scalars. Wire format is an ISO 8601
 # string (DateTime) or a JSON-encoded string (JSONString). Python type stays as
 # `str` so we don't force every resolver to construct typed values; the scalar
@@ -35,9 +60,11 @@ BigInt = strawberry.scalar(
 DateTime = strawberry.scalar(
     NewType("DateTime", str),
     serialize=str,
-    parse_value=str,
-    description="An ISO 8601 datetime string. Wire-compatible with the legacy graphene "
-    "DateTime scalar; typed clients get a `DateTime` rather than a plain `String`.",
+    parse_value=_parse_datetime,
+    description="An ISO 8601 datetime string with timezone. Wire-compatible "
+    "with the legacy graphene DateTime scalar (which rejected naive and "
+    "malformed values); typed clients get a `DateTime` rather than a "
+    "plain `String`.",
 )
 
 JSONString = strawberry.scalar(

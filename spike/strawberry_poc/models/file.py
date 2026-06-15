@@ -19,16 +19,19 @@ from data.s3 import presigned_post_for_file
 
 from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
 from .file_interface import FileInterface
+from .predecessor import PredecessorInput
+from .predecessors_interface import PredecessorsInterface
 from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
 
 @strawberry.type(name="File")
-class ToshiFile(relay.Node, FileInterface):
+class ToshiFile(relay.Node, FileInterface, PredecessorsInterface):
     """A file stored in S3 and indexed in DynamoDB."""
 
     pk: relay.NodeID[str]
 
     relations_raw: strawberry.Private[list | None] = None
+    predecessors_raw: strawberry.Private[list | None] = None
 
     @relay.connection(FileRelationsConnection)
     def relations(self, info: Info) -> list[FileRelation | None]:
@@ -56,6 +59,7 @@ class ToshiFile(relay.Node, FileInterface):
             meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
             created=d.created,
             relations_raw=d.relations,
+            predecessors_raw=[p.model_dump() for p in d.predecessors] if d.predecessors else None,
         )
 
 
@@ -66,7 +70,9 @@ class CreateFileInput:
     file_size: BigInt | None = None
     meta: list[KeyValuePairInput | None] | None = None
     created: DateTime | None = None
-    created: str | None = None
+    # Legacy parity: plain File accepts predecessors. Persisted on the
+    # ToshiFileObject row alongside meta/relations.
+    predecessors: list[PredecessorInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 
@@ -77,12 +83,16 @@ def resolve_files(info: Info) -> Iterable[ToshiFile]:
 
 def mutate_create_file(info: Info, input: CreateFileInput) -> ToshiFile:
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
+    predecessors = (
+        [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
+    )
     payload = {
         "file_name": input.file_name,
         "md5_digest": input.md5_digest,
         "file_size": input.file_size,
         "meta": meta,
         "created": input.created,
+        "predecessors": predecessors,
     }
     data = create_file(info.context["dynamodb"], "File", payload)
     instance = ToshiFile.from_dict(data)
