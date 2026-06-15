@@ -27,6 +27,7 @@ from .relations import (
 )
 
 _OpenquakeHazardSolution = Annotated["OpenquakeHazardSolution", strawberry.lazy("models.openquake_hazard_solution")]
+_OpenquakeHazardConfig = Annotated["OpenquakeHazardConfig", strawberry.lazy("models.openquake_hazard_config")]
 
 @strawberry.type
 class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
@@ -50,6 +51,7 @@ class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
     parents_raw: strawberry.Private[list | None] = None
     children_raw: strawberry.Private[list | None] = None
     hazard_solution_raw_id: strawberry.Private[str | None] = None
+    config_raw_id: strawberry.Private[str | None] = None
 
     @relay.connection(FileRelationsConnection)
     def files(self, info: Info) -> list[FileRelation | None]:
@@ -66,6 +68,19 @@ class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
     @strawberry.field
     def inversion_solution(self, info: Info) -> InversionSolutionUnion | None:
         return resolve_task_inversion_solution(info.context["dynamodb"], self.files_raw)
+
+    @strawberry.field(deprecation_reason="We no longer store this value.")
+    def config(self, info: Info) -> _OpenquakeHazardConfig | None:
+        if not self.config_raw_id:
+            return None
+        from models.openquake_hazard_config import OpenquakeHazardConfig  # noqa: PLC0415
+
+        try:
+            raw_id = GlobalID.from_id(self.config_raw_id).node_id
+        except Exception:
+            raw_id = self.config_raw_id
+        data = get_thing(info.context["dynamodb"], raw_id)
+        return OpenquakeHazardConfig.from_dict(data) if data else None
 
     @strawberry.field
     def hazard_solution(self, info: Info) -> _OpenquakeHazardSolution | None:
@@ -108,6 +123,7 @@ class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
             parents_raw=d.parents,
             children_raw=d.children,
             hazard_solution_raw_id=d.hazard_solution,
+            config_raw_id=d.config,
         )
 
 @strawberry.input

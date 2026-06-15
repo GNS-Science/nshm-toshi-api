@@ -205,6 +205,11 @@ class OpenquakeHazardTaskData(AutomationTaskData):
     srm_logic_tree: str | None = None  # JSON string
     gmcm_logic_tree: str | None = None  # JSON string
     openquake_config: str | None = None  # JSON string
+    # Legacy: relay GlobalID → OpenquakeHazardConfig. Deprecated in the Graphene
+    # schema ("We no longer store this value") but still queried by older runzi
+    # client code (e.g. AutomationTaskPageQuery), and present on records
+    # created before deprecation. Surfaced for read-only parity.
+    config: str | None = None
 
 
 class TableData(BaseModel):
