@@ -68,9 +68,18 @@ def _extract_auth_context(request: Any) -> tuple[str, set[str], str]:
     """
     Pull (userId, scopes, authMethod) from request.
 
-    Mangum exposes the API Gateway event at request.scope["aws.event"]; the
-    Lambda Authorizer's output lives under requestContext.authorizer.
-    Header fallback supports local/e2e runs without API Gateway.
+    Source selection is atomic, not per-field:
+      - If the API Gateway authorizer ran (its dict is present, even
+        partially), we trust it as the sole source. Missing keys get safe
+        defaults — we never fall through to headers for individual fields.
+      - Otherwise (no Mangum / local dev / e2e harness), read from X-Auth-*
+        headers.
+
+    The atomic choice prevents a spoof where an authenticated request's
+    headers fill in a missing authorizer field — e.g. real userId from the
+    authorizer + spoofed scopes from the X-Auth-Scopes header. The
+    authorizer is the trust boundary; if it's there, headers don't get a
+    say.
     """
     authorizer_ctx: dict[str, Any] = {}
     if request is not None:
@@ -80,30 +89,23 @@ def _extract_auth_context(request: Any) -> tuple[str, set[str], str]:
             request_context = aws_event.get("requestContext") or {}
             authorizer_ctx = request_context.get("authorizer") or {}
 
-    headers = {}
-    if request is not None:
-        raw_headers = getattr(request, "headers", None)
-        if raw_headers is not None:
-            try:
-                headers = {k.lower(): v for k, v in raw_headers.items()}
-            except AttributeError:
-                headers = {}
+    if authorizer_ctx:
+        user_id = authorizer_ctx.get("userId") or "anonymous"
+        scopes_str = authorizer_ctx.get("scopes") or ""
+        auth_method = authorizer_ctx.get("authMethod") or "none"
+    else:
+        headers = {}
+        if request is not None:
+            raw_headers = getattr(request, "headers", None)
+            if raw_headers is not None:
+                try:
+                    headers = {k.lower(): v for k, v in raw_headers.items()}
+                except AttributeError:
+                    headers = {}
+        user_id = headers.get("x-auth-userid") or "anonymous"
+        scopes_str = headers.get("x-auth-scopes") or ""
+        auth_method = headers.get("x-auth-method") or "none"
 
-    user_id = (
-        authorizer_ctx.get("userId")
-        or headers.get("x-auth-userid")
-        or "anonymous"
-    )
-    scopes_str = (
-        authorizer_ctx.get("scopes")
-        or headers.get("x-auth-scopes")
-        or ""
-    )
-    auth_method = (
-        authorizer_ctx.get("authMethod")
-        or headers.get("x-auth-method")
-        or "none"
-    )
     scopes = set(scopes_str.split()) if scopes_str else set()
     return user_id, scopes, auth_method
 

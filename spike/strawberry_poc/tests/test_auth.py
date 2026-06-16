@@ -241,6 +241,36 @@ def test_authorizer_wins_over_headers_when_both_present(no_bypass):
     assert ctx["current_user"]["userId"] == "real-alice"
 
 
+def test_partial_authorizer_does_not_fall_through_to_headers(no_bypass):
+    """
+    Spoofing window flagged in PR review: if the authorizer ran but is
+    missing a field (e.g. scopes), per-field fallback would let an
+    X-Auth-Scopes header fill it in. The contract is atomic — if the
+    authorizer is present at all, headers are ignored entirely.
+    """
+    ctx = {
+        "request": _FakeRequest(
+            authorizer={
+                # scopes deliberately missing — only userId + authMethod
+                "userId": "real-alice",
+                "authMethod": "cognito-jwt",
+            },
+            headers={
+                # spoofed elevation attempt
+                "x-auth-scopes": "toshi/read toshi/write",
+            },
+        )
+    }
+    # No scopes from the authorizer → blocked on the read check.
+    # If the header had been consulted, the mutation would have succeeded
+    # because both read+write would be present.
+    result = test_schema.execute_sync("mutation { do_write }", context_value=ctx)
+    assert result.errors is not None
+    assert "Missing required scope: toshi/read" in str(result.errors[0])
+    assert ctx["current_user"]["scopes"] == set()
+    assert ctx["current_user"]["userId"] == "real-alice"
+
+
 # ---------------------------------------------------------------------------
 # Multi-operation document — operationName must drive scope check
 # ---------------------------------------------------------------------------
