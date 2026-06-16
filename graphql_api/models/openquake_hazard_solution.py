@@ -10,17 +10,17 @@ from strawberry.types import Info
 
 from graphql_api.data.dynamo import create_thing, get_file, get_thing, list_things
 from graphql_api.data.models import OpenquakeHazardSolutionData
-from graphql_api.models.file import ToshiFile
+from graphql_api.models._base.file import ToshiFile
 from graphql_api.models.openquake_hazard_task import OpenquakeHazardTask
 
-from .common import DateTime, KeyValuePair, KeyValuePairInput, OpenquakeTaskType, client_mutation_id_input_field
+from graphql_api.models._infra.common import DateTime, KeyValuePair, KeyValuePairInput, OpenquakeTaskType, client_mutation_id_input_field
 
-from .thing import Thing
-from .predecessor import PredecessorInput
-from .predecessors_interface import PredecessorsInterface
+from graphql_api.models._base.thing import Thing
+from graphql_api.models._interfaces.predecessor import PredecessorInput
+from graphql_api.models._interfaces.predecessors_interface import PredecessorsInterface
 
 _OpenquakeHazardTask = Annotated["OpenquakeHazardTask", strawberry.lazy("graphql_api.models.openquake_hazard_task")]
-_ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models.file")]
+_ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models._base.file")]
 
 @strawberry.type
 class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):

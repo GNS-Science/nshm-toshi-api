@@ -12,12 +12,12 @@ from graphql_api.data.dynamo import create_file, get_file, list_files
 from graphql_api.data.models import TimeDependentInversionSolutionData
 from graphql_api.data.s3 import presigned_post_for_file
 
-from .common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
-from .file_interface import FileInterface
-from .inversion_solution import InversionSolution, LabelledTableRelation, _ltr_from_dict
-from .inversion_solution_interface import InversionSolutionInterface
-from .predecessor import PredecessorInput
-from .predecessors_interface import PredecessorsInterface
+from graphql_api.models._infra.common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
+from graphql_api.models._interfaces.file_interface import FileInterface
+from graphql_api.models.inversion_solution import InversionSolution, LabelledTableRelation, _ltr_from_dict
+from graphql_api.models._interfaces.inversion_solution_interface import InversionSolutionInterface
+from graphql_api.models._interfaces.predecessor import PredecessorInput
+from graphql_api.models._interfaces.predecessors_interface import PredecessorsInterface
 
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("graphql_api.models.inversion_solution")]
 

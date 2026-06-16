@@ -12,10 +12,10 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_thing, get_thing, list_things
 from graphql_api.data.models import StrongMotionStationData
 
-from .common import DateTime, SmsSiteClass, SmsSiteClassBasis, _try_enum, client_mutation_id_input_field
-from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_thing
+from graphql_api.models._infra.common import DateTime, SmsSiteClass, SmsSiteClassBasis, _try_enum, client_mutation_id_input_field
+from graphql_api.models.relations import FileRelation, FileRelationsConnection, build_file_relations_for_thing
 
-from .thing import Thing
+from graphql_api.models._base.thing import Thing
 
 @strawberry.type
 class StrongMotionStation(relay.Node, Thing):

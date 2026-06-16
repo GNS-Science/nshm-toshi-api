@@ -108,7 +108,7 @@ def test_post_url_fields_queryable_via_node(gql_context, created_rupture_set):
 
 def test_file_url_uses_presigned_download_url(gql_context, created_rupture_set, monkeypatch):
     """file_url must delegate to presigned_download_url with (pk, file_name)."""
-    from graphql_api.models import file_interface as fi
+    from graphql_api.models._interfaces import file_interface as fi
 
     captured = {}
 
