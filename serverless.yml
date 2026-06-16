@@ -33,7 +33,6 @@ package:
     - .coverage
     - .bumpversion.cfg
     - bin/**
-    - demo/**
     - docs/**
     - lib/**
     - node_modules/**
