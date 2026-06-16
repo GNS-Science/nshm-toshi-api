@@ -261,7 +261,7 @@ def test_children_total_count_after_relation(gql_context, created_task):
 
 def test_unknown_enum_value_does_not_crash(gql_context):
     """from_dict must survive unknown enum values in production data (returns None, not an error)."""
-    from data.dynamo import create_thing
+    from graphql_api.data.dynamo import create_thing
 
     raw = create_thing(
         gql_context["dynamodb"],

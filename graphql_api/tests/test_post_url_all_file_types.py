@@ -36,7 +36,7 @@ _BUCKET = "toshi-strawberry-test-allfiles"
 @pytest.fixture
 def s3_bucket(monkeypatch):
     """moto-backed S3 bucket; matches the pattern in test_bugfix_gap4_rupture_set."""
-    import data.s3 as s3_mod  # noqa: PLC0415
+    import graphql_api.data.s3 as s3_mod  # noqa: PLC0415
 
     monkeypatch.setattr(s3_mod, "S3_BUCKET_NAME", _BUCKET)
     with mock_aws():
@@ -50,7 +50,7 @@ def s3_bucket(monkeypatch):
 
 @pytest.fixture
 def rgt_id(gql_context):
-    from data.dynamo import create_thing  # noqa: PLC0415
+    from graphql_api.data.dynamo import create_thing  # noqa: PLC0415
 
     data = create_thing(
         gql_context["dynamodb"],
@@ -63,7 +63,7 @@ def rgt_id(gql_context):
 
 @pytest.fixture
 def at_id(gql_context):
-    from data.dynamo import create_thing  # noqa: PLC0415
+    from graphql_api.data.dynamo import create_thing  # noqa: PLC0415
 
     data = create_thing(
         gql_context["dynamodb"],

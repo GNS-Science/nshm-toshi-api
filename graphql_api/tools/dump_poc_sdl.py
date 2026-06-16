@@ -1,13 +1,13 @@
 """Dump the Strawberry POC SDL to stdout.
 
-Usage (from spike/strawberry_poc/):
+Usage (from graphql_api/):
     uv run python tools/dump_poc_sdl.py > poc.sdl
 """
 
 import sys
 from pathlib import Path
 
-# Make spike/strawberry_poc/ importable when invoked as `python tools/dump_poc_sdl.py`
+# Make graphql_api/ importable when invoked as `python tools/dump_poc_sdl.py`
 # from the spike root. pytest config does this via pythonpath but a bare python
 # call doesn't pick that up.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

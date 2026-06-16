@@ -4,6 +4,10 @@
 **Trigger:** chrisdicaprio's diagnosis after running `nzshm-runzi` against the
 deployed Strawberry POC at `/test/graphql-v2`.
 
+> **Path note (ADR-004):** "POC" paths below (`spike/strawberry_poc/...`)
+> now live at `graphql_api/...`. Preserved verbatim as historical record
+> of the mini Phase 4 context.
+
 ## Why this doc exists
 
 When mini Phase 4 (#318) flipped the POC to read-write on the test stage, the

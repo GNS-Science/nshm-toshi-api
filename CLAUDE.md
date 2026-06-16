@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`nshm-toshi-api` is a GraphQL API (Flask + Graphene) deployed as an AWS Lambda function via the Serverless Framework. It serves as the object store for New Zealand NSHM (National Seismic Hazard Model) experiments and outputs — storing task metadata, file references, and computation results in DynamoDB + S3, with Elasticsearch for search.
+`nshm-toshi-api` is a GraphQL API (Strawberry + FastAPI, served via Mangum) deployed as an AWS Lambda function via the Serverless Framework. It serves as the object store for New Zealand NSHM (National Seismic Hazard Model) experiments and outputs — storing task metadata, file references, and computation results in DynamoDB + S3, with Elasticsearch for search.
 
 ## Commands
 
@@ -17,16 +17,12 @@ yarn sls dynamodb install  # Install DynamoDB local plugin (Java required)
 
 ### Running Tests
 ```bash
-uv run pytest                          # Run all tests (requires TESTING=1, SLS_OFFLINE=1 in .env)
-uv run pytest graphql_api/tests/test_schema.py  # Run a single test file
+uv run pytest                          # Run all tests
+uv run pytest graphql_api/tests/test_auth.py  # Run a single test file
 uv run pytest -k "test_name"           # Run tests matching a pattern
 ```
 
-Tests use `moto` to mock AWS services. The `.env.tests` file is auto-loaded by `conftest.py`. Ensure your `.env` contains:
-```
-SLS_OFFLINE=1
-TESTING=1
-```
+Tests use Docker testcontainers (DynamoDB Local + Elasticsearch 7.1.0) — the Docker daemon must be running. `graphql_api/tests/conftest.py` sets `TESTING=1` at module load so the `AuthExtension` short-circuits (see "Auth in tests" below).
 
 ### Linting & Formatting
 ```bash
@@ -35,13 +31,13 @@ uv run ruff check graphql_api          # Lint
 uv run ruff check --fix graphql_api    # Lint and auto-fix
 ```
 
-### Local Development (Smoketest)
+### Local Development
 ```bash
 yarn sls dynamodb start --stage local &
 yarn sls s3 start &
-uv run yarn sls wsgi serve             # Starts Flask on http://localhost:5000/graphql
+uv run uvicorn graphql_api.app:app --reload   # FastAPI on http://localhost:8000/graphql
 ```
-Requires `.env` with `SLS_OFFLINE=1`, `TESTING=0`, `TOSHI_FIX_RANDOM_SEED=1`, `FIRST_DYNAMO_ID=0`.
+Requires `.env` with `SLS_OFFLINE=1`, `TESTING=0` (or `1` to bypass auth), `FIRST_DYNAMO_ID=0`.
 
 Elasticsearch must also be running locally:
 ```bash
@@ -60,40 +56,51 @@ uv run pip-audit -r audit.txt -s pypi --require-hashes
 
 ```
 graphql_api/
-  api.py           # Flask app entry point; registers GraphQL route, runs DB migrations
-  config.py        # All env-var config (IS_OFFLINE, TESTING, ES_*, S3_*, DB_*)
-  schema/          # Graphene schema definitions
-    schema.py      # Root Query + Mutation types; wires everything together
-    custom/        # Domain-specific types (GeneralTask, RuptureSet, InversionSolution, etc.)
-    *.py           # Base types: File, Thing, Table, FileRelation, TaskTaskRelation
-  data/            # Data access layer
-    base_data.py   # BaseDynamoDBData: DynamoDB read/write, S3 fallback, ES indexing
-    data_manager.py# DataManager singleton: entry point with .file, .thing, .table properties
-    *_data.py      # FileData, ThingData, TableData, etc.
-  dynamodb/
-    models.py      # PynamoDB models: ToshiFileObject, ToshiThingObject, ToshiTableObject, ToshiIdentity
+  app.py                 # FastAPI + Mangum entry point; `handler` is the Lambda entry
+  schema.py              # Root Strawberry schema — Query + Mutation, AuthExtension wired
+  auth.py                # AuthExtension: toshi/read + toshi/write scope enforcement
+  models/                # Strawberry types — one file per GraphQL type
+    common.py            # Shared scalars (BigInt, DateTime, JSONString) + KeyValuePair
+    file.py, thing.py    # Base interfaces + their default implementations
+    relations.py         # FileRelation, TaskTaskRelation (uses strawberry.lazy for cycles)
+    aggregate_inversion_solution.py, automation_task.py, ...   # Domain types
+    _dispatch.py         # clazz_name → Strawberry type lookup
+  data/                  # Data access layer
+    dynamo.py            # DynamoDB CRUD + scan + ES indexing
+    s3.py                # S3 read fallback for legacy object IDs (< FIRST_DYNAMO_ID)
+    search.py            # Elasticsearch search
+    models.py            # Pydantic data models (per-domain *.Data classes)
+    ids.py               # Global ID encode/decode + auto-increment IDs
+  tests/                 # pytest suite, testcontainers-driven (DynamoDB Local + ES)
+  tools/                 # SDL dump, schema parity check, runzi corpus refresh
 ```
+
+`auth/` (top-level) holds the Lambda Authorizer (`auth/authorizer/`) and Cognito CLI tooling — not part of the GraphQL package.
 
 ### Data Storage Model
 
-Objects are categorised into three stores managed by PynamoDB models:
-- **ToshiThingObject** — task/entity records (GeneralTask, RuptureGenerationTask, AutomationTask, etc.)
-- **ToshiFileObject** — file records with S3 references (File, RuptureSet, InversionSolution variants, etc.)
-- **ToshiTableObject** — tabular data
-- **ToshiIdentity** — monotonic ID counter per object type
+Three DynamoDB tables, modeled in `graphql_api/data/models.py`:
+- **ToshiThingObject-{STAGE}** — task/entity records (GeneralTask, RuptureGenerationTask, AutomationTask, etc.)
+- **ToshiFileObject-{STAGE}** — file records with S3 references (File, RuptureSet, InversionSolution variants, etc.)
+- **ToshiTableObject-{STAGE}** — tabular data
+- **ToshiIdentity-{STAGE}** — monotonic ID counter per object type
 
-Every object has a `clazz_name` field in its JSON; `ThingData.from_json()` and `FileData.from_json()` use this to dynamically instantiate the correct Graphene class via `getattr(import_module('graphql_api.schema'), clazz_name)`. **All schema types used this way must be exported from `graphql_api/schema/__init__.py`.**
+Every object has a `clazz_name` field in its JSON. The resolver path uses this to dispatch through `graphql_api/models/_dispatch.py` to the correct Strawberry type. **New domain types must be registered in `_dispatch.py` for `node()` / `nodes()` queries to find them.**
 
-Objects are written to DynamoDB and simultaneously indexed in Elasticsearch. On read, DynamoDB is tried first; if not found, S3 is used as a legacy fallback.
+Objects are written to DynamoDB and simultaneously indexed in Elasticsearch. On read, DynamoDB is tried first; if not found, S3 is used as a legacy fallback (for IDs below `FIRST_DYNAMO_ID`).
 
 ### GraphQL Schema Pattern
 
-Each domain type follows this pattern in `graphql_api/schema/custom/`:
-1. **ObjectType** class with `class Meta: interfaces = (relay.Node, Thing|FileInterface)`
-2. **CreateXxx(relay.ClientIDMutation)** with an `Input` class and `mutate_and_get_payload`
-3. **UpdateXxx(relay.ClientIDMutation)** for mutable types
+Each domain type follows this pattern in `graphql_api/models/`:
+1. **Strawberry type** decorated with `@strawberry.type`, implementing `relay.Node` and the relevant base interface (Thing or FileInterface).
+2. **Input class** (`CreateXxxInput`) decorated with `@strawberry.input`.
+3. **Payload class** (`CreateXxxPayload`) — the mutation return shape, matching the legacy Graphene `ClientIDMutation` shape exactly so existing clients work unchanged.
+4. **Mutation function** (`mutate_create_xxx`) — called from the root mutation in `schema.py`.
+5. **Resolver** (`resolve_xxxs`) for the connection field on Query.
 
-Mutations call `get_data_manager().thing.create(...)` or `.file.create(...)`, which handles ID allocation, DynamoDB write, and ES indexing transactionally.
+Cross-type references use `strawberry.lazy("graphql_api.models.X")` string forward refs to break import cycles.
+
+Mutations write through `graphql_api/data/dynamo.py` helpers (`create_thing`, `create_file`, etc.), which handle ID allocation, DynamoDB write, and ES indexing.
 
 ### Key Interfaces
 - `Thing` — base interface for task/entity types (stored in ToshiThingObject)
@@ -101,19 +108,21 @@ Mutations call `get_data_manager().thing.create(...)` or `.file.create(...)`, wh
 - `PredecessorsInterface` — for types that track predecessor objects
 
 ### ID Scheme
-Object IDs are auto-incremented integers (starting at `FIRST_DYNAMO_ID`, default 100000) with a 5-char random suffix appended (`append_uniq`). IDs are globally unique relay node IDs encoded as `base64(TypeName:id)`.
+Object IDs are auto-incremented integers (starting at `FIRST_DYNAMO_ID`, default 100000) with a 5-char random suffix appended. IDs are exposed as Relay GlobalIDs (`base64(TypeName:id)`).
 
-### Config Flags
-All config is in `graphql_api/config.py` and loaded from `.env`:
-- `TESTING=1` — disables real AWS calls; moto mocking is used
-- `SLS_OFFLINE=1` — points to local DynamoDB (port 8000) and local S3 (port 4569)
-- `DB_READ_ONLY=1` — prevents any writes
-- `FIRST_DYNAMO_ID` — starting ID for new objects (0 for smoketests, 100000 for production)
+### Config
+
+Most config comes from environment variables, read directly via `os.environ.get(...)` in the modules that need them (no central `config.py`).
+- `TESTING=1` — bypasses `AuthExtension` (synthetic local-dev user with both scopes); set in `graphql_api/tests/conftest.py` for the suite.
+- `SLS_OFFLINE=1` — also bypasses auth; set by `serverless-offline` for local dev.
+- `DB_READ_ONLY=1` — set on the deployed `graphql` function in dev/prod; dropped on test (see `serverless.yml` serverlessIfElse).
+- `FIRST_DYNAMO_ID` — starting ID for new objects (0 for smoketests, 100000 for production).
+- `ES_ENDPOINT`, `ES_INDEX`, `GRAPHQL_PATH`, `S3_BUCKET_NAME` — wired in `serverless.yml`.
 
 ### Testing Fixtures
-Tests import `graphql_client` from `conftest.py`, which wraps the schema in `moto`'s `mock_aws` context, creates DynamoDB tables via `migrate()`, and creates an S3 bucket. Tests make GraphQL requests directly via `graphene.test.Client`.
+`graphql_api/tests/conftest.py` starts DynamoDB Local and Elasticsearch 7.1.0 via `testcontainers` (Docker required), creates fresh tables per test module, and yields a `gql_context` dict for `schema.execute_sync(..., context_value=...)` calls. There is no Flask `graphql_client` — tests drive Strawberry directly.
 
-### Auth in tests (POC)
-The Strawberry POC's `AuthExtension` (`spike/strawberry_poc/auth.py`) enforces `toshi/read` on every request and `toshi/write` on mutations. The POC's `tests/conftest.py` sets `TESTING=1`, which short-circuits the extension and attaches a synthetic `local-dev` user with both scopes — so existing tests run unchanged.
+### Auth in tests
+`graphql_api/auth.py`'s `AuthExtension` enforces `toshi/read` on every request and `toshi/write` on mutations. The conftest sets `TESTING=1`, which short-circuits the extension and attaches a synthetic `local-dev` user with both scopes — so existing tests run unchanged.
 
-**Rule of thumb when adding scope-aware code**: any resolver or code path that reads `info.context["current_user"]` (scopes, userId, authMethod) to make a decision must have at least one test that disables the bypass and exercises real enforcement. See the `no_bypass` fixture and `_FakeRequest` pattern in `spike/strawberry_poc/tests/test_auth.py`. Without it, the test silently passes under the synthetic user (which holds both scopes) and the real denial path is never exercised.
+**Rule of thumb when adding scope-aware code**: any resolver or code path that reads `info.context["current_user"]` (scopes, userId, authMethod) to make a decision must have at least one test that disables the bypass and exercises real enforcement. See the `no_bypass` fixture and `_FakeRequest` pattern in `graphql_api/tests/test_auth.py`. Without it, the test silently passes under the synthetic user (which holds both scopes) and the real denial path is never exercised.

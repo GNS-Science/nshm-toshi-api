@@ -73,7 +73,7 @@ class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
     def config(self, info: Info) -> _OpenquakeHazardConfig | None:
         if not self.config_raw_id:
             return None
-        from models.openquake_hazard_config import OpenquakeHazardConfig  # noqa: PLC0415
+        from graphql_api.models.openquake_hazard_config import OpenquakeHazardConfig  # noqa: PLC0415
 
         try:
             raw_id = GlobalID.from_id(self.config_raw_id).node_id
@@ -86,7 +86,7 @@ class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
     def hazard_solution(self, info: Info) -> _OpenquakeHazardSolution | None:
         if not self.hazard_solution_raw_id:
             return None
-        from models.openquake_hazard_solution import OpenquakeHazardSolution  # noqa: PLC0415
+        from graphql_api.models.openquake_hazard_solution import OpenquakeHazardSolution  # noqa: PLC0415
 
         try:
             raw_id = GlobalID.from_id(self.hazard_solution_raw_id).node_id

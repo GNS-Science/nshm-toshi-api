@@ -123,7 +123,7 @@ query GetNode($id: ID!) {
 
 
 def _seed_toshi_file(gql_context, name="archive.zip"):
-    from data.dynamo import create_file
+    from graphql_api.data.dynamo import create_file
 
     data = create_file(gql_context["dynamodb"], "ToshiFile", {"file_name": name})
     raw_id = data["object_id"]
@@ -568,7 +568,7 @@ def legacy_oq_task_with_config(gql_context, created_oq_config):
     """Seed a legacy-shape OpenquakeHazardTask carrying the deprecated `config`
     GlobalID directly via create_thing (the field is no longer accepted by the
     create mutation)."""
-    from data.dynamo import create_thing  # noqa: PLC0415
+    from graphql_api.data.dynamo import create_thing  # noqa: PLC0415
 
     data = create_thing(
         gql_context["dynamodb"],

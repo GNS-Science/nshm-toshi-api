@@ -4,6 +4,12 @@
 
 Proposed.
 
+> **Path note (ADR-004):** What this ADR calls "the POC at
+> `spike/strawberry_poc/`" now lives at `graphql_api/`, and the
+> parity tool is `graphql_api/tools/schema_parity.py`. The legacy
+> Flask/Graphene tree has been removed. References below preserved
+> as historical context.
+
 ## Context
 
 ### The drop-in promise

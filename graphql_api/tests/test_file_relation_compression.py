@@ -18,7 +18,7 @@ import json
 import pytest
 from nzshm_common.util import compress_string, decompress_string
 
-from data import dynamo
+from graphql_api.data import dynamo
 from graphql_api.schema import schema
 
 

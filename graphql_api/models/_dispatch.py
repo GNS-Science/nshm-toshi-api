@@ -18,25 +18,25 @@ from typing import Any
 # circular-import issues during schema build.
 _CLAZZ_REGISTRY: dict[str, tuple[str, str]] = {
     # Things
-    "GeneralTask": ("models.general_task", "GeneralTask"),
-    "RuptureGenerationTask": ("models.automation_task", "RuptureGenerationTask"),
-    "AutomationTask": ("models.automation_task", "AutomationTask"),
-    "StrongMotionStation": ("models.strong_motion_station", "StrongMotionStation"),
-    "OpenquakeHazardTask": ("models.openquake_hazard_task", "OpenquakeHazardTask"),
-    "OpenquakeHazardSolution": ("models.openquake_hazard_solution", "OpenquakeHazardSolution"),
-    "OpenquakeHazardConfig": ("models.openquake_hazard_config", "OpenquakeHazardConfig"),
+    "GeneralTask": ("graphql_api.models.general_task", "GeneralTask"),
+    "RuptureGenerationTask": ("graphql_api.models.automation_task", "RuptureGenerationTask"),
+    "AutomationTask": ("graphql_api.models.automation_task", "AutomationTask"),
+    "StrongMotionStation": ("graphql_api.models.strong_motion_station", "StrongMotionStation"),
+    "OpenquakeHazardTask": ("graphql_api.models.openquake_hazard_task", "OpenquakeHazardTask"),
+    "OpenquakeHazardSolution": ("graphql_api.models.openquake_hazard_solution", "OpenquakeHazardSolution"),
+    "OpenquakeHazardConfig": ("graphql_api.models.openquake_hazard_config", "OpenquakeHazardConfig"),
     # Files
-    "ToshiFile": ("models.file", "ToshiFile"),
-    "SmsFile": ("models.sms_file", "SmsFile"),
-    "RuptureSet": ("models.rupture_set", "RuptureSet"),
-    "InversionSolution": ("models.inversion_solution", "InversionSolution"),
-    "ScaledInversionSolution": ("models.scaled_inversion_solution", "ScaledInversionSolution"),
-    "AggregateInversionSolution": ("models.aggregate_inversion_solution", "AggregateInversionSolution"),
+    "ToshiFile": ("graphql_api.models.file", "ToshiFile"),
+    "SmsFile": ("graphql_api.models.sms_file", "SmsFile"),
+    "RuptureSet": ("graphql_api.models.rupture_set", "RuptureSet"),
+    "InversionSolution": ("graphql_api.models.inversion_solution", "InversionSolution"),
+    "ScaledInversionSolution": ("graphql_api.models.scaled_inversion_solution", "ScaledInversionSolution"),
+    "AggregateInversionSolution": ("graphql_api.models.aggregate_inversion_solution", "AggregateInversionSolution"),
     "TimeDependentInversionSolution": (
-        "models.time_dependent_inversion_solution",
+        "graphql_api.models.time_dependent_inversion_solution",
         "TimeDependentInversionSolution",
     ),
-    "InversionSolutionNrml": ("models.inversion_solution_nrml", "InversionSolutionNrml"),
+    "InversionSolutionNrml": ("graphql_api.models.inversion_solution_nrml", "InversionSolutionNrml"),
 }
 
 # Sets defining which clazz_names are valid in each dispatch context.

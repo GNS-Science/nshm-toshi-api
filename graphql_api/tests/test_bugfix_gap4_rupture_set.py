@@ -45,7 +45,7 @@ def s3_bucket(monkeypatch):
     against the mock. See issue #312 concern 3 for the underlying
     env-var-caching issue this works around.
     """
-    import data.s3 as s3_mod  # noqa: PLC0415
+    import graphql_api.data.s3 as s3_mod  # noqa: PLC0415
 
     monkeypatch.setattr(s3_mod, "S3_BUCKET_NAME", _BUCKET)
     with mock_aws():
@@ -60,7 +60,7 @@ def s3_bucket(monkeypatch):
 
 @pytest.fixture
 def rupture_gen_task_id(gql_context):
-    from data.dynamo import create_thing  # noqa: PLC0415
+    from graphql_api.data.dynamo import create_thing  # noqa: PLC0415
 
     data = create_thing(
         gql_context["dynamodb"],
@@ -273,7 +273,7 @@ def test_post_url_null_without_s3(gql_context, rupture_gen_task_id, monkeypatch)
     """When S3 is not configured (default), post_url* must be null —
     matches the FileInterface default and keeps the schema honest.
     """
-    import data.s3 as s3_mod  # noqa: PLC0415
+    import graphql_api.data.s3 as s3_mod  # noqa: PLC0415
 
     monkeypatch.setattr(s3_mod, "S3_BUCKET_NAME", "")
 
