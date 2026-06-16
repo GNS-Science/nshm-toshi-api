@@ -17,6 +17,14 @@ Local-dev / test bypass: no-op when TESTING=1 or SLS_OFFLINE=1; attaches
 a synthetic current_user with both scopes so resolvers that read
 context["current_user"] see a consistent shape.
 
+**Test-writing rule of thumb**: any resolver or code path that reads
+context["current_user"] (scopes, userId, authMethod) to make a decision
+must have at least one test that disables the bypass (see the
+`no_bypass` fixture pattern in tests/test_auth.py) and exercises the
+real enforcement path with an explicit FakeRequest. Otherwise the test
+will silently pass under the synthetic local-dev user (which holds
+both scopes) and the real-world denial path is never exercised.
+
 Auth context source (in priority order):
   1. request.scope["aws.event"]["requestContext"]["authorizer"]
      — injected by Mangum from the API Gateway Lambda Authorizer.
