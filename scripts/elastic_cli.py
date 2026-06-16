@@ -1,3 +1,4 @@
+import os
 import sys
 
 import click
@@ -10,7 +11,10 @@ from elasticsearch.dsl import Q, Search, connections
 
 
 from graphql_relay import to_global_id
-from graphql_api.config import ES_ENDPOINT, ES_REGION, ES_INDEX
+
+ES_ENDPOINT = os.environ["ES_ENDPOINT"]
+ES_REGION = os.environ.get("ES_REGION", "ap-southeast-2")
+ES_INDEX = os.environ.get("ES_INDEX", "toshi_index_mapped")
 
 credentials = boto3.Session().get_credentials()
 awsauth = AWS4Auth(credentials.access_key, credentials.secret_key, ES_REGION, 'es', session_token=credentials.token)

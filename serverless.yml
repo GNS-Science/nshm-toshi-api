@@ -5,7 +5,6 @@ app: nshm-toshi-api
 service: nzshm22-toshi-api
 
 plugins:
-  - serverless-wsgi
   - serverless-s3-local
   - serverless-dynamodb
   - serverless-plugin-warmup
@@ -38,7 +37,6 @@ package:
     - node_modules/**
     - prof/**
     - spike/**
-    - graphql_api/tests/**
     - auth/test_*
     - auth/tests/**
     - auth/cdk/**
@@ -49,12 +47,6 @@ package:
     - package-lock.json
 
 custom:
-  #serverless-wsgi settings
-  wsgi:
-    app: graphql_api.api.app
-    packRequirements: false
-    pythonBin: python3
-
   #serverless-python-requirements settings
   pythonRequirements:
     dockerizePip: non-linux
@@ -123,16 +115,9 @@ custom:
         Exclude:
           - resourcee.Resources.ElasticSearchInstance
           - provider.iamrolestatements.1
-          - functions.app.environment.0
-          # Mini Phase 4 (test only): the POC becomes the read-write primary.
+          # Mini Phase 4 (test only): the POC is the read-write primary.
           # Drop its DB_READ_ONLY guard so writes succeed.
           - functions.strawberry-poc.environment.DB_READ_ONLY
-        Set:
-          # Mini Phase 4 (test only): legacy app becomes read-only. Any client
-          # still POSTing mutations to /graphql will get a clear RuntimeError
-          # from graphql_api/data/base_data.py:347, forcing the cutover to
-          # /graphql-v2. Reads on /graphql still work.
-          functions.app.environment.DB_READ_ONLY: "1"
 
 provider:
   name: aws
@@ -197,44 +182,6 @@ functions:
           - - !Ref ToshiScientistClient
             - !Ref ToshiAutomationClient
       LEGACY_API_KEY: ${env:NZSHM22_TOSHI_API_KEY, env:LEGACY_API_KEY, ''}
-
-  app:
-    description: The graphql API of ${self:service}
-    handler: wsgi_handler.handler
-    memorySize: 8192 # optional, in MB, default is 1024
-    timeout: 30 # optional, in seconds, default is 6
-    events:
-      - http:
-          path: graphql
-          method: OPTIONS
-      - http:
-          path: graphql
-          method: POST
-          authorizer:
-            name: jwtAuthorizer
-            resultTtlInSeconds: 0
-            identitySource: ''
-            type: request
-      - http:
-          path: graphql
-          method: GET
-          authorizer:
-            name: jwtAuthorizer
-            resultTtlInSeconds: 0
-            identitySource: ''
-            type: request
-    environment:
-      ES_ENDPOINT: {"Fn::Join": ["", ["https://", "Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]]]}
-      ES_INDEX: ${self:custom.esIndex}
-      ES_REGION: ${self:custom.region}
-      ES_DOMAIN_NAME: ${self:custom.esDomainName}
-      STACK_NAME: ${self:custom.stack_name}
-      FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
-    warmup:
-      lowConcurrencyWarmer:
-        enabled:
-          - test
-          - prod
 
   strawberry-poc:
     description: Strawberry/FastAPI POC at /graphql-v2 (read-only)
