@@ -19,6 +19,7 @@ dependencies = [
     "elasticsearch7-compatible",
     "gql",
     "nzshm-common",
+    "pydantic>=2.0",
     "python-benedict",
     "python-dateutil>=2.8.2",
     "python-dotenv>=1.2.1",
@@ -35,6 +36,7 @@ elastic_cli = 'scripts.elastic_cli:main'
 dev = [
     "bump2version",
     "click",
+    "httpx>=0.27",
     "moto",
     "mypy>=2",
     "pip-audit",
@@ -45,6 +47,7 @@ dev = [
     "ruff",
     "safety",
     "sgqlc",
+    "testcontainers>=4.0",
     "tox",
     "tox-uv",
     "types-python-dateutil",
@@ -66,15 +69,31 @@ exclude-newer-package = { "nzshm-common" = false }
 [tool.mypy]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "graphql_api.models.*"
+# Strawberry relay.Node **kwargs pattern triggers false-positive override warnings;
+# ListConnection[FileRelation/TaskTaskRelation] triggers false-positive type-var warnings;
+# strawberry.lazy() string forward refs trigger false-positive name-defined warnings.
+disable_error_code = ["override", "type-var", "name-defined"]
+
 [tool.ruff]
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "G004"]
+select = ["E", "F", "I", "B", "UP", "G004", "PLC0415"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"graphql_api/tests/**" = ["E501"]
+# strawberry.lazy() uses string forward refs that are intentionally not imported
+"graphql_api/models/*.py" = ["F821"]
+# test helpers / fixtures use local imports for clarity and testcontainer lazy-start patterns
+"graphql_api/tests/**" = ["E501", "PLC0415"]
 
 [tool.ruff.format]
 quote-style = "preserve"
+
+[tool.pytest.ini_options]
+testpaths = ["graphql_api/tests"]
+markers = [
+    "integration: requires a live Elasticsearch instance (ES_ENDPOINT env var)",
+]
