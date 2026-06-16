@@ -3,14 +3,16 @@ name: Run Tests On PullRequest
 on:
   # schedule:
   #  - cron:  '25 4 * * 0' # At 04:25 on Sunday
+  # Run on every PR regardless of base — stacked PRs targeting intermediate
+  # branches need CI too. Cost is low (~25s) and the failure mode of "my PR
+  # didn't run CI because of its base" is worse than the occasional extra run.
   pull_request:
-    branches: [ deploy-test, main ]
 
   # Allows us to call the workflow from another workflow
-  workflow_call:    
+  workflow_call:
 
   # Allows us to run the workflow manually
-  workflow_dispatch:  
+  workflow_dispatch:
 
 jobs:
   call-test-workflow:
