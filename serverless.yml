@@ -12,8 +12,7 @@ plugins:
 package:
   individually: false
   include:
-    - spike/strawberry_poc/**
-    - strawberry_poc_handler.py
+    - graphql_api/**
   exclude:
     - .env
     - .env.*
@@ -38,6 +37,13 @@ package:
     - node_modules/**
     - prof/**
     - spike/**
+    - graphql_api/tests/**
+    - graphql_api/tools/**
+    - graphql_api/README.md
+    - graphql_api/COVERAGE_GAPS.md
+    - graphql_api/pyproject.toml
+    - graphql_api/setup.cfg
+    - graphql_api/uv.lock
     - auth/test_*
     - auth/tests/**
     - auth/cdk/**
@@ -116,9 +122,9 @@ custom:
         Exclude:
           - resourcee.Resources.ElasticSearchInstance
           - provider.iamrolestatements.1
-          # Mini Phase 4 (test only): the POC is the read-write primary.
+          # Test stage: the graphql function is the read-write primary.
           # Drop its DB_READ_ONLY guard so writes succeed.
-          - functions.strawberry-poc.environment.DB_READ_ONLY
+          - functions.graphql.environment.DB_READ_ONLY
 
 provider:
   name: aws
@@ -184,9 +190,9 @@ functions:
             - !Ref ToshiAutomationClient
       LEGACY_API_KEY: ${env:NZSHM22_TOSHI_API_KEY, env:LEGACY_API_KEY, ''}
 
-  strawberry-poc:
-    description: Strawberry/FastAPI POC at /graphql-v2 (read-only)
-    handler: strawberry_poc_handler.handler
+  graphql:
+    description: GraphQL API (Strawberry/FastAPI) at /graphql-v2
+    handler: graphql_api.app.handler
     memorySize: 1024
     timeout: 30
     events:
@@ -215,10 +221,9 @@ functions:
       GRAPHQL_PATH: /graphql-v2
       # REGION + S3_BUCKET_NAME inherit from provider.environment but we set
       # S3_BUCKET_NAME explicitly so the dependency for _from_s3 / S3 fallback
-      # paths in data/dynamo.py + data/s3.py is visible at function scope.
+      # paths in graphql_api/data/{dynamo,s3}.py is visible at function scope.
       S3_BUCKET_NAME: ${self:custom.s3_bucket}
       # Watermark for legacy_object_identities — IDs below this are S3-only.
-      # Tracks custom.first_dynamo_id so the POC and legacy stay in lockstep.
       FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
       # S3 IAM (s3:*) is inherited from provider.iamRoleStatements — covers
       # the s3:GetObject + s3:ListBucket needed by the read fallback paths.

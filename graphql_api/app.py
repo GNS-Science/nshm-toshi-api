@@ -1,15 +1,12 @@
 """
 FastAPI + Mangum entry point.
 
-Replaces Flask + serverless-wsgi. The Lambda handler is `app.handler`.
-
 Local dev:
-    uvicorn app:app --reload
+    uvicorn graphql_api.app:app --reload
     # GraphQL playground at http://localhost:8000/graphql
 
 Lambda deploy:
-    handler: spike/strawberry_poc/app.handler
-    (adjust serverless.yml function definition)
+    handler: graphql_api.app.handler
 """
 
 import os
