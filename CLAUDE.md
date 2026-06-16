@@ -112,3 +112,8 @@ All config is in `graphql_api/config.py` and loaded from `.env`:
 
 ### Testing Fixtures
 Tests import `graphql_client` from `conftest.py`, which wraps the schema in `moto`'s `mock_aws` context, creates DynamoDB tables via `migrate()`, and creates an S3 bucket. Tests make GraphQL requests directly via `graphene.test.Client`.
+
+### Auth in tests (POC)
+The Strawberry POC's `AuthExtension` (`spike/strawberry_poc/auth.py`) enforces `toshi/read` on every request and `toshi/write` on mutations. The POC's `tests/conftest.py` sets `TESTING=1`, which short-circuits the extension and attaches a synthetic `local-dev` user with both scopes — so existing tests run unchanged.
+
+**Rule of thumb when adding scope-aware code**: any resolver or code path that reads `info.context["current_user"]` (scopes, userId, authMethod) to make a decision must have at least one test that disables the bypass and exercises real enforcement. See the `no_bypass` fixture and `_FakeRequest` pattern in `spike/strawberry_poc/tests/test_auth.py`. Without it, the test silently passes under the synthetic user (which holds both scopes) and the real denial path is never exercised.
