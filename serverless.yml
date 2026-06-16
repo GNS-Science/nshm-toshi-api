@@ -192,7 +192,7 @@ functions:
   graphql:
     description: GraphQL API (Strawberry/FastAPI) at /graphql
     handler: graphql_api.app.handler
-    memorySize: 1024
+    memorySize: 4096
     timeout: 30
     events:
       - http:
