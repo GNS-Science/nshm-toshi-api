@@ -19,7 +19,7 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_thing, get_thing, list_things, update_thing
 from graphql_api.data.models import AutomationTaskData
 
-from .common import (
+from graphql_api.models._infra.common import (
     DateTime,
     EventResult,
     EventState,
@@ -30,8 +30,8 @@ from .common import (
     _try_enum,
     client_mutation_id_input_field,
 )
-from .inversion_solution_union import InversionSolutionUnion, resolve_task_inversion_solution
-from .relations import (
+from graphql_api.models._infra.inversion_solution_union import InversionSolutionUnion, resolve_task_inversion_solution
+from graphql_api.models.relations import (
     FileRelation,
     FileRelationsConnection,
     TaskRelationsConnection,
@@ -40,7 +40,7 @@ from .relations import (
     build_task_children,
     build_task_parents,
 )
-from .thing import AutomationTaskInterface, Thing
+from graphql_api.models._base.thing import AutomationTaskInterface, Thing
 
 
 def _kv_input_to_list(items) -> list[dict] | None:
@@ -256,7 +256,7 @@ def _validate_at_arguments_against_gt(dynamodb, gt_id: str, at_arguments: list |
     skipped — matches the legacy "skip validation with no gt" behaviour
     exercised by test_argument_skip_validation_with_no_gt_OK.
     """
-    from .general_task import GeneralTask  # noqa: PLC0415
+    from graphql_api.models.general_task import GeneralTask  # noqa: PLC0415
 
     try:
         gid = GlobalID.from_id(gt_id)

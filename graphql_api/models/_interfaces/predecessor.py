@@ -6,12 +6,12 @@ import strawberry
 from strawberry.relay import GlobalID
 from strawberry.types import Info
 
-from .common import AncestryLabel
+from graphql_api.models._infra.common import AncestryLabel
 
 # Legacy PredecessorUnion = (File, InversionSolution, ScaledInversionSolution,
 # AggregateInversionSolution, TimeDependentInversionSolution, InversionSolutionNrml).
 # All file-like; reuse the lazy refs pattern from relations.py.
-_File = Annotated["ToshiFile", strawberry.lazy("graphql_api.models.file")]
+_File = Annotated["ToshiFile", strawberry.lazy("graphql_api.models._base.file")]
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("graphql_api.models.inversion_solution")]
 _ScaledInversionSolution = Annotated["ScaledInversionSolution", strawberry.lazy("graphql_api.models.scaled_inversion_solution")]
 _AggregateInversionSolution = Annotated[
@@ -73,7 +73,7 @@ class Predecessor:
         data = get_file(info.context["dynamodb"], raw_id)
         if not data:
             return None
-        from ._dispatch import dispatch_file as _dispatch_file  # noqa: PLC0415
+        from graphql_api.models._infra._dispatch import dispatch_file as _dispatch_file  # noqa: PLC0415
 
         return _dispatch_file(data)
 

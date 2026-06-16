@@ -26,7 +26,7 @@ _CLAZZ_REGISTRY: dict[str, tuple[str, str]] = {
     "OpenquakeHazardSolution": ("graphql_api.models.openquake_hazard_solution", "OpenquakeHazardSolution"),
     "OpenquakeHazardConfig": ("graphql_api.models.openquake_hazard_config", "OpenquakeHazardConfig"),
     # Files
-    "ToshiFile": ("graphql_api.models.file", "ToshiFile"),
+    "ToshiFile": ("graphql_api.models._base.file", "ToshiFile"),
     "SmsFile": ("graphql_api.models.sms_file", "SmsFile"),
     "RuptureSet": ("graphql_api.models.rupture_set", "RuptureSet"),
     "InversionSolution": ("graphql_api.models.inversion_solution", "InversionSolution"),

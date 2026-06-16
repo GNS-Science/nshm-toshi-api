@@ -9,7 +9,7 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_table, get_table
 from graphql_api.data.models import TableData
 
-from .common import (
+from graphql_api.models._infra.common import (
     DateTime,
     KeyValueListPair,
     KeyValueListPairInput,

@@ -11,7 +11,7 @@ import strawberry
 
 from graphql_api.data.dynamo import get_file
 
-from .common import FileRole
+from graphql_api.models._infra.common import FileRole
 
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("graphql_api.models.inversion_solution")]
 _ScaledInversionSolution = Annotated["ScaledInversionSolution", strawberry.lazy("graphql_api.models.scaled_inversion_solution")]

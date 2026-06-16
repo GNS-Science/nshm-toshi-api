@@ -42,15 +42,15 @@ from graphql_api.models.automation_task import (
     resolve_automation_tasks,
     resolve_rupture_generation_tasks,
 )
-from graphql_api.models.common import (
+from graphql_api.models._infra.common import (
     BigInt,
     DateTime,
     FileRole,
     KeyValuePairInput,
     client_mutation_id_payload_field,
 )
-from graphql_api.models.file import CreateFileInput, ToshiFile, mutate_create_file, resolve_files
-from graphql_api.models.predecessor import PredecessorInput
+from graphql_api.models._base.file import CreateFileInput, ToshiFile, mutate_create_file, resolve_files
+from graphql_api.models._interfaces.predecessor import PredecessorInput
 from graphql_api.models.general_task import (
     CreateGeneralTaskInput,
     GeneralTask,
@@ -73,7 +73,7 @@ from graphql_api.models.inversion_solution_nrml import (
     mutate_create_inversion_solution_nrml,
     resolve_inversion_solution_nrmls,
 )
-from graphql_api.models.object_identity import (
+from graphql_api.models._base.object_identity import (
     ObjectIdentitiesConnection,
     decode_cursor,
     make_object_identities_connection,
@@ -98,7 +98,7 @@ from graphql_api.models.openquake_hazard_task import (
     mutate_update_openquake_hazard_task,
     resolve_openquake_hazard_tasks,
 )
-from graphql_api.models.page_info import CompatListConnection
+from graphql_api.models._infra.page_info import CompatListConnection
 from graphql_api.models.relations import (
     CreateFileRelationInput,
     CreateTaskRelationInput,
@@ -126,7 +126,7 @@ from graphql_api.models.strong_motion_station import (
     mutate_create_strong_motion_station,
     resolve_strong_motion_stations,
 )
-from graphql_api.models.table import CreateTableInput, Table, mutate_create_table
+from graphql_api.models._base.table import CreateTableInput, Table, mutate_create_table
 from graphql_api.models.time_dependent_inversion_solution import (
     CreateTimeDependentInversionSolutionInput,
     TimeDependentInversionSolution,
@@ -182,7 +182,7 @@ def _dispatch_search(hit: dict) -> SearchResult | None:
     Delegates to the shared clazz_name → type registry in models/_dispatch.py.
     Unknown clazz values fall back to ToshiFile, matching legacy behaviour.
     """
-    from graphql_api.models._dispatch import dispatch_search  # noqa: PLC0415
+    from graphql_api.models._infra._dispatch import dispatch_search  # noqa: PLC0415
 
     try:
         return dispatch_search(hit)
