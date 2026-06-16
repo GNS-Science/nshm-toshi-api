@@ -93,28 +93,21 @@ POC today and is a hard prerequisite (see *Prerequisites* below).
 
 ## Prerequisites
 
-1. **Auth-middleware parity in the POC**, validated on test stage.
-   The legacy `app` Lambda runs `auth/middleware.py`, which
-   enforces:
-   - `toshi/read` required on every authenticated request
-   - `toshi/write` required for GraphQL mutations (parses the AST,
-     fails closed on parse error)
-   - attaches `{userId, scopes, authMethod}` to request context
-   - audit-logs userId/scopes/authMethod per request
-
-   The `strawberry-poc` Lambda runs the same `jwtAuthorizer` (so
-   unauthenticated callers are rejected at API Gateway) but does
-   **no scope enforcement**, no request-context attachment, and no
-   per-request audit log. Deleting the `app` Lambda without porting
-   this layer would silently downgrade authorization: any holder of
-   a `toshi/read`-only token could mutate.
-
-   Port + tests required before this reorg can land.
+1. **Auth-middleware parity in the POC**, validated on test stage —
+   tracked in #327, implemented in #328. The legacy `app` Lambda
+   runs `auth/middleware.py`, which enforces `toshi/read` on every
+   request, `toshi/write` on mutations, attaches `{userId, scopes,
+   authMethod}` to request context, and audit-logs per request.
+   Deleting the `app` Lambda without an equivalent in the POC would
+   silently downgrade authorization (any `toshi/read`-only token
+   holder could mutate). #328 ports this as a Strawberry
+   `SchemaExtension`; must merge and be validated on test stage
+   before this reorg lands.
 
 2. Test-stage cutover complete: `/graphql` migrated off legacy.
 3. mini Phase 4 testing concluded.
 
-(2) and (3) are tracked in #295. (1) needs its own ticket.
+(2) and (3) are tracked in #295.
 
 ## Related decisions
 
