@@ -1,6 +1,5 @@
 """Tests for file relations — linking ToshiFiles to tasks."""
 
-
 import pytest
 
 from graphql_api.schema import schema
@@ -81,11 +80,11 @@ def file_id(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "output_data.zip",
-                "md5_digest": "99aabbcc",
-                "file_size": 2048,
-                "created": "2024-08-01T00:00:00Z",
-            },
+            "file_name": "output_data.zip",
+            "md5_digest": "99aabbcc",
+            "file_size": 2048,
+            "created": "2024-08-01T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors

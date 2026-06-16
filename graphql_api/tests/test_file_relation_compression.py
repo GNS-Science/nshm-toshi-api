@@ -21,7 +21,6 @@ from nzshm_common.util import compress_string, decompress_string
 from graphql_api.data import dynamo
 from graphql_api.schema import schema
 
-
 CREATE_AT_MUTATION = """
 mutation CreateTask($input: CreateAutomationTaskInput!) {
     create_automation_task(input: $input) {
@@ -96,11 +95,11 @@ def test_relations_stored_as_list_under_threshold(gql_context, lower_threshold):
     file_result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "compression_under.zip",
-                "md5_digest": "00aa",
-                "file_size": 1024,
-                "created": "2024-07-01T00:00:00Z",
-            },
+            "file_name": "compression_under.zip",
+            "md5_digest": "00aa",
+            "file_size": 1024,
+            "created": "2024-07-01T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert file_result.errors is None, file_result.errors
@@ -108,7 +107,7 @@ def test_relations_stored_as_list_under_threshold(gql_context, lower_threshold):
     file_raw_id = base64.b64decode(file_gid).decode().split(":")[1]
 
     # Add 5 relations — well below the lowered threshold of 25.
-    for i in range(5):
+    for _i in range(5):
         at = schema.execute_sync(
             CREATE_AT_MUTATION,
             variable_values={
@@ -141,11 +140,11 @@ def test_relations_compressed_above_threshold(gql_context, lower_threshold):
     file_result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "compression_over.zip",
-                "md5_digest": "01bb",
-                "file_size": 1024,
-                "created": "2024-07-02T00:00:00Z",
-            },
+            "file_name": "compression_over.zip",
+            "md5_digest": "01bb",
+            "file_size": 1024,
+            "created": "2024-07-02T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert file_result.errors is None, file_result.errors
@@ -153,7 +152,7 @@ def test_relations_compressed_above_threshold(gql_context, lower_threshold):
     file_raw_id = base64.b64decode(file_gid).decode().split(":")[1]
 
     # Add lower_threshold + 1 = 26 relations to cross the threshold.
-    for i in range(lower_threshold + 1):
+    for _i in range(lower_threshold + 1):
         at = schema.execute_sync(
             CREATE_AT_MUTATION,
             variable_values={
@@ -190,18 +189,18 @@ def test_relations_round_trip_through_graphql(gql_context, lower_threshold):
     file_result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "compression_roundtrip.zip",
-                "md5_digest": "02cc",
-                "file_size": 1024,
-                "created": "2024-07-03T00:00:00Z",
-            },
+            "file_name": "compression_roundtrip.zip",
+            "md5_digest": "02cc",
+            "file_size": 1024,
+            "created": "2024-07-03T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert file_result.errors is None, file_result.errors
     file_gid = file_result.data["create_file"]["file_result"]["id"]
 
     thing_gids = []
-    for i in range(lower_threshold + 5):  # 30 relations, well above threshold
+    for _i in range(lower_threshold + 5):  # 30 relations, well above threshold
         at = schema.execute_sync(
             CREATE_AT_MUTATION,
             variable_values={
@@ -225,9 +224,7 @@ def test_relations_round_trip_through_graphql(gql_context, lower_threshold):
         assert rel.errors is None, rel.errors
 
     # Query the file — node lookup should decompress transparently.
-    result = schema.execute_sync(
-        FILE_WITH_RELATIONS_QUERY, variable_values={"id": file_gid}, context_value=gql_context
-    )
+    result = schema.execute_sync(FILE_WITH_RELATIONS_QUERY, variable_values={"id": file_gid}, context_value=gql_context)
     assert result.errors is None, result.errors
     node = result.data["node"]
     assert node["file_name"] == "compression_roundtrip.zip"
@@ -243,11 +240,11 @@ def test_pre_compressed_legacy_data_reads_correctly(gql_context):
     file_result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "legacy_compressed.zip",
-                "md5_digest": "03dd",
-                "file_size": 1024,
-                "created": "2024-07-04T00:00:00Z",
-            },
+            "file_name": "legacy_compressed.zip",
+            "md5_digest": "03dd",
+            "file_size": 1024,
+            "created": "2024-07-04T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert file_result.errors is None, file_result.errors

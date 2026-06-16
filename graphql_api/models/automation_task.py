@@ -18,7 +18,7 @@ from strawberry.types import Info
 
 from graphql_api.data.dynamo import create_thing, get_thing, list_things, update_thing
 from graphql_api.data.models import AutomationTaskData
-
+from graphql_api.models._base.thing import AutomationTaskInterface, Thing
 from graphql_api.models._infra.common import (
     DateTime,
     EventResult,
@@ -40,7 +40,6 @@ from graphql_api.models.relations import (
     build_task_children,
     build_task_parents,
 )
-from graphql_api.models._base.thing import AutomationTaskInterface, Thing
 
 
 def _kv_input_to_list(items) -> list[dict] | None:

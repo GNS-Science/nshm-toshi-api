@@ -205,9 +205,7 @@ def chain(gql_context):
 def test_nodes_basic_returns_typename_and_id(gql_context, chain):
     """nodes(id_in: [mixed]) returns matching __typename and id for each."""
     ids = [chain["sis_id"], chain["is_id"], chain["at_id"]]
-    result = schema.execute_sync(
-        NODES_BASIC_QUERY, variable_values={"ids": ids}, context_value=gql_context
-    )
+    result = schema.execute_sync(NODES_BASIC_QUERY, variable_values={"ids": ids}, context_value=gql_context)
     assert result.errors is None, result.errors
     edges = result.data["nodes"]["result"]["edges"]
     nodes = [e["node"] for e in edges]

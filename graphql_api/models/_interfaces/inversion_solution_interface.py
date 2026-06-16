@@ -20,7 +20,6 @@ from strawberry.relay import GlobalID
 from strawberry.types import Info
 
 from graphql_api.data.dynamo import get_table, get_thing
-
 from graphql_api.models._infra.common import BigInt, DateTime, KeyValuePair, TableType
 from graphql_api.models.relations import InversionSolutionRelations, build_file_relations_for_file
 

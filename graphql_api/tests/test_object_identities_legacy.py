@@ -16,7 +16,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_GT = """
 mutation ($created: DateTime!, $title: String!) {
   create_general_task(input: {
@@ -128,9 +127,7 @@ def test_object_identities_after_cursor_returns_next_page(seeded_ids, gql_contex
     assert second.errors is None, second.errors
     second_ids = {e["node"]["object_id"] for e in second.data["object_identities"]["edges"]}
     # No overlap between batches
-    assert first_ids.isdisjoint(second_ids), (
-        f"page-1 and page-2 ids overlap: {first_ids & second_ids}"
-    )
+    assert first_ids.isdisjoint(second_ids), f"page-1 and page-2 ids overlap: {first_ids & second_ids}"
 
 
 def test_object_identities_unknown_type_returns_empty(seeded_ids, gql_context):

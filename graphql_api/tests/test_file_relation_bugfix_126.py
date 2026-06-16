@@ -15,7 +15,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_AT = """
 mutation ($created: DateTime!) {
   create_automation_task(input: {

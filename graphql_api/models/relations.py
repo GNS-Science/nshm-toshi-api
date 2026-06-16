@@ -15,15 +15,12 @@ causing circular imports at schema build time.
 from typing import Annotated
 
 import strawberry
-from strawberry import relay
 from strawberry.relay import GlobalID
 from strawberry.types import Info
 
 from graphql_api.data.dynamo import create_file_relation, create_task_relation, get_file, get_thing
-
-from graphql_api.models._infra.common import FileRole
+from graphql_api.models._infra.common import FileRole, client_mutation_id_input_field
 from graphql_api.models._infra.page_info import CompatListConnection
-from graphql_api.models._infra.common import client_mutation_id_input_field, FileRole
 
 # ── Lazy forward references (break circular deps) ─────────────────────────────
 
@@ -31,21 +28,29 @@ _ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models._base.fi
 _SmsFile = Annotated["SmsFile", strawberry.lazy("graphql_api.models.sms_file")]
 _RuptureSet = Annotated["RuptureSet", strawberry.lazy("graphql_api.models.rupture_set")]
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("graphql_api.models.inversion_solution")]
-_ScaledInversionSolution = Annotated["ScaledInversionSolution", strawberry.lazy("graphql_api.models.scaled_inversion_solution")]
+_ScaledInversionSolution = Annotated[
+    "ScaledInversionSolution", strawberry.lazy("graphql_api.models.scaled_inversion_solution")
+]
 _AggregateInversionSolution = Annotated[
     "AggregateInversionSolution", strawberry.lazy("graphql_api.models.aggregate_inversion_solution")
 ]
 _TimeDependentInversionSolution = Annotated[
     "TimeDependentInversionSolution", strawberry.lazy("graphql_api.models.time_dependent_inversion_solution")
 ]
-_InversionSolutionNrml = Annotated["InversionSolutionNrml", strawberry.lazy("graphql_api.models.inversion_solution_nrml")]
+_InversionSolutionNrml = Annotated[
+    "InversionSolutionNrml", strawberry.lazy("graphql_api.models.inversion_solution_nrml")
+]
 _GeneralTask = Annotated["GeneralTask", strawberry.lazy("graphql_api.models.general_task")]
 _RuptureGenerationTask = Annotated["RuptureGenerationTask", strawberry.lazy("graphql_api.models.automation_task")]
 _AutomationTask = Annotated["AutomationTask", strawberry.lazy("graphql_api.models.automation_task")]
 _StrongMotionStation = Annotated["StrongMotionStation", strawberry.lazy("graphql_api.models.strong_motion_station")]
 _OpenquakeHazardTask = Annotated["OpenquakeHazardTask", strawberry.lazy("graphql_api.models.openquake_hazard_task")]
-_OpenquakeHazardSolution = Annotated["OpenquakeHazardSolution", strawberry.lazy("graphql_api.models.openquake_hazard_solution")]
-_OpenquakeHazardConfig = Annotated["OpenquakeHazardConfig", strawberry.lazy("graphql_api.models.openquake_hazard_config")]
+_OpenquakeHazardSolution = Annotated[
+    "OpenquakeHazardSolution", strawberry.lazy("graphql_api.models.openquake_hazard_solution")
+]
+_OpenquakeHazardConfig = Annotated[
+    "OpenquakeHazardConfig", strawberry.lazy("graphql_api.models.openquake_hazard_config")
+]
 
 # Union types — referenced as return types of @strawberry.field methods
 FileUnion = Annotated[
@@ -225,9 +230,8 @@ class TaskRelationsConnection(CompatListConnection[TaskTaskRelation]):
 # ── Dispatch helpers ──────────────────────────────────────────────────────────
 
 
-from graphql_api.models._infra._dispatch import dispatch_file as _dispatch_file
-from graphql_api.models._infra._dispatch import dispatch_thing as _dispatch_thing
-
+from graphql_api.models._infra._dispatch import dispatch_file as _dispatch_file  # noqa: E402
+from graphql_api.models._infra._dispatch import dispatch_thing as _dispatch_thing  # noqa: E402
 
 # ── Input types for mutations ─────────────────────────────────────────────────
 

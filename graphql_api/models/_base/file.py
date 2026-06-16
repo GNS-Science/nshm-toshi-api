@@ -16,8 +16,13 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_file, get_file, list_files
 from graphql_api.data.models import ToshiFileData
 from graphql_api.data.s3 import presigned_post_for_file
-
-from graphql_api.models._infra.common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
+from graphql_api.models._infra.common import (
+    BigInt,
+    DateTime,
+    KeyValuePair,
+    KeyValuePairInput,
+    client_mutation_id_input_field,
+)
 from graphql_api.models._interfaces.file_interface import FileInterface
 from graphql_api.models._interfaces.predecessor import PredecessorInput
 from graphql_api.models._interfaces.predecessors_interface import PredecessorsInterface
@@ -83,9 +88,7 @@ def resolve_files(info: Info) -> Iterable[ToshiFile]:
 
 def mutate_create_file(info: Info, input: CreateFileInput) -> ToshiFile:
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
-    predecessors = (
-        [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
-    )
+    predecessors = [{"id": str(p.id), "depth": p.depth} for p in input.predecessors] if input.predecessors else None
     payload = {
         "file_name": input.file_name,
         "md5_digest": input.md5_digest,

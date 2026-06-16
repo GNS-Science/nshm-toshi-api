@@ -221,9 +221,7 @@ def test_subtask_result_field(created_task):
 
 def test_children_total_count_zero(gql_context, created_task):
     """children.total_count is 0 when no child tasks have been linked."""
-    result = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": created_task["id"]}, context_value=gql_context
-    )
+    result = schema.execute_sync(NODE_QUERY, variable_values={"id": created_task["id"]}, context_value=gql_context)
     assert result.errors is None, result.errors
     assert result.data["node"]["children"]["total_count"] == 0
 
@@ -252,9 +250,7 @@ def test_children_total_count_after_relation(gql_context, created_task):
     )
     assert rel_result.errors is None, rel_result.errors
 
-    result = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": created_task["id"]}, context_value=gql_context
-    )
+    result = schema.execute_sync(NODE_QUERY, variable_values={"id": created_task["id"]}, context_value=gql_context)
     assert result.errors is None, result.errors
     assert result.data["node"]["children"]["total_count"] == 1
 

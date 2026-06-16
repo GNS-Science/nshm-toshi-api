@@ -105,9 +105,7 @@ def test_create_with_metrics(gql_context):
     """Mirrors legacy test_create_with_metrics — create RGT carrying a metrics list."""
     result = schema.execute_sync(
         CREATE_RGT,
-        variable_values={
-            "input": _make_input(metrics=[{"k": "rupture_count", "v": "206776"}])
-        },
+        variable_values={"input": _make_input(metrics=[{"k": "rupture_count", "v": "206776"}])},
         context_value=gql_context,
     )
     assert result.errors is None, result.errors

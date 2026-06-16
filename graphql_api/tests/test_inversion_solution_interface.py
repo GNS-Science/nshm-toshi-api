@@ -164,9 +164,7 @@ def is_with_mfd_table(gql_context, rgt_id, mfd_table_id):
                 "md5_digest": "aabbccdd",
                 "file_size": 1024,
                 "created": "2024-06-01T00:00:00Z",
-                "tables": [
-                    {"table_id": mfd_table_id, "table_type": "MFD_CURVES_V2", "label": "mfd"}
-                ],
+                "tables": [{"table_id": mfd_table_id, "table_type": "MFD_CURVES_V2", "label": "mfd"}],
             }
         },
         context_value=gql_context,

@@ -174,9 +174,7 @@ def _create_nrml(gql_context, source_id: str, file_name: str, predecessors=None)
     }
     if predecessors is not None:
         payload["predecessors"] = predecessors
-    result = schema.execute_sync(
-        CREATE_NRML_MUTATION, variable_values={"input": payload}, context_value=gql_context
-    )
+    result = schema.execute_sync(CREATE_NRML_MUTATION, variable_values={"input": payload}, context_value=gql_context)
     assert result.errors is None, result.errors
     return result.data["create_inversion_solution_nrml"]["inversion_solution_nrml"]
 
@@ -230,9 +228,7 @@ def test_nrml_with_predecessors(gql_context, is_id):
 
 def test_nrml_node_lookup(gql_context, is_id):
     nrml = _create_nrml(gql_context, is_id, "node_lookup.xml")
-    result = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": nrml["id"]}, context_value=gql_context
-    )
+    result = schema.execute_sync(NODE_QUERY, variable_values={"id": nrml["id"]}, context_value=gql_context)
     assert result.errors is None, result.errors
     node = result.data["node"]
     assert node["__typename"] == "InversionSolutionNrml"

@@ -212,9 +212,7 @@ def test_table_node_lookup_returns_name(gql_context, task_id):
     assert create_result.errors is None, create_result.errors
     table_id = create_result.data["create_table"]["table"]["id"]
 
-    result = schema.execute_sync(
-        NODE_NAME_QUERY, variable_values={"id": table_id}, context_value=gql_context
-    )
+    result = schema.execute_sync(NODE_NAME_QUERY, variable_values={"id": table_id}, context_value=gql_context)
     assert result.errors is None, result.errors
     assert result.data["node"]["name"] == "Hazard Sites Grid"
 

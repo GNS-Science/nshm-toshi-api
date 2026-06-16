@@ -11,8 +11,13 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_file, get_file, list_files
 from graphql_api.data.models import InversionSolutionNrmlData
 from graphql_api.data.s3 import presigned_post_for_file
-
-from graphql_api.models._infra.common import BigInt, DateTime, KeyValuePair, KeyValuePairInput, client_mutation_id_input_field
+from graphql_api.models._infra.common import (
+    BigInt,
+    DateTime,
+    KeyValuePair,
+    KeyValuePairInput,
+    client_mutation_id_input_field,
+)
 from graphql_api.models._interfaces.file_interface import FileInterface
 from graphql_api.models._interfaces.predecessor import PredecessorInput
 from graphql_api.models._interfaces.predecessors_interface import PredecessorsInterface

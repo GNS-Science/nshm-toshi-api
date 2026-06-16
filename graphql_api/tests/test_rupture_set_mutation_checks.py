@@ -13,7 +13,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_RS_BARE = """
 mutation ($created: DateTime!) {
   create_rupture_set(input: {

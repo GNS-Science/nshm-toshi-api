@@ -16,7 +16,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_AT = """
 mutation ($created: DateTime!) {
   create_automation_task(input: {
@@ -130,9 +129,7 @@ def scenario(gql_context):
 
 def test_inversion_solution_skips_non_is_write_files(scenario, gql_context):
     """Bug #93 regression: with multiple WRITE files, only the IS is selected."""
-    res = schema.execute_sync(
-        QUERY_AT_INVERSION, variable_values={"id": scenario["at_id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(QUERY_AT_INVERSION, variable_values={"id": scenario["at_id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     sol = res.data["node"]["inversion_solution"]
     assert sol is not None
@@ -143,9 +140,7 @@ def test_inversion_solution_skips_non_is_write_files(scenario, gql_context):
 
 def test_inversion_solution_not_the_non_is_write_file(scenario, gql_context):
     """Explicit assertion the resolver did NOT return the plain WRITE File."""
-    res = schema.execute_sync(
-        QUERY_AT_INVERSION, variable_values={"id": scenario["at_id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(QUERY_AT_INVERSION, variable_values={"id": scenario["at_id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     sol = res.data["node"]["inversion_solution"]
     assert sol["id"] != scenario["write_other_id"]

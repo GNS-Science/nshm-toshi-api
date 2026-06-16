@@ -13,26 +13,29 @@ type in POC's SDL.
 
 from graphql_api.schema import schema
 
-
 # Verbatim from legacy CLASS_MAPPINGS — these are the types clients
 # may reference. Sorted + deduped so an addition shows as a real diff.
-LEGACY_CLASS_NAMES = sorted(set([
-    "AggregateInversionSolution",
-    "File",
-    "GeneralTask",
-    "InversionSolution",
-    "InversionSolutionNrml",
-    "OpenquakeHazardConfig",
-    "OpenquakeHazardSolution",
-    "OpenquakeHazardTask",
-    "RuptureGenerationTask",
-    "RuptureSet",
-    "ScaledInversionSolution",
-    "SmsFile",
-    "StrongMotionStation",
-    "Table",
-    "TimeDependentInversionSolution",
-]))
+LEGACY_CLASS_NAMES = sorted(
+    set(
+        [
+            "AggregateInversionSolution",
+            "File",
+            "GeneralTask",
+            "InversionSolution",
+            "InversionSolutionNrml",
+            "OpenquakeHazardConfig",
+            "OpenquakeHazardSolution",
+            "OpenquakeHazardTask",
+            "RuptureGenerationTask",
+            "RuptureSet",
+            "ScaledInversionSolution",
+            "SmsFile",
+            "StrongMotionStation",
+            "Table",
+            "TimeDependentInversionSolution",
+        ]
+    )
+)
 
 
 def test_every_legacy_class_name_resolves_in_poc_sdl():

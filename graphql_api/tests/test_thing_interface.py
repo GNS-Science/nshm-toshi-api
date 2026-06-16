@@ -10,7 +10,6 @@ import pytest
 
 from graphql_api.schema import schema
 
-
 CREATE_GT_MUTATION = """
 mutation($input: CreateGeneralTaskInput!) {
     create_general_task(input: $input) { general_task { id } }
@@ -120,11 +119,7 @@ def test_thing_attached_to_all_concrete_types():
     sdl = schema.as_str()
     import re
 
-    matches = {
-        tn: impl
-        for tn, impl in re.findall(r"type (\w+) implements ([\w &]+)", sdl)
-        if "Thing" in impl
-    }
+    matches = {tn: impl for tn, impl in re.findall(r"type (\w+) implements ([\w &]+)", sdl) if "Thing" in impl}
     # The 7 types ADR-002 specifies
     expected = {
         "GeneralTask",

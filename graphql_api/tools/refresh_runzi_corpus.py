@@ -41,7 +41,6 @@ import sys
 import textwrap
 from pathlib import Path
 
-
 # Triple-quoted block whose first non-whitespace token is `query`,
 # `mutation`, or `fragment`. Permissive on whitespace and the operation
 # name so we catch runzi's typical `qry = '''mutation foo (…) {…}'''`.
@@ -118,9 +117,9 @@ OPERATIONS = [
     for label, query in operations:
         # Use ` ''' `-safe triple-quoted strings; runzi queries never contain
         # `"""` so emit with double-quote triplets.
-        parts.append(f"    (\n")
+        parts.append("    (\n")
         parts.append(f"        {label!r},\n")
-        parts.append(f'        """\\\n')
+        parts.append('        """\\\n')
         # Indent the query body by 8 spaces so the docstring is readable but
         # the query text itself is left-aligned for parse correctness.
         parts.append(textwrap.indent(query, ""))

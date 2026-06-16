@@ -227,9 +227,7 @@ def test_scan_skips_entries_without_clazz_name(mocked_aws):
     from graphql_api.data import s3 as s3_mod
 
     _put_s3_object(mocked_aws["s3"], "ThingData/300/object.json", {"state": "done"})
-    _put_s3_object(
-        mocked_aws["s3"], "ThingData/400/object.json", {"clazz_name": "AutomationTask"}
-    )
+    _put_s3_object(mocked_aws["s3"], "ThingData/400/object.json", {"clazz_name": "AutomationTask"})
 
     items, _, _ = s3_mod.scan_s3_paginated("Thing", limit=10)
     object_ids = {it["object_id"] for it in items}
@@ -240,9 +238,7 @@ def test_scan_file_data_applies_first_dynamo_id_watermark(mocked_aws):
     """File-prefixed IDs >= FIRST_DYNAMO_ID are filtered out (avoid double-yield vs DDB scan)."""
     from graphql_api.data import s3 as s3_mod
 
-    _put_s3_object(
-        mocked_aws["s3"], "FileData/99/object.json", {"clazz_name": "RuptureSet", "file_name": "old.zip"}
-    )
+    _put_s3_object(mocked_aws["s3"], "FileData/99/object.json", {"clazz_name": "RuptureSet", "file_name": "old.zip"})
     _put_s3_object(
         mocked_aws["s3"],
         "FileData/100001/object.json",
@@ -258,9 +254,7 @@ def test_scan_thing_data_does_not_apply_watermark(mocked_aws):
     """The watermark filter is FileData-specific (matches legacy base_data.py:178)."""
     from graphql_api.data import s3 as s3_mod
 
-    _put_s3_object(
-        mocked_aws["s3"], "ThingData/100001/object.json", {"clazz_name": "GeneralTask", "title": "x"}
-    )
+    _put_s3_object(mocked_aws["s3"], "ThingData/100001/object.json", {"clazz_name": "GeneralTask", "title": "x"})
     items, _, _ = s3_mod.scan_s3_paginated("Thing", limit=10)
     assert len(items) == 1
     assert items[0]["object_id"] == "100001"

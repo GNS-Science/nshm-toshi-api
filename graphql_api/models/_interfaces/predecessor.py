@@ -13,14 +13,18 @@ from graphql_api.models._infra.common import AncestryLabel
 # All file-like; reuse the lazy refs pattern from relations.py.
 _File = Annotated["ToshiFile", strawberry.lazy("graphql_api.models._base.file")]
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("graphql_api.models.inversion_solution")]
-_ScaledInversionSolution = Annotated["ScaledInversionSolution", strawberry.lazy("graphql_api.models.scaled_inversion_solution")]
+_ScaledInversionSolution = Annotated[
+    "ScaledInversionSolution", strawberry.lazy("graphql_api.models.scaled_inversion_solution")
+]
 _AggregateInversionSolution = Annotated[
     "AggregateInversionSolution", strawberry.lazy("graphql_api.models.aggregate_inversion_solution")
 ]
 _TimeDependentInversionSolution = Annotated[
     "TimeDependentInversionSolution", strawberry.lazy("graphql_api.models.time_dependent_inversion_solution")
 ]
-_InversionSolutionNrml = Annotated["InversionSolutionNrml", strawberry.lazy("graphql_api.models.inversion_solution_nrml")]
+_InversionSolutionNrml = Annotated[
+    "InversionSolutionNrml", strawberry.lazy("graphql_api.models.inversion_solution_nrml")
+]
 
 PredecessorUnion = Annotated[
     _File

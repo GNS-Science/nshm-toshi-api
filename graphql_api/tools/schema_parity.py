@@ -73,11 +73,7 @@ def _fields_to_dict(field_defs) -> dict[str, dict]:
 
 def _input_fields_to_dict(field_defs) -> dict[str, str]:
     """{field_name: rendered_type} for input object fields."""
-    return {
-        f.name.value: _type_to_str(f.type)
-        for f in field_defs
-        if isinstance(f, InputValueDefinitionNode)
-    }
+    return {f.name.value: _type_to_str(f.type) for f in field_defs if isinstance(f, InputValueDefinitionNode)}
 
 
 def extract_types(sdl: str) -> dict[str, dict]:
@@ -142,9 +138,7 @@ def _diff_object_or_interface(legacy: dict, poc: dict) -> dict:
                 "args_only_in_legacy": sorted(set(l_args) - set(p_args)),
                 "args_only_in_poc": sorted(set(p_args) - set(l_args)),
                 "arg_type_mismatches": {
-                    a: (l_args[a], p_args[a])
-                    for a in set(l_args) & set(p_args)
-                    if l_args[a] != p_args[a]
+                    a: (l_args[a], p_args[a]) for a in set(l_args) & set(p_args) if l_args[a] != p_args[a]
                 },
             }
 
@@ -186,9 +180,7 @@ def _diff_input(legacy: dict, poc: dict) -> dict:
         out["fields_only_in_poc"] = only_p
 
     type_mismatches = {
-        name: (l_fields[name], p_fields[name])
-        for name in l_names & p_names
-        if l_fields[name] != p_fields[name]
+        name: (l_fields[name], p_fields[name]) for name in l_names & p_names if l_fields[name] != p_fields[name]
     }
     if type_mismatches:
         out["field_type_mismatches"] = type_mismatches
@@ -228,20 +220,20 @@ def diff_schemas(legacy_sdl: str, poc_sdl: str) -> dict:
 
     type_diffs: dict[str, dict] = {}
     for name in sorted(in_both):
-        l = legacy[name]
+        leg = legacy[name]
         p = poc[name]
-        if l["kind"] != p["kind"]:
-            type_diffs[name] = {"kind_mismatch": (l["kind"], p["kind"])}
+        if leg["kind"] != p["kind"]:
+            type_diffs[name] = {"kind_mismatch": (leg["kind"], p["kind"])}
             continue
-        kind = l["kind"]
+        kind = leg["kind"]
         if kind in ("object", "interface"):
-            d = _diff_object_or_interface(l, p)
+            d = _diff_object_or_interface(leg, p)
         elif kind == "input":
-            d = _diff_input(l, p)
+            d = _diff_input(leg, p)
         elif kind == "enum":
-            d = _diff_enum(l, p)
+            d = _diff_enum(leg, p)
         elif kind == "union":
-            d = _diff_union(l, p)
+            d = _diff_union(leg, p)
         else:
             d = {}
         if d:
@@ -320,9 +312,7 @@ def format_report(diff: dict) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Diff a legacy GraphQL SDL against a Strawberry POC SDL"
-    )
+    parser = argparse.ArgumentParser(description="Diff a legacy GraphQL SDL against a Strawberry POC SDL")
     parser.add_argument("legacy", help="Path to legacy SDL file")
     parser.add_argument("poc", help="Path to POC SDL file")
     parser.add_argument(

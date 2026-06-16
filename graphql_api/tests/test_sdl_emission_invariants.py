@@ -81,9 +81,7 @@ def test_create_file_relation_uses_positional_args(sdl):
     assert m, "create_file_relation disappeared from SDL"
     sig = m.group(0)
     assert "file_id: ID!" in sig, f"create_file_relation lost positional file_id: {sig}"
-    assert "input: CreateFileRelationInput" not in sig, (
-        f"create_file_relation regressed: {sig}"
-    )
+    assert "input: CreateFileRelationInput" not in sig, f"create_file_relation regressed: {sig}"
 
 
 def test_create_task_relation_uses_positional_args(sdl):
@@ -93,9 +91,7 @@ def test_create_task_relation_uses_positional_args(sdl):
     sig = m.group(0)
     assert "child_id: ID!" in sig, f"create_task_relation lost positional child_id: {sig}"
     assert "parent_id: ID!" in sig, f"create_task_relation lost positional parent_id: {sig}"
-    assert "input: CreateTaskRelationInput" not in sig, (
-        f"create_task_relation regressed: {sig}"
-    )
+    assert "input: CreateTaskRelationInput" not in sig, f"create_task_relation regressed: {sig}"
 
 
 # ── Invariant 3: Connection type names match legacy ──────────────────────────
@@ -110,9 +106,7 @@ def test_connection_type_names_match_legacy(sdl):
     assert "type FileRelationsConnection " not in sdl, (
         "FileRelationsConnection (plural) regressed into SDL — clients break"
     )
-    assert "type TaskRelationsConnection " not in sdl, (
-        "TaskRelationsConnection (single Task) regressed into SDL"
-    )
+    assert "type TaskRelationsConnection " not in sdl, "TaskRelationsConnection (single Task) regressed into SDL"
 
 
 # ── Invariant 4: OQ task payloads use `openquake_hazard_task` not `task_result` ──
@@ -150,6 +144,4 @@ def test_create_inversion_solution_input_has_mfd_table_id(sdl):
     m = re.search(r"input CreateInversionSolutionInput \{[^}]+\}", sdl, re.DOTALL)
     assert m, "CreateInversionSolutionInput missing"
     body = m.group(0)
-    assert "mfd_table_id:" in body, (
-        f"CreateInversionSolutionInput missing mfd_table_id: {body}"
-    )
+    assert "mfd_table_id:" in body, f"CreateInversionSolutionInput missing mfd_table_id: {body}"

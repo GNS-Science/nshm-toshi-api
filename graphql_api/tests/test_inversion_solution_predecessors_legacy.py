@@ -14,7 +14,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_RGT = """
 mutation ($created: DateTime!) {
   create_rupture_generation_task(input: {
@@ -151,9 +150,7 @@ def test_predecessor_node_meta_round_trips(scenario):
 
 def test_predecessors_interface_node_lookup(scenario, gql_context):
     """Same shape via `... on PredecessorsInterface` fragment on node(id:)."""
-    res = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": scenario["inv_id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(NODE_QUERY, variable_values={"id": scenario["inv_id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     preds = res.data["node"]["predecessors"]
     assert len(preds) == 1

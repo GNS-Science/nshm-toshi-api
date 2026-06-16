@@ -8,7 +8,6 @@ from strawberry.types import Info
 
 from graphql_api.data.dynamo import create_table, get_table
 from graphql_api.data.models import TableData
-
 from graphql_api.models._infra.common import (
     DateTime,
     KeyValueListPair,
@@ -20,6 +19,7 @@ from graphql_api.models._infra.common import (
     _try_enum,
     client_mutation_id_input_field,
 )
+
 
 @strawberry.type
 class Table(relay.Node):
@@ -58,6 +58,7 @@ class Table(relay.Node):
             dimensions=[KeyValueListPair(k=i.k, v=i.v) for i in d.dimensions] if d.dimensions else None,
         )
 
+
 @strawberry.input
 class CreateTableInput:
     object_id: strawberry.ID
@@ -70,6 +71,7 @@ class CreateTableInput:
     table_type: TableType | None = None
     dimensions: list[KeyValueListPairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
+
 
 def mutate_create_table(info: Info, input: CreateTableInput) -> Table:
     meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None

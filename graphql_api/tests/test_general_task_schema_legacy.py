@@ -15,7 +15,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_GT = """
 mutation ($created: DateTime!, $argument_lists: [KeyValueListPairInput], $meta: [KeyValuePairInput]) {
   create_general_task(input: {
@@ -100,8 +99,7 @@ def test_argument_lists_inner_null_round_trip(created):
 
 
 def test_swept_arguments_excludes_single_null_list(created):
-    """A key with `v: [null]` (one element) is NOT swept — only keys with len(v) > 1.
-    """
+    """A key with `v: [null]` (one element) is NOT swept — only keys with len(v) > 1."""
     assert created["swept_arguments"] == ["bogus_metric"]
 
 
@@ -113,9 +111,7 @@ def test_meta_round_trip(created):
 
 def test_node_lookup_preserves_argument_lists(created, gql_context):
     """Same shape via node(id:) lookup — separate code path."""
-    res = schema.execute_sync(
-        NODE_QUERY_GT, variable_values={"id": created["id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(NODE_QUERY_GT, variable_values={"id": created["id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     node = res.data["node"]
     al = {item["k"]: item["v"] for item in node["argument_lists"]}

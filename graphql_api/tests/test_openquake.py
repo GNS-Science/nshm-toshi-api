@@ -489,9 +489,7 @@ def task_args_id(gql_context):
 
 
 @pytest.fixture(scope="module")
-def oq_solution_with_archives(
-    gql_context, created_oq_task, csv_archive_id, hdf5_archive_id, task_args_id
-):
+def oq_solution_with_archives(gql_context, created_oq_task, csv_archive_id, hdf5_archive_id, task_args_id):
     result = schema.execute_sync(
         CREATE_OQ_SOLUTION_FULL_MUTATION,
         variable_values={

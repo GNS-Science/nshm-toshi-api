@@ -11,7 +11,6 @@ import pytest
 
 from graphql_api.schema import schema
 
-
 CREATE_TABLE = """
 mutation (
   $object_id: ID!,
@@ -103,9 +102,7 @@ def test_node_lookup_returns_rows(created, gql_context):
     """node(id:) returns the full rows back. The Table.rows[list[list[str|None]|None]|None]
     read path has no other test coverage in POC.
     """
-    res = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": created["id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(NODE_QUERY, variable_values={"id": created["id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     node = res.data["node"]
     assert node["rows"] == [["1", "1.01"], ["2", "2.2"]]
@@ -113,9 +110,7 @@ def test_node_lookup_returns_rows(created, gql_context):
 
 def test_node_lookup_returns_dimensions(created, gql_context):
     """dimensions list-of-KeyValueListPair survives the node lookup."""
-    res = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": created["id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(NODE_QUERY, variable_values={"id": created["id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     dims = {d["k"]: d["v"] for d in res.data["node"]["dimensions"]}
     assert dims["grid_spacings"] == ["0.1"]
@@ -125,9 +120,7 @@ def test_node_lookup_returns_dimensions(created, gql_context):
 
 def test_node_lookup_returns_meta(created, gql_context):
     """meta list-of-KeyValuePair survives the node lookup."""
-    res = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": created["id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(NODE_QUERY, variable_values={"id": created["id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     meta = {m["k"]: m["v"] for m in res.data["node"]["meta"]}
     assert meta["round"] == "0"
@@ -136,8 +129,6 @@ def test_node_lookup_returns_meta(created, gql_context):
 
 def test_node_lookup_returns_table_type(created, gql_context):
     """Enum round-trips via node lookup."""
-    res = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": created["id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(NODE_QUERY, variable_values={"id": created["id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     assert res.data["node"]["table_type"] == "HAZARD_GRIDDED"

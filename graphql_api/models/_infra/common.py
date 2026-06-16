@@ -1,14 +1,12 @@
 """Shared scalar types and enums used across schema types."""
 
 import enum
-from typing import NewType, TypeVar
+from typing import NewType
 
 import strawberry
 
-_E = TypeVar("_E", bound=enum.Enum)
 
-
-def _try_enum(enum_cls: type[_E], value: str | None) -> _E | None:
+def _try_enum[E: enum.Enum](enum_cls: type[E], value: str | None) -> E | None:
     """Construct an enum from a string value, returning None for unknown/missing values."""
     if value is None:
         return None
@@ -27,6 +25,7 @@ BigInt = strawberry.scalar(
     description="A signed integer with arbitrary precision (not limited to GraphQL Int 32-bit). "
     "Used for file_size where production values can exceed 2GB.",
 )
+
 
 def _parse_datetime(value):
     """Validate an inbound DateTime value, matching legacy Graphene semantics:

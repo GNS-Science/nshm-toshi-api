@@ -17,10 +17,9 @@ from strawberry.types import Info
 
 from graphql_api.data.dynamo import create_thing, get_thing, list_things, update_thing
 from graphql_api.data.models import GeneralTaskData
-
+from graphql_api.models._base.thing import Thing
 from graphql_api.models._infra.common import (
     DateTime,
-    client_mutation_id_input_field,
     EventResult,
     KeyValueListPair,
     KeyValueListPairInput,
@@ -29,6 +28,7 @@ from graphql_api.models._infra.common import (
     ModelType,
     TaskSubType,
     _try_enum,
+    client_mutation_id_input_field,
 )
 from graphql_api.models.relations import (
     FileRelation,
@@ -39,7 +39,7 @@ from graphql_api.models.relations import (
     build_task_children,
     build_task_parents,
 )
-from graphql_api.models._base.thing import Thing
+
 
 @strawberry.type
 class GeneralTask(relay.Node, Thing):
@@ -117,6 +117,7 @@ class GeneralTask(relay.Node, Thing):
             parents_raw=d.parents,
         )
 
+
 @strawberry.input
 class CreateGeneralTaskInput:
     title: str | None = None
@@ -131,6 +132,7 @@ class CreateGeneralTaskInput:
     argument_lists: list[KeyValueListPairInput | None] | None = None
     meta: list[KeyValuePairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
+
 
 @strawberry.input
 class UpdateGeneralTaskInput:
@@ -148,9 +150,11 @@ class UpdateGeneralTaskInput:
     meta: list[KeyValuePairInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
+
 def resolve_general_tasks(info: Info) -> Iterable[GeneralTask]:
     items = list_things(info.context["dynamodb"], "GeneralTask")
     return [GeneralTask.from_dict(item) for item in items]
+
 
 def mutate_create_general_task(info: Info, input: CreateGeneralTaskInput) -> GeneralTask:
     def _kvl(items):
@@ -171,6 +175,7 @@ def mutate_create_general_task(info: Info, input: CreateGeneralTaskInput) -> Gen
     }
     data = create_thing(info.context["dynamodb"], "GeneralTask", payload)
     return GeneralTask.from_dict(data)
+
 
 def mutate_update_general_task(info: Info, input: UpdateGeneralTaskInput) -> GeneralTask | None:
     # Decode relay global ID → raw object_id

@@ -11,13 +11,9 @@ The legacy test shows that File-with-predecessors is a real shape —
 clients chaining files via predecessor edges need it to work.
 """
 
-import datetime as dt
-
 import pytest
-from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
-
 
 CREATE_FILE_NO_PRED = """
 mutation ($file_name: String!, $md5: String!, $size: BigInt!) {

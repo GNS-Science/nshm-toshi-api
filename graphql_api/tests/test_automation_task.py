@@ -113,9 +113,7 @@ def test_update_state_and_result(gql_context, created_task):
     assert updated["state"] == "DONE"
     assert updated["result"] == "SUCCESS"
 
-    node_result = schema.execute_sync(
-        NODE_QUERY, variable_values={"id": created_task["id"]}, context_value=gql_context
-    )
+    node_result = schema.execute_sync(NODE_QUERY, variable_values={"id": created_task["id"]}, context_value=gql_context)
     assert node_result.errors is None, node_result.errors
     assert node_result.data["node"]["state"] == "DONE"
     assert node_result.data["node"]["result"] == "SUCCESS"

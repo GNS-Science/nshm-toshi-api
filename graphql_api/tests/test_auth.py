@@ -341,7 +341,6 @@ def test_parse_error_blocks_execution(no_bypass):
 
 
 def test_production_schema_has_auth_extension_registered():
-    assert any(
-        ext is AuthExtension or type(ext) is AuthExtension
-        for ext in production_schema.extensions
-    ), "AuthExtension is not registered on the production schema"
+    assert any(ext is AuthExtension or type(ext) is AuthExtension for ext in production_schema.extensions), (
+        "AuthExtension is not registered on the production schema"
+    )

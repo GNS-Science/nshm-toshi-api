@@ -14,7 +14,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_FILE = """
 mutation ($file_name: String!, $md5: String!, $size: BigInt!) {
   create_file(file_name: $file_name, md5_digest: $md5, file_size: $size) {

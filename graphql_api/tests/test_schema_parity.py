@@ -22,7 +22,6 @@ from graphql_api.tools.schema_parity import (  # noqa: E402
     main,
 )
 
-
 # ── Unit tests: extractor ─────────────────────────────────────────────────────
 
 
@@ -121,13 +120,13 @@ def test_diff_detects_argument_drift_on_field():
     legacy = "type Query { node(id: ID!, deep: Boolean): String }"
     poc = "type Query { node(id: ID!): String }"
     d = diff_schemas(legacy, poc)
-    assert d["type_diffs"]["Query"]["field_arg_mismatches"]["node"]["args_only_in_legacy"] == [
-        "deep"
-    ]
+    assert d["type_diffs"]["Query"]["field_arg_mismatches"]["node"]["args_only_in_legacy"] == ["deep"]
 
 
 def test_diff_detects_interface_implementation_drift():
-    legacy = "interface Node { id: ID! } interface FI { fn: String } type Foo implements Node & FI { id: ID! fn: String }"
+    legacy = (
+        "interface Node { id: ID! } interface FI { fn: String } type Foo implements Node & FI { id: ID! fn: String }"
+    )
     poc = "interface Node { id: ID! } type Foo implements Node { id: ID! fn: String }"
     d = diff_schemas(legacy, poc)
     assert d["type_diffs"]["Foo"]["interfaces_only_in_legacy"] == ["FI"]
@@ -137,9 +136,7 @@ def test_diff_input_field_type_mismatch():
     legacy = "input CreateInput { file_size: BigInt }"
     poc = "input CreateInput { file_size: Int }"
     d = diff_schemas(legacy, poc)
-    assert d["type_diffs"]["CreateInput"]["field_type_mismatches"] == {
-        "file_size": ("BigInt", "Int")
-    }
+    assert d["type_diffs"]["CreateInput"]["field_type_mismatches"] == {"file_size": ("BigInt", "Int")}
 
 
 def test_identical_schemas_produce_empty_diff():
@@ -231,9 +228,7 @@ def test_catches_file_size_int_vs_bigint_mismatch():
     legacy = "type ToshiFile { id: ID! file_size: BigInt }"
     poc = "type ToshiFile { id: ID! file_size: Int }"
     d = diff_schemas(legacy, poc)
-    assert d["type_diffs"]["ToshiFile"]["field_type_mismatches"] == {
-        "file_size": ("BigInt", "Int")
-    }
+    assert d["type_diffs"]["ToshiFile"]["field_type_mismatches"] == {"file_size": ("BigInt", "Int")}
 
 
 def test_catches_missing_total_count_on_connection(legacy_minimal):

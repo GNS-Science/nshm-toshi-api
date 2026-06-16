@@ -9,11 +9,9 @@ Covers cases the existing POC test_automation_task.py doesn't:
 
 import datetime as dt
 
-import pytest
 from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
-
 
 CREATE_AT = """
 mutation ($created: DateTime!) {
@@ -62,9 +60,7 @@ mutation ($created: DateTime!) {
 def test_naive_datetime_rejected(gql_context):
     """Bare datetime (no tz) should fail at the DateTime scalar layer."""
     naive = dt.datetime.now()  # no tz
-    res = schema.execute_sync(
-        CREATE_AT, variable_values={"created": naive.isoformat()}, context_value=gql_context
-    )
+    res = schema.execute_sync(CREATE_AT, variable_values={"created": naive.isoformat()}, context_value=gql_context)
     assert res.errors is not None, "expected naive datetime to be rejected"
     # The legacy error said "must have a timezone". Strawberry's may differ; we
     # accept any error referencing timezone or aware/naive distinction.
