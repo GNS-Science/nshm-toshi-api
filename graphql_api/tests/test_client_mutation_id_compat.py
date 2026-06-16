@@ -80,7 +80,7 @@ def test_round_trip_works_on_other_mutations(gql_context):
     # Need a parent AutomationTask for the produced_by field.
     import base64  # noqa: PLC0415
 
-    from data.dynamo import create_thing  # noqa: PLC0415
+    from graphql_api.data.dynamo import create_thing  # noqa: PLC0415
 
     at_data = create_thing(
         gql_context["dynamodb"],

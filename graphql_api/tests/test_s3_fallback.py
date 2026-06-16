@@ -30,8 +30,8 @@ REGION = "us-east-1"
 @pytest.fixture
 def s3_env(monkeypatch):
     """Point both data modules at our mocked bucket and reset module-level constants."""
-    from data import dynamo as dynamo_mod
-    from data import s3 as s3_mod
+    from graphql_api.data import dynamo as dynamo_mod
+    from graphql_api.data import s3 as s3_mod
 
     monkeypatch.setattr(dynamo_mod, "S3_BUCKET_NAME", BUCKET)
     monkeypatch.setattr(s3_mod, "S3_BUCKET_NAME", BUCKET)
@@ -71,7 +71,7 @@ def _put_s3_object(s3, key: str, body: dict) -> None:
 
 def test_from_s3_returns_none_when_bucket_unset(monkeypatch):
     """_from_s3 short-circuits when S3_BUCKET_NAME is empty."""
-    from data import dynamo as dynamo_mod
+    from graphql_api.data import dynamo as dynamo_mod
 
     monkeypatch.setattr(dynamo_mod, "S3_BUCKET_NAME", "")
     assert dynamo_mod._from_s3("12345", "ThingData") is None
@@ -79,14 +79,14 @@ def test_from_s3_returns_none_when_bucket_unset(monkeypatch):
 
 def test_from_s3_returns_none_on_miss(mocked_aws):
     """Object that doesn't exist in S3 returns None, not an exception."""
-    from data import dynamo as dynamo_mod
+    from graphql_api.data import dynamo as dynamo_mod
 
     assert dynamo_mod._from_s3("does-not-exist", "ThingData") is None
 
 
 def test_from_s3_returns_parsed_dict_on_hit(mocked_aws):
     """Object stored at the expected key path returns the parsed JSON."""
-    from data import dynamo as dynamo_mod
+    from graphql_api.data import dynamo as dynamo_mod
 
     body = {
         "object_id": "12345",
@@ -105,7 +105,7 @@ def test_from_s3_returns_parsed_dict_on_hit(mocked_aws):
 
 def test_get_thing_falls_back_to_s3(mocked_aws):
     """DynamoDB miss → returns S3 data with object_id populated."""
-    from data import dynamo as dynamo_mod
+    from graphql_api.data import dynamo as dynamo_mod
 
     body = {"clazz_name": "GeneralTask", "title": "legacy GT", "created": "2021-05-01T00:00:00Z"}
     _put_s3_object(mocked_aws["s3"], "ThingData/567/object.json", body)
@@ -119,7 +119,7 @@ def test_get_thing_falls_back_to_s3(mocked_aws):
 
 def test_get_file_falls_back_to_s3(mocked_aws):
     """DynamoDB miss for File-prefixed type → returns S3 data."""
-    from data import dynamo as dynamo_mod
+    from graphql_api.data import dynamo as dynamo_mod
 
     body = {
         "clazz_name": "RuptureSet",
@@ -138,7 +138,7 @@ def test_get_file_falls_back_to_s3(mocked_aws):
 
 def test_get_table_falls_back_to_s3(mocked_aws):
     """get_table previously had no S3 fallback — now matches get_thing/get_file."""
-    from data import dynamo as dynamo_mod
+    from graphql_api.data import dynamo as dynamo_mod
 
     body = {
         "clazz_name": "Table",
@@ -156,7 +156,7 @@ def test_get_table_falls_back_to_s3(mocked_aws):
 
 
 def test_get_thing_returns_none_when_neither_store_has_it(mocked_aws):
-    from data import dynamo as dynamo_mod
+    from graphql_api.data import dynamo as dynamo_mod
 
     assert dynamo_mod.get_thing(mocked_aws["dynamodb"], "no-such-id") is None
 
@@ -166,7 +166,7 @@ def test_get_thing_returns_none_when_neither_store_has_it(mocked_aws):
 
 def test_is_pre_dynamo_file_id_classifies_old_ids_as_legacy():
     """Numeric IDs below 100000 (zero-padded) are pre-watermark."""
-    from data.s3 import _is_pre_dynamo_file_id
+    from graphql_api.data.s3 import _is_pre_dynamo_file_id
 
     assert _is_pre_dynamo_file_id("123")
     assert _is_pre_dynamo_file_id("99999")
@@ -174,7 +174,7 @@ def test_is_pre_dynamo_file_id_classifies_old_ids_as_legacy():
 
 def test_is_pre_dynamo_file_id_classifies_post_watermark_ids_as_not_legacy():
     """Numeric IDs at or above 100000 are post-watermark (already in DynamoDB)."""
-    from data.s3 import _is_pre_dynamo_file_id
+    from graphql_api.data.s3 import _is_pre_dynamo_file_id
 
     assert not _is_pre_dynamo_file_id("100000")
     assert not _is_pre_dynamo_file_id("100001")
@@ -182,7 +182,7 @@ def test_is_pre_dynamo_file_id_classifies_post_watermark_ids_as_not_legacy():
 
 def test_is_pre_dynamo_file_id_strips_dot_suffix():
     """Legacy IDs sometimes had a '.suffix' for revisions — only the numeric prefix is compared."""
-    from data.s3 import _is_pre_dynamo_file_id
+    from graphql_api.data.s3 import _is_pre_dynamo_file_id
 
     assert _is_pre_dynamo_file_id("99999.1")
     assert not _is_pre_dynamo_file_id("100000.0")
@@ -193,7 +193,7 @@ def test_is_pre_dynamo_file_id_strips_dot_suffix():
 
 def test_scan_returns_empty_when_bucket_unset(monkeypatch):
     """scan_s3_paginated short-circuits when no bucket is configured."""
-    from data import s3 as s3_mod
+    from graphql_api.data import s3 as s3_mod
 
     monkeypatch.setattr(s3_mod, "S3_BUCKET_NAME", "")
     items, has_more, last = s3_mod.scan_s3_paginated("Thing", limit=5)
@@ -204,7 +204,7 @@ def test_scan_returns_empty_when_bucket_unset(monkeypatch):
 
 def test_scan_returns_concrete_clazz_name_not_store_type(mocked_aws):
     """object_type must be the actual clazz_name so the relay GlobalID is dispatchable."""
-    from data import s3 as s3_mod
+    from graphql_api.data import s3 as s3_mod
 
     _put_s3_object(
         mocked_aws["s3"],
@@ -224,7 +224,7 @@ def test_scan_returns_concrete_clazz_name_not_store_type(mocked_aws):
 
 def test_scan_skips_entries_without_clazz_name(mocked_aws):
     """Malformed object.json (no clazz_name) is skipped, not surfaced as a broken identity."""
-    from data import s3 as s3_mod
+    from graphql_api.data import s3 as s3_mod
 
     _put_s3_object(mocked_aws["s3"], "ThingData/300/object.json", {"state": "done"})
     _put_s3_object(
@@ -238,7 +238,7 @@ def test_scan_skips_entries_without_clazz_name(mocked_aws):
 
 def test_scan_file_data_applies_first_dynamo_id_watermark(mocked_aws):
     """File-prefixed IDs >= FIRST_DYNAMO_ID are filtered out (avoid double-yield vs DDB scan)."""
-    from data import s3 as s3_mod
+    from graphql_api.data import s3 as s3_mod
 
     _put_s3_object(
         mocked_aws["s3"], "FileData/99/object.json", {"clazz_name": "RuptureSet", "file_name": "old.zip"}
@@ -256,7 +256,7 @@ def test_scan_file_data_applies_first_dynamo_id_watermark(mocked_aws):
 
 def test_scan_thing_data_does_not_apply_watermark(mocked_aws):
     """The watermark filter is FileData-specific (matches legacy base_data.py:178)."""
-    from data import s3 as s3_mod
+    from graphql_api.data import s3 as s3_mod
 
     _put_s3_object(
         mocked_aws["s3"], "ThingData/100001/object.json", {"clazz_name": "GeneralTask", "title": "x"}
@@ -268,7 +268,7 @@ def test_scan_thing_data_does_not_apply_watermark(mocked_aws):
 
 def test_scan_pagination_cursor(mocked_aws):
     """StartAfter cursor advances through pages."""
-    from data import s3 as s3_mod
+    from graphql_api.data import s3 as s3_mod
 
     for i in range(1, 6):
         _put_s3_object(

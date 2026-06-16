@@ -19,7 +19,7 @@ snapshot lives in this repo for two reasons:
 
 To refresh the snapshot when runzi changes:
 
-    python spike/strawberry_poc/tools/refresh_runzi_corpus.py
+    python graphql_api/tools/refresh_runzi_corpus.py
 
 ## Long-term plan (Option 4)
 

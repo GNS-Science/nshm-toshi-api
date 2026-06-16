@@ -30,10 +30,10 @@ InversionSolutionUnion = Annotated[
 
 
 _IS_CLAZZ_DISPATCH = {
-    "InversionSolution": "models.inversion_solution",
-    "ScaledInversionSolution": "models.scaled_inversion_solution",
-    "AggregateInversionSolution": "models.aggregate_inversion_solution",
-    "TimeDependentInversionSolution": "models.time_dependent_inversion_solution",
+    "InversionSolution": "graphql_api.models.inversion_solution",
+    "ScaledInversionSolution": "graphql_api.models.scaled_inversion_solution",
+    "AggregateInversionSolution": "graphql_api.models.aggregate_inversion_solution",
+    "TimeDependentInversionSolution": "graphql_api.models.time_dependent_inversion_solution",
 }
 
 

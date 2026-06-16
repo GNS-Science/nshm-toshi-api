@@ -70,7 +70,7 @@ NSHM_TOSHI_CLIENT_CREATE_FILE_RELATION = """
 
 @pytest.fixture
 def thing_id(gql_context):
-    from data.dynamo import create_thing  # noqa: PLC0415
+    from graphql_api.data.dynamo import create_thing  # noqa: PLC0415
 
     data = create_thing(
         gql_context["dynamodb"],

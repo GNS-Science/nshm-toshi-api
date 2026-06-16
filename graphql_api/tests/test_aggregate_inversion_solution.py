@@ -67,7 +67,7 @@ query GetNode($id: ID!) {
 
 
 def _seed_rgt(gql_context) -> str:
-    from data.dynamo import create_thing
+    from graphql_api.data.dynamo import create_thing
 
     data = create_thing(
         gql_context["dynamodb"],
@@ -78,7 +78,7 @@ def _seed_rgt(gql_context) -> str:
 
 
 def _seed_automation_task(gql_context) -> str:
-    from data.dynamo import create_thing
+    from graphql_api.data.dynamo import create_thing
 
     data = create_thing(
         gql_context["dynamodb"],
@@ -114,7 +114,7 @@ def _seed_inversion_solution(gql_context, rgt_id: str, label: str = "upstream.zi
 
 
 def _seed_rupture_set(gql_context, label: str = "rupture_set.zip") -> str:
-    from data.dynamo import create_file
+    from graphql_api.data.dynamo import create_file
 
     data = create_file(gql_context["dynamodb"], "RuptureSet", {"file_name": label})
     return base64.b64encode(f"RuptureSet:{data['object_id']}".encode()).decode()

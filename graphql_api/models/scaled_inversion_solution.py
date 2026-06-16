@@ -43,7 +43,7 @@ def dispatch_source_solution(data: dict):
     if clazz == "ScaledInversionSolution":
         return ScaledInversionSolution.from_dict(data)
     if clazz == "AggregateInversionSolution":
-        from models.aggregate_inversion_solution import AggregateInversionSolution  # noqa: PLC0415
+        from graphql_api.models.aggregate_inversion_solution import AggregateInversionSolution  # noqa: PLC0415
 
         return AggregateInversionSolution.from_dict(data)
     if clazz == "TimeDependentInversionSolution":

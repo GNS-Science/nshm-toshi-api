@@ -182,7 +182,7 @@ def _dispatch_search(hit: dict) -> SearchResult | None:
     Delegates to the shared clazz_name → type registry in models/_dispatch.py.
     Unknown clazz values fall back to ToshiFile, matching legacy behaviour.
     """
-    from models._dispatch import dispatch_search  # noqa: PLC0415
+    from graphql_api.models._dispatch import dispatch_search  # noqa: PLC0415
 
     try:
         return dispatch_search(hit)

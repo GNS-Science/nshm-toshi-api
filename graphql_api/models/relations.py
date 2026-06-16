@@ -159,7 +159,7 @@ class TaskTaskRelation:
 
     @strawberry.field
     def parent(self, info: Info) -> _GeneralTask | None:
-        from models.general_task import GeneralTask  # noqa: PLC0415
+        from graphql_api.models.general_task import GeneralTask  # noqa: PLC0415
 
         data = get_thing(info.context["dynamodb"], self.parent_raw_id)
         return GeneralTask.from_dict(data) if data else None
