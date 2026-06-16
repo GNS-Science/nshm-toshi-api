@@ -121,9 +121,6 @@ custom:
         Exclude:
           - resourcee.Resources.ElasticSearchInstance
           - provider.iamrolestatements.1
-          # Test stage: the graphql function is the read-write primary.
-          # Drop its DB_READ_ONLY guard so writes succeed.
-          - functions.graphql.environment.DB_READ_ONLY
 
 provider:
   name: aws
@@ -215,7 +212,6 @@ functions:
             identitySource: ''
             type: request
     environment:
-      DB_READ_ONLY: "1"
       DEPLOYMENT_STAGE: ${self:custom.stage}
       GRAPHQL_PATH: /graphql
       # REGION + S3_BUCKET_NAME inherit from provider.environment but we set
