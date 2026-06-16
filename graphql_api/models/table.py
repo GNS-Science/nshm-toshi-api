@@ -1,0 +1,89 @@
+"""Table — relay.Node for ToshiTableObject records."""
+
+from typing import Optional
+
+import strawberry
+from strawberry import relay
+from strawberry.types import Info
+
+from graphql_api.data.dynamo import create_table, get_table
+from graphql_api.data.models import TableData
+
+from .common import (
+    DateTime,
+    KeyValueListPair,
+    KeyValueListPairInput,
+    KeyValuePair,
+    KeyValuePairInput,
+    RowItemType,
+    TableType,
+    _try_enum,
+    client_mutation_id_input_field,
+)
+
+@strawberry.type
+class Table(relay.Node):
+    pk: relay.NodeID[str]
+    object_id: strawberry.ID | None = None
+    name: str | None = None
+    created: DateTime | None = None
+    column_headers: list[str | None] | None = None
+    column_types: list[RowItemType | None] | None = None
+    rows: list[list[str | None] | None] | None = None
+    meta: list[KeyValuePair | None] | None = None
+    table_type: TableType | None = None
+    dimensions: list[KeyValueListPair | None] | None = None
+
+    @classmethod
+    def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["Table"]:
+        data = get_table(info.context["dynamodb"], node_id)
+        return cls.from_dict(data) if data else None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Table":
+        d = TableData.model_validate(data)
+        table_type = _try_enum(TableType, d.table_type)
+        return cls(
+            pk=d.object_id,
+            object_id=strawberry.ID(d.object_id),
+            name=d.name,
+            created=d.created,
+            column_headers=d.column_headers,
+            column_types=[RowItemType[v] for v in d.column_types if v in RowItemType.__members__]
+            if d.column_types
+            else None,
+            rows=d.rows,
+            meta=[KeyValuePair(k=i.k, v=i.v) for i in d.meta] if d.meta else None,
+            table_type=table_type,
+            dimensions=[KeyValueListPair(k=i.k, v=i.v) for i in d.dimensions] if d.dimensions else None,
+        )
+
+@strawberry.input
+class CreateTableInput:
+    object_id: strawberry.ID
+    name: str | None = None
+    created: DateTime | None = None
+    column_headers: list[str | None] | None = None
+    column_types: list[RowItemType | None] | None = None
+    rows: list[list[str | None] | None] | None = None
+    meta: list[KeyValuePairInput | None] | None = None
+    table_type: TableType | None = None
+    dimensions: list[KeyValueListPairInput | None] | None = None
+    client_mutation_id: str | None = client_mutation_id_input_field()
+
+def mutate_create_table(info: Info, input: CreateTableInput) -> Table:
+    meta = [{"k": i.k, "v": i.v} for i in input.meta] if input.meta else None
+    dimensions = [{"k": i.k, "v": i.v} for i in input.dimensions] if input.dimensions else None
+    payload = {
+        "object_id": str(input.object_id),
+        "name": input.name,
+        "created": input.created,
+        "column_headers": input.column_headers,
+        "column_types": [v.name for v in input.column_types] if input.column_types else None,
+        "rows": input.rows,
+        "meta": meta,
+        "table_type": input.table_type.value if input.table_type else None,
+        "dimensions": dimensions,
+    }
+    data = create_table(info.context["dynamodb"], "Table", payload)
+    return Table.from_dict(data)
