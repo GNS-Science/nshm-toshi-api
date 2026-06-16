@@ -110,10 +110,6 @@ yarn sls dynamodb start --stage local &\
 yarn sls s3 start &\
 SLS_OFFLINE=1 uv run yarn sls wsgi serve
 ```
-then in another shell,
-```
-SLS_OFFLINE=1 S3_BUCKET_NAME=nzshm22-toshi-api-local S3_TEST_DATA_PATH=s3_extract python3 graphql_api/tests/upload_test_s3_extract.py 
-```
 then in the simple-toshi-ui repo,
 set REACT_APP_GRAPH_ENDPOINT=http://localhost:5000/graphql,
 and run yarn start
