@@ -1,6 +1,6 @@
 {
   "name": "nzshm22-toshi-api",
-  "version": "0.5.2",
+  "version": "0.7.0",
   "description": "A graphql API for NZSHM22 shared resources using AWS lambda, S3, Dynamodb and ElasticSearch",
   "directories": {
     "lib": "lib"
@@ -10,7 +10,7 @@
     "requirements_1": "serverless requirements clean",
     "requirements_2": "serverless requirements cleanCache",
     "dummy_pkg": "serverless package --stage dummy",
-    "deploy": "serverless deploy --stage ${STAGE}",
+    "deploy": "serverless deploy --stage ${STAGE} && serverless info --stage ${STAGE}",
     "sls_doctor": "serverless doctor"
   },
   "repository": {
@@ -29,8 +29,7 @@
     "serverless-dynamodb": "^0.2.56",
     "serverless-plugin-ifelse": "^1.0.7",
     "serverless-plugin-warmup": "^8.3.0",
-    "serverless-s3-local": "^0.8.5",
-    "serverless-wsgi": "^3.1.0"
+    "serverless-s3-local": "^0.8.5"
   },
-  "packageManager": "yarn@4.10.2"
+  "packageManager": "yarn@4.16.0"
 }

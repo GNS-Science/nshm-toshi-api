@@ -1,133 +1,157 @@
-"""
-Squash the bug in Scaled and Aggregate Solutinos whene they retrun ther incorrect type for source-solution
+"""Ported from graphql_api/tests/test_source_solution_bugfix_214.py.
 
+Bug #214: ScaledInversionSolution.source_solution returned the wrong
+__typename when the upstream was a TimeDependentInversionSolution.
+The dispatch must select the concrete subtype, not a generic node.
+
+POC's existing test_scaled_inversion_solution.py tests source_solution
+only with InversionSolution as the source. This file fills the gap.
 """
 
-from copy import copy
+import datetime as dt
 
 import pytest
-from graphene.test import Client
-from graphql_relay import to_global_id
+from dateutil.tz import tzutc
 
-import graphql_api.data
-from graphql_api.schema import root_schema
+from graphql_api.schema import schema
 
-scaled_inversion_object_120837 = {
-    "id": 120837,
-    "file_name": "NZSHM22_ScaledInversionSolution-QXV0b21hdGlvblRhc2s6MTEzMTg4.zip",
-    "md5_digest": "TXiN7F4ft1rPzNsKhRgnmQ==",
-    "file_size": 27915950,
-    "file_url": None,
-    "post_url": None,
-    # "relations": [{"id": "113188", "role": "write"}, {"id": "113304", "role": "read"}, {"id": "1326904", "role": "read"}, {"id": "1327538", "role": "read"}, {"id": "6529396", "role": "read"}],
-    # "predecessors": [{"id": "VGltZURlcGVuZGVudEludmVyc2lvblNvbHV0aW9uOjExOTE2NA==", "depth": -1}, {"id": "SW52ZXJzaW9uU29sdXRpb246MTEzMDYz", "depth": -2}, {"id": "RmlsZToxMDAwODc=", "depth": -3}],
-    "meta": [
-        {"k": "scale", "v": "1.41"},
-        {"k": "polygon_scale", "v": "0.8"},
-        {"k": "polygon_max_mag", "v": "8"},
-        {"k": "model_type", "v": "CRUSTAL"},
-    ],
-    "created": "2022-08-12T02:57:05.508741+00:00",
-    "metrics": None,
-    "mfd_table_id": None,
-    "hazard_table_id": None,
-    "tables": None,
-    "hazard_table": None,
-    "mfd_table": None,
-    "produced_by": "QXV0b21hdGlvblRhc2s6MTEzMTg4",
-    "source_solution": "VGltZURlcGVuZGVudEludmVyc2lvblNvbHV0aW9uOjExOTE2NA==",
-    "clazz_name": "ScaledInversionSolution",
+CREATE_AT = """
+mutation ($created: DateTime!) {
+  create_automation_task(input: {
+    state: UNDEFINED
+    result: UNDEFINED
+    created: $created
+    duration: 1
+    task_type: INVERSION
+  }) { task_result { id } }
 }
+"""
 
-
-td_solution_object_119164 = {
-    "id": 119164,
-    "file_name": "NZSHM22_TimeDependentInversionSolution-QXV0b21hdGlvblRhc2s6MTExNjI5.zip",
-    "md5_digest": "iwBRIm0peyP4Ym9p0er0AA==",
-    "file_size": 27915865,
-    "file_url": None,
-    "post_url": None,
-    "meta": [
-        {"k": "current_year", "v": "2022"},
-        {"k": "mre_enum", "v": "CFM_1_1"},
-        {"k": "forecast_timespan", "v": "100"},
-        {"k": "aperiodicity", "v": "NZSHM22"},
-        {"k": "model_type", "v": "CRUSTAL"},
-        {
-            "k": "file_path",
-            "v": "/work/chrisdc/NZSHM-WORKING/PROD/downloads/SW52ZXJzaW9uU29sdXRpb246MTEzMDYz/NZSHM22_InversionSolution-QXV0b21hdGlvblRhc2s6MTA3MDE2.zip",
-        },
-    ],
-    "relations": [
-        {"id": "111629", "role": "write"},
-        {"id": "113188", "role": "read"},
-        {"id": "113189", "role": "read"},
-        {"id": "113191", "role": "read"},
-    ],
-    "predecessors": [{"id": "SW52ZXJzaW9uU29sdXRpb246MTEzMDYz", "depth": -1}, {"id": "RmlsZToxMDAwODc=", "depth": -2}],
-    "created": "2022-08-09T23:37:05.247558+00:00",
-    "metrics": None,
-    "mfd_table_id": None,
-    "hazard_table_id": None,
-    "tables": None,
-    "hazard_table": None,
-    "mfd_table": None,
-    "produced_by": "QXV0b21hdGlvblRhc2s6MTExNjI5",
-    "source_solution": "SW52ZXJzaW9uU29sdXRpb246MTEzMDYz",
-    "clazz_name": "TimeDependentInversionSolution",
+CREATE_INVERSION = """
+mutation ($input: CreateInversionSolutionInput!) {
+  create_inversion_solution(input: $input) { inversion_solution { id } }
 }
+"""
+
+CREATE_TIME_DEPENDENT = """
+mutation ($input: CreateTimeDependentInversionSolutionInput!) {
+  create_time_dependent_inversion_solution(input: $input) {
+    solution { id }
+  }
+}
+"""
+
+CREATE_SCALED = """
+mutation ($input: CreateScaledInversionSolutionInput!) {
+  create_scaled_inversion_solution(input: $input) {
+    solution {
+      id
+      source_solution {
+        __typename
+        ... on Node { id }
+      }
+    }
+  }
+}
+"""
+
+QUERY_SCALED_NODE = """
+query ($id: ID!) {
+  node(id: $id) {
+    __typename
+    ... on ScaledInversionSolution {
+      id
+      source_solution {
+        __typename
+        ... on Node { id }
+      }
+    }
+  }
+}
+"""
 
 
 @pytest.fixture(scope="module")
-def graphene_client():
-    yield Client(root_schema)
+def chain(gql_context):
+    """Build:  inv (upstream)  ←  time_dep  ←  scaled
 
+    Such that:
+      time_dep.source_solution = inv
+      scaled.source_solution   = time_dep
+    """
+    created = dt.datetime.now(tzutc()).isoformat()
 
-@pytest.fixture
-def mock_dynamodb_read(monkeypatch):
-    """Requests.get() mocked to return {'mock_key':'mock_response'}."""
+    at_res = schema.execute_sync(CREATE_AT, variable_values={"created": created}, context_value=gql_context)
+    assert at_res.errors is None, at_res.errors
+    at_id = at_res.data["create_automation_task"]["task_result"]["id"]
 
-    def mock_read(self, *args, **kwargs):
-        if args[0] == "119164":
-            return copy(td_solution_object_119164)
-        elif args[0] == "120837":
-            return copy(scaled_inversion_object_120837)
-        else:
-            raise ValueError(f"{args}, {kwargs}")
-
-    monkeypatch.setattr(graphql_api.data.BaseDynamoDBData, "_read_object", mock_read)
-
-
-def test_scaled_inversion_example(graphene_client, mock_dynamodb_read):
-    """Test fgor modern DynamoDB objects"""
-    QRY = """
-        query A {
-          node(id:"%s") {
-            __typename
-            ...on ScaledInversionSolution {
-              __typename
-              id
-              source_solution {
-                __typename
-                ... on Node {
-                    id
-                }
-              }
-              predecessors {
-                typename
-                id
-                depth
-                relationship
-              }
+    inv_res = schema.execute_sync(
+        CREATE_INVERSION,
+        variable_values={
+            "input": {
+                "file_name": "upstream.zip",
+                "produced_by": at_id,
+                "md5_digest": "aabb",
+                "file_size": 1024,
+                "created": created,
             }
-          }
-        }
-    """ % to_global_id(
-        'ScaledInversionSolution', 120837
+        },
+        context_value=gql_context,
     )
+    assert inv_res.errors is None, inv_res.errors
+    inv_id = inv_res.data["create_inversion_solution"]["inversion_solution"]["id"]
 
-    result = graphene_client.execute(QRY)
-    print(result)
-    # assert mocked_api.call_count == 2
-    assert result['data']['node']['source_solution']['id'] == "VGltZURlcGVuZGVudEludmVyc2lvblNvbHV0aW9uOjExOTE2NA=="
-    assert result['data']['node']['source_solution']['__typename'] == "TimeDependentInversionSolution"
+    td_res = schema.execute_sync(
+        CREATE_TIME_DEPENDENT,
+        variable_values={
+            "input": {
+                "file_name": "td_v1.zip",
+                "produced_by": at_id,
+                "source_solution": inv_id,
+                "md5_digest": "ccdd",
+                "file_size": 2048,
+                "created": created,
+            }
+        },
+        context_value=gql_context,
+    )
+    assert td_res.errors is None, td_res.errors
+    td_id = td_res.data["create_time_dependent_inversion_solution"]["solution"]["id"]
+
+    scaled_res = schema.execute_sync(
+        CREATE_SCALED,
+        variable_values={
+            "input": {
+                "file_name": "scaled_v1.zip",
+                "produced_by": at_id,
+                "source_solution": td_id,
+                "md5_digest": "eeff",
+                "file_size": 512,
+                "created": created,
+            }
+        },
+        context_value=gql_context,
+    )
+    assert scaled_res.errors is None, scaled_res.errors
+    scaled_data = scaled_res.data["create_scaled_inversion_solution"]["solution"]
+
+    return {"inv_id": inv_id, "td_id": td_id, "scaled_id": scaled_data["id"], "scaled_data": scaled_data}
+
+
+def test_scaled_source_solution_dispatches_to_time_dependent_on_create(chain):
+    """Bug #214: the mutation response's source_solution.__typename must be
+    'TimeDependentInversionSolution', not a generic node or InversionSolution.
+    """
+    ss = chain["scaled_data"]["source_solution"]
+    assert ss is not None
+    assert ss["__typename"] == "TimeDependentInversionSolution"
+    assert ss["id"] == chain["td_id"]
+
+
+def test_scaled_source_solution_dispatches_to_time_dependent_via_node_lookup(chain, gql_context):
+    """Same assertion via a node lookup — separate code path (resolve_node)."""
+    res = schema.execute_sync(QUERY_SCALED_NODE, variable_values={"id": chain["scaled_id"]}, context_value=gql_context)
+    assert res.errors is None, res.errors
+    ss = res.data["node"]["source_solution"]
+    assert ss["__typename"] == "TimeDependentInversionSolution"
+    assert ss["id"] == chain["td_id"]

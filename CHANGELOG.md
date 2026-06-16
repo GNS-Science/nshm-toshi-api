@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.7.0] - 2026-05-15
+
+### Added
+ - **M2M Secrets Manager bootstrap** for `nshm-toshi-client` 1.2.0+ consumers (closes #290)
+   - `ToshiM2MSecret` (`AWS::SecretsManager::Secret`) per stage, `DeletionPolicy: Retain`
+   - `secretsmanager:GetSecretValue` grants on `ToshiRunziLocal/Batch/AdminRole` (scoped to `toshi-m2m-*`)
+   - CloudFormation Outputs `M2MSecretArn` / `M2MSecretName` for consumer config
+ - **`auth/create_m2m_secret.py`**: Click CLI that mints a Cognito M2M app client (client_credentials grant, `toshi/read toshi/write` scopes) and writes the `{client_id, client_secret}` pair into SM. Rolls back the just-minted Cognito client if the SM write fails.
+ - **`auth/rotate_m2m_secret.py`**: safe new→put→sleep→delete rotation wrapper. Optional `--authorizer-function` flag widens the Lambda authorizer's `COGNITO_CLIENT_ID` allowlist to `OLD,NEW` during the overlap window.
+ - **Auth README**: "M2M credential bootstrap" section + manual rotation runbook with IaC-drift warning.
+
+### Changed
+ - deps: patch (12 pkgs), minor (9 pkgs), major: cryptography 47→48, elasticsearch 8→9 (drops `elasticsearch-dsl`; use `elasticsearch.dsl`), mypy 1→2
+ - **Lambda bundle dropped 375 MiB → 33.5 MiB** by excluding `.venv/`, `spike/`, `.yarn/`, `.serverless/`, `.ruff_cache/`, `graphql_api/tests/`, `auth/tests/` from the package. Unblocks deploys that had been failing on the 250 MiB unzipped limit since the auth spike landed.
+ - `IDP_INTEGRATION_OPTIONS_STUDY.md` Option C "Cons": call out that SM minimises caller-side credential exposure but does not eliminate the long-lived Cognito `client_secret` on the AWS side (gap surfaced in nshm-toshi-client PR #41 review).
+ - Fixed `package-lock.json` typo (`package-log.json`) in `serverless.yml` package excludes.
+
+## [0.6.0] - 2026-05-11
+
+### Added
+ - **JWT authentication** replacing the single shared `x-api-key` with per-user Cognito JWTs
+   - Lambda Authorizer (`auth/authorizer/handler.py`) validates JWTs and legacy API keys
+   - Flask middleware (`auth/middleware.py`) enforces `toshi/read` and `toshi/write` scopes
+   - Scientist CLI (`auth/toshi_auth.py`) for login, token management, and AWS credentials
+   - All Cognito infrastructure provisioned via CloudFormation in `serverless.yml`
+ - **Backward compatibility**: legacy `x-api-key` clients continue working via `LEGACY_API_KEY`
+   env var (reads `NZSHM22_TOSHI_API_KEY` in CI)
+ - **Token flows**: USER_PASSWORD_AUTH for scientists, client credentials for M2M/Runzi
+ - **IAM roles** for Runzi workloads via Cognito Identity Pool (`runzi-local/batch/admin`)
+ - 38 unit tests across authorizer handler and middleware mutation detection
+
+### Changed
+ - GraphQL events use Lambda Authorizer instead of `private: true` API key plan
+ - Mutation detection uses `graphql-core` AST parser (was regex — had false positives)
+ - Lambda package reduced from 329MB to 120MB by excluding dev artifacts
+ - Middleware is no-op when `TESTING=1` or `SLS_OFFLINE=1` — local dev unaffected
+ - Migrated from Poetry to uv; replaced flake8/black/isort with ruff
+ - CI deploy workflow uses GitHub environments (`AWS_TEST`/`AWS_PROD`) for per-stage secrets
+
+### Security
+ - Test user credentials and client secrets kept in gitignored local files only
+ - Authorizer only accepts access tokens (id tokens rejected)
+
+### Future (Phase 2)
+ - Entra ID (Azure AD) OIDC federation for GNS corporate SSO
+ - Client library (`nshm-toshi-client`) migration to Bearer tokens
+
 ## [0.5.2] - 2025-12-15
 
 ### Changed

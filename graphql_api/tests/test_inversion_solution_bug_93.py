@@ -1,180 +1,147 @@
-import unittest
-from copy import copy
-from unittest import mock
+"""Ported from graphql_api/tests/test_inversion_solution_bug_93.py.
 
-from graphene.test import Client
+Bug #93: when an AutomationTask has multiple WRITE-role file relations,
+the `inversion_solution` resolver must SKIP files whose clazz_name isn't
+an InversionSolution subtype, not return the first WRITE file.
 
-import graphql_api.data  # for mocking
-from graphql_api.data.file_relation_data import FileRelationData
-from graphql_api.schema import root_schema
+POC's test_weka_parity.py covers the simple case (one WRITE file = IS)
+and the no-write case. This port adds the discriminating case from the
+original production bug.
+"""
 
-AUTO_TASK = {
-    "id": "6040tkPow",
-    "created": "2021-12-20T09:24:59.371931+00:00",
-    "files": ["21001AXf9j", "21005LE452", "21008R7VUG"],
-    "result": "success",
-    "state": "done",
-    "duration": 97.022132,
-    "parents": ["5820YXyzX"],
-    "arguments": None,
-    "environment": None,
-    "metrics": None,
-    "model_type": "crustal",
-    "task_type": "inversion",
-    "inversion_solution": None,
-    "clazz_name": "AutomationTask",
+import datetime as dt
+
+import pytest
+from dateutil.tz import tzutc
+
+from graphql_api.schema import schema
+
+CREATE_AT = """
+mutation ($created: DateTime!) {
+  create_automation_task(input: {
+    state: UNDEFINED
+    result: UNDEFINED
+    task_type: INVERSION
+    created: $created
+    duration: 97
+  }) { task_result { id } }
 }
-FILE_REL0 = {
-    "id": "21001AXf9j",
-    "thing": None,
-    "file": None,
-    "role": "read",
-    "thing_id": "6040tkPow",
-    "file_id": "16742.0Ukmre",
-    "clazz_name": "FileRelation",
+"""
+
+CREATE_FILE = """
+mutation ($file_name: String!, $md5: String!, $size: BigInt!) {
+  create_file(file_name: $file_name, md5_digest: $md5, file_size: $size) {
+    file_result { id }
+  }
 }
-FILE_REL1 = {
-    "id": "21005LE452",
-    "thing": None,
-    "file": None,
-    "role": "write",
-    "thing_id": "6040tkPow",
-    "file_id": "17184.06nh58",
-    "clazz_name": "FileRelation",
+"""
+
+CREATE_INVERSION = """
+mutation ($file_name: String!, $produced_by: ID!, $md5: String!, $size: BigInt!, $created: DateTime!) {
+  create_inversion_solution(input: {
+    file_name: $file_name
+    produced_by: $produced_by
+    md5_digest: $md5
+    file_size: $size
+    created: $created
+  }) { inversion_solution { id } }
 }
-FILE_REL2 = {
-    "id": "21008R7VUG",
-    "thing": None,
-    "file": None,
-    "role": "write",
-    "thing_id": "6040tkPow",
-    "file_id": "17187.0b3Cn3",
-    "clazz_name": "FileRelation",
+"""
+
+CREATE_FILE_RELATION = """
+mutation ($thing_id: ID!, $file_id: ID!, $role: FileRole!) {
+  create_file_relation(thing_id: $thing_id, file_id: $file_id, role: $role) { ok }
 }
-FILE0 = {
-    "id": "16742.0Ukmre",
-    "file_name": "NZSHM22_InversionSolution-QXV0b21hdGlvblRhc2s6NTg4OG1nWFRY.zip",
-    "md5_digest": "W4HpdeO/Rn+nOwOgLPko+A==",
-    "file_size": 29283271,
-    "file_url": None,
-    "post_url": None,
-    "meta": None,
-    "relations": None,
-    "created": "2021-12-09T06:41:09.351578+00:00",
-    "metrics": [
-        {"k": "total_ruptures", "v": "447797"},
-        {"k": "perturbed_ruptures", "v": "15575"},
-    ],
-    "produced_by_id": "QXV0b21hdGlvblRhc2s6NTg4OG1nWFRY",
-    "mfd_table_id": None,
-    "hazard_table_id": None,
-    "tables": None,
-    "hazard_table": None,
-    "mfd_table": None,
-    "produced_by": None,
-    "clazz_name": "InversionSolution",
+"""
+
+QUERY_AT_INVERSION = """
+query ($id: ID!) {
+  node(id: $id) {
+    __typename
+    ... on AutomationTask {
+      id
+      inversion_solution {
+        __typename
+        ... on Node { id }
+        ... on FileInterface { file_name }
+      }
+    }
+  }
 }
-FILE1 = {
-    "id": "17184.06nh58",
-    "file_name": "Wellington_ruptures_radius(200km)_rate_filter(1e-15).geojson",
-    "md5_digest": "+bfJDziXGNxQpeX5HpMJKw==",
-    "file_size": 725970,
-    "file_url": None,
-    "post_url": None,
-    "meta": None,
-    "relations": ["21005LE452"],
-    "clazz_name": "File",
-}
-FILE2 = {
-    "id": "17187.0b3Cn3",
-    "file_name": "Wellington_ruptures_radius(200km)_rate_filter(1e-15)_sub_solution.zip",
-    "md5_digest": "Qdo0ZuxcDzaNZSq9xzTqLA==",
-    "file_size": 29144881,
-    "file_url": None,
-    "post_url": None,
-    "meta": None,
-    "relations": ["21008R7VUG"],
-    "created": "2021-12-20T09:26:17.326242+00:00",
-    "metrics": None,
-    "mfd_table_id": None,
-    "hazard_table_id": None,
-    "tables": None,
-    "hazard_table": None,
-    "mfd_table": None,
-    "produced_by": None,
-    "clazz_name": "InversionSolution",
-}
+"""
 
 
-class TestInversionSolutionRelationBugFix(unittest.TestCase):
+@pytest.fixture(scope="module")
+def scenario(gql_context):
+    """Replicate bug #93's data shape:
+      - 1 AutomationTask
+      - 1 READ file (plain File)
+      - 1 WRITE file (plain File, NOT an InversionSolution)
+      - 1 WRITE file (InversionSolution)
+    Resolver must return the IS, not the plain WRITE File.
     """
-    This test replicates a bug which occurs from the relation of two inversion solutions, one as read and one as write
-    The automation task inversion solution resolver needs to be able to handle having a read and write solution
-    The get_one function is mocked 3 times, as it is called 3 times by the list of file relations in auto task :
-        - "files": ["21001AXf9j", "21005LE452", "21008R7VUG"],
-    Each time it is called, the inversion_solution_resolver calls file_relation.get_one(file_id)and checks if it has a
-    'role' of write, if it doesn't it continues. If the 'role' is write, it calls file.get_one(file_relation.file_id)
-    and checks if it is an InversionSolution.
-    mock_get_one is patched for all 3 file_rels which it traverse through and checks if its 'role' is write (FILE_REL1 & FILE_REL2 are).
-    Because FILE_REL1 is write, mock_read_object sees if its an InversionSolution (which it is not), and then continues onto
-    FILE_REL2 which is.
-    It has now found the correct file relation!
-    """
+    created = dt.datetime.now(tzutc()).isoformat()
 
-    def setUp(self) -> None:
-        self.client = Client(root_schema)
+    at = schema.execute_sync(CREATE_AT, variable_values={"created": created}, context_value=gql_context)
+    assert at.errors is None, at.errors
+    at_id = at.data["create_automation_task"]["task_result"]["id"]
 
-    @mock.patch(
-        'graphql_api.data.file_relation_data.FileRelationData.get_one',
-        side_effect=[
-            FileRelationData.from_json(copy(FILE_REL0)),
-            FileRelationData.from_json(copy(FILE_REL1)),
-            FileRelationData.from_json(copy(FILE_REL2)),
-        ],
+    read_file = schema.execute_sync(
+        CREATE_FILE,
+        variable_values={"file_name": "input.csv", "md5": "rrrr", "size": 100},
+        context_value=gql_context,
     )
-    @mock.patch(
-        'graphql_api.data.BaseDynamoDBData._read_object', side_effect=[copy(AUTO_TASK), copy(FILE1), copy(FILE2)]
-    )
-    def test_query_with_files(self, mocked_read_object, mocked_get_one):
-        qry = """ 
-        query InversionSolutionDiagnosticContainerQuery {
-            nodes(id_in: ["QXV0b21hdGlvblRhc2s6NjA0MHRrUG93"]) {
-            result {
-                edges {
-                node {
-                    __typename
-                    ... on AutomationTask {
-                    created
-                    task_type
-                    id
-                    inversion_solution {
-                        ... on Node { id }
-                        ... on FileInterface {
-                            file_name
-                            meta {
-                            k
-                            v
-                            }
-                        }
-                        ... on InversionSolutionInterface {
-                            tables {
-                            table_id
-                            table_type
-                            }
-                        }
-                    }
-                    }
-                }
-                }
-            }
-            }
-        }"""
+    assert read_file.errors is None, read_file.errors
+    read_id = read_file.data["create_file"]["file_result"]["id"]
 
-        print(qry)
-        executed = self.client.execute(qry)
-        print(executed)
-        node = executed['data']['nodes']['result']['edges'][0]['node']
-        assert mocked_get_one.call_args[0][0] == "21008R7VUG"
-        assert node["inversion_solution"]["id"] == 'SW52ZXJzaW9uU29sdXRpb246MTcxODcuMGIzQ24z'
-        assert mocked_read_object.call_count == 3
-        assert mocked_get_one.call_count == 3
+    write_other = schema.execute_sync(
+        CREATE_FILE,
+        variable_values={"file_name": "Wellington.geojson", "md5": "wwww", "size": 725970},
+        context_value=gql_context,
+    )
+    assert write_other.errors is None, write_other.errors
+    write_other_id = write_other.data["create_file"]["file_result"]["id"]
+
+    inv = schema.execute_sync(
+        CREATE_INVERSION,
+        variable_values={
+            "file_name": "solution.zip",
+            "produced_by": at_id,
+            "md5": "iiii",
+            "size": 29144881,
+            "created": created,
+        },
+        context_value=gql_context,
+    )
+    assert inv.errors is None, inv.errors
+    inv_id = inv.data["create_inversion_solution"]["inversion_solution"]["id"]
+
+    for file_id, role in [(read_id, "READ"), (write_other_id, "WRITE"), (inv_id, "WRITE")]:
+        rel = schema.execute_sync(
+            CREATE_FILE_RELATION,
+            variable_values={"thing_id": at_id, "file_id": file_id, "role": role},
+            context_value=gql_context,
+        )
+        assert rel.errors is None, rel.errors
+
+    return {"at_id": at_id, "read_id": read_id, "write_other_id": write_other_id, "inv_id": inv_id}
+
+
+def test_inversion_solution_skips_non_is_write_files(scenario, gql_context):
+    """Bug #93 regression: with multiple WRITE files, only the IS is selected."""
+    res = schema.execute_sync(QUERY_AT_INVERSION, variable_values={"id": scenario["at_id"]}, context_value=gql_context)
+    assert res.errors is None, res.errors
+    sol = res.data["node"]["inversion_solution"]
+    assert sol is not None
+    assert sol["__typename"] == "InversionSolution"
+    assert sol["id"] == scenario["inv_id"]
+    assert sol["file_name"] == "solution.zip"
+
+
+def test_inversion_solution_not_the_non_is_write_file(scenario, gql_context):
+    """Explicit assertion the resolver did NOT return the plain WRITE File."""
+    res = schema.execute_sync(QUERY_AT_INVERSION, variable_values={"id": scenario["at_id"]}, context_value=gql_context)
+    assert res.errors is None, res.errors
+    sol = res.data["node"]["inversion_solution"]
+    assert sol["id"] != scenario["write_other_id"]
+    assert sol["id"] != scenario["read_id"]

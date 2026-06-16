@@ -1,205 +1,286 @@
-import datetime as dt
+"""
+Tests for File.relations compression behaviour.
+
+Mirrors graphql_api/tests/test_file_relation_compression.py — when the
+relations list crosses UNCOMPRESSED_LIMIT entries, the data layer stores
+it as a compressed string instead of a JSON list. The same nzshm_common
+compress_string is used so this format is byte-compatible with the
+legacy production data layer.
+
+Covers COVERAGE_GAPS.md gap 6 (re-categorised from "Low/N/A" to "High"
+once we noticed that the POC would crash on legacy compressed rows and
+would hit DynamoDB's 400KB item limit at ~10k uncompressed relations).
+"""
+
+import base64
 import json
-import random
-import unittest
-from unittest import mock
 
-import boto3
-from dateutil.tz import tzutc
-from graphene.test import Client
-from graphql_relay import to_global_id
-from moto import mock_aws
+import pytest
 from nzshm_common.util import compress_string, decompress_string
-from pynamodb.connection.base import Connection  # for mocking
 
-import graphql_api.data.file_relation_data
-from graphql_api.config import REGION, S3_BUCKET_NAME
-from graphql_api.data import data_manager
-from graphql_api.data.file_data import FileData
-from graphql_api.data.thing_data import ThingData
-from graphql_api.dynamodb.models import ToshiFileObject, ToshiIdentity, ToshiThingObject
-from graphql_api.schema import root_schema
-from graphql_api.schema.search_manager import SearchManager
+from graphql_api.data import dynamo
+from graphql_api.schema import schema
 
-# Monkey patch for testing
-UNCOMPRESSED_LIMIT = 25
-graphql_api.data.file_relation_data.UNCOMPRESSED_LIMIT = UNCOMPRESSED_LIMIT
-graphql_api.data.file_data.MIGRATE_FILE_TO_RUPTSET = False  # , 'MIGRATE_FILE_TO_RUPTSET',
-
-QRY_CREATE_AT_RELATION = '''
-    mutation ($thing_id: ID!, $file_id: ID!) {
-      create_file_relation(
-        thing_id: $thing_id
-        file_id: $file_id
-        role: READ
-      )
-      {
-        ok
-        file_relation { file_id }
-      }
+CREATE_AT_MUTATION = """
+mutation CreateTask($input: CreateAutomationTaskInput!) {
+    create_automation_task(input: $input) {
+        task_result { id }
     }
-'''
-
-ATMOCK = {
-    #'id': '100000',
-    "clazz_name": "AutomationTask",
-    'created': dt.datetime.now(tzutc()),
-    'files': None,
-    'parents': [{'parent_id': '1', 'parent_clazz': 'GeneralTask'}],
-    'children': None,
-    'result': 'undefined',
-    'state': 'undefined',
-    'duration': 600.0,
-    'arguments': [
-        {'k': 'max_jump_distance', 'v': '55.5'},
-        {'k': 'max_sub_section_length', 'v': '2'},
-        {'k': 'max_cumulative_azimuth', 'v': '590'},
-        {'k': 'min_sub_sections_per_parent', 'v': '2'},
-        {'k': 'permutation_strategy', 'v': 'DOWNDIP'},
-    ],
-    'environment': [
-        {'k': 'gitref_opensha_ucerf3', 'v': 'ABC'},
-        {'k': 'gitref_opensha_commons', 'v': 'ABC'},
-        {'k': 'gitref_opensha_core', 'v': 'ABC'},
-        {'k': 'nshm_nz_opensha', 'v': 'ABC'},
-        {'k': 'host', 'v': 'tryharder-ubuntu'},
-        {'k': 'JAVA', 'v': '-Xmx24G'},
-    ],
-    'metrics': None,
 }
-FAKE_RELATION = {'id': '100000', 'role': 'read'}
-# FILE_RELATIONS = compress_string(json.dumps([FAKE_RELATION for x in range(UNCOMPRESSED_LIMIT )]))
-FILE_RELATIONS = [FAKE_RELATION for x in range(UNCOMPRESSED_LIMIT)]
-FILEMOCK = {
-    #'id': '100000',
-    'file_name': 'RupSet_Cl_FM(CFM_0_9_).zip',
-    'md5_digest': '5f1jFJY5keP7n7pSOX64Mg==',
-    'file_size': 32045903,
-    'file_url': None,
-    'post_url': None,
-    'meta': [
-        {'k': 'max_sections', 'v': '2000'},
-        {'k': 'fault_model', 'v': 'CFM_0_9_SANSTVZ_D90'},
-        {'k': 'min_sub_sects_per_parent', 'v': '2'},
-        {'k': 'min_sub_sections', 'v': '2'},
-        {'k': 'max_jump_distance', 'v': '15'},
-        {'k': 'adaptive_min_distance', 'v': '6'},
-        {'k': 'thinning_factor', 'v': '0.2'},
-        {'k': 'scaling_relationship', 'v': 'TMG_CRU_2017'},
-    ],
-    'relations': FILE_RELATIONS,
-    'clazz_name': 'File',
+"""
+
+CREATE_FILE_MUTATION = """
+mutation CreateFile($file_name: String!, $md5_digest: String!, $file_size: BigInt!, $created: DateTime = null, $meta: [KeyValuePairInput!] = null) {
+    create_file(file_name: $file_name, md5_digest: $md5_digest, file_size: $file_size, created: $created, meta: $meta) {
+        ok
+        file_result { id file_name }
+    }
 }
-FILEMOCKID = '100000'
+"""
 
+CREATE_FILE_RELATION_MUTATION = """
+mutation CreateFileRelation($file_id: ID!, $role: FileRole!, $thing_id: ID!) {
+    create_file_relation(file_id: $file_id, role: $role, thing_id: $thing_id) { ok }
+}
+"""
 
-@mock_aws
-class TestCompressRelations(unittest.TestCase):
-    @mock.patch('graphql_api.schema.search_manager.Elasticsearch')
-    def setUp(self, mock_es_class):
-        self.client = Client(root_schema)
-
-        # S3 is used for file object storage
-        self._s3_conn = boto3.resource('s3', region_name=REGION)
-        self._s3_conn.create_bucket(Bucket=S3_BUCKET_NAME)
-        self._bucket = self._s3_conn.Bucket(S3_BUCKET_NAME)
-        self._connection = Connection(region=REGION)
-
-        ToshiThingObject.create_table()
-        ToshiFileObject.create_table()
-        ToshiIdentity.create_table()
-
-        self._data_manager = data_manager.DataManager(search_manager=SearchManager('test', 'test', 'fake:auth'))
-        at1 = ThingData({}, self._data_manager, ToshiThingObject, self._connection)
-        at1.create(**ATMOCK)  # will get identity 100000 = 'QXV0b21hdGlvblRhc2s6MTAwMDAw',
-        f1 = FileData({}, self._data_manager, ToshiFileObject, self._connection)
-        f1.create(**FILEMOCK)
-
-    # @unittest.skip('experimental test code')
-    def test_how_many_relations_in_390k(self):
-        def fake_relation():
-            return {'id': random.randint(int(1e5), int(1e7)), 'role': random.choice(['read'])}
-
-        MAX_RELS = int(80e3)  # 80,000
-        MAX_SIZE = 390e3  # 3000
-
-        rels = [fake_relation() for x in range(MAX_RELS)]
-        size = len(compress_string(json.dumps(rels)))
-        print(size)
-        self.assertTrue(size < MAX_SIZE)
-
-    def test_create_file_relation_added_with_compression(self):
-
-        file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCKID)
-
-        # the relation
-        link_result = self.client.execute(
-            QRY_CREATE_AT_RELATION, variable_values=dict(thing_id='QXV0b21hdGlvblRhc2s6MTAwMDAw', file_id=file_id)
-        )
-
-        print(link_result)
-        assert link_result['data']['create_file_relation']['ok'] == True
-
-        # get the file back from dyamodb
-        file = ToshiFileObject.get(FILEMOCKID)
-        print(file.object_content)
-        self.assertEqual(len(json.loads(decompress_string(file.object_content['relations']))), UNCOMPRESSED_LIMIT + 1)
-        self.assertEqual(
-            json.loads(decompress_string(file.object_content['relations']))[-1], {'id': '100000', 'role': 'read'}
-        )
-
-    def test_round_trip_file_relation_with_compression(self):
-
-        file_id = to_global_id(FILEMOCK['clazz_name'], FILEMOCKID)
-
-        link_result = self.client.execute(
-            QRY_CREATE_AT_RELATION, variable_values=dict(thing_id='QXV0b21hdGlvblRhc2s6MTAwMDAw', file_id=file_id)
-        )
-
-        file = ToshiFileObject.get(FILEMOCKID)
-        # print(file.object_content)
-        self.assertEqual(len(json.loads(decompress_string(file.object_content['relations']))), UNCOMPRESSED_LIMIT + 1)
-        self.assertEqual(
-            json.loads(decompress_string(file.object_content['relations']))[-1], {'id': '100000', 'role': 'read'}
-        )
-
-        query = (
-            '''
-            query get_file {
-              node(id: "%s") {
-                __typename
-                ... on File {
-                  file_name
-                  file_size
-                  relations {
-                    total_count
-                    edges {
-                      node {
-                        ... on FileRelation {
-                          role
-                          thing {
-                            ... on Node{
-                              id
-                              __typename
-                            }
-                          }
+FILE_WITH_RELATIONS_QUERY = """
+query GetFile($id: ID!) {
+    node(id: $id) {
+        ... on File {
+            id
+            file_name
+            relations {
+                total_count
+                edges {
+                    node {
+                        role
+                        thing {
+                            ... on AutomationTask { id }
+                            ... on GeneralTask { id }
+                            ... on RuptureGenerationTask { id }
                         }
-                      }
                     }
-                  }
                 }
-              }
-            }'''
-            % file_id
-        )
+            }
+        }
+    }
+}
+"""
 
-        file_result = self.client.execute(query)
-        print(file_result)
-        self.assertEqual(file_result['data']['node']['__typename'], "File")
-        self.assertEqual(file_result['data']['node']['relations']['total_count'], UNCOMPRESSED_LIMIT + 1)
-        self.assertEqual(
-            file_result['data']['node']['relations']['edges'][0]['node']['thing']['id'], 'QXV0b21hdGlvblRhc2s6MTAwMDAw'
+
+@pytest.fixture
+def lower_threshold(monkeypatch):
+    """Drop UNCOMPRESSED_LIMIT to 25 so threshold-crossing tests run fast."""
+    monkeypatch.setattr(dynamo, "UNCOMPRESSED_LIMIT", 25)
+    return 25
+
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
+
+
+def test_helper_round_trip():
+    """_ensure_decompressed accepts both list and compressed-string forms."""
+    relations = [{"id": f"100000abc{i:03d}", "role": "read"} for i in range(150)]
+    compressed = compress_string(json.dumps(relations))
+    assert isinstance(compressed, str)
+
+    assert dynamo._ensure_decompressed(relations) == relations
+    assert dynamo._ensure_decompressed(compressed) == relations
+    assert dynamo._ensure_decompressed(None) == []
+
+
+def test_relations_stored_as_list_under_threshold(gql_context, lower_threshold):
+    """At <UNCOMPRESSED_LIMIT relations, storage stays as a JSON list."""
+    file_result = schema.execute_sync(
+        CREATE_FILE_MUTATION,
+        variable_values={
+            "file_name": "compression_under.zip",
+            "md5_digest": "00aa",
+            "file_size": 1024,
+            "created": "2024-07-01T00:00:00Z",
+        },
+        context_value=gql_context,
+    )
+    assert file_result.errors is None, file_result.errors
+    file_gid = file_result.data["create_file"]["file_result"]["id"]
+    file_raw_id = base64.b64decode(file_gid).decode().split(":")[1]
+
+    # Add 5 relations — well below the lowered threshold of 25.
+    for _i in range(5):
+        at = schema.execute_sync(
+            CREATE_AT_MUTATION,
+            variable_values={
+                "input": {
+                    "state": "DONE",
+                    "result": "SUCCESS",
+                    "task_type": "INVERSION",
+                    "created": "2024-07-01T00:00:00Z",
+                }
+            },
+            context_value=gql_context,
         )
-        self.assertEqual(
-            file_result['data']['node']['relations']['edges'][0]['node']['thing']['__typename'], 'AutomationTask'
+        assert at.errors is None, at.errors
+        thing_gid = at.data["create_automation_task"]["task_result"]["id"]
+        rel = schema.execute_sync(
+            CREATE_FILE_RELATION_MUTATION,
+            variable_values={"thing_id": thing_gid, "file_id": file_gid, "role": "READ"},
+            context_value=gql_context,
         )
+        assert rel.errors is None, rel.errors
+
+    raw = gql_context["dynamodb"].Table("ToshiFileObject-TEST").get_item(Key={"object_id": file_raw_id})["Item"]
+    stored = json.loads(raw["object_content"])
+    assert isinstance(stored["relations"], list)
+    assert len(stored["relations"]) == 5
+
+
+def test_relations_compressed_above_threshold(gql_context, lower_threshold):
+    """Crossing UNCOMPRESSED_LIMIT switches storage to compressed-string form."""
+    file_result = schema.execute_sync(
+        CREATE_FILE_MUTATION,
+        variable_values={
+            "file_name": "compression_over.zip",
+            "md5_digest": "01bb",
+            "file_size": 1024,
+            "created": "2024-07-02T00:00:00Z",
+        },
+        context_value=gql_context,
+    )
+    assert file_result.errors is None, file_result.errors
+    file_gid = file_result.data["create_file"]["file_result"]["id"]
+    file_raw_id = base64.b64decode(file_gid).decode().split(":")[1]
+
+    # Add lower_threshold + 1 = 26 relations to cross the threshold.
+    for _i in range(lower_threshold + 1):
+        at = schema.execute_sync(
+            CREATE_AT_MUTATION,
+            variable_values={
+                "input": {
+                    "state": "DONE",
+                    "result": "SUCCESS",
+                    "task_type": "INVERSION",
+                    "created": "2024-07-02T00:00:00Z",
+                }
+            },
+            context_value=gql_context,
+        )
+        assert at.errors is None, at.errors
+        thing_gid = at.data["create_automation_task"]["task_result"]["id"]
+        rel = schema.execute_sync(
+            CREATE_FILE_RELATION_MUTATION,
+            variable_values={"thing_id": thing_gid, "file_id": file_gid, "role": "READ"},
+            context_value=gql_context,
+        )
+        assert rel.errors is None, rel.errors
+
+    raw = gql_context["dynamodb"].Table("ToshiFileObject-TEST").get_item(Key={"object_id": file_raw_id})["Item"]
+    stored = json.loads(raw["object_content"])
+    assert isinstance(stored["relations"], str), (
+        f"expected compressed-string storage above threshold, got {type(stored['relations']).__name__}"
+    )
+    # The compressed payload round-trips back to the full list.
+    decompressed = json.loads(decompress_string(stored["relations"]))
+    assert len(decompressed) == lower_threshold + 1
+
+
+def test_relations_round_trip_through_graphql(gql_context, lower_threshold):
+    """Query node(id:) on a file with compressed relations returns full count + edges."""
+    file_result = schema.execute_sync(
+        CREATE_FILE_MUTATION,
+        variable_values={
+            "file_name": "compression_roundtrip.zip",
+            "md5_digest": "02cc",
+            "file_size": 1024,
+            "created": "2024-07-03T00:00:00Z",
+        },
+        context_value=gql_context,
+    )
+    assert file_result.errors is None, file_result.errors
+    file_gid = file_result.data["create_file"]["file_result"]["id"]
+
+    thing_gids = []
+    for _i in range(lower_threshold + 5):  # 30 relations, well above threshold
+        at = schema.execute_sync(
+            CREATE_AT_MUTATION,
+            variable_values={
+                "input": {
+                    "state": "DONE",
+                    "result": "SUCCESS",
+                    "task_type": "INVERSION",
+                    "created": "2024-07-03T00:00:00Z",
+                }
+            },
+            context_value=gql_context,
+        )
+        assert at.errors is None, at.errors
+        thing_gid = at.data["create_automation_task"]["task_result"]["id"]
+        thing_gids.append(thing_gid)
+        rel = schema.execute_sync(
+            CREATE_FILE_RELATION_MUTATION,
+            variable_values={"thing_id": thing_gid, "file_id": file_gid, "role": "READ"},
+            context_value=gql_context,
+        )
+        assert rel.errors is None, rel.errors
+
+    # Query the file — node lookup should decompress transparently.
+    result = schema.execute_sync(FILE_WITH_RELATIONS_QUERY, variable_values={"id": file_gid}, context_value=gql_context)
+    assert result.errors is None, result.errors
+    node = result.data["node"]
+    assert node["file_name"] == "compression_roundtrip.zip"
+    assert node["relations"]["total_count"] == lower_threshold + 5
+
+    returned_thing_ids = {edge["node"]["thing"]["id"] for edge in node["relations"]["edges"]}
+    assert returned_thing_ids == set(thing_gids)
+
+
+def test_pre_compressed_legacy_data_reads_correctly(gql_context):
+    """A pre-existing file with relations already stored as a compressed string
+    (e.g. read from legacy production DynamoDB) must round-trip through node lookup."""
+    file_result = schema.execute_sync(
+        CREATE_FILE_MUTATION,
+        variable_values={
+            "file_name": "legacy_compressed.zip",
+            "md5_digest": "03dd",
+            "file_size": 1024,
+            "created": "2024-07-04T00:00:00Z",
+        },
+        context_value=gql_context,
+    )
+    assert file_result.errors is None, file_result.errors
+    file_gid = file_result.data["create_file"]["file_result"]["id"]
+    file_raw_id = base64.b64decode(file_gid).decode().split(":")[1]
+
+    # Directly write a compressed-string relations field — bypassing the mutation
+    # so we exercise the read-side decompression in isolation.
+    table = gql_context["dynamodb"].Table("ToshiFileObject-TEST")
+    item = table.get_item(Key={"object_id": file_raw_id})["Item"]
+    content = json.loads(item["object_content"])
+    fake_relations = [{"id": f"10000{i:03d}xyz", "role": "read"} for i in range(60)]
+    content["relations"] = compress_string(json.dumps(fake_relations))
+    table.put_item(
+        Item={
+            "object_id": file_raw_id,
+            "object_type": item["object_type"],
+            "object_content": json.dumps(content),
+        }
+    )
+
+    # Read it back via the standard get_file path used by node lookup.
+    data = dynamo.get_file(gql_context["dynamodb"], file_raw_id)
+    assert isinstance(data["relations"], list), (
+        f"get_file must decompress legacy compressed-string rows; got {type(data['relations']).__name__}"
+    )
+    assert len(data["relations"]) == 60
+
+
+def test_80k_relations_fit_under_dynamodb_limit():
+    """Ceiling check: legacy depends on 80k relations compressing under 390KB.
+    This guards against any future change to compress_string semantics (e.g.
+    swapping compression algo) that would silently shrink the headroom."""
+    relations = [{"id": f"{100_000 + i:09d}", "role": "read"} for i in range(80_000)]
+    compressed = compress_string(json.dumps(relations))
+    assert len(compressed) < 390_000, (
+        f"compressed 80k relations = {len(compressed)} bytes; expected <390KB to "
+        f"stay under DynamoDB's 400KB item-size limit"
+    )
