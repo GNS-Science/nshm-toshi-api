@@ -28,6 +28,10 @@ os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
 os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
 os.environ.setdefault("AWS_SECURITY_TOKEN", "testing")
 os.environ.setdefault("AWS_SESSION_TOKEN", "testing")
+# AuthExtension is a no-op when TESTING=1, attaching a synthetic
+# current_user with both toshi/read and toshi/write. Tests that need
+# to exercise the enforcement path override this with monkeypatch.
+os.environ.setdefault("TESTING", "1")
 
 _TABLE_NAMES = [
     f"ToshiThingObject-{STAGE}",

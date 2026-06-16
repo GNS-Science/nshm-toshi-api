@@ -19,6 +19,7 @@ from strawberry import relay
 from strawberry.relay import GlobalID
 from strawberry.schema.config import StrawberryConfig
 
+from auth import AuthExtension
 import data.search as _data_search
 from data.dynamo import es_key_for, get_object, scan_objects_paginated
 from data.s3 import scan_s3_paginated
@@ -760,4 +761,5 @@ schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
     config=StrawberryConfig(auto_camel_case=False),
+    extensions=[AuthExtension],
 )
