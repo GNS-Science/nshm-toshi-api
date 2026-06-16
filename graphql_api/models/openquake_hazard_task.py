@@ -11,12 +11,12 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_thing, get_thing, list_things, update_thing
 from graphql_api.data.models import OpenquakeHazardTaskData
 
-from .common import DateTime, EventResult, EventState, JSONString, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum, client_mutation_id_input_field
+from graphql_api.models._infra.common import DateTime, EventResult, EventState, JSONString, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum, client_mutation_id_input_field
 
-from .thing import AutomationTaskInterface, Thing
+from graphql_api.models._base.thing import AutomationTaskInterface, Thing
 
-from .inversion_solution_union import InversionSolutionUnion, resolve_task_inversion_solution
-from .relations import (
+from graphql_api.models._infra.inversion_solution_union import InversionSolutionUnion, resolve_task_inversion_solution
+from graphql_api.models.relations import (
     FileRelation,
     FileRelationsConnection,
     TaskRelationsConnection,

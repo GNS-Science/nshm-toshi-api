@@ -21,8 +21,8 @@ from strawberry.types import Info
 
 from graphql_api.data.dynamo import get_table, get_thing
 
-from .common import BigInt, DateTime, KeyValuePair, TableType
-from .relations import InversionSolutionRelations, build_file_relations_for_file
+from graphql_api.models._infra.common import BigInt, DateTime, KeyValuePair, TableType
+from graphql_api.models.relations import InversionSolutionRelations, build_file_relations_for_file
 
 # ── Lazy forward refs ─────────────────────────────────────────────────────────
 # These types are defined in modules that import *this* module (circular),
@@ -31,7 +31,7 @@ from .relations import InversionSolutionRelations, build_file_relations_for_file
 _AutomationTask = Annotated["AutomationTask", strawberry.lazy("graphql_api.models.automation_task")]
 _RuptureGenerationTask = Annotated["RuptureGenerationTask", strawberry.lazy("graphql_api.models.automation_task")]
 _LabelledTableRelation = Annotated["LabelledTableRelation", strawberry.lazy("graphql_api.models.inversion_solution")]
-_Table = Annotated["Table", strawberry.lazy("graphql_api.models.table")]
+_Table = Annotated["Table", strawberry.lazy("graphql_api.models._base.table")]
 
 # Registered once here; inversion_solution.py re-exports it via import.
 AutomationTaskUnion = Annotated[
@@ -116,7 +116,7 @@ class InversionSolutionInterface:
                     raw_id = str(t.table_id)  # type: ignore[attr-defined]
                 data = get_table(info.context["dynamodb"], raw_id)
                 if data:
-                    from graphql_api.models.table import Table  # noqa: PLC0415
+                    from graphql_api.models._base.table import Table  # noqa: PLC0415
 
                     return Table.from_dict(data)
         return None
@@ -145,7 +145,7 @@ class InversionSolutionInterface:
                     raw_id = str(t.table_id)  # type: ignore[attr-defined]
                 data = get_table(info.context["dynamodb"], raw_id)
                 if data:
-                    from graphql_api.models.table import Table  # noqa: PLC0415
+                    from graphql_api.models._base.table import Table  # noqa: PLC0415
 
                     return Table.from_dict(data)
         return None

@@ -18,7 +18,7 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_thing, get_thing, list_things, update_thing
 from graphql_api.data.models import GeneralTaskData
 
-from .common import (
+from graphql_api.models._infra.common import (
     DateTime,
     client_mutation_id_input_field,
     EventResult,
@@ -30,7 +30,7 @@ from .common import (
     TaskSubType,
     _try_enum,
 )
-from .relations import (
+from graphql_api.models.relations import (
     FileRelation,
     FileRelationsConnection,
     TaskRelationsConnection,
@@ -39,7 +39,7 @@ from .relations import (
     build_task_children,
     build_task_parents,
 )
-from .thing import Thing
+from graphql_api.models._base.thing import Thing
 
 @strawberry.type
 class GeneralTask(relay.Node, Thing):

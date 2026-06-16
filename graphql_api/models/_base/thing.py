@@ -25,8 +25,8 @@ import strawberry
 from strawberry import relay
 from strawberry.types import Info
 
-from .common import DateTime, EventResult, EventState, KeyValuePair, ModelType, TaskSubType
-from .relations import (
+from graphql_api.models._infra.common import DateTime, EventResult, EventState, KeyValuePair, ModelType, TaskSubType
+from graphql_api.models.relations import (
     FileRelation,
     FileRelationsConnection,
     TaskRelationsConnection,

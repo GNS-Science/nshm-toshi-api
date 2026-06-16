@@ -10,14 +10,14 @@ from strawberry.types import Info
 
 from graphql_api.data.dynamo import create_thing, get_file, get_thing, list_things
 from graphql_api.data.models import OpenquakeHazardConfigData
-from graphql_api.models.common import DateTime, client_mutation_id_input_field
-from graphql_api.models.file import ToshiFile
+from graphql_api.models._infra.common import DateTime, client_mutation_id_input_field
+from graphql_api.models._base.file import ToshiFile
 from graphql_api.models.inversion_solution_nrml import InversionSolutionNrml
-from graphql_api.models.thing import Thing
+from graphql_api.models._base.thing import Thing
 
 # ── OpenquakeNrmlUnion ────────────────────────────────────────────────────────
 
-_ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models.file")]
+_ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models._base.file")]
 _InversionSolutionNrml = Annotated["InversionSolutionNrml", strawberry.lazy("graphql_api.models.inversion_solution_nrml")]
 
 OpenquakeNrmlUnion = Annotated[

@@ -20,7 +20,7 @@ from graphql_api.data.dynamo import _file_table, create_file, get_file, list_fil
 from graphql_api.data.models import InversionSolutionData
 from graphql_api.data.s3 import presigned_post_for_file
 
-from .common import (
+from graphql_api.models._infra.common import (
     BigInt,
     DateTime,
     client_mutation_id_input_field,
@@ -31,15 +31,15 @@ from .common import (
     TableType,
     _try_enum,
 )
-from .file_interface import FileInterface
-from .inversion_solution_interface import (  # noqa: F401 — re-export AutomationTaskUnion for other modules
+from graphql_api.models._interfaces.file_interface import FileInterface
+from graphql_api.models._interfaces.inversion_solution_interface import (  # noqa: F401 — re-export AutomationTaskUnion for other modules
     AutomationTaskUnion,
     InversionSolutionInterface,
     _dispatch_automation_task,
 )
-from .predecessor import Predecessor, PredecessorInput  # noqa: F401 — re-exported for other models
-from .predecessors_interface import PredecessorsInterface
-from .table import Table  # noqa: F401 — re-exported; also needed for mfd_table return type
+from graphql_api.models._interfaces.predecessor import Predecessor, PredecessorInput  # noqa: F401 — re-exported for other models
+from graphql_api.models._interfaces.predecessors_interface import PredecessorsInterface
+from graphql_api.models._base.table import Table  # noqa: F401 — re-exported; also needed for mfd_table return type
 
 
 # ── LabelledTableRelation (embedded — not a relay.Node) ───────────────────────
@@ -67,7 +67,7 @@ class LabelledTableRelation:
         if not self.table_id:
             return None
         from graphql_api.data.dynamo import get_table  # noqa: PLC0415
-        from graphql_api.models.table import Table  # noqa: PLC0415
+        from graphql_api.models._base.table import Table  # noqa: PLC0415
 
         try:
             raw_id = GlobalID.from_id(str(self.table_id)).node_id

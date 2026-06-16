@@ -12,9 +12,9 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_file, get_file, list_files
 from graphql_api.data.models import SmsFileData
 
-from .common import BigInt, DateTime, KeyValuePair, SmsFileType, _try_enum, client_mutation_id_input_field
-from .file_interface import FileInterface
-from .relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
+from graphql_api.models._infra.common import BigInt, DateTime, KeyValuePair, SmsFileType, _try_enum, client_mutation_id_input_field
+from graphql_api.models._interfaces.file_interface import FileInterface
+from graphql_api.models.relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
 
 @strawberry.type

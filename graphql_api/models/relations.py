@@ -21,13 +21,13 @@ from strawberry.types import Info
 
 from graphql_api.data.dynamo import create_file_relation, create_task_relation, get_file, get_thing
 
-from .common import FileRole
-from .page_info import CompatListConnection
-from .common import client_mutation_id_input_field, FileRole
+from graphql_api.models._infra.common import FileRole
+from graphql_api.models._infra.page_info import CompatListConnection
+from graphql_api.models._infra.common import client_mutation_id_input_field, FileRole
 
 # ── Lazy forward references (break circular deps) ─────────────────────────────
 
-_ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models.file")]
+_ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models._base.file")]
 _SmsFile = Annotated["SmsFile", strawberry.lazy("graphql_api.models.sms_file")]
 _RuptureSet = Annotated["RuptureSet", strawberry.lazy("graphql_api.models.rupture_set")]
 _InversionSolution = Annotated["InversionSolution", strawberry.lazy("graphql_api.models.inversion_solution")]
@@ -225,8 +225,8 @@ class TaskRelationsConnection(CompatListConnection[TaskTaskRelation]):
 # ── Dispatch helpers ──────────────────────────────────────────────────────────
 
 
-from ._dispatch import dispatch_file as _dispatch_file
-from ._dispatch import dispatch_thing as _dispatch_thing
+from graphql_api.models._infra._dispatch import dispatch_file as _dispatch_file
+from graphql_api.models._infra._dispatch import dispatch_thing as _dispatch_thing
 
 
 # ── Input types for mutations ─────────────────────────────────────────────────

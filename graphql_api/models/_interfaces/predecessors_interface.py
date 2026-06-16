@@ -2,7 +2,7 @@
 
 import strawberry
 
-from .predecessor import Predecessor
+from graphql_api.models._interfaces.predecessor import Predecessor
 
 
 @strawberry.interface

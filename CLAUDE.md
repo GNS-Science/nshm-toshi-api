@@ -60,11 +60,15 @@ graphql_api/
   schema.py              # Root Strawberry schema — Query + Mutation, AuthExtension wired
   auth.py                # AuthExtension: toshi/read + toshi/write scope enforcement
   models/                # Strawberry types — one file per GraphQL type
-    common.py            # Shared scalars (BigInt, DateTime, JSONString) + KeyValuePair
-    file.py, thing.py    # Base interfaces + their default implementations
+    _base/               # Storage-aligned types: thing, file, table, object_identity
+    _interfaces/         # file_interface, inversion_solution_interface,
+                         # predecessors_interface, predecessor
+    _infra/              # common (scalars), page_info, _dispatch (clazz_name lookup),
+                         # inversion_solution_union
+    aggregate_inversion_solution.py, automation_task.py,
+    general_task.py, inversion_solution.py, openquake_hazard_*,
+    rupture_set.py, sms_file.py, strong_motion_station.py, ...   # Domain types
     relations.py         # FileRelation, TaskTaskRelation (uses strawberry.lazy for cycles)
-    aggregate_inversion_solution.py, automation_task.py, ...   # Domain types
-    _dispatch.py         # clazz_name → Strawberry type lookup
   data/                  # Data access layer
     dynamo.py            # DynamoDB CRUD + scan + ES indexing
     s3.py                # S3 read fallback for legacy object IDs (< FIRST_DYNAMO_ID)
