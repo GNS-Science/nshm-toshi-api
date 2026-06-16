@@ -100,7 +100,7 @@ def write_fixture(operations: list[tuple[str, str]], dest: Path, sha: str | None
 
 DO NOT EDIT BY HAND. Regenerate with:
 
-    python spike/strawberry_poc/tools/refresh_runzi_corpus.py
+    python graphql_api/tools/refresh_runzi_corpus.py
 
 Snapshot source: GNS-Science/nzshm-runzi at {sha or "(sha unknown)"}
 Extracted from: runzi/automation/toshi_api/

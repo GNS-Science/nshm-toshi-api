@@ -74,7 +74,7 @@ query GetNode($id: ID!) {
 
 def _make_rupture_generation_task(gql_context):
     """Seed a RuptureGenerationTask directly via the data layer."""
-    from data.dynamo import create_thing
+    from graphql_api.data.dynamo import create_thing
 
     data = create_thing(
         gql_context["dynamodb"],

@@ -66,8 +66,8 @@ class LabelledTableRelation:
         """
         if not self.table_id:
             return None
-        from data.dynamo import get_table  # noqa: PLC0415
-        from models.table import Table  # noqa: PLC0415
+        from graphql_api.data.dynamo import get_table  # noqa: PLC0415
+        from graphql_api.models.table import Table  # noqa: PLC0415
 
         try:
             raw_id = GlobalID.from_id(str(self.table_id)).node_id

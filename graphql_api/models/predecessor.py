@@ -64,7 +64,7 @@ class Predecessor:
         Predecessor; clients use it to selection-spread into the underlying
         file's fields without a separate node(id:) lookup.
         """
-        from data.dynamo import get_file  # noqa: PLC0415
+        from graphql_api.data.dynamo import get_file  # noqa: PLC0415
 
         try:
             raw_id = GlobalID.from_id(str(self.id)).node_id

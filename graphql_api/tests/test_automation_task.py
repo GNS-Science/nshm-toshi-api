@@ -151,7 +151,7 @@ def test_update_preserves_id(gql_context, created_task):
 
 def test_update_triggers_es_reindex(gql_context, created_task, monkeypatch):
     """Updating an AutomationTask must trigger ES re-indexing (gap 10)."""
-    from data import dynamo as dynamo_mod
+    from graphql_api.data import dynamo as dynamo_mod
 
     calls = []
 

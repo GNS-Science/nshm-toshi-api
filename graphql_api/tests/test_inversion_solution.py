@@ -111,7 +111,7 @@ query GetNode($id: ID!) {
 
 
 def _seed_rupture_gen_task(gql_context):
-    from data.dynamo import create_thing
+    from graphql_api.data.dynamo import create_thing
 
     data = create_thing(
         gql_context["dynamodb"],
@@ -124,7 +124,7 @@ def _seed_rupture_gen_task(gql_context):
 
 def _seed_toshi_file(gql_context, label="table.hdf5"):
     """Seed a plain ToshiFile to act as a table target."""
-    from data.dynamo import create_file
+    from graphql_api.data.dynamo import create_file
 
     data = create_file(
         gql_context["dynamodb"],

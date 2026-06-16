@@ -42,7 +42,7 @@ AutomationTaskUnion = Annotated[
 
 def _dispatch_automation_task(data: dict):
     """Instantiate the correct task type from a raw thing dict."""
-    from models.automation_task import AutomationTask, RuptureGenerationTask  # noqa: PLC0415
+    from graphql_api.models.automation_task import AutomationTask, RuptureGenerationTask  # noqa: PLC0415
 
     clazz = data.get("clazz_name", "")
     if clazz == "RuptureGenerationTask":
@@ -116,7 +116,7 @@ class InversionSolutionInterface:
                     raw_id = str(t.table_id)  # type: ignore[attr-defined]
                 data = get_table(info.context["dynamodb"], raw_id)
                 if data:
-                    from models.table import Table  # noqa: PLC0415
+                    from graphql_api.models.table import Table  # noqa: PLC0415
 
                     return Table.from_dict(data)
         return None
@@ -145,7 +145,7 @@ class InversionSolutionInterface:
                     raw_id = str(t.table_id)  # type: ignore[attr-defined]
                 data = get_table(info.context["dynamodb"], raw_id)
                 if data:
-                    from models.table import Table  # noqa: PLC0415
+                    from graphql_api.models.table import Table  # noqa: PLC0415
 
                     return Table.from_dict(data)
         return None

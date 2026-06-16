@@ -2,7 +2,7 @@
 
 DO NOT EDIT BY HAND. Regenerate with:
 
-    python spike/strawberry_poc/tools/refresh_runzi_corpus.py
+    python graphql_api/tools/refresh_runzi_corpus.py
 
 Snapshot source: GNS-Science/nzshm-runzi at 8f29eb7dc5476a1c236822d95df816aeab4c82b6
 Extracted from: runzi/automation/toshi_api/

@@ -93,7 +93,7 @@ mutation CreateTask($input: CreateAutomationTaskInput!) {
 
 
 def _seed_rgt(gql_context) -> str:
-    from data.dynamo import create_thing
+    from graphql_api.data.dynamo import create_thing
 
     data = create_thing(
         gql_context["dynamodb"],

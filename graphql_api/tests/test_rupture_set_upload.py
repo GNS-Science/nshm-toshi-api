@@ -48,7 +48,7 @@ query GetNode($id: ID!) {
 def rgt_id(gql_context):
     import base64
 
-    from data.dynamo import create_thing
+    from graphql_api.data.dynamo import create_thing
 
     data = create_thing(
         gql_context["dynamodb"],
@@ -108,7 +108,7 @@ def test_post_url_fields_queryable_via_node(gql_context, created_rupture_set):
 
 def test_file_url_uses_presigned_download_url(gql_context, created_rupture_set, monkeypatch):
     """file_url must delegate to presigned_download_url with (pk, file_name)."""
-    from models import file_interface as fi
+    from graphql_api.models import file_interface as fi
 
     captured = {}
 
