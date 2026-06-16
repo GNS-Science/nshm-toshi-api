@@ -254,7 +254,7 @@ def get_aws_credentials(config, access_token, profile='toshi'):
         with open(aws_credentials_path) as f:
             config_content = f.read()
 
-    import configparser
+    import configparser  # noqa: PLC0415
 
     parser = configparser.ConfigParser()
     parser.read_string(config_content)

@@ -45,9 +45,7 @@ class ObjectIdentitiesPageInfo:
 class ObjectIdentitiesConnection:
     edges: list[ObjectIdentitiesEdge | None] = strawberry.field(default_factory=list)
     # Modern Relay-spec camelCase (preferred)
-    page_info: ObjectIdentitiesPageInfo = strawberry.field(
-        name="pageInfo", default_factory=ObjectIdentitiesPageInfo
-    )
+    page_info: ObjectIdentitiesPageInfo = strawberry.field(name="pageInfo", default_factory=ObjectIdentitiesPageInfo)
 
     @strawberry.field(
         name="page_info",

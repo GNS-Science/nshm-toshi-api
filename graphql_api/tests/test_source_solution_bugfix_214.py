@@ -15,7 +15,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_AT = """
 mutation ($created: DateTime!) {
   create_automation_task(input: {
@@ -151,9 +150,7 @@ def test_scaled_source_solution_dispatches_to_time_dependent_on_create(chain):
 
 def test_scaled_source_solution_dispatches_to_time_dependent_via_node_lookup(chain, gql_context):
     """Same assertion via a node lookup — separate code path (resolve_node)."""
-    res = schema.execute_sync(
-        QUERY_SCALED_NODE, variable_values={"id": chain["scaled_id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(QUERY_SCALED_NODE, variable_values={"id": chain["scaled_id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     ss = res.data["node"]["source_solution"]
     assert ss["__typename"] == "TimeDependentInversionSolution"

@@ -17,7 +17,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_GT = """
 mutation new_gt ($created: DateTime!) {
   create_general_task(input:{
@@ -115,9 +114,7 @@ query get_task ($id: ID!) {
 def seeded(gql_context):
     created = dt.datetime.now(tzutc()).isoformat()
 
-    gt_res = schema.execute_sync(
-        CREATE_GT, variable_values={"created": created}, context_value=gql_context
-    )
+    gt_res = schema.execute_sync(CREATE_GT, variable_values={"created": created}, context_value=gql_context)
     assert gt_res.errors is None, gt_res.errors
     gt_id = gt_res.data["create_general_task"]["general_task"]["id"]
 
@@ -152,9 +149,7 @@ def test_at_parents_connection_resolves_general_task(seeded, gql_context):
     """The #322-renamed Connection field `parents { edges { node { parent } } }`
     on AutomationTask resolves back to the seeded GeneralTask.
     """
-    res = schema.execute_sync(
-        QUERY_AT_PARENT, variable_values={"id": seeded["at_id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(QUERY_AT_PARENT, variable_values={"id": seeded["at_id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     node = res.data["node"]
     assert node["__typename"] == "AutomationTask"
@@ -170,9 +165,7 @@ def test_at_arguments_input_list_nullability(seeded, gql_context):
     """The arguments list field accepts the legacy [KeyValuePairInput] shape.
     Verifies #322's `list[KeyValuePairInput | None]` SDL emission.
     """
-    res = schema.execute_sync(
-        QUERY_AT_PARENT, variable_values={"id": seeded["at_id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(QUERY_AT_PARENT, variable_values={"id": seeded["at_id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     # Argument list itself isn't reselected in this query; assert via a fresh node lookup.
     Q = """

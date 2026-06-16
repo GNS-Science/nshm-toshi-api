@@ -16,7 +16,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_AT_AGGREGATE = """
 mutation ($created: DateTime!) {
   create_automation_task(input: {
@@ -162,9 +161,7 @@ def scenario(gql_context):
 
 def test_files_resolves_aggregate_inversion_solution(scenario, gql_context):
     """The FileUnion must dispatch to AggregateInversionSolution typename."""
-    res = schema.execute_sync(
-        QUERY_AT_FILES, variable_values={"id": scenario["at_id"]}, context_value=gql_context
-    )
+    res = schema.execute_sync(QUERY_AT_FILES, variable_values={"id": scenario["at_id"]}, context_value=gql_context)
     assert res.errors is None, res.errors
     node = res.data["node"]
     assert node["files"]["total_count"] == 1

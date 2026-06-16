@@ -83,11 +83,11 @@ def _seed_automation_task(gql_context) -> str:
         gql_context["dynamodb"],
         "AutomationTask",
         {
-                "state": "done",
-                "result": "success",
-                "task_type": "time_dependent_solution",
-                "created": "2024-01-01T00:00:00Z",
-            },
+            "state": "done",
+            "result": "success",
+            "task_type": "time_dependent_solution",
+            "created": "2024-01-01T00:00:00Z",
+        },
     )
     return base64.b64encode(f"AutomationTask:{data['object_id']}".encode()).decode()
 

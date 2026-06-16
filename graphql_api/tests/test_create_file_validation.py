@@ -31,11 +31,11 @@ def test_create_file_with_int_file_size(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "small.zip",
-                "md5_digest": "00",
-                "file_size": 1024,
-                "created": "2024-05-01T00:00:00Z",
-            },
+            "file_name": "small.zip",
+            "md5_digest": "00",
+            "file_size": 1024,
+            "created": "2024-05-01T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
@@ -47,11 +47,11 @@ def test_create_file_with_max_int32_file_size(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "near_max.zip",
-                "md5_digest": "01a",
-                "file_size": MAX_INT32,
-                "created": "2024-05-01T00:00:00Z",
-            },
+            "file_name": "near_max.zip",
+            "md5_digest": "01a",
+            "file_size": MAX_INT32,
+            "created": "2024-05-01T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
@@ -64,11 +64,11 @@ def test_create_file_with_large_file_size_bigint(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "big.zip",
-                "md5_digest": "01",
-                "file_size": big,
-                "created": "2024-05-01T00:00:00Z",
-            },
+            "file_name": "big.zip",
+            "md5_digest": "01",
+            "file_size": big,
+            "created": "2024-05-01T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert result.errors is None, result.errors
@@ -80,11 +80,11 @@ def test_create_file_rejects_string_file_size(gql_context):
     result = schema.execute_sync(
         CREATE_FILE_MUTATION,
         variable_values={
-                "file_name": "bad.zip",
-                "md5_digest": "02",
-                "file_size": "not-a-number",
-                "created": "2024-05-01T00:00:00Z",
-            },
+            "file_name": "bad.zip",
+            "md5_digest": "02",
+            "file_size": "not-a-number",
+            "created": "2024-05-01T00:00:00Z",
+        },
         context_value=gql_context,
     )
     assert result.errors is not None

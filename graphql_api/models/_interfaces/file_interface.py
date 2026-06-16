@@ -6,7 +6,6 @@ import strawberry
 from strawberry.types import Info
 
 from graphql_api.data.s3 import presigned_download_url
-
 from graphql_api.models._infra.common import BigInt, DateTime, JSONString, KeyValuePair
 
 

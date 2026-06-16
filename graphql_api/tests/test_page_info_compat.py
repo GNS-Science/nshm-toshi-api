@@ -12,7 +12,6 @@ import pytest
 
 from graphql_api.schema import schema
 
-
 CREATE_TASK_MUTATION = """
 mutation CreateTask($input: CreateGeneralTaskInput!) {
     create_general_task(input: $input) { general_task { id } }

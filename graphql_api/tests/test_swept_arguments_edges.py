@@ -18,11 +18,9 @@ a vague "the swept_args got weird" report.
 
 import datetime as dt
 
-import pytest
 from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
-
 
 CREATE_GT = """
 mutation ($created: DateTime!, $argument_lists: [KeyValueListPairInput]) {

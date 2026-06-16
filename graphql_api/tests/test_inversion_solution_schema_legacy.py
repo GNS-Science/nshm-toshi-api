@@ -17,7 +17,6 @@ from dateutil.tz import tzutc
 
 from graphql_api.schema import schema
 
-
 CREATE_TABLE = """
 mutation ($name: String, $object_id: ID!, $rows: [[String]], $column_headers: [String], $column_types: [RowItemType]) {
   create_table(input: {

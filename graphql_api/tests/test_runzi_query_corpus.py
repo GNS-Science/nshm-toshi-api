@@ -39,7 +39,6 @@ from graphql import parse, validate
 
 from graphql_api.schema import schema
 
-
 # `tests/` is not a Python package (adding an __init__.py here breaks the
 # rest of the suite, which relies on sys.path-based imports). Load the
 # fixture by file path instead.
@@ -92,10 +91,7 @@ def test_runzi_query_validates_against_poc(origin, query):
     document = parse(query)
     errors = validate(schema._schema, document)
     # Strip out errors that match runzi-own bugs (see _RUNZI_KNOWN_BAD).
-    real_errors = [
-        e for e in errors
-        if not any(known in e.message for known in _RUNZI_KNOWN_BAD)
-    ]
+    real_errors = [e for e in errors if not any(known in e.message for known in _RUNZI_KNOWN_BAD)]
     assert not real_errors, (
         f"{origin}\n"
         + "\n".join(f"  - {e.message}" for e in real_errors)

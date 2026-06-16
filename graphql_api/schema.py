@@ -19,11 +19,27 @@ from strawberry import relay
 from strawberry.relay import GlobalID
 from strawberry.schema.config import StrawberryConfig
 
-from graphql_api.auth import AuthExtension
 import graphql_api.data.search as _data_search
+from graphql_api.auth import AuthExtension
 from graphql_api.data.dynamo import es_key_for, get_object, scan_objects_paginated
 from graphql_api.data.s3 import scan_s3_paginated
 from graphql_api.data.search import search as es_search
+from graphql_api.models._base.file import CreateFileInput, ToshiFile, mutate_create_file, resolve_files
+from graphql_api.models._base.object_identity import (
+    ObjectIdentitiesConnection,
+    decode_cursor,
+    make_object_identities_connection,
+)
+from graphql_api.models._base.table import CreateTableInput, Table, mutate_create_table
+from graphql_api.models._infra.common import (
+    BigInt,
+    DateTime,
+    FileRole,
+    KeyValuePairInput,
+    client_mutation_id_payload_field,
+)
+from graphql_api.models._infra.page_info import CompatListConnection
+from graphql_api.models._interfaces.predecessor import PredecessorInput
 from graphql_api.models.aggregate_inversion_solution import (
     AggregateInversionSolution,
     CreateAggregateInversionSolutionInput,
@@ -42,15 +58,6 @@ from graphql_api.models.automation_task import (
     resolve_automation_tasks,
     resolve_rupture_generation_tasks,
 )
-from graphql_api.models._infra.common import (
-    BigInt,
-    DateTime,
-    FileRole,
-    KeyValuePairInput,
-    client_mutation_id_payload_field,
-)
-from graphql_api.models._base.file import CreateFileInput, ToshiFile, mutate_create_file, resolve_files
-from graphql_api.models._interfaces.predecessor import PredecessorInput
 from graphql_api.models.general_task import (
     CreateGeneralTaskInput,
     GeneralTask,
@@ -73,11 +80,6 @@ from graphql_api.models.inversion_solution_nrml import (
     mutate_create_inversion_solution_nrml,
     resolve_inversion_solution_nrmls,
 )
-from graphql_api.models._base.object_identity import (
-    ObjectIdentitiesConnection,
-    decode_cursor,
-    make_object_identities_connection,
-)
 from graphql_api.models.openquake_hazard_config import (
     CreateOpenquakeHazardConfigInput,
     OpenquakeHazardConfig,
@@ -98,7 +100,6 @@ from graphql_api.models.openquake_hazard_task import (
     mutate_update_openquake_hazard_task,
     resolve_openquake_hazard_tasks,
 )
-from graphql_api.models._infra.page_info import CompatListConnection
 from graphql_api.models.relations import (
     CreateFileRelationInput,
     CreateTaskRelationInput,
@@ -126,7 +127,6 @@ from graphql_api.models.strong_motion_station import (
     mutate_create_strong_motion_station,
     resolve_strong_motion_stations,
 )
-from graphql_api.models._base.table import CreateTableInput, Table, mutate_create_table
 from graphql_api.models.time_dependent_inversion_solution import (
     CreateTimeDependentInversionSolutionInput,
     TimeDependentInversionSolution,
@@ -333,9 +333,7 @@ class CreateOpenquakeHazardTaskPayload:
     ok: bool | None = None
     # Field name matches legacy SDL — `openquake_hazard_task`, not the
     # POC-original `task_result` (chris's audit Problem 2 #1).
-    openquake_hazard_task: OpenquakeHazardTask | None = strawberry.field(
-        default=None, name="openquake_hazard_task"
-    )
+    openquake_hazard_task: OpenquakeHazardTask | None = strawberry.field(default=None, name="openquake_hazard_task")
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
 
@@ -344,9 +342,7 @@ class UpdateOpenquakeHazardTaskPayload:
     ok: bool | None = None
     # Legacy uses `openquake_hazard_task` not `task_result` on the OQ task
     # payloads (chris's Problem 2 #1).
-    openquake_hazard_task: OpenquakeHazardTask | None = strawberry.field(
-        default=None, name="openquake_hazard_task"
-    )
+    openquake_hazard_task: OpenquakeHazardTask | None = strawberry.field(default=None, name="openquake_hazard_task")
     client_mutation_id: str | None = client_mutation_id_payload_field()
 
 

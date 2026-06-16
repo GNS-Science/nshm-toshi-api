@@ -147,13 +147,8 @@ class AuthExtension(SchemaExtension):
             logger.warning("Access denied for %s: missing %s", user_id, SCOPE_READ)
             raise GraphQLError(f"Missing required scope: {SCOPE_READ}")
 
-        if (
-            self.execution_context.operation_type == OperationType.MUTATION
-            and SCOPE_WRITE not in scopes
-        ):
-            logger.warning(
-                "Mutation blocked for %s: missing %s", user_id, SCOPE_WRITE
-            )
+        if self.execution_context.operation_type == OperationType.MUTATION and SCOPE_WRITE not in scopes:
+            logger.warning("Mutation blocked for %s: missing %s", user_id, SCOPE_WRITE)
             raise GraphQLError(f"GraphQL mutations require scope: {SCOPE_WRITE}")
 
         yield

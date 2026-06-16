@@ -10,11 +10,19 @@ from strawberry.types import Info
 
 from graphql_api.data.dynamo import create_thing, get_thing, list_things, update_thing
 from graphql_api.data.models import OpenquakeHazardTaskData
-
-from graphql_api.models._infra.common import DateTime, EventResult, EventState, JSONString, KeyValuePair, KeyValuePairInput, ModelType, TaskSubType, _try_enum, client_mutation_id_input_field
-
 from graphql_api.models._base.thing import AutomationTaskInterface, Thing
-
+from graphql_api.models._infra.common import (
+    DateTime,
+    EventResult,
+    EventState,
+    JSONString,
+    KeyValuePair,
+    KeyValuePairInput,
+    ModelType,
+    TaskSubType,
+    _try_enum,
+    client_mutation_id_input_field,
+)
 from graphql_api.models._infra.inversion_solution_union import InversionSolutionUnion, resolve_task_inversion_solution
 from graphql_api.models.relations import (
     FileRelation,
@@ -26,8 +34,13 @@ from graphql_api.models.relations import (
     build_task_parents,
 )
 
-_OpenquakeHazardSolution = Annotated["OpenquakeHazardSolution", strawberry.lazy("graphql_api.models.openquake_hazard_solution")]
-_OpenquakeHazardConfig = Annotated["OpenquakeHazardConfig", strawberry.lazy("graphql_api.models.openquake_hazard_config")]
+_OpenquakeHazardSolution = Annotated[
+    "OpenquakeHazardSolution", strawberry.lazy("graphql_api.models.openquake_hazard_solution")
+]
+_OpenquakeHazardConfig = Annotated[
+    "OpenquakeHazardConfig", strawberry.lazy("graphql_api.models.openquake_hazard_config")
+]
+
 
 @strawberry.type
 class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
@@ -126,6 +139,7 @@ class OpenquakeHazardTask(relay.Node, Thing, AutomationTaskInterface):
             config_raw_id=d.config,
         )
 
+
 @strawberry.input
 class CreateOpenquakeHazardTaskInput:
     state: EventState
@@ -144,6 +158,7 @@ class CreateOpenquakeHazardTaskInput:
     hazard_solution: strawberry.ID | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
+
 @strawberry.input
 class UpdateOpenquakeHazardTaskInput:
     task_id: strawberry.ID
@@ -158,9 +173,11 @@ class UpdateOpenquakeHazardTaskInput:
     executor: str | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
+
 def resolve_openquake_hazard_tasks(info: Info) -> Iterable[OpenquakeHazardTask]:
     items = list_things(info.context["dynamodb"], "OpenquakeHazardTask")
     return [OpenquakeHazardTask.from_dict(item) for item in items]
+
 
 def mutate_create_openquake_hazard_task(info: Info, input: CreateOpenquakeHazardTaskInput) -> OpenquakeHazardTask:
     payload = {
@@ -181,6 +198,7 @@ def mutate_create_openquake_hazard_task(info: Info, input: CreateOpenquakeHazard
     }
     data = create_thing(info.context["dynamodb"], "OpenquakeHazardTask", payload)
     return OpenquakeHazardTask.from_dict(data)
+
 
 def mutate_update_openquake_hazard_task(
     info: Info, input: UpdateOpenquakeHazardTaskInput

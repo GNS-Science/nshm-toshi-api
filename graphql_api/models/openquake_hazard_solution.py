@@ -11,16 +11,21 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import create_thing, get_file, get_thing, list_things
 from graphql_api.data.models import OpenquakeHazardSolutionData
 from graphql_api.models._base.file import ToshiFile
-from graphql_api.models.openquake_hazard_task import OpenquakeHazardTask
-
-from graphql_api.models._infra.common import DateTime, KeyValuePair, KeyValuePairInput, OpenquakeTaskType, client_mutation_id_input_field
-
 from graphql_api.models._base.thing import Thing
+from graphql_api.models._infra.common import (
+    DateTime,
+    KeyValuePair,
+    KeyValuePairInput,
+    OpenquakeTaskType,
+    client_mutation_id_input_field,
+)
 from graphql_api.models._interfaces.predecessor import PredecessorInput
 from graphql_api.models._interfaces.predecessors_interface import PredecessorsInterface
+from graphql_api.models.openquake_hazard_task import OpenquakeHazardTask
 
 _OpenquakeHazardTask = Annotated["OpenquakeHazardTask", strawberry.lazy("graphql_api.models.openquake_hazard_task")]
 _ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models._base.file")]
+
 
 @strawberry.type
 class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):
@@ -94,6 +99,7 @@ class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):
             predecessors_raw=[p.model_dump() for p in d.predecessors] if d.predecessors else None,
         )
 
+
 @strawberry.input
 class CreateOpenquakeHazardSolutionInput:
     produced_by: strawberry.ID
@@ -107,9 +113,11 @@ class CreateOpenquakeHazardSolutionInput:
     predecessors: list[PredecessorInput | None] | None = None
     client_mutation_id: str | None = client_mutation_id_input_field()
 
+
 def resolve_openquake_hazard_solutions(info: Info) -> Iterable[OpenquakeHazardSolution]:
     items = list_things(info.context["dynamodb"], "OpenquakeHazardSolution")
     return [OpenquakeHazardSolution.from_dict(item) for item in items]
+
 
 def mutate_create_openquake_hazard_solution(
     info: Info, input: CreateOpenquakeHazardSolutionInput

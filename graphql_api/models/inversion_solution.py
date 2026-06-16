@@ -19,17 +19,17 @@ from strawberry.types import Info
 from graphql_api.data.dynamo import _file_table, create_file, get_file, list_files
 from graphql_api.data.models import InversionSolutionData
 from graphql_api.data.s3 import presigned_post_for_file
-
+from graphql_api.models._base.table import Table  # noqa: F401 — re-exported; also needed for mfd_table return type
 from graphql_api.models._infra.common import (
     BigInt,
     DateTime,
-    client_mutation_id_input_field,
     KeyValueListPair,
     KeyValueListPairInput,
     KeyValuePair,
     KeyValuePairInput,
     TableType,
     _try_enum,
+    client_mutation_id_input_field,
 )
 from graphql_api.models._interfaces.file_interface import FileInterface
 from graphql_api.models._interfaces.inversion_solution_interface import (  # noqa: F401 — re-export AutomationTaskUnion for other modules
@@ -37,10 +37,11 @@ from graphql_api.models._interfaces.inversion_solution_interface import (  # noq
     InversionSolutionInterface,
     _dispatch_automation_task,
 )
-from graphql_api.models._interfaces.predecessor import Predecessor, PredecessorInput  # noqa: F401 — re-exported for other models
+from graphql_api.models._interfaces.predecessor import (  # noqa: F401 — re-exported for other models
+    Predecessor,
+    PredecessorInput,
+)
 from graphql_api.models._interfaces.predecessors_interface import PredecessorsInterface
-from graphql_api.models._base.table import Table  # noqa: F401 — re-exported; also needed for mfd_table return type
-
 
 # ── LabelledTableRelation (embedded — not a relay.Node) ───────────────────────
 

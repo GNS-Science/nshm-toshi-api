@@ -7,7 +7,6 @@ echoed back unchanged in the payload. Modern Relay 2 / Apollo clients can
 omit it entirely.
 """
 
-
 from graphql_api.schema import schema
 
 CREATE_WITH_CMI_MUTATION = """
@@ -117,9 +116,7 @@ def test_sdl_has_client_mutation_id_on_every_mutation_input():
 
     inputs = re.findall(r"input ((?:Create|Update|Append)\w+Input) \{[^}]+\}", sdl, re.DOTALL)
     assert len(inputs) > 15, f"expected many inputs, found {len(inputs)}"
-    blocks = re.findall(
-        r"input (?:Create|Update|Append)\w+Input \{[^}]+\}", sdl, re.DOTALL
-    )
+    blocks = re.findall(r"input (?:Create|Update|Append)\w+Input \{[^}]+\}", sdl, re.DOTALL)
     for block in blocks:
         assert "clientMutationId: String" in block, f"missing clientMutationId in:\n{block}"
 
@@ -131,9 +128,7 @@ def test_sdl_has_client_mutation_id_on_every_mutation_payload():
 
     payloads = re.findall(r"type ((?:Create|Update|Append)\w+Payload) \{[^}]+\}", sdl, re.DOTALL)
     assert len(payloads) > 10, f"expected many payloads, found {len(payloads)}"
-    blocks = re.findall(
-        r"type (?:Create|Update|Append)\w+Payload \{[^}]+\}", sdl, re.DOTALL
-    )
+    blocks = re.findall(r"type (?:Create|Update|Append)\w+Payload \{[^}]+\}", sdl, re.DOTALL)
     for block in blocks:
         assert "clientMutationId: String" in block, f"missing clientMutationId in:\n{block}"
 
