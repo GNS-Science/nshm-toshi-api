@@ -24,6 +24,9 @@ from graphql_api.models._interfaces.predecessors_interface import PredecessorsIn
 from graphql_api.models.openquake_hazard_task import OpenquakeHazardTask
 
 _OpenquakeHazardTask = Annotated["OpenquakeHazardTask", strawberry.lazy("graphql_api.models.openquake_hazard_task")]
+_OpenquakeHazardConfig = Annotated[
+    "OpenquakeHazardConfig", strawberry.lazy("graphql_api.models.openquake_hazard_config")
+]
 _ToshiFile = Annotated["ToshiFile", strawberry.lazy("graphql_api.models._base.file")]
 
 
@@ -39,6 +42,8 @@ class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):
     csv_archive_raw_id: strawberry.Private[str | None] = None
     hdf5_archive_raw_id: strawberry.Private[str | None] = None
     task_args_raw_id: strawberry.Private[str | None] = None
+    config_raw_id: strawberry.Private[str | None] = None
+    modified_config_raw_id: strawberry.Private[str | None] = None
     predecessors_raw: strawberry.Private[list | None] = None
 
     def _resolve_file(self, info: Info, raw_id: str | None):
@@ -74,6 +79,23 @@ class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):
     def task_args(self, info: Info) -> _ToshiFile | None:
         return self._resolve_file(info, self.task_args_raw_id)
 
+    @strawberry.field(deprecation_reason="We no longer store this value.")
+    def config(self, info: Info) -> _OpenquakeHazardConfig | None:
+        if not self.config_raw_id:
+            return None
+        from graphql_api.models.openquake_hazard_config import OpenquakeHazardConfig  # noqa: PLC0415
+
+        try:
+            raw_id = GlobalID.from_id(self.config_raw_id).node_id
+        except Exception:
+            raw_id = self.config_raw_id
+        data = get_thing(info.context["dynamodb"], raw_id)
+        return OpenquakeHazardConfig.from_dict(data) if data else None
+
+    @strawberry.field(deprecation_reason="We no longer use this field.")
+    def modified_config(self, info: Info) -> _ToshiFile | None:
+        return self._resolve_file(info, self.modified_config_raw_id)
+
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["OpenquakeHazardSolution"]:
         data = get_thing(info.context["dynamodb"], node_id)
@@ -96,6 +118,8 @@ class OpenquakeHazardSolution(relay.Node, PredecessorsInterface, Thing):
             csv_archive_raw_id=d.csv_archive,
             hdf5_archive_raw_id=d.hdf5_archive,
             task_args_raw_id=d.task_args,
+            config_raw_id=d.config,
+            modified_config_raw_id=d.modified_config,
             predecessors_raw=[p.model_dump() for p in d.predecessors] if d.predecessors else None,
         )
 
