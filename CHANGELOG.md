@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+ - deps: patch (17 pkgs), minor (27 pkgs)
+
 ## [0.7.0] - 2026-05-15
 
 ### Added
