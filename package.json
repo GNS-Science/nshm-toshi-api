@@ -46,6 +46,7 @@
     "minimatch": "9.0.7",
     "@koa/router": "15.6.0",
     "fast-xml-parser": "5.8.0",
-    "glob": "13.0.6"
+    "glob": "13.0.6",
+    "tar": "7.5.16"
   }
 }
