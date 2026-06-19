@@ -156,6 +156,13 @@ class CreateOpenquakeHazardTaskInput:
     gmcm_logic_tree: JSONString | None = None
     openquake_config: JSONString | None = None
     hazard_solution: strawberry.ID | None = None
+    # Legacy parity: deprecated input field, kept so old clients writing
+    # tasks with a config GlobalID still round-trip. Persisted on the
+    # record.
+    config: strawberry.ID | None = strawberry.field(
+        default=None,
+        deprecation_reason="We no longer store this config",
+    )
     client_mutation_id: str | None = client_mutation_id_input_field()
 
 
@@ -195,6 +202,7 @@ def mutate_create_openquake_hazard_task(info: Info, input: CreateOpenquakeHazard
         "gmcm_logic_tree": input.gmcm_logic_tree,
         "openquake_config": input.openquake_config,
         "hazard_solution": str(input.hazard_solution) if input.hazard_solution else None,
+        "config": str(input.config) if input.config else None,
     }
     data = create_thing(info.context["dynamodb"], "OpenquakeHazardTask", payload)
     return OpenquakeHazardTask.from_dict(data)
