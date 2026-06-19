@@ -194,6 +194,11 @@ class OpenquakeHazardSolutionData(BaseModel):
     metrics: list[KVPairModel] | None = None
     meta: list[KVPairModel] | None = None
     predecessors: list[PredecessorEntry] | None = None
+    # Legacy parity: deprecated fields still queried by older clients (e.g.
+    # toshi-ui OpenquakeHazardSolutionDetailTabQuery). Present on records
+    # created before deprecation. Surfaced read-only for compatibility.
+    config: str | None = None  # relay GlobalID → OpenquakeHazardConfig
+    modified_config: str | None = None  # relay GlobalID → File
     files: list[dict] | None = None
     parents: list[dict] | None = None
     children: list[dict] | None = None

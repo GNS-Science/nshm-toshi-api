@@ -223,6 +223,35 @@ def test_oq_solution_node_lookup(gql_context, created_oq_solution, created_oq_ta
     assert node["produced_by"]["id"] == created_oq_task["id"]
 
 
+def test_oq_solution_legacy_deprecated_fields_resolve(gql_context, created_oq_solution):
+    """Parity gap caught in prod: legacy `config` + `modified_config` fields
+    on OpenquakeHazardSolution must be queryable even though they're deprecated.
+    Older clients (e.g. toshi-ui OpenquakeHazardSolutionDetailTabQuery) hit
+    these as part of a larger selection; missing them returns a validation
+    error that nulls the whole node payload."""
+    result = schema.execute_sync(
+        """
+        query($id: ID!) {
+            node(id: $id) {
+                ... on OpenquakeHazardSolution {
+                    id
+                    config { id }
+                    modified_config { id file_name }
+                }
+            }
+        }
+        """,
+        variable_values={"id": created_oq_solution["id"]},
+        context_value=gql_context,
+    )
+    assert result.errors is None, result.errors
+    node = result.data["node"]
+    assert node["id"] == created_oq_solution["id"]
+    # Fixture record has neither field set — they resolve to null without error.
+    assert node["config"] is None
+    assert node["modified_config"] is None
+
+
 # ── update_openquake_hazard_task tests ────────────────────────────────────────
 
 
