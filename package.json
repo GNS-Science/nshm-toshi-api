@@ -26,10 +26,16 @@
   "homepage": "https://github.com/GNS-Science/nshm-toshi-api#readme",
   "devDependencies": {
     "serverless": "^4.29.0",
-    "serverless-dynamodb": "^0.2.56",
+    "serverless-dynamodb": "0.2.58",
     "serverless-plugin-ifelse": "^1.0.7",
     "serverless-plugin-warmup": "^8.3.0",
     "serverless-s3-local": "^0.8.5"
   },
-  "packageManager": "yarn@4.16.0"
+  "packageManager": "yarn@4.16.0",
+  "resolutions": {
+    "@hapi/content": "6.0.2",
+    "@hapi/wreck": "18.1.2",
+    "dicer": "0.3.1",
+    "velocityjs": "2.1.6"
+  }
 }
