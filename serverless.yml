@@ -486,6 +486,9 @@ resources:
                 - batch:DeleteComputeEnvironment
                 - batch:RegisterJobDefinition
                 - batch:DeregisterJobDefinition
+                - batch:CreateJobQueue
+                - batch:UpdateJobQueue
+                - batch:DeleteJobQueue
               Resource: '*'
             - Sid: ECRAdmin
               Effect: Allow
@@ -498,6 +501,18 @@ resources:
                 - ecr:BatchDeleteImage
               Resource:
                 - arn:aws:ecr:*:*:repository/nshm-runzi-*
+            # Terraform state for terraform/batch/ in nzshm-runzi (S3 backend +
+            # native S3 locking, which writes/deletes a "<key>.tflock" object).
+            - Sid: TerraformStateS3
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+                - s3:DeleteObject
+                - s3:ListBucket
+              Resource:
+                - arn:aws:s3:::nzshm22-runzi-tfstate
+                - arn:aws:s3:::nzshm22-runzi-tfstate/*
 
     # ── IAM roles (assumed via Identity Pool after Cognito login) ──────────────
     # local tier — base permissions only (ECR pull, S3 read/write).
