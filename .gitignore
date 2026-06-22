@@ -107,3 +107,4 @@ package-lock.json
 auth/test_users.json
 .llm/.session
 auth/auth_config.json
+.yarn/install-state.gz
