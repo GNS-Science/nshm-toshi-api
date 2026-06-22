@@ -79,7 +79,7 @@ Capture the current behavioural contract so any regression during migration is c
 ### 🚧 Traps
 
 - **SDL parity ≠ runtime parity.** Tools like `graphql-inspector diff` only compare types and fields. They miss: input field defaults, `@deprecated` directives (and the human reason text), behavioural changes inside resolvers (e.g. legacy returning `null` vs new raising). The query corpus catches the runtime gap.
-- **Don't rely on a live registry for the corpus.** Vendor the queries; live-fetch at test time means the migration's deploy depends on a third-party service being up.
+- **Vendor the client queries — don't fetch them from the client at test time.** "Vendoring" means copying the client's query files into this repo (e.g. `tests/fixtures/runzi/*.graphql`) and committing them. The queries become a snapshot you control: CI runs against the same input every time, `git log` shows when they changed, and refreshing them is an explicit PR.
 
 ---
 
