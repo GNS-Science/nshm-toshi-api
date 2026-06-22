@@ -44,8 +44,7 @@
     "brace-expansion": "2.0.3",
     "koa": "2.16.4",
     "minimatch": "9.0.7",
-    "@koa/router": "15.6.0",
-    "fast-xml-parser": "5.8.0",
+    "s3rver/fast-xml-parser": "3.21.1",
     "glob": "13.0.6",
     "tar": "7.5.16",
     "uuid": "14.0.0"
