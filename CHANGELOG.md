@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+ - deps (Python/uv): patch (17 pkgs), minor (27 pkgs)
+ - deps (JS/yarn): patch (5 pkgs; skipped form-data 4.0.6 — age-gated), minor (6 pkgs), major: @koa/router 9→15, brace-expansion 2.0.2→2.0.3, fast-xml-parser 3→5, glob 10→13, koa 2.16.2→2.16.4, minimatch 9.0.5→9.0.7, tar 6→7, uuid 9→14 (all transitive via resolutions)
+
 ## [0.7.0] - 2026-05-15
 
 ### Added
