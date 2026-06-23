@@ -57,7 +57,7 @@ Capture the current behavioural contract so any regression during migration is c
 2. **Vendor a client query corpus.** Collect real production queries — from `runzi`, the web frontends, any internal scripts — into the repo as a fixture set:
    - See `graphql_api/tools/refresh_runzi_corpus.py` in toshi-api for the pattern.
    - One file per client; each query labelled with the calling component.
-   - Vendor real query text, NOT live-fetched at test time — live-fetching introduces a deploy-time dependency that broke us once (PR #325).
+   - Vendor real query text, NOT live-fetched at test time — live-fetching introduces a deploy-time dependency that broke us once ([PR #325](https://github.com/GNS-Science/nshm-toshi-api/pull/325)).
    - Wire these into a CI job that replays them against the test-stage deploy.
 
 3. **Inventory the current `serverless.yml`.** Record in a markdown scratchpad:
@@ -90,7 +90,7 @@ Stand up the new Strawberry/FastAPI scaffold alongside (or replacing) the legacy
 
 ### Steps
 
-1. **Consolidate Python deps under `uv`.** Drop `poetry`:
+1. **Consolidate Python deps under `uv`.** Drop `poetry`. The dockerbash `poetry2uv` skill automates this end-to-end — the poetry→uv conversion, the npm age-gate setup, documentation updates, and the move to `ruff`. Run it first; the steps below are then a verification checklist rather than manual work:
    - Delete `poetry.lock`, fold any `setup.cfg` settings into `pyproject.toml`
    - Generate `uv.lock`: `uv lock`
    - Sync: `uv sync`
@@ -260,7 +260,7 @@ config: strawberry.ID | None = strawberry.field(
   - `importlib.import_module("path.to.module")`
   - `unittest.mock.patch("path.to.module.attr")`
 
-  All hold module paths as strings. A `sed -E '^from data\.X'` will not touch them. Use an AST-aware refactor tool, or grep for the bare string segment (`"data\."`) and inspect each hit.
+  All hold module paths as strings. A `sed -E '^from data\.X'` will not touch them. Use an AST-aware refactor tool (e.g. `ast-grep`, `comby`, or `libcst`), or grep for the bare string segment (`"data\."`) and inspect each hit.
 
 - **Indented inline imports** like `    from data.foo import bar  # noqa: PLC0415` are common (lazy imports for cycle-breaking). Anchor-only regex (`^from`) misses them. Use `\s+from` or unanchored.
 
