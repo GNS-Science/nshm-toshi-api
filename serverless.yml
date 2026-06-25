@@ -121,6 +121,18 @@ custom:
         Exclude:
           - resourcee.Resources.ElasticSearchInstance
           - provider.iamrolestatements.1
+          # Migration deploy #2 (test only): the 6 ToshiRunzi* IAM resources are now owned by
+          # nzshm-runzi's terraform/access/ (see that repo's ADR-0005 / issue #353). Excluding
+          # them here drops them from the TEST stack on deploy; their DeletionPolicy: Retain keeps
+          # the live (Terraform-managed) resources intact. They stay ACTIVE for prod until prod's
+          # own migration. (NB: the ElasticSearchInstance line above uses a stale "resourcee"
+          # typo - the paths below use the correct "resources.Resources." root.)
+          - resources.Resources.ToshiRunziBaseManagedPolicy
+          - resources.Resources.ToshiRunziBatchManagedPolicy
+          - resources.Resources.ToshiRunziAdminManagedPolicy
+          - resources.Resources.ToshiRunziLocalRole
+          - resources.Resources.ToshiRunziBatchRole
+          - resources.Resources.ToshiRunziAdminRole
 
 provider:
   name: aws
