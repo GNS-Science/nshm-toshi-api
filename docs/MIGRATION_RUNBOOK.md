@@ -172,6 +172,18 @@ Stand up the new Strawberry/FastAPI scaffold alongside (or replacing) the legacy
 - **`<pkg>/schema.py` may already be taken by the legacy schema.** If the Graphene code lives in a `schema/` *package* (not a `schema.py` module), that import path is occupied — Step 4 can't create `schema.py` yet. Use a transitional name (Model pilot used `strawberry_schema.py`) during the migration and rename to `schema.py` at cutover, once the legacy `schema/` package is deleted. Update `app.py` + test imports in the same rename commit.
 - **Dropping `serverless-wsgi` does NOT drop Python-dep packaging.** A common worry after Step 5 is "what now zips the deps into the Lambda?" On Serverless Framework v4 the answer is the **built-in** python-requirements step (see §4.8), activated by a `custom.pythonRequirements` block and uv-aware. Removing `serverless-wsgi` leaves it running. Don't add `serverless-python-requirements` back as a plugin.
 
+- **The `poetry2uv` skill flips mypy strict via `follow_untyped_imports = true`.** It writes a `[tool.mypy]` block with `follow_untyped_imports = true`, which makes CI mypy type-check *into* the legacy Graphene + untyped lib code (e.g. `solvis`, `geopandas`) — surfacing dozens of errors in modules you haven't touched and were green before. Restore the original lenient posture (`ignore_missing_imports = true` only) and keep the per-file `exclude`; the legacy modules are deleted at cutover anyway. (Solvis: 29 spurious errors, all in to-be-deleted graphene modules; CI red on every PR until reverted.)
+
+- **Container Lambda + `serverless-plugin-warmup`: Mangum needs a warmup-event guard.** The warmup plugin pings the function every few minutes with a **non-HTTP** event (`{"source": "serverless-plugin-warmup"}`). Mangum can't infer a handler for it → `RuntimeError` on every ping (the old `serverless-wsgi` handler silently swallowed these). Guard it in the entry **before** delegating to Mangum:
+  ```python
+  _mangum = Mangum(app)
+  def handler(event, context):
+      if isinstance(event, dict) and event.get("source") == "serverless-plugin-warmup":
+          return {"statusCode": 200, "body": "warmed"}
+      return _mangum(event, context)
+  ```
+  **Nothing but live warmup traffic surfaces this** — in-process tests, the HTTP `TestClient`, and the deploy smoke all pass; you only see it tailing prod logs (or a unit test that feeds the handler a warmup event). Applies to every container sibling using the plugin (Hazard next).
+
 ---
 
 ## Phase 2 — Schema migration
@@ -280,6 +292,21 @@ config: strawberry.ID | None = strawberry.field(
 
 - **Optional args render a `= null` default that graphene omits.** `def field(self, version: str | None = None)` produces `version: String = null` in the SDL; legacy graphene emits `version: String`. Use `strawberry.UNSET` as the default (`version: str | None = strawberry.UNSET`) to suppress the `= null` and match.
 
+- **An input *instance* as an arg/field default renders in the SDL but breaks runtime coercion.** Reproducing a graphene `default_value=dict(...)` with a Strawberry input *instance* (`style: Foo = Foo(...)`) prints the right default in the SDL **but** graphql-core then tries to coerce that already-built instance at execution and raises *"Expected type 'Foo' to be a mapping"*. Use a plain **mapping** as the default instead (`style: Foo = {"stroke_color": "black", ...}`) — it both renders and coerces. (Solvis hit this twice: a geojson style arg and a nested `filter_set_options` default.)
+
+- **Graphene fills *partial* input defaults from the input type's own field defaults — match the value *types*.** A graphene `default_value=dict(stroke_color="black", stroke_width=1, stroke_opacity=1.0)` (3 keys) is coerced through the input type, so the omitted `fill_opacity`/`fill_color` come back filled from the **field** defaults. Reproduce those field defaults with the right type (`fill_opacity: float | None = 1.0`, not `= 1`) or the JSON output differs by `1.0` vs `1` and the byte-compare fails. The SDL gate won't catch it — only a runtime differential will (see Phase 3).
+
+- **Custom scalars and enums-from-untyped-libs trip mypy `valid-type`.** A `strawberry.scalar(NewType(...))` or `strawberry.enum(some_untyped_lib.Enum)` assigned to a module variable isn't seen as a usable type in annotations. Wrap it in a `TYPE_CHECKING` alias to a concrete stub:
+  ```python
+  if TYPE_CHECKING:
+      JSONString = object               # opaque to mypy
+      class SetOperationEnum(enum.Enum): UNION = "UNION"; ...   # concrete stub
+  else:
+      JSONString = strawberry.scalar(...)
+      SetOperationEnum = strawberry.enum(lib.SetOperationEnum, ...)
+  ```
+  (Model used a single `# type: ignore[valid-type]` for one scalar; Solvis needed this for `JSONString` + a `SetOperationEnum` from `solvis`.)
+
 ---
 
 ## Phase 3 — Test infrastructure
@@ -324,6 +351,26 @@ Set up a parallel test stack that can validate the new code against real DynamoD
 - **`testcontainers[dynamodb]` extra does not exist.** Use bare `testcontainers>=4.0`; `uv lock` warns if you spell the extra.
 - **Java is required for DynamoDB Local.** Surfaced as a non-obvious testcontainers error. Document in `DEVELOPMENT.md`.
 - **`TESTING=1` set inside a fixture is too late.** It must be at module-load time in `conftest.py` (use `os.environ.setdefault` so the dev's local env wins if explicitly set).
+
+### The differential harness is the highest-value Phase 3 artifact
+
+SDL parity proves the *shape*; it is blind to **runtime** divergence. Build a tiny in-process
+differential — run each query through **both** schemas (legacy Graphene + new Strawberry, same
+process, same fixtures) and assert identical `data`:
+
+```python
+def _assert_parity(query, **vars):
+    legacy = Client(schema_root).execute(query, variable_values=vars or None)
+    straw  = strawberry_schema.execute_sync(query, variable_values=vars or None)
+    assert straw.data == legacy["data"]
+```
+
+It is cheap and it catches the things the SDL gate **cannot** — Solvis found three real bugs
+this way that were byte-identical in the SDL: the relay **global-id** encoding (`id` must be
+`graphql_relay.to_global_id(...)`, not raw — the C1 trap, live), **float-vs-int** default values,
+and the input-instance-vs-mapping coercion. Seed it from the vendored corpus; for archive/data
+fixtures, reuse the existing test fixtures. It's also the in-process rehearsal for the live A/B
+(`cli_ab_test` / `drive_live.py`) at cutover.
 
 ---
 
@@ -534,10 +581,8 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 - **Stack deltas:** container Lambda (Dockerfile + ECR).
 - **Container build:** Mangum + FastAPI works the same inside a container. The build pipeline changes; the runtime entry doesn't.
 - **The existing `handler.py` workaround goes away.** It exists today because `serverless-wsgi` doesn't cleanly support container Lambda — switching to Mangum (which is packaging-agnostic) makes the workaround unnecessary. Mangum itself isn't doing anything ECR-specific; it just isn't `serverless-wsgi`.
-- **Heavy deps:** `matplotlib`, `geopandas`. Watch container image size:
-  - Use `python:3.12-slim` base
-  - Multi-stage build to drop build deps
-  - Aim for <500MB final image (current is likely larger)
+- **Heavy deps:** `matplotlib`, `geopandas`. Watch container image size — but **don't reach for multi-stage reflexively**: Solvis (same geo stack: matplotlib + geopandas + pyproj + shapely + solvis) came in at **360 MB single-stage** on the `public.ecr.aws/lambda/python:3.12` base, comfortably under the 500 MB aim. Measure first; only multi-stage if you're actually over.
+- **`serverless-plugin-warmup` warmup-event guard** — see the Phase 1 trap. Hazard is a container Lambda with the warmup plugin, so its Mangum entry needs the same guard or prod logs fill with `RuntimeError` every few minutes.
 - **Memory:** already 4096 MB — keep. Don't try to drop.
 
 ### A4. `solvis-graphql-api` — last
@@ -546,7 +591,14 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 - **The big extra:** PynamoDB → boto3 + Pydantic v2 conversion. PynamoDB's declarative Model class becomes a `pydantic.BaseModel` in `<pkg>/data/models.py` plus thin boto3 CRUD helpers in `<pkg>/data/dynamo.py`. See toshi-api `graphql_api/data/models.py` and `graphql_api/data/dynamo.py` for the destination pattern.
 - **Yarn `resolutions` hygiene matters here especially** — `serverless-dynamodb` plugin has the same shape of trap as `serverless-s3-local` did for toshi-api. Validate plugin chain locally on every deps PR.
 - **`cli` and `cli_ab_test` scripts** import from the package — when the package layout changes (e.g. adopting `_base/_interfaces/_infra`), those imports break. Add them to the test matrix.
-- **Migration order within the API:** bootstrap → data layer (PynamoDB→Pydantic) → schema → tests → deploy. The data-layer step is bigger than for the other three APIs.
+- **Migration order within the API:** bootstrap → data layer (PynamoDB→Pydantic) → schema → tests → deploy.
+
+**What the migration actually found (2026-06, completed through test-stage + 9/9 A/B):**
+- **The PynamoDB surface was tiny, not a big data layer.** It was a *single* model (`BinaryLargeObjectModel`, 5 attrs) already wrapped by a hand-written class. Convert the `Model` to a `pydantic.BaseModel` + thin boto3 CRUD **behind the unchanged wrapper API** so `cli`/resolvers don't move — `pynamodb` drops out entirely. The "data-layer step is bigger" caveat above didn't hold.
+- **Reproduce `JSONAttribute` as a JSON *string*, not a native DynamoDB Map.** A native Map round-trips numbers as `Decimal`; storing the JSON-dumped string keeps ints as ints and keeps `to_json()` byte-equal.
+- **Reuse the in-repo `cli_ab_test` for cutover validation — don't build a `drive_live.py`.** Its checks already cover the full client surface; `cli_ab_test -A prod -B test` gave the 9/9 gate. (Model had to build `drive_live.py` because it had no equivalent.)
+- **For the heaviest resolvers, *delegate* to the legacy Graphene resolvers rather than re-port.** Solvis's `CompositeRuptureSections` (aggregates + MFD + geojson + colour) was ported by building a graphene root from the Strawberry input and calling the legacy static resolvers (held as `strawberry.Private`); the compute is reused verbatim, rewired onto the kept helpers at cleanup. Far less risk than rewriting pandas/geopandas logic.
+- **`relay.Node` → custom interface for `id: ID!` parity (C1) is mandatory here too** — and the live differential caught the *encoding* (`to_global_id`), which SDL parity can't see.
 
 ---
 
@@ -629,6 +681,13 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 | 33 | 4 | One-by-one stacked merge deploys a broken intermediate | Combined merge → one deploy when a phase isn't independently deployable |
 | 34 | 4 | Assumed `AWS_TEST`/`AWS_PROD` env split that doesn't exist | Inventory secrets first; some siblings use repo-level static keys + one env |
 | 35 | 5 | Soak is meaningless on a low-traffic API | Active differential validation: drive live, diff byte-for-byte vs oracle |
+| 36 | 1 | CI mypy red on untouched legacy code after `poetry2uv` | It set `follow_untyped_imports=true`; restore `ignore_missing_imports` only |
+| 37 | 1 | Container Lambda: `RuntimeError` every few min in prod logs | `serverless-plugin-warmup` sends a non-HTTP event; guard it before Mangum |
+| 38 | 2 | Input-instance arg default → "expected a mapping" at runtime | Use a plain mapping default, not an input instance (renders + coerces) |
+| 39 | 2 | Geojson/output differs by `1.0` vs `1` on default styles | Match input-field default *types* (graphene fills partial defaults via them) |
+| 40 | 2 | mypy `valid-type` on a custom scalar / enum-from-untyped-lib | `TYPE_CHECKING` alias to a concrete stub; real value in the `else` branch |
+| 41 | 3 | SDL parity green but `id`/values wrong at runtime | In-process differential (same query, both schemas) — catches encoding/defaults |
+| 42 | A4 | PynamoDB port feared big; geojson resolvers feared a re-port | One wrapped model → pydantic behind the wrapper; *delegate* heavy resolvers |
 
 ---
 
