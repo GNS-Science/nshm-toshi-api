@@ -166,6 +166,20 @@ is deliberate — see the reference doc's "Deferred / future" section)**
 - **A future split** of the compute-permission domain (Identity Pool +
   `runzi-*` roles + batch job role + compute resources) into a dedicated
   runzi-infra stack/repo.
+  - **Status: partially actioned.** The 3 `ToshiRunzi*ManagedPolicy` resources
+    and 3 `ToshiRunzi*Role` resources are migrating to `nzshm-runzi`'s
+    `terraform/access/` — see that repo's
+    [`docs/architecture/adr/0005-runzi-iam-tiers-terraform-migration.md`](https://github.com/GNS-Science/nzshm-runzi/blob/main/docs/architecture/adr/0005-runzi-iam-tiers-terraform-migration.md).
+    Unlike the split this ADR originally envisioned, the **Identity Pool and
+    its role attachment stay here** (and are slated for an eventual move to
+    a separate `nzshm-security` repo together, not split across two moves) —
+    they're shared identity/credential machinery, not runzi's own permission
+    surface. The role attachment's `RoleARN`/`Roles.authenticated` references
+    were changed from `!GetAtt` to `Fn::Sub` ARN strings so it no longer
+    depends on the departing role resources; see the comment above
+    `ToshiIdentityPoolRoleAttachment` in `serverless.yml`. Tracked via a
+    GitHub issue in this repo (the hand-off checklist: Retain → de-template
+    per stage, `test` then `prod`).
 
 **Verification**
 - `uv run pytest auth/tests/` passes (50), including new tests for the
