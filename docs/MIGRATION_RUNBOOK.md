@@ -417,9 +417,18 @@ on:
     branches: [main, deploy-test]
 ```
 
-only run on PRs whose **base** is `main` or `deploy-test`. Stacked PRs that target a feature branch get **no CI** silently. Remove the `branches:` filter (see toshi-api PR #337) so every PR runs tests regardless of base.
+only run on PRs whose **base** is `main` or `deploy-test`. Stacked PRs that target a feature branch get **no CI** silently — annoying mid-migration.
 
-- **The fix must reach every head branch in the stack.** For same-repo PRs, GitHub runs the workflow file as it exists on the PR's **head** branch. So removing the filter on the bottom branch doesn't retroactively give CI to the PRs stacked above it — cascade-rebase the change up through every head branch in the stack (Model pilot confirmed this live: PRs #64/#65 stayed CI-less until the fix was rebased onto each).
+> ⚠️ **This filter is often a deliberate supply-chain control — do NOT remove it reflexively.** It narrows the set of PRs that auto-trigger the build. The risk it mitigates (raised by voj on solvis): an **anonymous / outside PR auto-running CI** is a supply-chain vector — the build `uv sync`s untrusted deps and runs the PR's checked-out code in the runner. (`pull_request` withholds secrets from fork PRs and runs the *base* branch's workflow, so secrets aren't directly exposed — but arbitrary code execution + dep install on a well-crafted PR is the attack surface.) Pair the filter with GitHub's **"require approval to run workflows on fork PRs"** setting; never switch to `pull_request_target` to "fix" CI coverage.
+
+**So:** if a stacked migration needs CI on feature-branch PRs, get it **without** weakening the control —
+- merge the stack as **one combined PR** (G7) and rely on that PR's CI (what solvis ended up doing), or
+- run CI on a stacked branch on demand with `workflow_dispatch`, or
+- widen temporarily, then **restore the filter** before promote.
+
+Solvis lived this: removed the filter in Phase 1 for stacked-PR CI, voj flagged it as the deliberate anti-supply-chain rule, restored before the prod promote. (toshi-api PR #337 removed it there in a different threat context — confirm your repo's fork-PR posture before copying.)
+
+- **If you do widen it for a stack, the change must reach every head branch.** For same-repo PRs, GitHub runs the workflow file as it exists on the PR's **head** branch — removing the filter on the bottom branch doesn't retroactively give CI to the PRs stacked above it. (One more reason to prefer the combined-merge route over widening.)
 
 ### 4.6 Yarn 4 (Berry) hygiene
 
@@ -527,7 +536,7 @@ fi
 - **A local-dev-only plugin breaks prod deploy.** s3rver, sls-dynamodb, sls-s3-local — they all load at sls boot. Test plugin chain locally before every deps-only PR (`yarn sls package --stage dummy`).
 - **`DB_READ_ONLY` defaults are fragile.** Prefer write-by-default with opt-in read-only.
 - **`gh secret list` (repo-level) hides environment secrets** — use `--env`.
-- **`pull_request.branches:` filter silently skips CI on stacked PRs.** Remove it.
+- **`pull_request.branches:` filter silently skips CI on stacked PRs** — but it's often a deliberate **supply-chain control** (stops anonymous/fork PRs auto-running the build). Don't remove it reflexively; get stacked-PR CI via the combined-merge route (G7) or `workflow_dispatch`, and restore it before promote. See §4.5.
 - **Auto-merge polling is mandatory** if the repo doesn't have auto-merge enabled. Don't manually refresh.
 
 ---
@@ -659,7 +668,7 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 | 11 | 4 | Existing clients suddenly hit auth | Preserve `LEGACY_API_KEY` chain in `serverless.yml` |
 | 12 | 4 | Prod write returns `DB_READ_ONLY` | Drop the default; opt-in to RO via `serverlessIfElse` |
 | 13 | 4 | Can't find where `NZSHM22_*` secret is set | `gh secret list --env AWS_TEST/AWS_PROD` |
-| 14 | 4 | Stacked PR doesn't run CI | Remove `branches:` filter on workflow |
+| 14 | 4 | Stacked PR doesn't run CI | `branches:` filter is often a deliberate supply-chain control — combined-merge (G7), don't just remove it (§4.5) |
 | 15 | 4 | `yarn install --immutable` fails after removing a dep | `yarn install --mode update-lockfile` first |
 | 16 | 4 | Deploy dies at plugin init: `xmlParser.parse is not a function` | Scope resolutions to the affected consumer; drop global override |
 | 17 | 4 | Prod deploy crashes after a deps-only PR | Run `yarn sls package --stage dummy` locally before push |
