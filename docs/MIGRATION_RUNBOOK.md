@@ -602,12 +602,19 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 - **`cli` and `cli_ab_test` scripts** import from the package — when the package layout changes (e.g. adopting `_base/_interfaces/_infra`), those imports break. Add them to the test matrix.
 - **Migration order within the API:** bootstrap → data layer (PynamoDB→Pydantic) → schema → tests → deploy.
 
-**What the migration actually found (2026-06, completed through test-stage + 9/9 A/B):**
+**What the migration actually found (2026-06, completed **in prod** — promote + 30-min watch clean):**
 - **The PynamoDB surface was tiny, not a big data layer.** It was a *single* model (`BinaryLargeObjectModel`, 5 attrs) already wrapped by a hand-written class. Convert the `Model` to a `pydantic.BaseModel` + thin boto3 CRUD **behind the unchanged wrapper API** so `cli`/resolvers don't move — `pynamodb` drops out entirely. The "data-layer step is bigger" caveat above didn't hold.
 - **Reproduce `JSONAttribute` as a JSON *string*, not a native DynamoDB Map.** A native Map round-trips numbers as `Decimal`; storing the JSON-dumped string keeps ints as ints and keeps `to_json()` byte-equal.
 - **Reuse the in-repo `cli_ab_test` for cutover validation — don't build a `drive_live.py`.** Its checks already cover the full client surface; `cli_ab_test -A prod -B test` gave the 9/9 gate. (Model had to build `drive_live.py` because it had no equivalent.)
 - **For the heaviest resolvers, *delegate* to the legacy Graphene resolvers rather than re-port.** Solvis's `CompositeRuptureSections` (aggregates + MFD + geojson + colour) was ported by building a graphene root from the Strawberry input and calling the legacy static resolvers (held as `strawberry.Private`); the compute is reused verbatim, rewired onto the kept helpers at cleanup. Far less risk than rewriting pandas/geopandas logic.
 - **`relay.Node` → custom interface for `id: ID!` parity (C1) is mandatory here too** — and the live differential caught the *encoding* (`to_global_id`), which SDL parity can't see.
+
+**Post-cutover legacy cleanup (de-graphene) — what removing Graphene actually taught us:**
+- **Remove Graphene in verified chunks, each gated on SDL parity + the test suite — not one big delete.** Extract each Graphene-free compute helper to a stable home (Solvis: `color_scale/compute.py`, `composite_solution/ruptures.py`, `cached.py`, `geojson_style_util.py`), rewire the Strawberry resolver onto it, verify against the still-present Graphene, then delete. The *delegated* resolvers (the `CompositeRuptureSections` `strawberry.Private` trick above) must be **de-delegated** the same way before the Graphene root can go. Net for Solvis: −1740 lines of Graphene across ~12 modules; the whole package then imports zero `graphene`.
+- **Deleting Graphene kills the differential test's oracle — and snapshots are NOT a drop-in replacement.** The in-process differential ran the *same query through both schemas in one process*, so platform float differences (shapely/geos coords, matplotlib hexes) cancelled. Capture those as golden snapshots on macOS and ubuntu CI fails the byte-compare on the low float digits. Fix: keep byte-exact snapshots only for **deterministic** queries (rounded scalars, enums); assert geometry/geojson/colour **structurally** (counts, the global-id encoding decodes, "styling reached every feature"). `cli_ab_test` (same live data, both stages) stays the authoritative geojson parity gate. *Also drop accidental megafixtures — a `get_locations` snapshot re-stored the whole `nzshm_common` LOCATIONS constant as a 118k-line file.*
+- **Keep and *repoint* the legacy Graphene-`Client` tests at the Strawberry schema — don't delete them.** A `graphene.test.Client` drop-in (`tests/_strawberry_client.py`, ~25 lines) runs all of them unchanged against Strawberry; they cover the resolvers you *reimplemented*, far past the parity corpus. They caught a real bug: `filter_ruptures` passed `strawberry.UNSET` as the sortby `ascending` (pandas rejected it) — invisible to SDL parity.
+- **Codecov fails on the *promote* PR's cumulative diff, not your last commit.** The whole `deploy-test → main` diff is measured against `main`; the migration sat ~0.2% under the auto-bar. The culprit was a standalone tool script (the SDL-parity gate) at **0% coverage** — wrap such tools as pytest tests (which also makes the gate permanent). Don't fake-cover genuinely-unreachable legacy branches; use `# pragma: no cover` with a note.
+- **A/B with valid inputs can't see malformed-input behaviour — and that's OK.** Prod logged a `KeyError` from a client sending `fault_system: ""`; the failing line was unchanged shared compute Graphene called identically (HTTP 200 + a per-field GraphQL error, not 5xx). Not a regression — don't let it trigger a rollback; file it as a separate robustness item.
 
 ---
 
@@ -697,6 +704,10 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 | 40 | 2 | mypy `valid-type` on a custom scalar / enum-from-untyped-lib | `TYPE_CHECKING` alias to a concrete stub; real value in the `else` branch |
 | 41 | 3 | SDL parity green but `id`/values wrong at runtime | In-process differential (same query, both schemas) — catches encoding/defaults |
 | 42 | A4 | PynamoDB port feared big; geojson resolvers feared a re-port | One wrapped model → pydantic behind the wrapper; *delegate* heavy resolvers |
+| 43 | cleanup | Differential test's oracle deleted with Graphene; snapshots flake on CI | Byte-snapshot deterministic queries only; assert geometry/geojson structurally |
+| 44 | cleanup | Deleting the Graphene-`Client` tests loses coverage of reimplemented resolvers | Repoint them at Strawberry via a `graphene.test.Client` drop-in shim |
+| 45 | cleanup | Codecov red on the *promote* PR (cumulative diff under auto-bar) | Wrap standalone tool scripts (SDL gate) as pytest tests; `# pragma` truly-dead branches |
+| 46 | 5 | Prod `KeyError` on `fault_system:""` post-cutover | Unchanged shared compute — Graphene identical; not a regression, file separately |
 
 ---
 
