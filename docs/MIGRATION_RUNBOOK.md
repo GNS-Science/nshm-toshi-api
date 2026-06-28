@@ -387,7 +387,11 @@ This is the densest section. Every item here corresponds to a real incident or n
 
 - Secrets live in **GitHub Environments** (`AWS_TEST`, `AWS_PROD`), not at repo level. The shared deploy workflow takes an `environment:` parameter and uses `secrets: inherit` from the calling workflow.
 - **`gh secret list` at repo level does NOT show environment secrets** — this is a 30-min "where is `NZSHM22_TOSHI_API_KEY` coming from" detour. Use `gh secret list --env <NAME>`.
-- **This `AWS_TEST`/`AWS_PROD` + OIDC split is the toshi-api posture, not a universal one.** Confirm the target sibling's actual setup before assuming it. The Model pilot deploys from **repo-level static AWS keys** (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) plus a single `DEPLOY_TEST` environment that holds *no* environment secrets — no per-env split, no OIDC role to preserve. Inventory first (Phase 0); migrating a sibling *toward* the toshi-api posture is a separate hardening task, out of scope for the code migration.
+- **Don't assume toshi-api's secrets layout — inventory the target's first (Phase 0).** The `AWS_TEST`/`AWS_PROD` Environments + OIDC split above is *toshi-api's* posture; siblings differ. Two postures seen so far:
+  - **toshi-api:** `AWS_TEST`/`AWS_PROD` GitHub Environments, each holding deploy secrets, assumed via an OIDC role.
+  - **Model pilot:** **repo-level static AWS keys** (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) + a single `DEPLOY_TEST` environment with *no* secrets — no per-env split, no OIDC role.
+
+  Preserve whatever the sibling already uses. Migrating a sibling *toward* the toshi-api posture is a separate hardening task — out of scope for the code migration.
 
 ### 4.3 Legacy API key resolution chain
 
@@ -492,7 +496,8 @@ STAGE=dummy yarn sls package --stage dummy
 - `uv lock` after any `pyproject.toml` change. `uv sync` for installs.
 - For `pip-audit`: `uv export --format requirements-txt --no-emit-project --output-file audit.txt && uv run pip-audit -r audit.txt -s pypi --require-hashes`
 - CI: `uv sync --frozen` to assert the lockfile matches.
-- **`bump2version` / `bumpversion` does not touch `uv.lock`.** It bumps `pyproject.toml`, `package.json`, `__init__.py` — but `uv.lock` records the project's own version too, so after a bump `uv lock --check` fails. Pair every version bump with a follow-up `uv lock` commit (Model pilot: caught by CI's lock check).
+- **Migrate version bumping off `bump2version`/`bumpversion` to `hatch-vcs`.** `bump2version`/`bumpversion` is unmaintained; GNS libs standardise on `hatch-vcs` (version derived from the git tag, not written into source). The dockerbash `bumpversion2hatchvcs` skill automates the switch — run it as part of the migration. Bonus: hatch-vcs **sidesteps** the lockfile trap below, since there's no static version in `pyproject.toml` to drift out of sync with `uv.lock`.
+  - *If a sibling still uses static-version `bump2version`/`bumpversion`:* note that it bumps `pyproject.toml`/`package.json`/`__init__.py` but **not** `uv.lock` (which also records the project's own version), so `uv lock --check` fails after a bump — pair every bump with a follow-up `uv lock` commit until it's moved to hatch-vcs. (Model pilot: caught by CI's lock check.)
 - **How Python deps get packaged after `serverless-wsgi` is gone (SF v4).** Serverless Framework v4 ships **python-requirements built-in** — no plugin needed. It activates on the presence of a `custom.pythonRequirements` block (SF prints this at deploy time) and is **uv-aware**. Pattern Model used: keep `custom.pythonRequirements` (with e.g. `dockerizePip`, `slim`, `noDeploy: [botocore]`); have the `deploy` script run `uv export` → `requirements.txt` before `serverless deploy` for a deterministic input; leave `plugins: []`. Removing `serverless-wsgi` does **not** remove this step. The package `patterns` (`!**` + `<pkg>/**`) only scope your *source*, not the deps.
 
 ### 4.9 Atomic auth source selection (only when JWT auth lands)
