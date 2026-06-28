@@ -121,6 +121,18 @@ custom:
         Exclude:
           - resourcee.Resources.ElasticSearchInstance
           - provider.iamrolestatements.1
+          # Migration deploy #2 (test only): the 6 ToshiRunzi* IAM resources are now owned by
+          # nzshm-runzi's terraform/access/ (see that repo's ADR-0005 / issue #353). Excluding
+          # them here drops them from the TEST stack on deploy; their DeletionPolicy: Retain keeps
+          # the live (Terraform-managed) resources intact. They stay ACTIVE for prod until prod's
+          # own migration. (NB: the ElasticSearchInstance line above uses a stale "resourcee"
+          # typo - the paths below use the correct "resources.Resources." root.)
+          - resources.Resources.ToshiRunziBaseManagedPolicy
+          - resources.Resources.ToshiRunziBatchManagedPolicy
+          - resources.Resources.ToshiRunziAdminManagedPolicy
+          - resources.Resources.ToshiRunziLocalRole
+          - resources.Resources.ToshiRunziBatchRole
+          - resources.Resources.ToshiRunziAdminRole
 
 provider:
   name: aws
@@ -409,8 +421,15 @@ resources:
     # tier they need). If they are in several, the HIGHEST tier wins — see the
     # ToshiIdentityPoolRoleAttachment rules below, which are ordered
     # most-privileged-first (admin → batch → local) so the first match is correct.
+    # DeletionPolicy/UpdateReplacePolicy: Retain — being migrated to nzshm-runzi's
+    # terraform/access/ (see that repo's docs/architecture/adr/0005-...). Retain so removing
+    # this resource from this template (the final step of that migration) does not delete the
+    # live IAM resource out from under Terraform. Remove Retain only as part of that migration's
+    # de-template step, once Terraform has imported it.
     ToshiRunziBaseManagedPolicy:
       Type: AWS::IAM::ManagedPolicy
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         ManagedPolicyName: toshi-runzi-base-${self:custom.stage}
         Description: Base runzi permissions (ECR pull, S3 read/write, M2M secret read) shared by all runzi tiers
@@ -445,8 +464,11 @@ resources:
                 Fn::Sub: arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:toshi-m2m-*
 
     # batch increment — submit/manage AWS Batch jobs (layered on top of base).
+    # DeletionPolicy/UpdateReplacePolicy: Retain — see note on ToshiRunziBaseManagedPolicy above.
     ToshiRunziBatchManagedPolicy:
       Type: AWS::IAM::ManagedPolicy
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         ManagedPolicyName: toshi-runzi-batch-${self:custom.stage}
         Description: Incremental runzi-batch permissions (AWS Batch submit/describe); attached on top of the base policy
@@ -466,8 +488,11 @@ resources:
               Resource: '*'
 
     # admin increment — Batch/ECR administration (layered on top of base + batch).
+    # DeletionPolicy/UpdateReplacePolicy: Retain — see note on ToshiRunziBaseManagedPolicy above.
     ToshiRunziAdminManagedPolicy:
       Type: AWS::IAM::ManagedPolicy
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         ManagedPolicyName: toshi-runzi-admin-${self:custom.stage}
         Description: Incremental runzi-admin permissions (Batch + ECR administration); attached on top of the base + batch policies
@@ -497,8 +522,11 @@ resources:
 
     # ── IAM roles (assumed via Identity Pool after Cognito login) ──────────────
     # local tier — base permissions only (ECR pull, S3 read/write).
+    # DeletionPolicy/UpdateReplacePolicy: Retain — see note on ToshiRunziBaseManagedPolicy above.
     ToshiRunziLocalRole:
       Type: AWS::IAM::Role
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         RoleName: toshi-runzi-local-${self:custom.stage}
         Description: Runzi workstation access (ECR pull, S3 read/write)
@@ -519,8 +547,11 @@ resources:
           - !Ref ToshiRunziBaseManagedPolicy
 
     # batch tier — base + submit/manage AWS Batch jobs.
+    # DeletionPolicy/UpdateReplacePolicy: Retain — see note on ToshiRunziBaseManagedPolicy above.
     ToshiRunziBatchRole:
       Type: AWS::IAM::Role
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         RoleName: toshi-runzi-batch-${self:custom.stage}
         Description: Runzi batch job access (base + Batch submit)
@@ -542,8 +573,11 @@ resources:
           - !Ref ToshiRunziBatchManagedPolicy
 
     # admin tier — base + Batch submit + Batch/ECR administration.
+    # DeletionPolicy/UpdateReplacePolicy: Retain — see note on ToshiRunziBaseManagedPolicy above.
     ToshiRunziAdminRole:
       Type: AWS::IAM::Role
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         RoleName: toshi-runzi-admin-${self:custom.stage}
         Description: Runzi admin access (base + Batch submit + Batch/ECR admin)
@@ -566,12 +600,19 @@ resources:
           - !Ref ToshiRunziAdminManagedPolicy
 
     # ── Identity Pool role attachment (rules-based by Cognito group) ───────────
+    # Role references below are Fn::Sub ARN STRINGS, not !GetAtt, deliberately: the
+    # ToshiRunzi{Local,Batch,Admin}Role resources are being migrated to nzshm-runzi's
+    # terraform/access/ (see docs/architecture/adr/0005-... in that repo) and will be removed
+    # from this template once Terraform has imported them. Fn::Sub keeps this attachment
+    # working (the live ARN value is identical to what !GetAtt produced) without depending on
+    # resources that are leaving this stack. Do not revert to !GetAtt.
     ToshiIdentityPoolRoleAttachment:
       Type: AWS::Cognito::IdentityPoolRoleAttachment
       Properties:
         IdentityPoolId: !Ref ToshiIdentityPool
         Roles:
-          authenticated: !GetAtt ToshiRunziLocalRole.Arn
+          authenticated:
+            Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/toshi-runzi-local-${self:custom.stage}
         RoleMappings:
           ToshiProvider:
             IdentityProvider:
@@ -591,15 +632,18 @@ resources:
                 - Claim: cognito:groups
                   MatchType: Contains
                   Value: runzi-admin
-                  RoleARN: !GetAtt ToshiRunziAdminRole.Arn
+                  RoleARN:
+                    Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/toshi-runzi-admin-${self:custom.stage}
                 - Claim: cognito:groups
                   MatchType: Contains
                   Value: runzi-batch
-                  RoleARN: !GetAtt ToshiRunziBatchRole.Arn
+                  RoleARN:
+                    Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/toshi-runzi-batch-${self:custom.stage}
                 - Claim: cognito:groups
                   MatchType: Contains
                   Value: runzi-local
-                  RoleARN: !GetAtt ToshiRunziLocalRole.Arn
+                  RoleARN:
+                    Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/toshi-runzi-local-${self:custom.stage}
 
     # ── Secrets Manager: Cognito M2M client_id/client_secret container ─────────
     # Populated out-of-band by `auth/create_m2m_secret.py` after the Cognito
