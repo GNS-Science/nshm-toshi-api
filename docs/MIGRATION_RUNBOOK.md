@@ -80,6 +80,7 @@ Capture the current behavioural contract so any regression during migration is c
 
 - **SDL parity ≠ runtime parity.** Tools like `graphql-inspector diff` only compare types and fields. They miss: input field defaults, `@deprecated` directives (and the human reason text), behavioural changes inside resolvers (e.g. legacy returning `null` vs new raising). The query corpus catches the runtime gap.
 - **Vendor the client queries — don't fetch them from the client at test time.** "Vendoring" means copying the client's query files into this repo (e.g. `tests/fixtures/runzi/*.graphql`) and committing them. The queries become a snapshot you control: CI runs against the same input every time, `git log` shows when they changed, and refreshing them is an explicit PR.
+- **Importing the legacy schema can pollute the SDL dump via stdout.** The `print(str(schema))` snippet above captures *everything* on stdout — including dependency warnings emitted at import time (Model pilot: `nzshm-model` prints `WARNING: optional 'toshi' dependencies are not installed`). Those lines land in `schema.legacy.graphql` and break the parity baseline. Redirect stdout→stderr around the schema import (`contextlib.redirect_stdout(sys.stderr)`), then print the SDL.
 
 ---
 
@@ -168,6 +169,20 @@ Stand up the new Strawberry/FastAPI scaffold alongside (or replacing) the legacy
 
 - **Lint-config consolidation tightens previously-passing legacy code.** Switching to the strict ruff config above will fail on auth/ or other adjacent packages that the legacy ruleset never touched. Add per-file-ignores for those packages **before** the first PR ships, so the bootstrap PR's CI stays green (see toshi-api PR #338 — 89 ruff errors at first CI run).
 - **`auto_camel_case=False` is mandatory** if your legacy schema uses snake_case field names. Strawberry's default flips to camelCase and breaks every existing client.
+- **`<pkg>/schema.py` may already be taken by the legacy schema.** If the Graphene code lives in a `schema/` *package* (not a `schema.py` module), that import path is occupied — Step 4 can't create `schema.py` yet. Use a transitional name (Model pilot used `strawberry_schema.py`) during the migration and rename to `schema.py` at cutover, once the legacy `schema/` package is deleted. Update `app.py` + test imports in the same rename commit.
+- **Dropping `serverless-wsgi` does NOT drop Python-dep packaging.** A common worry after Step 5 is "what now zips the deps into the Lambda?" On Serverless Framework v4 the answer is the **built-in** python-requirements step (see §4.8), activated by a `custom.pythonRequirements` block and uv-aware. Removing `serverless-wsgi` leaves it running. Don't add `serverless-python-requirements` back as a plugin.
+
+- **The `poetry2uv` skill flips mypy strict via `follow_untyped_imports = true`.** It writes a `[tool.mypy]` block with `follow_untyped_imports = true`, which makes CI mypy type-check *into* the legacy Graphene + untyped lib code (e.g. `solvis`, `geopandas`) — surfacing dozens of errors in modules you haven't touched and were green before. Restore the original lenient posture (`ignore_missing_imports = true` only) and keep the per-file `exclude`; the legacy modules are deleted at cutover anyway. (Solvis: 29 spurious errors, all in to-be-deleted graphene modules; CI red on every PR until reverted.)
+
+- **Container Lambda + `serverless-plugin-warmup`: Mangum needs a warmup-event guard.** The warmup plugin pings the function every few minutes with a **non-HTTP** event (`{"source": "serverless-plugin-warmup"}`). Mangum can't infer a handler for it → `RuntimeError` on every ping (the old `serverless-wsgi` handler silently swallowed these). Guard it in the entry **before** delegating to Mangum:
+  ```python
+  _mangum = Mangum(app)
+  def handler(event, context):
+      if isinstance(event, dict) and event.get("source") == "serverless-plugin-warmup":
+          return {"statusCode": 200, "body": "warmed"}
+      return _mangum(event, context)
+  ```
+  **Nothing but live warmup traffic surfaces this** — in-process tests, the HTTP `TestClient`, and the deploy smoke all pass; you only see it tailing prod logs (or a unit test that feeds the handler a warmup event). Applies to every container sibling using the plugin (Hazard next).
 
 ---
 
@@ -226,6 +241,7 @@ Wire `mutate_create_foo` and `resolve_foos` into the root `Mutation` / `Query` i
 
 ### Patterns to use
 
+- **Relay `Node` — watch the `id` scalar for SDL parity.** The per-type pattern above uses `relay.Node` / `relay.NodeID[str]` (what toshi-api ships). But Strawberry's relay emits a `GlobalID` scalar and `id: GlobalID!`, whereas a legacy **graphene-relay** schema exposes `id: ID!`. If your parity baseline (Phase 0) has `id: ID!`, `relay.Node` will fail the parity gate and may change the wire id. Two options: (a) accept the `GlobalID` SDL change if no client pins `id`'s type, or (b) for strict parity, hand-write a custom `@strawberry.interface Node` with `id: strawberry.ID` and encode/decode via `graphql_relay.to_global_id` / `from_global_id` (Model pilot's choice — reproduces graphene byte-for-byte). Composite ids built from several fields also don't fit `relay.NodeID[str]` cleanly; the custom interface handles those.
 - **Cycle-breaking:** `Annotated["Bar", strawberry.lazy("path.to.bar")]` for forward refs between types.
 - **Runtime dispatch (conditional):** only needed if your API has polymorphic node lookup by a stored `clazz_name` (typical when one DynamoDB table holds multiple GraphQL types). Build a dispatch table (see toshi-api `graphql_api/models/_infra/_dispatch.py`). **Every new domain type must be registered here** or `node()` returns `None` for it. Models / Kororaa likely don't need this; Solvis / Hazard might.
 - **Layered models** (recommended for any package with >10 types):
@@ -234,7 +250,7 @@ Wire `mutate_create_foo` and `resolve_foos` into the root `Mutation` / `Query` i
   - `<pkg>/models/_infra/` — scalars, common enums, dispatch table, unions
   - `<pkg>/models/<domain>.py` — flat domain types
   - See toshi-api `graphql_api/models/` for the reference.
-- **Pydantic v2 in the data layer:** keep DynamoDB shapes in `<pkg>/data/models.py` as `pydantic.BaseModel` classes (e.g. `FooData`), separate from the Strawberry `Foo`. `from_dict` does the validation + projection. This separation makes data migrations isolated from schema migrations.
+- **Pydantic v2 in the data layer:** keep DynamoDB shapes in `<pkg>/data/models.py` as `pydantic.BaseModel` classes (e.g. `FooData`), separate from the Strawberry `Foo`. `from_dict` does the validation + projection. This separation makes data migrations isolated from schema migrations. **Caveat:** this assumes you *own* the data layer. When an upstream library already exposes typed models (Model pilot reads `nzshm-model`'s stdlib dataclasses), reuse those as the data layer and write resolvers against them directly — don't mirror them into a parallel pydantic shape. Your Strawberry types stay a thin projection either way.
 - **PEP 695 generics** for utility functions: `def _try_enum[E: enum.Enum](enum_cls: type[E], value: str | None) -> E | None:` (ruff `UP047` enforces this).
 
 ### Deprecated fields — non-negotiable
@@ -271,6 +287,25 @@ config: strawberry.ID | None = strawberry.field(
 - **Output deprecated fields must be exhaustively grepped from the legacy tree.** Run `git grep -n deprecation_reason <legacy-tree-sha>` and check every hit is carried forward. Toshi-api missed 2 output fields + 1 input field on `OpenquakeHazardSolution` / `OpenquakeHazardTask`; only caught in prod from a real client query (hotfix #344).
 
 - **The Graphene `ClientIDMutation` payload shape must be preserved exactly.** Existing clients use the camelCase `clientMutationId` echo and the `<entityName>` field in the payload. Don't "improve" the shape during migration.
+
+- **Strawberry makes output fields non-null by default — graphene didn't.** A resolver typed `-> str` emits `String!`; the equivalent graphene `String` field was nullable (`String`). Annotate `-> str | None` (or `Optional[str]`) to match the legacy SDL. This applies to *every* scalar field — tightening the contract mid-migration is a parity break the SDL gate will catch, but only if your Phase 0 baseline is accurate.
+
+- **Optional args render a `= null` default that graphene omits.** `def field(self, version: str | None = None)` produces `version: String = null` in the SDL; legacy graphene emits `version: String`. Use `strawberry.UNSET` as the default (`version: str | None = strawberry.UNSET`) to suppress the `= null` and match.
+
+- **An input *instance* as an arg/field default renders in the SDL but breaks runtime coercion.** Reproducing a graphene `default_value=dict(...)` with a Strawberry input *instance* (`style: Foo = Foo(...)`) prints the right default in the SDL **but** graphql-core then tries to coerce that already-built instance at execution and raises *"Expected type 'Foo' to be a mapping"*. Use a plain **mapping** as the default instead (`style: Foo = {"stroke_color": "black", ...}`) — it both renders and coerces. (Solvis hit this twice: a geojson style arg and a nested `filter_set_options` default.)
+
+- **Graphene fills *partial* input defaults from the input type's own field defaults — match the value *types*.** A graphene `default_value=dict(stroke_color="black", stroke_width=1, stroke_opacity=1.0)` (3 keys) is coerced through the input type, so the omitted `fill_opacity`/`fill_color` come back filled from the **field** defaults. Reproduce those field defaults with the right type (`fill_opacity: float | None = 1.0`, not `= 1`) or the JSON output differs by `1.0` vs `1` and the byte-compare fails. The SDL gate won't catch it — only a runtime differential will (see Phase 3).
+
+- **Custom scalars and enums-from-untyped-libs trip mypy `valid-type`.** A `strawberry.scalar(NewType(...))` or `strawberry.enum(some_untyped_lib.Enum)` assigned to a module variable isn't seen as a usable type in annotations. Wrap it in a `TYPE_CHECKING` alias to a concrete stub:
+  ```python
+  if TYPE_CHECKING:
+      JSONString = object               # opaque to mypy
+      class SetOperationEnum(enum.Enum): UNION = "UNION"; ...   # concrete stub
+  else:
+      JSONString = strawberry.scalar(...)
+      SetOperationEnum = strawberry.enum(lib.SetOperationEnum, ...)
+  ```
+  (Model used a single `# type: ignore[valid-type]` for one scalar; Solvis needed this for `JSONString` + a `SetOperationEnum` from `solvis`.)
 
 ---
 
@@ -317,6 +352,26 @@ Set up a parallel test stack that can validate the new code against real DynamoD
 - **Java is required for DynamoDB Local.** Surfaced as a non-obvious testcontainers error. Document in `DEVELOPMENT.md`.
 - **`TESTING=1` set inside a fixture is too late.** It must be at module-load time in `conftest.py` (use `os.environ.setdefault` so the dev's local env wins if explicitly set).
 
+### The differential harness is the highest-value Phase 3 artifact
+
+SDL parity proves the *shape*; it is blind to **runtime** divergence. Build a tiny in-process
+differential — run each query through **both** schemas (legacy Graphene + new Strawberry, same
+process, same fixtures) and assert identical `data`:
+
+```python
+def _assert_parity(query, **vars):
+    legacy = Client(schema_root).execute(query, variable_values=vars or None)
+    straw  = strawberry_schema.execute_sync(query, variable_values=vars or None)
+    assert straw.data == legacy["data"]
+```
+
+It is cheap and it catches the things the SDL gate **cannot** — Solvis found three real bugs
+this way that were byte-identical in the SDL: the relay **global-id** encoding (`id` must be
+`graphql_relay.to_global_id(...)`, not raw — the C1 trap, live), **float-vs-int** default values,
+and the input-instance-vs-mapping coercion. Seed it from the vendored corpus; for archive/data
+fixtures, reuse the existing test fixtures. It's also the in-process rehearsal for the live A/B
+(`cli_ab_test` / `drive_live.py`) at cutover.
+
 ---
 
 ## Phase 4 — Deploy, CI & deps hardening
@@ -332,6 +387,11 @@ This is the densest section. Every item here corresponds to a real incident or n
 
 - Secrets live in **GitHub Environments** (`AWS_TEST`, `AWS_PROD`), not at repo level. The shared deploy workflow takes an `environment:` parameter and uses `secrets: inherit` from the calling workflow.
 - **`gh secret list` at repo level does NOT show environment secrets** — this is a 30-min "where is `NZSHM22_TOSHI_API_KEY` coming from" detour. Use `gh secret list --env <NAME>`.
+- **Don't assume toshi-api's secrets layout — inventory the target's first (Phase 0).** The `AWS_TEST`/`AWS_PROD` Environments + OIDC split above is *toshi-api's* posture; siblings differ. Two postures seen so far:
+  - **toshi-api:** `AWS_TEST`/`AWS_PROD` GitHub Environments, each holding deploy secrets, assumed via an OIDC role.
+  - **Model pilot:** **repo-level static AWS keys** (`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`) + a single `DEPLOY_TEST` environment with *no* secrets — no per-env split, no OIDC role.
+
+  Preserve whatever the sibling already uses. Migrating a sibling *toward* the toshi-api posture is a separate hardening task — out of scope for the code migration.
 
 ### 4.3 Legacy API key resolution chain
 
@@ -361,7 +421,18 @@ on:
     branches: [main, deploy-test]
 ```
 
-only run on PRs whose **base** is `main` or `deploy-test`. Stacked PRs that target a feature branch get **no CI** silently. Remove the `branches:` filter (see toshi-api PR #337) so every PR runs tests regardless of base.
+only run on PRs whose **base** is `main` or `deploy-test`. Stacked PRs that target a feature branch get **no CI** silently — annoying mid-migration.
+
+> ⚠️ **This filter is often a deliberate supply-chain control — do NOT remove it reflexively.** It narrows the set of PRs that auto-trigger the build. The risk it mitigates (raised by voj on solvis): an **anonymous / outside PR auto-running CI** is a supply-chain vector — the build `uv sync`s untrusted deps and runs the PR's checked-out code in the runner. (`pull_request` withholds secrets from fork PRs and runs the *base* branch's workflow, so secrets aren't directly exposed — but arbitrary code execution + dep install on a well-crafted PR is the attack surface.) Pair the filter with GitHub's **"require approval to run workflows on fork PRs"** setting; never switch to `pull_request_target` to "fix" CI coverage.
+
+**So:** if a stacked migration needs CI on feature-branch PRs, get it **without** weakening the control —
+- merge the stack as **one combined PR** (G7) and rely on that PR's CI (what solvis ended up doing), or
+- run CI on a stacked branch on demand with `workflow_dispatch`, or
+- widen temporarily, then **restore the filter** before promote.
+
+Solvis lived this: removed the filter in Phase 1 for stacked-PR CI, voj flagged it as the deliberate anti-supply-chain rule, restored before the prod promote. (toshi-api PR #337 removed it there in a different threat context — confirm your repo's fork-PR posture before copying.)
+
+- **If you do widen it for a stack, the change must reach every head branch.** For same-repo PRs, GitHub runs the workflow file as it exists on the PR's **head** branch — removing the filter on the bottom branch doesn't retroactively give CI to the PRs stacked above it. (One more reason to prefer the combined-merge route over widening.)
 
 ### 4.6 Yarn 4 (Berry) hygiene
 
@@ -418,11 +489,16 @@ STAGE=dummy yarn sls package --stage dummy
 # (will fail later on AWS creds — that's fine; the plugin-init step is what we're testing)
 ```
 
+> **SF v4 + Python: `sls package` won't produce a local zip.** On a Serverless Framework v4 Python project, `yarn sls package` always resolves the AWS account id first (even offline, even with no `org`/`app`), so it stops before building the zip without credentials. You can still validate plugin/config init this way, but the *definitive* packaging proof is the first test-stage deploy (Model pilot: local packaging was blocked; the test-stage deploy is what confirmed the built-in requirements step works — see §4.8).
+
 ### 4.8 `uv` hygiene
 
 - `uv lock` after any `pyproject.toml` change. `uv sync` for installs.
 - For `pip-audit`: `uv export --format requirements-txt --no-emit-project --output-file audit.txt && uv run pip-audit -r audit.txt -s pypi --require-hashes`
 - CI: `uv sync --frozen` to assert the lockfile matches.
+- **Migrate version bumping off `bump2version`/`bumpversion` to `hatch-vcs`.** `bump2version`/`bumpversion` is unmaintained; GNS libs standardise on `hatch-vcs` (version derived from the git tag, not written into source). The dockerbash `bumpversion2hatchvcs` skill automates the switch — run it as part of the migration. Bonus: hatch-vcs **sidesteps** the lockfile trap below, since there's no static version in `pyproject.toml` to drift out of sync with `uv.lock`.
+  - *If a sibling still uses static-version `bump2version`/`bumpversion`:* note that it bumps `pyproject.toml`/`package.json`/`__init__.py` but **not** `uv.lock` (which also records the project's own version), so `uv lock --check` fails after a bump — pair every bump with a follow-up `uv lock` commit until it's moved to hatch-vcs. (Model pilot: caught by CI's lock check.)
+- **How Python deps get packaged after `serverless-wsgi` is gone (SF v4).** Serverless Framework v4 ships **python-requirements built-in** — no plugin needed. It activates on the presence of a `custom.pythonRequirements` block (SF prints this at deploy time) and is **uv-aware**. Pattern Model used: keep `custom.pythonRequirements` (with e.g. `dockerizePip`, `slim`, `noDeploy: [botocore]`); have the `deploy` script run `uv export` → `requirements.txt` before `serverless deploy` for a deterministic input; leave `plugins: []`. Removing `serverless-wsgi` does **not** remove this step. The package `patterns` (`!**` + `<pkg>/**`) only scope your *source*, not the deps.
 
 ### 4.9 Atomic auth source selection (only when JWT auth lands)
 
@@ -438,6 +514,7 @@ If a Lambda Authorizer dict is present **at all** in the request scope (`request
   git rebase --onto <new-base> <old-base> <branch>
   ```
   Chained simple rebases (`git rebase <prev>` repeated) confuse git about which commits to replay and can resurrect old commits.
+- **If an intermediate phase isn't independently deployable, merge the stack as one unit.** Phase boundaries are good for *review*, but a mid-stack branch can be a non-runnable state (Model pilot's P1 is a minimal stub schema that doesn't serve the real types yet). On a repo where merging the bottom branch triggers a deploy (`deploy-test`), landing phases one-by-one would deploy that broken intermediate. Instead, retarget the top PR's base to the deploy branch and do **one combined merge → one deploy** (Model: #67 carried #63–#66; the others closed as "landed via #67").
 
 ### 4.11 Hotfix forward-port
 
@@ -464,7 +541,7 @@ fi
 - **A local-dev-only plugin breaks prod deploy.** s3rver, sls-dynamodb, sls-s3-local — they all load at sls boot. Test plugin chain locally before every deps-only PR (`yarn sls package --stage dummy`).
 - **`DB_READ_ONLY` defaults are fragile.** Prefer write-by-default with opt-in read-only.
 - **`gh secret list` (repo-level) hides environment secrets** — use `--env`.
-- **`pull_request.branches:` filter silently skips CI on stacked PRs.** Remove it.
+- **`pull_request.branches:` filter silently skips CI on stacked PRs** — but it's often a deliberate **supply-chain control** (stops anonymous/fork PRs auto-running the build). Don't remove it reflexively; get stacked-PR CI via the combined-merge route (G7) or `workflow_dispatch`, and restore it before promote. See §4.5.
 - **Auto-merge polling is mandatory** if the repo doesn't have auto-merge enabled. Don't manually refresh.
 
 ---
@@ -481,6 +558,7 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 3. **Run the client query corpus** against the test stage. Every query must return the same shape as legacy (modulo `@deprecated` notices on now-deprecated fields).
 4. **Spot-check a tiny mutation.** Toshi-api uses a small vendored `runzi` smoke mutation that writes a dummy file (cheap, easy to rollback). Include one in the repo as `tests/smoke/test_mutation_smoke.py`.
 5. **Soak the test stage for 24h** before promoting. Re-run the corpus at end of soak; eyeball CloudWatch for the soak window. Skip only if the API has very low real traffic (Model is the obvious candidate to skip).
+   - **Low-traffic alternative — active differential validation, not a passive soak.** With little real traffic, a soak and a CloudWatch baseline tell you nothing. Instead, drive the live `/graphql` yourself and diff each response **byte-for-byte against an in-process oracle** (the new schema executed locally, already proven == legacy). Enumerate the full surface — every entity/version, a `node(id)` per Relay type, and the vendored corpus. The rollback trigger becomes "the driver reports any mismatch", not a metric threshold. Model pilot ran this against both the live legacy test **and prod** stages (read-only): 19/19 byte-identical, which retired the parity risk *before* cutover. See `tests/smoke/drive_live.py` in `nshm-model-graphql-api`.
 6. **Pre-stage the rollback PR.** Open it as a draft against `main` with title `revert: <promote-pr-title>` and body containing `git revert <merge-sha>` plus a one-line trigger criterion ("publish if 5xx rate > X% sustained > Y min"). Faster to publish than to author under stress.
 7. **Promote `deploy-test → main`** via PR — only after corpus + smoke + soak pass. Use the standard PR title format `release: promote <thing> to prod`.
 8. **Watch prod for at least 30 min post-deploy.** Two windows side-by-side:
@@ -504,6 +582,7 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 - **Migration order within the API:** straightforward — bootstrap → schema (2-3 types only) → tests → deploy.
 - **Special handling:** the `nzshm-model` Python library is the heavy lift; it stays untouched.
 - **Use this migration to harden the runbook.** Anywhere this doc made you guess: file an issue against `nshm-toshi-api` referencing the runbook line that needed clarification.
+- **Pilot migration log:** `nshm-model-graphql-api/docs/MIGRATION_LOG.md` is the worked record — stacked PRs per phase, SF v4 built-in packaging proven on the test-stage deploy, and byte-for-byte differential validation against the live legacy test **and** prod stages. The traps and clarifications it surfaced are folded back into this runbook (Phase 0 SDL-dump stdout, Phase 1 `schema.py` name clash, Phase 2 `GlobalID`/nullability/`UNSET` parity, §4.5/4.7/4.8/4.10 deploy items, the Phase 5 differential-validation alternative).
 
 ### A2. `kororaa-graphql-api`
 
@@ -516,10 +595,8 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 - **Stack deltas:** container Lambda (Dockerfile + ECR).
 - **Container build:** Mangum + FastAPI works the same inside a container. The build pipeline changes; the runtime entry doesn't.
 - **The existing `handler.py` workaround goes away.** It exists today because `serverless-wsgi` doesn't cleanly support container Lambda — switching to Mangum (which is packaging-agnostic) makes the workaround unnecessary. Mangum itself isn't doing anything ECR-specific; it just isn't `serverless-wsgi`.
-- **Heavy deps:** `matplotlib`, `geopandas`. Watch container image size:
-  - Use `python:3.12-slim` base
-  - Multi-stage build to drop build deps
-  - Aim for <500MB final image (current is likely larger)
+- **Heavy deps:** `matplotlib`, `geopandas`. Watch container image size — but **don't reach for multi-stage reflexively**: Solvis (same geo stack: matplotlib + geopandas + pyproj + shapely + solvis) came in at **360 MB single-stage** on the `public.ecr.aws/lambda/python:3.12` base, comfortably under the 500 MB aim. Measure first; only multi-stage if you're actually over.
+- **`serverless-plugin-warmup` warmup-event guard** — see the Phase 1 trap. Hazard is a container Lambda with the warmup plugin, so its Mangum entry needs the same guard or prod logs fill with `RuntimeError` every few minutes.
 - **Memory:** already 4096 MB — keep. Don't try to drop.
 
 ### A4. `solvis-graphql-api` — last
@@ -528,7 +605,21 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 - **The big extra:** PynamoDB → boto3 + Pydantic v2 conversion. PynamoDB's declarative Model class becomes a `pydantic.BaseModel` in `<pkg>/data/models.py` plus thin boto3 CRUD helpers in `<pkg>/data/dynamo.py`. See toshi-api `graphql_api/data/models.py` and `graphql_api/data/dynamo.py` for the destination pattern.
 - **Yarn `resolutions` hygiene matters here especially** — `serverless-dynamodb` plugin has the same shape of trap as `serverless-s3-local` did for toshi-api. Validate plugin chain locally on every deps PR.
 - **`cli` and `cli_ab_test` scripts** import from the package — when the package layout changes (e.g. adopting `_base/_interfaces/_infra`), those imports break. Add them to the test matrix.
-- **Migration order within the API:** bootstrap → data layer (PynamoDB→Pydantic) → schema → tests → deploy. The data-layer step is bigger than for the other three APIs.
+- **Migration order within the API:** bootstrap → data layer (PynamoDB→Pydantic) → schema → tests → deploy.
+
+**What the migration actually found (2026-06, completed **in prod** — promote + 30-min watch clean):**
+- **The PynamoDB surface was tiny, not a big data layer.** It was a *single* model (`BinaryLargeObjectModel`, 5 attrs) already wrapped by a hand-written class. Convert the `Model` to a `pydantic.BaseModel` + thin boto3 CRUD **behind the unchanged wrapper API** so `cli`/resolvers don't move — `pynamodb` drops out entirely. The "data-layer step is bigger" caveat above didn't hold.
+- **Reproduce `JSONAttribute` as a JSON *string*, not a native DynamoDB Map.** A native Map round-trips numbers as `Decimal`; storing the JSON-dumped string keeps ints as ints and keeps `to_json()` byte-equal.
+- **Reuse the in-repo `cli_ab_test` for cutover validation — don't build a `drive_live.py`.** Its checks already cover the full client surface; `cli_ab_test -A prod -B test` gave the 9/9 gate. (Model had to build `drive_live.py` because it had no equivalent.)
+- **For the heaviest resolvers, *delegate* to the legacy Graphene resolvers rather than re-port.** Solvis's `CompositeRuptureSections` (aggregates + MFD + geojson + colour) was ported by building a graphene root from the Strawberry input and calling the legacy static resolvers (held as `strawberry.Private`); the compute is reused verbatim, rewired onto the kept helpers at cleanup. Far less risk than rewriting pandas/geopandas logic.
+- **`relay.Node` → custom interface for `id: ID!` parity (C1) is mandatory here too** — and the live differential caught the *encoding* (`to_global_id`), which SDL parity can't see.
+
+**Post-cutover legacy cleanup (de-graphene) — what removing Graphene actually taught us:**
+- **Remove Graphene in verified chunks, each gated on SDL parity + the test suite — not one big delete.** Extract each Graphene-free compute helper to a stable home (Solvis: `color_scale/compute.py`, `composite_solution/ruptures.py`, `cached.py`, `geojson_style_util.py`), rewire the Strawberry resolver onto it, verify against the still-present Graphene, then delete. The *delegated* resolvers (the `CompositeRuptureSections` `strawberry.Private` trick above) must be **de-delegated** the same way before the Graphene root can go. Net for Solvis: −1740 lines of Graphene across ~12 modules; the whole package then imports zero `graphene`.
+- **Deleting Graphene kills the differential test's oracle — and snapshots are NOT a drop-in replacement.** The in-process differential ran the *same query through both schemas in one process*, so platform float differences (shapely/geos coords, matplotlib hexes) cancelled. Capture those as golden snapshots on macOS and ubuntu CI fails the byte-compare on the low float digits. Fix: keep byte-exact snapshots only for **deterministic** queries (rounded scalars, enums); assert geometry/geojson/colour **structurally** (counts, the global-id encoding decodes, "styling reached every feature"). `cli_ab_test` (same live data, both stages) stays the authoritative geojson parity gate. *Also drop accidental megafixtures — a `get_locations` snapshot re-stored the whole `nzshm_common` LOCATIONS constant as a 118k-line file.*
+- **Keep and *repoint* the legacy Graphene-`Client` tests at the Strawberry schema — don't delete them.** A `graphene.test.Client` drop-in (`tests/_strawberry_client.py`, ~25 lines) runs all of them unchanged against Strawberry; they cover the resolvers you *reimplemented*, far past the parity corpus. They caught a real bug: `filter_ruptures` passed `strawberry.UNSET` as the sortby `ascending` (pandas rejected it) — invisible to SDL parity.
+- **Codecov fails on the *promote* PR's cumulative diff, not your last commit.** The whole `deploy-test → main` diff is measured against `main`; the migration sat ~0.2% under the auto-bar. The culprit was a standalone tool script (the SDL-parity gate) at **0% coverage** — wrap such tools as pytest tests (which also makes the gate permanent). Don't fake-cover genuinely-unreachable legacy branches; use `# pragma: no cover` with a note.
+- **A/B with valid inputs can't see malformed-input behaviour — and that's OK.** Prod logged a `KeyError` from a client sending `fault_system: ""`; the failing line was unchanged shared compute Graphene called identically (HTTP 200 + a per-field GraphQL error, not 5xx). Not a regression — don't let it trigger a rollback; file it as a separate robustness item.
 
 ---
 
@@ -589,7 +680,7 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 | 11 | 4 | Existing clients suddenly hit auth | Preserve `LEGACY_API_KEY` chain in `serverless.yml` |
 | 12 | 4 | Prod write returns `DB_READ_ONLY` | Drop the default; opt-in to RO via `serverlessIfElse` |
 | 13 | 4 | Can't find where `NZSHM22_*` secret is set | `gh secret list --env AWS_TEST/AWS_PROD` |
-| 14 | 4 | Stacked PR doesn't run CI | Remove `branches:` filter on workflow |
+| 14 | 4 | Stacked PR doesn't run CI | `branches:` filter is often a deliberate supply-chain control — combined-merge (G7), don't just remove it (§4.5) |
 | 15 | 4 | `yarn install --immutable` fails after removing a dep | `yarn install --mode update-lockfile` first |
 | 16 | 4 | Deploy dies at plugin init: `xmlParser.parse is not a function` | Scope resolutions to the affected consumer; drop global override |
 | 17 | 4 | Prod deploy crashes after a deps-only PR | Run `yarn sls package --stage dummy` locally before push |
@@ -598,6 +689,30 @@ Ship the new code to the test stage, validate end-to-end, promote to prod, monit
 | 20 | 4 | Lambda timeouts after memory drop | Halve from legacy and monitor CloudWatch; don't cut hard |
 | 21 | 5 | Rolling back fails because new code wrote new-shape DDB items | Test the rollback path on test stage before going to prod |
 | 22 | 5 | "Healthy" prod after deploy is hard to judge | Screenshot pre-deploy CloudWatch baseline (step 1) |
+| 23 | 0 | `schema.legacy.graphql` baseline has stray `WARNING:` lines | Redirect stdout→stderr around the schema import in the SDL dump |
+| 24 | 1 | Can't create `<pkg>/schema.py` — legacy `schema/` package owns the path | Transitional name (`strawberry_schema.py`); rename at cutover |
+| 25 | 2 | Parity gate fails: new `id: GlobalID!` vs legacy `id: ID!` | Custom `@strawberry.interface Node` + `graphql_relay` encode/decode |
+| 26 | 2 | New scalar field is `String!`, legacy was nullable `String` | Annotate resolvers `-> str \| None` |
+| 27 | 2 | Arg renders `version: T = null`; legacy emits `version: T` | Default the arg to `strawberry.UNSET` |
+| 28 | 2 | Mirroring an upstream-owned typed model into a parallel pydantic shape | Reuse the upstream dataclasses as the data layer |
+| 29 | 4 | "What packages the Python deps after `serverless-wsgi`?" | SF v4 built-in python-requirements (uv-aware), via `custom.pythonRequirements` |
+| 30 | 4 | `sls package` won't build a zip locally on SF v4 python | Resolves AWS account id first; prove packaging via test-stage deploy |
+| 31 | 4 | `uv lock --check` fails after a version bump | bumpversion skips `uv.lock`; add a paired `uv lock` commit |
+| 32 | 4 | Removing the `branches:` filter still leaves stacked PRs CI-less | Cascade-rebase the fix onto every head branch in the stack |
+| 33 | 4 | One-by-one stacked merge deploys a broken intermediate | Combined merge → one deploy when a phase isn't independently deployable |
+| 34 | 4 | Assumed `AWS_TEST`/`AWS_PROD` env split that doesn't exist | Inventory secrets first; some siblings use repo-level static keys + one env |
+| 35 | 5 | Soak is meaningless on a low-traffic API | Active differential validation: drive live, diff byte-for-byte vs oracle |
+| 36 | 1 | CI mypy red on untouched legacy code after `poetry2uv` | It set `follow_untyped_imports=true`; restore `ignore_missing_imports` only |
+| 37 | 1 | Container Lambda: `RuntimeError` every few min in prod logs | `serverless-plugin-warmup` sends a non-HTTP event; guard it before Mangum |
+| 38 | 2 | Input-instance arg default → "expected a mapping" at runtime | Use a plain mapping default, not an input instance (renders + coerces) |
+| 39 | 2 | Geojson/output differs by `1.0` vs `1` on default styles | Match input-field default *types* (graphene fills partial defaults via them) |
+| 40 | 2 | mypy `valid-type` on a custom scalar / enum-from-untyped-lib | `TYPE_CHECKING` alias to a concrete stub; real value in the `else` branch |
+| 41 | 3 | SDL parity green but `id`/values wrong at runtime | In-process differential (same query, both schemas) — catches encoding/defaults |
+| 42 | A4 | PynamoDB port feared big; geojson resolvers feared a re-port | One wrapped model → pydantic behind the wrapper; *delegate* heavy resolvers |
+| 43 | cleanup | Differential test's oracle deleted with Graphene; snapshots flake on CI | Byte-snapshot deterministic queries only; assert geometry/geojson structurally |
+| 44 | cleanup | Deleting the Graphene-`Client` tests loses coverage of reimplemented resolvers | Repoint them at Strawberry via a `graphene.test.Client` drop-in shim |
+| 45 | cleanup | Codecov red on the *promote* PR (cumulative diff under auto-bar) | Wrap standalone tool scripts (SDL gate) as pytest tests; `# pragma` truly-dead branches |
+| 46 | 5 | Prod `KeyError` on `fault_system:""` post-cutover | Unchanged shared compute — Graphene identical; not a regression, file separately |
 
 ---
 
