@@ -119,7 +119,7 @@ custom:
   serverlessIfElse:
       - If: '"${self:custom.stage}" == "test"'
         Exclude:
-          - resourcee.Resources.ElasticSearchInstance
+          - resources.Resources.ElasticSearchInstance
           - provider.iamrolestatements.1
 
 provider:
