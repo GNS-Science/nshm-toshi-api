@@ -1,6 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [0.7.1] - 2026-07-14
+
+### Fixed
+ - `RuptureGenerationTask` now returns the stored `model_type` on read (previously always `null`). The value was persisted correctly but dropped when reconstructing the type; the concrete type now declares and populates `model_type` like its sibling `AutomationTask` (#369).
 
 ### Changed
  - deps (Python/uv): patch (17 pkgs), minor (27 pkgs)
