@@ -125,6 +125,7 @@ class RuptureGenerationTask(relay.Node, Thing, AutomationTaskInterface):
     state: EventState | None = None
     result: EventResult | None = None
     task_type: TaskSubType | None = None
+    model_type: ModelType | None = None
     created: DateTime | None = None
     duration: float | None = None
     general_task_id: strawberry.ID | None = None
@@ -165,6 +166,7 @@ class RuptureGenerationTask(relay.Node, Thing, AutomationTaskInterface):
             state=_try_enum(EventState, d.state),
             result=_try_enum(EventResult, d.result),
             task_type=_try_enum(TaskSubType, d.task_type),
+            model_type=_try_enum(ModelType, d.model_type),
             created=d.created,
             duration=d.duration,
             arguments=[KeyValuePair(k=i.k, v=i.v) for i in d.arguments] if d.arguments else None,

@@ -25,6 +25,7 @@ mutation CreateRGT($input: CreateAutomationTaskInput!) {
         task_result {
             id
             task_type
+            model_type
             state
             result
             created
@@ -57,6 +58,7 @@ def _make_input(**overrides):
         "state": "UNDEFINED",
         "result": "UNDEFINED",
         "task_type": "RUPTURE_SET",
+        "model_type": "CRUSTAL",
         "created": "2026-01-01T00:00:00Z",
         "duration": 600,
         "arguments": [
@@ -94,6 +96,7 @@ def test_create_returns_id(created_rgt):
 def test_create_minimum_fields_round_trip(created_rgt):
     """Create with the legacy "minimum fields" shape — verify fields round-trip."""
     assert created_rgt["task_type"] == "RUPTURE_SET"
+    assert created_rgt["model_type"] == "CRUSTAL"
     assert created_rgt["state"] == "UNDEFINED"
     assert created_rgt["result"] == "UNDEFINED"
     assert created_rgt["duration"] == 600
