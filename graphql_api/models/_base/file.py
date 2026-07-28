@@ -26,7 +26,6 @@ from graphql_api.models._infra.common import (
 from graphql_api.models._interfaces.file_interface import FileInterface
 from graphql_api.models._interfaces.predecessor import PredecessorInput
 from graphql_api.models._interfaces.predecessors_interface import PredecessorsInterface
-from graphql_api.models.relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
 
 @strawberry.type(name="File")
@@ -35,12 +34,8 @@ class ToshiFile(relay.Node, FileInterface, PredecessorsInterface):
 
     pk: relay.NodeID[str]
 
-    relations_raw: strawberry.Private[list | None] = None
+    # `relations` (and its relations_raw backing field) is inherited from FileInterface.
     predecessors_raw: strawberry.Private[list | None] = None
-
-    @relay.connection(FileRelationsConnection)
-    def relations(self, info: Info) -> list[FileRelation | None]:
-        return build_file_relations_for_file(self.pk, self.relations_raw or [])
 
     @classmethod
     def resolve_node(

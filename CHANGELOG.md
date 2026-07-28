@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+ - **`relations` restored on the `FileInterface` GraphQL interface.** The legacy Graphene schema declared `relations` on `FileInterface` itself; the Strawberry port declared it only on some concrete types. Clients spreading `... on FileInterface { relations { total_count } }` (e.g. toshi-ui's `InversionSolutionDiagnosticContainerQuery`) failed GraphQL *validation*, which nulls the whole document — every node came back null, not just `relations`. Same class of parity gap as the `OpenquakeHazardSolution` `config`/`modified_config` hotfix.
+ - **`RuptureSet` and `InversionSolutionNrml` now expose `relations` at all.** Both implemented the legacy `FileInterface` and their DynamoDB records carry the relation data, but the Strawberry types dropped it in `from_dict`. A `RuptureSet`'s link back to the `RuptureGenerationTask` that produced it was unreachable through the API.
+
+### Changed
+ - `InversionSolutionInterface.relations` now returns `FileRelationConnection` instead of the bespoke `InversionSolutionRelations` type (which is removed from the SDL). This restores the legacy Relay shape — `relations { edges { node { … } } }` previously failed on all four InversionSolution types. Any client written against the post-port shape must change `edges { role }` to `edges { node { role } }`.
+
 ## [0.7.1] - 2026-07-14
 
 ### Fixed

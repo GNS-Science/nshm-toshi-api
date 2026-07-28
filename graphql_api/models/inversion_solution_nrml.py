@@ -59,6 +59,7 @@ class InversionSolutionNrml(relay.Node, FileInterface, PredecessorsInterface):
             created=d.created,
             source_solution_raw_id=d.source_solution,
             predecessors_raw=[p.model_dump() for p in d.predecessors] if d.predecessors else None,
+            relations_raw=d.relations,
         )
 
 

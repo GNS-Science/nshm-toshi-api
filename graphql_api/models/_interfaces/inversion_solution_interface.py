@@ -16,12 +16,13 @@ the Strawberry schema simple; concrete types implement both interfaces.
 from typing import Annotated
 
 import strawberry
+from strawberry import relay
 from strawberry.relay import GlobalID
 from strawberry.types import Info
 
 from graphql_api.data.dynamo import get_table, get_thing
 from graphql_api.models._infra.common import BigInt, DateTime, KeyValuePair, TableType
-from graphql_api.models.relations import InversionSolutionRelations, build_file_relations_for_file
+from graphql_api.models.relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
 # ── Lazy forward refs ─────────────────────────────────────────────────────────
 # These types are defined in modules that import *this* module (circular),
@@ -83,13 +84,13 @@ class InversionSolutionInterface:
 
     tables: list[_LabelledTableRelation | None] | None = None
 
-    @strawberry.field
-    def relations(self, info: Info) -> InversionSolutionRelations | None:
-        pk = self.pk  # type: ignore[attr-defined]
-        relations_raw = self.relations_raw  # type: ignore[attr-defined]
-        if not relations_raw:
-            return InversionSolutionRelations()
-        return InversionSolutionRelations(edges=build_file_relations_for_file(pk, relations_raw))
+    # Must stay type-identical to FileInterface.relations: the concrete IS types
+    # implement both interfaces, and GraphQL allows only one `relations` field per
+    # type. FileRelationConnection is also the legacy shape (`edges { node }`);
+    # the bespoke InversionSolutionRelations this replaced was port drift.
+    @relay.connection(FileRelationsConnection)
+    def relations(self, info: Info) -> list[FileRelation | None]:
+        return build_file_relations_for_file(self.pk, self.relations_raw or [])  # type: ignore[attr-defined]
 
     @strawberry.field
     def produced_by(self, info: Info) -> AutomationTaskUnion | None:
