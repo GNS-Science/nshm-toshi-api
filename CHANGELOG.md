@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.7.2] - 2026-07-29
 
 ### Fixed
  - **`relations` restored on the `FileInterface` GraphQL interface.** The legacy Graphene schema declared `relations` on `FileInterface` itself; the Strawberry port declared it only on some concrete types. Clients spreading `... on FileInterface { relations { total_count } }` (e.g. toshi-ui's `InversionSolutionDiagnosticContainerQuery`) failed GraphQL *validation*, which nulls the whole document — every node came back null, not just `relations`. Same class of parity gap as the `OpenquakeHazardSolution` `config`/`modified_config` hotfix.
