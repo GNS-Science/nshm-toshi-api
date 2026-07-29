@@ -36,13 +36,13 @@ class AggregateInversionSolution(relay.Node, FileInterface, InversionSolutionInt
     pk: relay.NodeID[str]
     metrics: list[KeyValuePair | None] | None = None
     aggregation_fn: AggregationFn | None = None
-    # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id, relations
-    # are all inherited from InversionSolutionInterface.
+    # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id are inherited
+    # from InversionSolutionInterface; `relations` (and its relations_raw backing
+    # field) from FileInterface.
 
     produced_by_raw_id: strawberry.Private[str | None] = None
     common_rupture_set_raw_id: strawberry.Private[str | None] = None
     source_solutions_raw_ids: strawberry.Private[list[str | None] | None] = None
-    relations_raw: strawberry.Private[list | None] = None
     predecessors_raw: strawberry.Private[list | None] = None
 
     @strawberry.field

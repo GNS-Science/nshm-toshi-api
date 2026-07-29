@@ -31,12 +31,12 @@ _InversionSolution = Annotated["InversionSolution", strawberry.lazy("graphql_api
 class TimeDependentInversionSolution(relay.Node, FileInterface, InversionSolutionInterface, PredecessorsInterface):
     pk: relay.NodeID[str]
     metrics: list[KeyValuePair | None] | None = None
-    # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id, relations
-    # are all inherited from InversionSolutionInterface.
+    # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id are inherited
+    # from InversionSolutionInterface; `relations` (and its relations_raw backing
+    # field) from FileInterface.
 
     produced_by_raw_id: strawberry.Private[str | None] = None
     source_solution_raw_id: strawberry.Private[str | None] = None
-    relations_raw: strawberry.Private[list | None] = None
     predecessors_raw: strawberry.Private[list | None] = None
 
     @strawberry.field
