@@ -88,6 +88,15 @@ class InversionSolutionInterface:
     # implement both interfaces, and GraphQL allows only one `relations` field per
     # type. FileRelationConnection is also the legacy shape (`edges { node }`);
     # the bespoke InversionSolutionRelations this replaced was port drift.
+    #
+    # This body is currently unreachable. Every concrete IS type lists FileInterface
+    # ahead of InversionSolutionInterface in its bases, so the MRO binds
+    # FileInterface.relations (`InversionSolution.relations is FileInterface.relations`).
+    # The declaration is still required — without it the SDL interface would not carry
+    # the field and `... on InversionSolutionInterface { relations }` would fail
+    # validation. Kept as a working implementation rather than the `return None` stub
+    # used by file_url above, so it stays correct if a type ever implements this
+    # interface without FileInterface; edit it and FileInterface.relations together.
     @relay.connection(FileRelationsConnection)
     def relations(self, info: Info) -> list[FileRelation | None]:
         return build_file_relations_for_file(self.pk, self.relations_raw or [])  # type: ignore[attr-defined]

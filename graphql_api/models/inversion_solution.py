@@ -122,11 +122,11 @@ class InversionSolution(relay.Node, FileInterface, InversionSolutionInterface, P
 
     pk: relay.NodeID[str]
     metrics: list[KeyValuePair | None] | None = None
-    # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id, relations
-    # are all inherited from InversionSolutionInterface.
+    # tables, produced_by, mfd_table, mfd_table_id, hazard_table_id are inherited
+    # from InversionSolutionInterface; `relations` (and its relations_raw backing
+    # field) from FileInterface.
 
     produced_by_raw_id: strawberry.Private[str | None] = None
-    relations_raw: strawberry.Private[list | None] = None
     predecessors_raw: strawberry.Private[list | None] = None
 
     @classmethod
