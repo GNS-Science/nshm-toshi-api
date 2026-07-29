@@ -71,6 +71,7 @@ class RuptureSet(relay.Node, FileInterface):
             fault_models=d.fault_models,
             metrics=[KeyValuePair(k=i.k, v=i.v) for i in d.metrics] if d.metrics else None,
             produced_by_raw_id=d.produced_by,
+            relations_raw=d.relations,
         )
 
 

@@ -20,7 +20,6 @@ from graphql_api.models._infra.common import (
     client_mutation_id_input_field,
 )
 from graphql_api.models._interfaces.file_interface import FileInterface
-from graphql_api.models.relations import FileRelation, FileRelationsConnection, build_file_relations_for_file
 
 
 @strawberry.type
@@ -30,11 +29,7 @@ class SmsFile(relay.Node, FileInterface):
     pk: relay.NodeID[str]
     file_type: SmsFileType | None = None
 
-    relations_raw: strawberry.Private[list | None] = None
-
-    @relay.connection(FileRelationsConnection)
-    def relations(self, info: Info) -> list[FileRelation | None]:
-        return build_file_relations_for_file(self.pk, self.relations_raw or [])
+    # `relations` (and its relations_raw backing field) is inherited from FileInterface.
 
     @classmethod
     def resolve_node(cls, node_id: str, *, info: Info, **kwargs) -> Optional["SmsFile"]:
