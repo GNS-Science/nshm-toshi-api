@@ -50,6 +50,25 @@ uv export --format requirements-txt --no-emit-project --output-file audit.txt
 uv run pip-audit -r audit.txt -s pypi --require-hashes
 ```
 
+### Deploying
+
+Deployments are staged through branches. `.github/workflows/deploy-aws-lambda.yaml`
+runs on pushes to both:
+
+| Branch | Deploys to |
+|---|---|
+| `deploy-test` | test stage |
+| `main` | prod stage |
+
+**Open PRs against `deploy-test`, not `main`.** `main` is merged from `deploy-test`
+once a change has run in test. A PR merged straight to `main` reaches production
+without ever having been exercised there.
+
+```bash
+gh pr create --base deploy-test      # not main
+gh pr edit <n> --base deploy-test    # retarget one already opened against main
+```
+
 ## Architecture
 
 ### Layered Structure
