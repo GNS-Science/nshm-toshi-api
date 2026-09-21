@@ -64,13 +64,22 @@ def test_graphql_function_indexes_the_live_index(sls, graphql_env):
 
 
 def test_es_endpoint_excluded_only_on_test(sls):
-    """ES_ENDPOINT may be dropped where the domain is excluded (test), nowhere else."""
-    for rule in sls["custom"]["serverlessIfElse"]:
-        excludes = rule.get("Exclude", []) + rule.get("ElseExclude", [])
-        if "functions.graphql.environment.ES_ENDPOINT" in excludes:
-            assert rule["If"] == '"${self:custom.stage}" == "test"'
-            assert "functions.graphql.environment.ES_ENDPOINT" not in rule.get("ElseExclude", [])
-            assert "resources.Resources.ElasticSearchInstance" in rule.get("Exclude", [])
+    """
+    ES_ENDPOINT is dropped exactly where the domain is (test), nowhere else.
+
+    Missing the exclusion leaves test's ES_ENDPOINT GetAtt pointing at an excluded
+    resource, failing the deploy-test deploy; excluding it elsewhere turns prod
+    indexing off.
+    """
+    endpoint_path = "functions.graphql.environment.ES_ENDPOINT"
+    rules = sls["custom"]["serverlessIfElse"]
+    matching = [r for r in rules if endpoint_path in r.get("Exclude", []) + r.get("ElseExclude", [])]
+    assert len(matching) == 1, f"expected one serverlessIfElse rule excluding {endpoint_path}, found {len(matching)}"
+    [rule] = matching
+    assert rule["If"] == '"${self:custom.stage}" == "test"'
+    assert endpoint_path in rule.get("Exclude", [])
+    assert endpoint_path not in rule.get("ElseExclude", [])
+    assert "resources.Resources.ElasticSearchInstance" in rule["Exclude"]
 
 
 def test_role_can_write_to_domain(sls):
