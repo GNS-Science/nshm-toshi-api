@@ -123,9 +123,14 @@ custom:
       # statement instead would need `provider.iamRoleStatements.1`, and the plugin
       # removes with `delete`, leaving a hole in the array that serialises to null
       # and fails validation. See #377.
+      #
+      # The graphql function's ES_ENDPOINT is a GetAtt on that resource, so it goes
+      # too. Unset ES_ENDPOINT means indexing is off (graphql_api/data/search.py);
+      # the other ES_* vars are inert without it. See #378.
       - If: '"${self:custom.stage}" == "test"'
         Exclude:
           - resources.Resources.ElasticSearchInstance
+          - functions.graphql.environment.ES_ENDPOINT
 
 provider:
   name: aws
@@ -234,6 +239,13 @@ functions:
       FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
       # S3 IAM (s3:*) is inherited from provider.iamRoleStatements — covers
       # the s3:GetObject + s3:ListBucket needed by the read fallback paths.
+      # Search indexing (#378). Writes go straight to the domain, SigV4-signed
+      # with this function's role (es:ESHttp* in provider.iamRoleStatements) —
+      # not through the GNS proxy that weka reads through. Removed on test by
+      # custom.serverlessIfElse. graphql_api/tests/test_serverless_config.py guards these.
+      ES_ENDPOINT: {"Fn::Join": ["", ["https://", {"Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]}]]}
+      ES_INDEX: ${self:custom.esIndex}
+      ES_REGION: ${self:custom.region}
     warmup:
       lowConcurrencyWarmer:
         enabled: false
@@ -261,6 +273,47 @@ resources:
           InstanceCount: 1
           DedicatedMasterEnabled: false
           ZoneAwarenessEnabled: false
+
+    # ── Search indexing failure alarm (#378) ──────────────────────────────────
+    # index_document() never raises, so a broken write path is otherwise silent.
+    # It logs INDEX_FAILURE_MARKER (graphql_api/data/search.py) on every failure;
+    # this counts those lines and alarms within the hour.
+    #
+    # The email subscription is added by hand in the SNS console, not here (the
+    # shared deploy workflow cannot pass an address through). Topic ARN is in the
+    # stack Outputs. Re-subscribe if this stack is ever rebuilt.
+    IndexingAlarmTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.stack_name}-indexing-alarm
+
+    IndexingFailureMetricFilter:
+      Type: AWS::Logs::MetricFilter
+      Properties:
+        LogGroupName: !Ref GraphqlLogGroup
+        FilterPattern: '"ES_INDEX_FAILURE"'
+        MetricTransformations:
+          - MetricNamespace: ${self:custom.stack_name}
+            MetricName: ESIndexFailures
+            MetricValue: "1"
+
+    IndexingFailureAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: ${self:custom.stack_name}-es-index-failures
+        AlarmDescription: >-
+          graphql Lambda failed to write to Elasticsearch — weka search is going
+          stale. Grep the graphql log group for ES_INDEX_FAILURE. See #378.
+        Namespace: ${self:custom.stack_name}
+        MetricName: ESIndexFailures
+        Statistic: Sum
+        Period: 3600
+        EvaluationPeriods: 1
+        Threshold: 1
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        TreatMissingData: notBreaching
+        AlarmActions:
+          - !Ref IndexingAlarmTopic
 
     # ── Cognito User Pool ──────────────────────────────────────────────────────
     # DeletionPolicy: Retain  # Uncomment for production to protect users on sls remove
@@ -460,6 +513,9 @@ resources:
         Description: Cognito M2M client_id + client_secret for ${self:custom.stage} (populated out-of-band by auth/create_m2m_secret.py)
 
   Outputs:
+    IndexingAlarmTopicArn:
+      Description: SNS topic for the ES indexing failure alarm (subscribe an email by hand in the SNS console)
+      Value: !Ref IndexingAlarmTopic
     UserPoolId:
       Description: Cognito User Pool ID (set as COGNITO_USER_POOL_ID env var)
       Value: !Ref ToshiUserPool
