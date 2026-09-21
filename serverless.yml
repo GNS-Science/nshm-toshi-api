@@ -117,10 +117,15 @@ custom:
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
 
   serverlessIfElse:
+      # Test runs without its own ES domain. Only the resource is excluded: the ES
+      # IAM statement below names the domain by constructed ARN rather than
+      # Fn::GetAtt, so it does not dangle when the resource is gone. Excluding the
+      # statement instead would need `provider.iamRoleStatements.1`, and the plugin
+      # removes with `delete`, leaving a hole in the array that serialises to null
+      # and fails validation. See #377.
       - If: '"${self:custom.stage}" == "test"'
         Exclude:
-          - resourcee.Resources.ElasticSearchInstance
-          - provider.iamrolestatements.1
+          - resources.Resources.ElasticSearchInstance
 
 provider:
   name: aws
@@ -148,9 +153,16 @@ provider:
         - es:ESHttpPut
         - es:ESHttpHead
         - es:ESHttpGet
+      # Constructed ARNs, not Fn::GetAtt, deliberately: the test stage excludes the
+      # ElasticSearchInstance resource (see custom.serverlessIfElse), and a GetAtt on
+      # an excluded resource fails template resolution. The value is identical to what
+      # GetAtt produced. Do not revert to GetAtt.
+      # Fn::Sub with the CFn pseudo-parameters, not ${aws:accountId}: the latter is a
+      # Serverless variable resolved by calling AWS, which would make `sls package`
+      # require live credentials. Same pattern as ToshiIdentityPoolRoleAttachment below.
       Resource:
-        - { "Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"] }
-        - { "Fn::Join": ["", ["Fn::GetAtt": ["ElasticSearchInstance", "DomainArn"], "/*"]] }
+        - Fn::Sub: arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${self:custom.esDomainName}
+        - Fn::Sub: arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${self:custom.esDomainName}/*
     -  Effect: Allow
        Action:
          - "cloudwatch:PutMetricData"
