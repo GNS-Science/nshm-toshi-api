@@ -43,33 +43,23 @@ aws_secret_access_key=MockAccessKeyId
 
 ## System configuration
 
-Configuration is managed by environment variables and `.env` files. There is no
-central config module; each setting is read with `os.environ.get(...)` in the module
-that uses it. The file `.env.example` includes the commonly used development setups.
-
-Deployed values are wired on the `graphql` function in `serverless.yml`:
+Settings come from environment variables (see `.env.example` for local dev).
+Deployed values are set on the `graphql` function in `serverless.yml`:
 
 | Variable | Purpose |
 |---|---|
-| `ES_ENDPOINT` | Elasticsearch domain URL for search indexing. **Unset means indexing is off** — it does not default to localhost. Not set on the test stage, which has no domain (#377). |
-| `ES_INDEX` | Index to write to (`toshi_index_mapped`, the index weka searches). |
-| `ES_REGION` | Region used to SigV4-sign requests to the domain. |
-| `GRAPHQL_PATH` | Route the GraphQL endpoint is mounted on (`/graphql`). |
-| `S3_BUCKET_NAME` | Bucket for file objects and the legacy S3 read fallback. |
-| `FIRST_DYNAMO_ID` | Starting ID for new objects (0 for smoketests, 100000 for production). |
-
-Requests to an AWS Elasticsearch domain (`*.es.amazonaws.com`) are signed with the
-Lambda's IAM role; a local docker Elasticsearch is not. `graphql_api/tests/test_serverless_config.py`
-fails CI if this wiring goes missing from `serverless.yml`.
+| `ES_ENDPOINT` | Elasticsearch URL. Unset = no search indexing (the case on test). |
+| `ES_INDEX` | Index name (`toshi_index_mapped`). |
+| `ES_REGION` | AWS region for signing Elasticsearch requests. |
+| `GRAPHQL_PATH` | GraphQL route (`/graphql`). |
+| `S3_BUCKET_NAME` | S3 bucket for files. |
+| `FIRST_DYNAMO_ID` | First ID for new objects (0 for smoketests, 100000 for prod). |
 
 ### Search indexing alarm
 
-Indexing failures never fail a mutation, but each one is logged at ERROR with the
-marker `ES_INDEX_FAILURE`. A CloudWatch alarm (`<stack>-es-index-failures`) fires
-when that marker appears in an hour and notifies an SNS topic, whose ARN is the
-stack output `IndexingAlarmTopicArn`. **The email subscription is not in the
-template** — add it by hand in the SNS console after the first deploy of a stage,
-and confirm the email AWS sends. Re-subscribe if the stack is ever rebuilt.
+Failed index writes log `ES_INDEX_FAILURE` and trigger a CloudWatch alarm, which
+emails via the SNS topic in stack output `IndexingAlarmTopicArn`. Add the email
+subscription by hand in the SNS console after a stage's first deploy.
 
 ## Smoketest
 
