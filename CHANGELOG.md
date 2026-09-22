@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+ - Search indexing restored on prod (#378). The `graphql` Lambda had no `ES_ENDPOINT` since the Strawberry cut-over, so new objects were missing from weka search.
+
+### Changed
+ - Unset `ES_ENDPOINT` now disables indexing instead of defaulting to localhost. Local dev must set `ES_ENDPOINT=http://localhost:9200`.
+
+### Added
+ - `ES_INDEX_FAILURE` log marker and CloudWatch alarm on indexing failures (SNS topic in output `IndexingAlarmTopicArn`).
+ - CI test guarding the ES config in `serverless.yml`.
+
 ## [0.7.2] - 2026-07-29
 
 ### Fixed

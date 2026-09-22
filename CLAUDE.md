@@ -37,7 +37,7 @@ yarn sls dynamodb start --stage local &
 yarn sls s3 start &
 uv run uvicorn graphql_api.app:app --reload   # FastAPI on http://localhost:8000/graphql
 ```
-Requires `.env` with `SLS_OFFLINE=1`, `TESTING=0` (or `1` to bypass auth), `FIRST_DYNAMO_ID=0`.
+Requires `.env` with `SLS_OFFLINE=1`, `TESTING=0` (or `1` to bypass auth), `FIRST_DYNAMO_ID=0`, and `ES_ENDPOINT=http://localhost:9200` to index into the local Elasticsearch below (unset, indexing is off).
 
 Elasticsearch must also be running locally:
 ```bash
@@ -140,7 +140,8 @@ Most config comes from environment variables, read directly via `os.environ.get(
 - `SLS_OFFLINE=1` — also bypasses auth; set by `serverless-offline` for local dev.
 - `DB_READ_ONLY=1` — set on the deployed `graphql` function in dev/prod; dropped on test (see `serverless.yml` serverlessIfElse).
 - `FIRST_DYNAMO_ID` — starting ID for new objects (0 for smoketests, 100000 for production).
-- `ES_ENDPOINT`, `ES_INDEX`, `GRAPHQL_PATH`, `S3_BUCKET_NAME` — wired in `serverless.yml`.
+- `ES_ENDPOINT`, `ES_INDEX`, `ES_REGION`, `GRAPHQL_PATH`, `S3_BUCKET_NAME` — wired on the `graphql` function in `serverless.yml`. `ES_ENDPOINT` is dropped on test (no domain there, #377), so indexing is off on test. Unset `ES_ENDPOINT` means indexing is off — it does not default to localhost. Requests to `*.es.amazonaws.com` are SigV4-signed with the Lambda role. `graphql_api/tests/test_serverless_config.py` guards this wiring (#378).
+- Search indexing failures never fail a mutation, but each one logs `ES_INDEX_FAILURE` at ERROR; a CloudWatch alarm on that marker notifies the `IndexingAlarmTopicArn` SNS topic (email subscription is added by hand in the console).
 
 ### Testing Fixtures
 `graphql_api/tests/conftest.py` starts DynamoDB Local and Elasticsearch 7.1.0 via `testcontainers` (Docker required), creates fresh tables per test module, and yields a `gql_context` dict for `schema.execute_sync(..., context_value=...)` calls. There is no Flask `graphql_client` — tests drive Strawberry directly.
