@@ -29,7 +29,7 @@ from typing import Any
 
 from .dynamo import _decompress_file_relations, _file_table, _table_table, _thing_table
 from .s3 import _is_pre_dynamo_file_id
-from .search import bulk_index
+from .search import NOT_INDEXED, bulk_index
 
 log = logging.getLogger(__name__)
 
@@ -85,6 +85,7 @@ class BackfillStats:
     seen: Counter = field(default_factory=Counter)  # (source, store, clazz_name) -> count
     skipped_before_since: int = 0
     skipped_filtered: int = 0
+    skipped_not_indexed: int = 0
     indexed: int = 0
     failed: list[tuple[str, str]] = field(default_factory=list)
 
@@ -133,6 +134,9 @@ def run_backfill(
         for n, (key, doc) in enumerate(documents):
             if on_progress and n and n % progress_every == 0:  # n documents read so far
                 on_progress(stats, source, store)
+            if doc.get("clazz_name") in NOT_INDEXED:
+                stats.skipped_not_indexed += 1
+                continue
             if clazz and doc.get("clazz_name") not in clazz:
                 stats.skipped_filtered += 1
                 continue

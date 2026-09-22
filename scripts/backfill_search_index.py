@@ -139,6 +139,7 @@ def main(argv=None) -> int:
     print(
         f"total: {sum(stats.seen.values())}   skipped (before --since): {stats.skipped_before_since}"
         f"   skipped (--clazz/--min-id): {stats.skipped_filtered}"
+        f"   skipped (never indexed): {stats.skipped_not_indexed}"
     )
 
     if args.execute:

@@ -31,6 +31,16 @@ _TIMEOUT = 5  # seconds
 # together.
 INDEX_FAILURE_MARKER = "ES_INDEX_FAILURE"
 
+# Classes deliberately kept out of the search index. OpenquakeHazardConfig is
+# 2.19M objects nobody searches for; it has been absent since the index was
+# rebuilt in May 2024 and stays out by choice, not by accident (#378). Both the
+# live write path and the backfill honour this.
+NOT_INDEXED: frozenset[str] = frozenset({"OpenquakeHazardConfig"})
+
+
+def is_indexable(document: dict) -> bool:
+    return document.get("clazz_name") not in NOT_INDEXED
+
 
 # Read at call time (not import time) so testcontainers can set the env var
 # after startup and have it picked up by all subsequent calls.
@@ -88,7 +98,7 @@ def index_document(
         endpoint = es_endpoint()
     if index is None:
         index = es_index()
-    if not endpoint:
+    if not endpoint or not is_indexable(document):
         return
 
     safe_key, doc = prepare_document(key, document)
@@ -157,7 +167,9 @@ def bulk_index(
     per-item errors (e.g. mapping conflicts) are returned in BulkResult.failed.
     """
     result = BulkResult()
-    pending = [prepare_document(key, doc) for key, doc in documents]
+    pending = [prepare_document(key, doc) for key, doc in documents if is_indexable(doc)]
+    if not pending:
+        return result
     url = f"{endpoint}/_bulk"
     auth = _auth_for(endpoint)
 

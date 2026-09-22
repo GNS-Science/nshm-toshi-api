@@ -302,14 +302,23 @@ def _docs(*objects):
 
 def test_clazz_filter_keeps_only_named_classes():
     objects = [
-        {"object_id": "1", "clazz_name": "OpenquakeHazardConfig"},
+        {"object_id": "1", "clazz_name": "Table"},
         {"object_id": "2", "clazz_name": "GeneralTask"},
     ]
-    stats = run_backfill(
-        [("dynamo", "Thing", _docs(*objects))], endpoint=None, index="idx", clazz={"OpenquakeHazardConfig"}
-    )
-    assert stats.seen == {("dynamo", "Thing", "OpenquakeHazardConfig"): 1}
+    stats = run_backfill([("dynamo", "Thing", _docs(*objects))], endpoint=None, index="idx", clazz={"Table"})
+    assert stats.seen == {("dynamo", "Thing", "Table"): 1}
     assert stats.skipped_filtered == 1
+
+
+def test_never_indexed_classes_are_skipped():
+    """OpenquakeHazardConfig is out of the index by choice, so the backfill leaves it out too."""
+    objects = [
+        {"object_id": "1", "clazz_name": "OpenquakeHazardConfig"},
+        {"object_id": "2", "clazz_name": "OpenquakeHazardTask"},
+    ]
+    stats = run_backfill([("dynamo", "Thing", _docs(*objects))], endpoint=None, index="idx")
+    assert stats.seen == {("dynamo", "Thing", "OpenquakeHazardTask"): 1}
+    assert stats.skipped_not_indexed == 1
 
 
 def test_min_id_selects_recent_undated_objects():
