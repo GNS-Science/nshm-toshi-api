@@ -266,3 +266,21 @@ def test_refuses_to_write_to_missing_index(requests_mock):
     requests_mock.head(f"{LOCAL_EP}/toshi-index-mapped", status_code=404)
     with pytest.raises(SystemExit, match="refusing to create it"):
         backfill_search_index._check_index_exists(LOCAL_EP, "toshi-index-mapped")
+
+
+def test_index_counts_aggregates_by_clazz(requests_mock):
+    requests_mock.post(
+        f"{LOCAL_EP}/idx/_search",
+        json={
+            "hits": {"total": {"value": 30}},
+            "aggregations": {"clazz": {"buckets": [{"key": "File", "doc_count": 20}]}},
+        },
+    )
+    counts = search.count_by_clazz(LOCAL_EP, "idx")
+    assert counts == {"File": 20, "TOTAL (all documents)": 30}
+    assert requests_mock.last_request.json()["aggs"]["clazz"]["terms"]["field"] == "clazz_name.keyword"
+
+
+def test_index_counts_requires_endpoint():
+    with pytest.raises(SystemExit):
+        backfill_search_index._parse_args(["--stage", "prod", "--index-counts"])

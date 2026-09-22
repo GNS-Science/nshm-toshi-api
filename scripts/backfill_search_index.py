@@ -47,9 +47,16 @@ def _parse_args(argv):
     p.add_argument("--batch-size", type=int, default=500)
     p.add_argument("--failures-file", default="backfill-failures.jsonl")
     p.add_argument("--execute", action="store_true", help="write to Elasticsearch (default: dry run)")
+    p.add_argument(
+        "--index-counts",
+        action="store_true",
+        help="print the index's document count per clazz_name and exit (read-only; needs --endpoint)",
+    )
     args = p.parse_args(argv)
     if args.execute and not args.endpoint:
         p.error("--execute requires --endpoint")
+    if args.index_counts and not args.endpoint:
+        p.error("--index-counts requires --endpoint")
     return args
 
 
@@ -69,6 +76,11 @@ def main(argv=None) -> int:
     stores = args.store or list(STORES)
     stage = args.stage.upper()  # matches dynamo.STAGE (DEPLOYMENT_STAGE.upper())
     bucket = args.bucket or f"nzshm22-toshi-api-{args.stage.lower()}"
+
+    if args.index_counts:
+        for clazz, n in sorted(search.count_by_clazz(args.endpoint, args.index).items()):
+            print(f"{clazz:<40} {n:>10}")
+        return 0
 
     dynamodb = boto3.resource("dynamodb", region_name=args.region)
     s3 = boto3.client("s3", region_name=args.region)

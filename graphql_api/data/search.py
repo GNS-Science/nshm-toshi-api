@@ -109,6 +109,22 @@ def index_document(
         )
 
 
+def count_by_clazz(endpoint: str, index: str, timeout: float = 60) -> dict[str, int]:
+    """
+    Document count per clazz_name in the index, for comparing with the object
+    stores before a backfill (#378). Read-only.
+    """
+    query = {"size": 0, "aggs": {"clazz": {"terms": {"field": "clazz_name.keyword", "size": 200}}}}
+    resp = requests.post(f"{endpoint}/{index}/_search", json=query, auth=_auth_for(endpoint), timeout=timeout)
+    resp.raise_for_status()
+    body = resp.json()
+    counts = {b["key"]: b["doc_count"] for b in body["aggregations"]["clazz"]["buckets"]}
+    counts["TOTAL (all documents)"] = (
+        body["hits"]["total"]["value"] if isinstance(body["hits"]["total"], dict) else body["hits"]["total"]
+    )
+    return counts
+
+
 @dataclass
 class BulkResult:
     indexed: int = 0
