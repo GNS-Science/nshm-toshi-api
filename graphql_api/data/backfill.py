@@ -84,8 +84,24 @@ def iter_legacy_documents(s3, bucket: str, store: str) -> Iterator[tuple[str, di
 class BackfillStats:
     seen: Counter = field(default_factory=Counter)  # (source, store, clazz_name) -> count
     skipped_before_since: int = 0
+    skipped_filtered: int = 0
     indexed: int = 0
     failed: list[tuple[str, str]] = field(default_factory=list)
+
+
+def numeric_id(object_id: str) -> int | None:
+    """Leading integer of an object id ("123456ABCDE" -> 123456), or None.
+
+    Ids come from one counter shared by all three tables (data/ids.py), so a
+    larger id means created later, across stores. That is the only ordering
+    File objects have — they carry no `created` field.
+    """
+    digits = ""
+    for ch in object_id:
+        if not ch.isdigit():
+            break
+        digits += ch
+    return int(digits) if digits else None
 
 
 def run_backfill(
@@ -93,6 +109,8 @@ def run_backfill(
     endpoint: str | None,
     index: str,
     since: str | None = None,
+    clazz: set[str] | None = None,
+    min_id: int | None = None,
     batch_size: int = 500,
     execute: bool = False,
     on_progress=None,
@@ -104,7 +122,9 @@ def run_backfill(
     With execute=False nothing is written and endpoint is not contacted: the
     stats are a count of what would be indexed. since (ISO date) keeps only
     documents whose `created` is on or after it; documents without `created`
-    are kept, since there is no way to tell they are not missing.
+    are kept, since there is no way to tell they are not missing. clazz keeps
+    only those clazz_names; min_id keeps only ids at or above that number
+    (undated File objects are selected this way — see numeric_id).
     on_progress(stats, source, store) is called every progress_every documents read.
     """
     stats = BackfillStats()
@@ -113,6 +133,14 @@ def run_backfill(
         for n, (key, doc) in enumerate(documents):
             if on_progress and n and n % progress_every == 0:  # n documents read so far
                 on_progress(stats, source, store)
+            if clazz and doc.get("clazz_name") not in clazz:
+                stats.skipped_filtered += 1
+                continue
+            if min_id is not None:
+                this_id = numeric_id(doc.get("object_id", ""))
+                if this_id is None or this_id < min_id:
+                    stats.skipped_filtered += 1
+                    continue
             created = doc.get("created")
             if since and isinstance(created, str) and created[: len(since)] < since:
                 stats.skipped_before_since += 1

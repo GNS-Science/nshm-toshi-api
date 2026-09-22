@@ -284,3 +284,41 @@ def test_index_counts_aggregates_by_clazz(requests_mock):
 def test_index_counts_requires_endpoint():
     with pytest.raises(SystemExit):
         backfill_search_index._parse_args(["--stage", "prod", "--index-counts"])
+
+
+@pytest.mark.parametrize(
+    "object_id,expected",
+    [("123456ABCDE", 123456), ("24887QNHG", 24887), ("1234", 1234), ("ABC123", None), ("", None)],
+)
+def test_numeric_id(object_id, expected):
+    from graphql_api.data.backfill import numeric_id
+
+    assert numeric_id(object_id) == expected
+
+
+def _docs(*objects):
+    return iter([(f"ThingData_{o['object_id']}", o) for o in objects])
+
+
+def test_clazz_filter_keeps_only_named_classes():
+    objects = [
+        {"object_id": "1", "clazz_name": "OpenquakeHazardConfig"},
+        {"object_id": "2", "clazz_name": "GeneralTask"},
+    ]
+    stats = run_backfill(
+        [("dynamo", "Thing", _docs(*objects))], endpoint=None, index="idx", clazz={"OpenquakeHazardConfig"}
+    )
+    assert stats.seen == {("dynamo", "Thing", "OpenquakeHazardConfig"): 1}
+    assert stats.skipped_filtered == 1
+
+
+def test_min_id_selects_recent_undated_objects():
+    """Files have no `created`, so --min-id is the only way to narrow them."""
+    objects = [
+        {"object_id": "100500ABCDE", "clazz_name": "File"},
+        {"object_id": "200500ABCDE", "clazz_name": "File"},
+        {"object_id": "notanumber", "clazz_name": "File"},
+    ]
+    stats = run_backfill([("dynamo", "File", _docs(*objects))], endpoint=None, index="idx", min_id=200000)
+    assert stats.seen == {("dynamo", "File", "File"): 1}
+    assert stats.skipped_filtered == 2

@@ -42,6 +42,13 @@ def _parse_args(argv):
     p.add_argument("--store", choices=STORES, action="append", help="limit to a store; repeatable (default: all)")
     p.add_argument("--bucket", help="legacy S3 bucket (default: nzshm22-toshi-api-<stage>)")
     p.add_argument("--since", help="only documents created on/after this ISO date (undated documents are kept)")
+    p.add_argument("--clazz", action="append", help="only this clazz_name; repeatable")
+    p.add_argument(
+        "--min-id",
+        type=int,
+        help="only ids at or above this number. Ids come from one shared counter, so this selects "
+        "recently created objects — the only way to narrow File objects, which have no `created` date.",
+    )
     p.add_argument("--endpoint", help="Elasticsearch domain URL (required with --execute)")
     p.add_argument("--index", default="toshi_index_mapped")
     p.add_argument("--batch-size", type=int, default=500)
@@ -119,6 +126,8 @@ def main(argv=None) -> int:
         endpoint=args.endpoint,
         index=args.index,
         since=args.since,
+        clazz=set(args.clazz) if args.clazz else None,
+        min_id=args.min_id,
         batch_size=args.batch_size,
         execute=args.execute,
         on_progress=progress,
@@ -127,7 +136,10 @@ def main(argv=None) -> int:
     print("\nsource  store  clazz_name                          count")
     for (source, store, clazz), n in sorted(stats.seen.items()):
         print(f"{source:<7} {store:<6} {clazz:<35} {n:>8}")
-    print(f"total: {sum(stats.seen.values())}   skipped (before --since): {stats.skipped_before_since}")
+    print(
+        f"total: {sum(stats.seen.values())}   skipped (before --since): {stats.skipped_before_since}"
+        f"   skipped (--clazz/--min-id): {stats.skipped_filtered}"
+    )
 
     if args.execute:
         print(f"indexed: {stats.indexed}   failed: {len(stats.failed)}")

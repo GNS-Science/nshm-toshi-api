@@ -114,7 +114,12 @@ def count_by_clazz(endpoint: str, index: str, timeout: float = 60) -> dict[str, 
     Document count per clazz_name in the index, for comparing with the object
     stores before a backfill (#378). Read-only.
     """
-    query = {"size": 0, "aggs": {"clazz": {"terms": {"field": "clazz_name.keyword", "size": 200}}}}
+    # track_total_hits: ES7 caps hits.total at 10,000 without it.
+    query = {
+        "size": 0,
+        "track_total_hits": True,
+        "aggs": {"clazz": {"terms": {"field": "clazz_name.keyword", "size": 200}}},
+    }
     resp = requests.post(f"{endpoint}/{index}/_search", json=query, auth=_auth_for(endpoint), timeout=timeout)
     resp.raise_for_status()
     body = resp.json()
