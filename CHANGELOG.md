@@ -11,7 +11,7 @@
 ### Added
  - `ES_INDEX_FAILURE` log marker and CloudWatch alarm on indexing failures (SNS topic in output `IndexingAlarmTopicArn`).
  - CI test guarding the ES config in `serverless.yml`.
- - `scripts/backfill_search_index.py`: rebuilds the search index from DynamoDB and legacy S3 objects (#378, #230). Dry run by default.
+ - `scripts/backfill_search_index.py`: rebuilds the search index from DynamoDB and legacy S3 objects (#378, #230).
  - `search.NOT_INDEXED`: classes deliberately kept out of the index. `OpenquakeHazardConfig` (2.19M objects, absent since the index was rebuilt in May 2024, and no longer created) is excluded from both the live write path and the backfill.
 
 ## [0.7.2] - 2026-07-29
