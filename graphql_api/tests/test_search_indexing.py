@@ -6,6 +6,7 @@ No live ES: requests are intercepted with requests_mock, so these run without
 the testcontainers fixtures.
 """
 
+import json
 import logging
 
 import pytest
@@ -85,3 +86,31 @@ def test_connection_error_is_logged_not_raised(requests_mock, caplog):
     [record] = caplog.records
     assert search.INDEX_FAILURE_MARKER in record.getMessage()
     assert "ThingData_1" in record.getMessage()
+
+
+def test_excluded_class_is_not_indexed(requests_mock):
+    """OpenquakeHazardConfig stays out of the index by choice (#378)."""
+    search.index_document("ThingData_1", {"clazz_name": "OpenquakeHazardConfig"}, endpoint=LOCAL_EP, index=INDEX)
+    assert requests_mock.call_count == 0
+
+
+def test_excluded_class_is_dropped_from_bulk(requests_mock):
+    requests_mock.post(f"{LOCAL_EP}/_bulk", json={"errors": False, "items": [{"index": {"status": 201}}]})
+    result = search.bulk_index(
+        [
+            ("ThingData_1", {"clazz_name": "OpenquakeHazardConfig"}),
+            ("ThingData_2", {"clazz_name": "OpenquakeHazardTask"}),
+        ],
+        endpoint=LOCAL_EP,
+        index=INDEX,
+    )
+    assert result.indexed == 1
+    ids = [json.loads(line)["index"]["_id"] for line in requests_mock.last_request.body.decode().splitlines()[::2]]
+    assert ids == ["ThingData_2"]
+
+
+def test_bulk_of_only_excluded_classes_makes_no_request(requests_mock):
+    result = search.bulk_index(
+        [("ThingData_1", {"clazz_name": "OpenquakeHazardConfig"})], endpoint=LOCAL_EP, index=INDEX
+    )
+    assert result.indexed == 0 and requests_mock.call_count == 0

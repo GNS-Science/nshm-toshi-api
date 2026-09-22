@@ -11,8 +11,11 @@ overridden per-call for testing.
 """
 
 import functools
+import json
 import logging
 import os
+import time
+from dataclasses import dataclass, field
 from urllib.parse import quote, urlparse
 
 import boto3
@@ -27,6 +30,20 @@ _TIMEOUT = 5  # seconds
 # indexing alarm in serverless.yml matches on this exact string — change both
 # together.
 INDEX_FAILURE_MARKER = "ES_INDEX_FAILURE"
+
+# Classes deliberately kept out of the search index (#378).
+#
+# OpenquakeHazardConfig: 2.19M objects, 1 of them in the index — they dropped
+# out when the index was rebuilt in May 2024 and nobody missed them. The
+# workflow that made them has since changed and no longer creates any, so this
+# mainly keeps the backfill from adding 2.19M documents nobody searches for.
+# create_openquake_hazard_config still exists in the schema, so it also covers
+# a straggler written by an old client.
+NOT_INDEXED: frozenset[str] = frozenset({"OpenquakeHazardConfig"})
+
+
+def is_indexable(document: dict) -> bool:
+    return document.get("clazz_name") not in NOT_INDEXED
 
 
 # Read at call time (not import time) so testcontainers can set the env var
@@ -55,6 +72,18 @@ def _auth_for(endpoint: str) -> AWS4Auth | None:
     return _aws_auth() if host.endswith(".es.amazonaws.com") else None
 
 
+def prepare_document(key: str, document: dict) -> tuple[str, dict]:
+    """Return the (ES _id, body) that index_document and bulk_index write."""
+    doc = dict(document)
+
+    # relations_compressed hack — ES cannot handle fields that switch between
+    # list and string across documents. Matches original search_manager.py:48-57.
+    if doc.get("clazz_name") == "File" and isinstance(doc.get("relations"), str):
+        doc["relations_compressed"] = doc.pop("relations")
+
+    return key.replace("/", "_"), doc
+
+
 def index_document(
     key: str,
     document: dict,
@@ -73,17 +102,10 @@ def index_document(
         endpoint = es_endpoint()
     if index is None:
         index = es_index()
-    if not endpoint:
+    if not endpoint or not is_indexable(document):
         return
 
-    doc = dict(document)
-
-    # relations_compressed hack — ES cannot handle fields that switch between
-    # list and string across documents. Matches original search_manager.py:48-57.
-    if doc.get("clazz_name") == "File" and isinstance(doc.get("relations"), str):
-        doc["relations_compressed"] = doc.pop("relations")
-
-    safe_key = key.replace("/", "_")
+    safe_key, doc = prepare_document(key, document)
     url = f"{endpoint}/{index}/_doc/{safe_key}"
     try:
         resp = requests.put(url, json=doc, auth=_auth_for(endpoint), timeout=_TIMEOUT)
@@ -99,6 +121,104 @@ def index_document(
             resp.status_code,
             resp.text,
         )
+
+
+def count_by_clazz(endpoint: str, index: str, timeout: float = 60) -> dict[str, int]:
+    """
+    Document count per clazz_name in the index, for comparing with the object
+    stores before a backfill (#378). Read-only.
+    """
+    # track_total_hits: ES7 caps hits.total at 10,000 without it.
+    query = {
+        "size": 0,
+        "track_total_hits": True,
+        "aggs": {"clazz": {"terms": {"field": "clazz_name.keyword", "size": 200}}},
+    }
+    resp = requests.post(f"{endpoint}/{index}/_search", json=query, auth=_auth_for(endpoint), timeout=timeout)
+    resp.raise_for_status()
+    body = resp.json()
+    counts = {b["key"]: b["doc_count"] for b in body["aggregations"]["clazz"]["buckets"]}
+    counts["TOTAL (all documents)"] = (
+        body["hits"]["total"]["value"] if isinstance(body["hits"]["total"], dict) else body["hits"]["total"]
+    )
+    return counts
+
+
+@dataclass
+class BulkResult:
+    indexed: int = 0
+    failed: list[tuple[str, str]] = field(default_factory=list)  # (_id, reason)
+
+
+_RETRYABLE_STATUS = frozenset({429, 502, 503, 504})
+
+
+def bulk_index(
+    documents: list[tuple[str, dict]],
+    endpoint: str,
+    index: str,
+    max_attempts: int = 5,
+    backoff_seconds: float = 2.0,
+    timeout: float = 60,
+) -> BulkResult:
+    """
+    Write (key, document) pairs in one _bulk request. For the backfill (#378),
+    not the live write path.
+
+    Unlike index_document this raises: a backfill that cannot reach the domain
+    should stop, not skip. Retries throttling (429) and gateway errors, both for
+    the whole request and for items the cluster rejected under load; other
+    per-item errors (e.g. mapping conflicts) are returned in BulkResult.failed.
+    """
+    result = BulkResult()
+    pending = [prepare_document(key, doc) for key, doc in documents if is_indexable(doc)]
+    if not pending:
+        return result
+    url = f"{endpoint}/_bulk"
+    auth = _auth_for(endpoint)
+
+    for attempt in range(1, max_attempts + 1):
+        body = "".join(
+            json.dumps({"index": {"_index": index, "_id": safe_key}}) + "\n" + json.dumps(doc) + "\n"
+            for safe_key, doc in pending
+        )
+        resp = requests.post(
+            url, data=body.encode(), headers={"Content-Type": "application/x-ndjson"}, auth=auth, timeout=timeout
+        )
+        if resp.status_code in _RETRYABLE_STATUS and attempt < max_attempts:
+            time.sleep(backoff_seconds * 2 ** (attempt - 1))
+            continue
+        resp.raise_for_status()
+
+        retry = []
+        # A cluster write block (e.g. the disk flood-stage watermark) fails every
+        # item with the same error and will not clear by retrying. Without this
+        # a long backfill runs to completion writing nothing.
+        blocked = next(
+            (
+                i["index"]["error"]
+                for i in resp.json()["items"]
+                if (i["index"].get("error") or {}).get("type") == "cluster_block_exception"
+            ),
+            None,
+        )
+        if blocked is not None:
+            raise RuntimeError(f"Elasticsearch is refusing writes, fix the cluster before retrying: {blocked}")
+
+        for (safe_key, doc), item in zip(pending, resp.json()["items"], strict=True):
+            outcome = item["index"]
+            if outcome.get("status", 500) < 300:
+                result.indexed += 1
+            elif outcome.get("status") == 429 and attempt < max_attempts:
+                retry.append((safe_key, doc))
+            else:
+                result.failed.append((safe_key, json.dumps(outcome.get("error"))[:500]))
+        if not retry:
+            return result
+        pending = retry
+        time.sleep(backoff_seconds * 2 ** (attempt - 1))
+
+    raise RuntimeError(f"_bulk still failing after {max_attempts} attempts: HTTP {resp.status_code}")
 
 
 def search(
