@@ -331,3 +331,30 @@ def test_min_id_selects_recent_undated_objects():
     stats = run_backfill([("dynamo", "File", _docs(*objects))], endpoint=None, index="idx", min_id=200000)
     assert stats.seen == {("dynamo", "File", "File"): 1}
     assert stats.skipped_filtered == 2
+
+
+def test_since_uses_updated_when_object_was_modified_later():
+    """An object created before the outage but updated during it is stale in the index."""
+    objects = [
+        {"object_id": "1", "clazz_name": "GeneralTask", "created": "2026-01-01", "updated": "2026-07-01"},
+        {"object_id": "2", "clazz_name": "GeneralTask", "created": "2026-01-01", "updated": "2026-02-01"},
+        {"object_id": "3", "clazz_name": "GeneralTask", "created": "2026-01-01"},
+    ]
+    stats = run_backfill([("dynamo", "Thing", _docs(*objects))], endpoint=None, index="idx", since="2026-06-12")
+    assert stats.seen == {("dynamo", "Thing", "GeneralTask"): 1}
+    assert stats.skipped_before_since == 2
+
+
+def test_documents_without_clazz_name_are_skipped():
+    objects = [{"object_id": "1"}, {"object_id": "2", "clazz_name": "GeneralTask"}]
+    stats = run_backfill([("legacy", "Thing", _docs(*objects))], endpoint=None, index="idx")
+    assert stats.seen == {("legacy", "Thing", "GeneralTask"): 1}
+    assert stats.skipped_no_clazz == 1
+
+
+def test_cluster_write_block_aborts_the_run(requests_mock, no_sleep):
+    error = {"type": "cluster_block_exception", "reason": "index read-only / allow delete (api)"}
+    requests_mock.post(f"{LOCAL_EP}/_bulk", json=_bulk_response(403, error=error))
+    with pytest.raises(RuntimeError, match="refusing writes"):
+        search.bulk_index([("ThingData_1", {})], endpoint=LOCAL_EP, index="idx")
+    assert requests_mock.call_count == 1

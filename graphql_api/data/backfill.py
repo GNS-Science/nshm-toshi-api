@@ -86,6 +86,7 @@ class BackfillStats:
     skipped_before_since: int = 0
     skipped_filtered: int = 0
     skipped_not_indexed: int = 0
+    skipped_no_clazz: int = 0
     indexed: int = 0
     failed: list[tuple[str, str]] = field(default_factory=list)
 
@@ -122,8 +123,9 @@ def run_backfill(
 
     With execute=False nothing is written and endpoint is not contacted: the
     stats are a count of what would be indexed. since (ISO date) keeps only
-    documents whose `created` is on or after it; documents without `created`
-    are kept, since there is no way to tell they are not missing. clazz keeps
+    documents whose `created` or `updated` — whichever is later — is on or after
+    it; documents with neither are kept, since there is no way to tell they are
+    not missing (File objects carry no `created`: use min_id for those). clazz keeps
     only those clazz_names; min_id keeps only ids at or above that number
     (undated File objects are selected this way — see numeric_id).
     on_progress(stats, source, store) is called every progress_every documents read.
@@ -145,8 +147,16 @@ def run_backfill(
                 if this_id is None or this_id < min_id:
                     stats.skipped_filtered += 1
                     continue
-            created = doc.get("created")
-            if since and isinstance(created, str) and created[: len(since)] < since:
+            if not doc.get("clazz_name"):
+                # The node resolver dispatches on clazz_name; without it a hit
+                # resolves to nothing. The legacy S3 scan skipped these too.
+                log.warning("%s %s has no clazz_name; skipped", source, key)
+                stats.skipped_no_clazz += 1
+                continue
+            # Compare the later of created/updated: an object created before the
+            # outage but modified during it is stale in the index too.
+            touched = max((t for t in (doc.get("created"), doc.get("updated")) if isinstance(t, str)), default=None)
+            if since and touched is not None and touched[: len(since)] < since:
                 stats.skipped_before_since += 1
                 continue
             stats.seen[(source, store, doc.get("clazz_name") or "?")] += 1

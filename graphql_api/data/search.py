@@ -191,6 +191,20 @@ def bulk_index(
         resp.raise_for_status()
 
         retry = []
+        # A cluster write block (e.g. the disk flood-stage watermark) fails every
+        # item with the same error and will not clear by retrying. Without this
+        # a long backfill runs to completion writing nothing.
+        blocked = next(
+            (
+                i["index"]["error"]
+                for i in resp.json()["items"]
+                if (i["index"].get("error") or {}).get("type") == "cluster_block_exception"
+            ),
+            None,
+        )
+        if blocked is not None:
+            raise RuntimeError(f"Elasticsearch is refusing writes, fix the cluster before retrying: {blocked}")
+
         for (safe_key, doc), item in zip(pending, resp.json()["items"], strict=True):
             outcome = item["index"]
             if outcome.get("status", 500) < 300:
