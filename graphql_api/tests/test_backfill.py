@@ -193,17 +193,65 @@ def test_dry_run_writes_nothing(requests_mock):
 # ── legacy S3 (moto) ──────────────────────────────────────────────────────────
 
 
-def test_legacy_iterates_only_ids_below_watermark():
+def _legacy_bucket(s3, objects: dict[str, dict | None]):
+    s3.create_bucket(Bucket="legacy")
+    for prefix, body in objects.items():
+        if body is None:
+            s3.put_object(Bucket="legacy", Key=f"{prefix}/content.zip", Body=b"uploaded file, no object.json")
+        else:
+            s3.put_object(Bucket="legacy", Key=f"{prefix}/object.json", Body=json.dumps(body))
+
+
+def test_legacy_files_below_watermark_only():
+    """FileData/ also holds DynamoDB-era uploads; only pre-watermark ids are legacy objects."""
     with mock_aws():
         s3 = boto3.client("s3", region_name="us-east-1")
-        s3.create_bucket(Bucket="legacy")
-        s3.put_object(Bucket="legacy", Key="ThingData/1234/object.json", Body=json.dumps({"clazz_name": "GeneralTask"}))
-        s3.put_object(Bucket="legacy", Key="ThingData/100001ABCDE/object.json", Body=json.dumps({"clazz_name": "X"}))
-        s3.put_object(Bucket="legacy", Key="ThingData/5678/other.txt", Body=b"no object.json here")
+        _legacy_bucket(
+            s3,
+            {
+                "FileData/1234": {"clazz_name": "File"},
+                "FileData/100001ABCDE": {"clazz_name": "File"},  # DynamoDB era: skipped by id
+                "FileData/5678": None,  # no object.json
+            },
+        )
+        docs = list(iter_legacy_documents(s3, "legacy", "File"))
 
-        docs = list(iter_legacy_documents(s3, "legacy", "Thing"))
+    assert docs == [("FileData_1234", {"clazz_name": "File", "object_id": "1234"})]
 
-    assert docs == [("ThingData_1234", {"clazz_name": "GeneralTask", "object_id": "1234"})]
+
+def test_legacy_things_and_tables_ignore_watermark():
+    """
+    Suffixed legacy ids (e.g. 24887QNHG) sort above "100000" as strings; the
+    watermark must not be applied outside FileData or #230's objects are lost.
+    """
+    with mock_aws():
+        s3 = boto3.client("s3", region_name="us-east-1")
+        _legacy_bucket(
+            s3,
+            {
+                "ThingData/24887QNHG": {"clazz_name": "GeneralTask"},
+                "ThingData/1234": {"clazz_name": "GeneralTask"},
+                "TableData/31234ABCDE": {"clazz_name": "Table"},
+            },
+        )
+        things = [key for key, _ in iter_legacy_documents(s3, "legacy", "Thing")]
+        tables = [key for key, _ in iter_legacy_documents(s3, "legacy", "Table")]
+
+    assert sorted(things) == ["ThingData_1234", "ThingData_24887QNHG"]
+    assert tables == ["TableData_31234ABCDE"]
+
+
+def test_progress_reported_while_reading(requests_mock):
+    calls = []
+    docs = iter([(f"ThingData_{i}", {"clazz_name": "GeneralTask"}) for i in range(25)])
+    run_backfill(
+        [("dynamo", "Thing", docs)],
+        endpoint=None,
+        index="idx",
+        on_progress=lambda stats, source, store: calls.append(sum(stats.seen.values())),
+        progress_every=10,
+    )
+    assert calls == [10, 20]
 
 
 # ── CLI guard rails ───────────────────────────────────────────────────────────

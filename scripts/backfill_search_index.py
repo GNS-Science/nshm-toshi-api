@@ -88,9 +88,19 @@ def main(argv=None) -> int:
 
     started = time.monotonic()
 
-    def progress(stats, last_key):
-        rate = stats.indexed / max(time.monotonic() - started, 1)
-        log.info("indexed=%d failed=%d (%.0f/s) last=%s", stats.indexed, len(stats.failed), rate, last_key)
+    def progress(stats, source, store):
+        elapsed = max(time.monotonic() - started, 1)
+        read = sum(stats.seen.values()) + stats.skipped_before_since
+        log.info(
+            "%s %s: read=%d (%.0f/s) kept=%d indexed=%d failed=%d",
+            source,
+            store,
+            read,
+            read / elapsed,
+            sum(stats.seen.values()),
+            stats.indexed,
+            len(stats.failed),
+        )
 
     stats = run_backfill(
         sources,
@@ -99,7 +109,7 @@ def main(argv=None) -> int:
         since=args.since,
         batch_size=args.batch_size,
         execute=args.execute,
-        on_batch=progress,
+        on_progress=progress,
     )
 
     print("\nsource  store  clazz_name                          count")

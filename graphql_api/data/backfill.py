@@ -10,8 +10,12 @@ overwrites the document with the same _id.
 
 Sources:
   - DynamoDB: every item in the Thing/File/Table tables for a stage.
-  - Legacy S3: {store}Data/{id}/object.json for ids below FIRST_DYNAMO_ID.
-    Ids at or above the watermark live in DynamoDB, which is authoritative.
+  - Legacy S3: {store}Data/{id}/object.json. FileData/ also holds the uploaded
+    content of every DynamoDB-era file (6.8M prefixes on prod), so File ids at
+    or above FIRST_DYNAMO_ID are skipped by id, without fetching — the same
+    rule as the legacy API. ThingData/ and TableData/ are small (~10k and ~8k
+    prefixes on prod) and taken whole. Any id also in DynamoDB is written again
+    from DynamoDB afterwards, so DynamoDB wins.
 
 Driven by scripts/backfill_search_index.py.
 """
@@ -58,13 +62,15 @@ def iter_dynamo_documents(dynamodb, store: str, stage: str) -> Iterator[tuple[st
 
 
 def iter_legacy_documents(s3, bucket: str, store: str) -> Iterator[tuple[str, dict]]:
-    """Yield (es_key, document) for every legacy S3 object below FIRST_DYNAMO_ID."""
+    """Yield (es_key, document) for every legacy S3 object in one store."""
     prefix = f"{store}Data/"
     paginator = s3.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="/"):
         for cp in page.get("CommonPrefixes", []):
             object_id = cp["Prefix"][len(prefix) :].rstrip("/")
-            if not _is_pre_dynamo_file_id(object_id):
+            # Files only: the watermark is a string compare on the numeric
+            # prefix, and would wrongly drop suffixed legacy Thing/Table ids.
+            if store == "File" and not _is_pre_dynamo_file_id(object_id):
                 continue
             try:
                 body = s3.get_object(Bucket=bucket, Key=f"{prefix}{object_id}/object.json")["Body"].read()
@@ -89,7 +95,8 @@ def run_backfill(
     since: str | None = None,
     batch_size: int = 500,
     execute: bool = False,
-    on_batch=None,
+    on_progress=None,
+    progress_every: int = 10_000,
 ) -> BackfillStats:
     """
     Walk each (source, store, documents) and, if execute, bulk-write them.
@@ -98,11 +105,14 @@ def run_backfill(
     stats are a count of what would be indexed. since (ISO date) keeps only
     documents whose `created` is on or after it; documents without `created`
     are kept, since there is no way to tell they are not missing.
+    on_progress(stats, source, store) is called every progress_every documents read.
     """
     stats = BackfillStats()
     for source, store, documents in sources:
         batch: list[tuple[str, dict]] = []
-        for key, doc in documents:
+        for n, (key, doc) in enumerate(documents):
+            if on_progress and n and n % progress_every == 0:  # n documents read so far
+                on_progress(stats, source, store)
             created = doc.get("created")
             if since and isinstance(created, str) and created[: len(since)] < since:
                 stats.skipped_before_since += 1
@@ -112,16 +122,14 @@ def run_backfill(
                 continue
             batch.append((key, doc))
             if len(batch) >= batch_size:
-                _flush(batch, endpoint, index, stats, on_batch)
+                _flush(batch, endpoint, index, stats)
                 batch = []
         if execute and batch:
-            _flush(batch, endpoint, index, stats, on_batch)
+            _flush(batch, endpoint, index, stats)
     return stats
 
 
-def _flush(batch, endpoint, index, stats: BackfillStats, on_batch) -> None:
+def _flush(batch, endpoint, index, stats: BackfillStats) -> None:
     result = bulk_index(batch, endpoint=endpoint, index=index)
     stats.indexed += result.indexed
     stats.failed.extend(result.failed)
-    if on_batch:
-        on_batch(stats, batch[-1][0])
