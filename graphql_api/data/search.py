@@ -31,10 +31,14 @@ _TIMEOUT = 5  # seconds
 # together.
 INDEX_FAILURE_MARKER = "ES_INDEX_FAILURE"
 
-# Classes deliberately kept out of the search index. OpenquakeHazardConfig is
-# 2.19M objects nobody searches for; it has been absent since the index was
-# rebuilt in May 2024 and stays out by choice, not by accident (#378). Both the
-# live write path and the backfill honour this.
+# Classes deliberately kept out of the search index (#378).
+#
+# OpenquakeHazardConfig: 2.19M objects, 1 of them in the index — they dropped
+# out when the index was rebuilt in May 2024 and nobody missed them. The
+# workflow that made them has since changed and no longer creates any, so this
+# mainly keeps the backfill from adding 2.19M documents nobody searches for.
+# create_openquake_hazard_config still exists in the schema, so it also covers
+# a straggler written by an old client.
 NOT_INDEXED: frozenset[str] = frozenset({"OpenquakeHazardConfig"})
 
 
