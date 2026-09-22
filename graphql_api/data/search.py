@@ -11,8 +11,11 @@ overridden per-call for testing.
 """
 
 import functools
+import json
 import logging
 import os
+import time
+from dataclasses import dataclass, field
 from urllib.parse import quote, urlparse
 
 import boto3
@@ -55,6 +58,18 @@ def _auth_for(endpoint: str) -> AWS4Auth | None:
     return _aws_auth() if host.endswith(".es.amazonaws.com") else None
 
 
+def prepare_document(key: str, document: dict) -> tuple[str, dict]:
+    """Return the (ES _id, body) that index_document and bulk_index write."""
+    doc = dict(document)
+
+    # relations_compressed hack — ES cannot handle fields that switch between
+    # list and string across documents. Matches original search_manager.py:48-57.
+    if doc.get("clazz_name") == "File" and isinstance(doc.get("relations"), str):
+        doc["relations_compressed"] = doc.pop("relations")
+
+    return key.replace("/", "_"), doc
+
+
 def index_document(
     key: str,
     document: dict,
@@ -76,14 +91,7 @@ def index_document(
     if not endpoint:
         return
 
-    doc = dict(document)
-
-    # relations_compressed hack — ES cannot handle fields that switch between
-    # list and string across documents. Matches original search_manager.py:48-57.
-    if doc.get("clazz_name") == "File" and isinstance(doc.get("relations"), str):
-        doc["relations_compressed"] = doc.pop("relations")
-
-    safe_key = key.replace("/", "_")
+    safe_key, doc = prepare_document(key, document)
     url = f"{endpoint}/{index}/_doc/{safe_key}"
     try:
         resp = requests.put(url, json=doc, auth=_auth_for(endpoint), timeout=_TIMEOUT)
@@ -99,6 +107,67 @@ def index_document(
             resp.status_code,
             resp.text,
         )
+
+
+@dataclass
+class BulkResult:
+    indexed: int = 0
+    failed: list[tuple[str, str]] = field(default_factory=list)  # (_id, reason)
+
+
+_RETRYABLE_STATUS = frozenset({429, 502, 503, 504})
+
+
+def bulk_index(
+    documents: list[tuple[str, dict]],
+    endpoint: str,
+    index: str,
+    max_attempts: int = 5,
+    backoff_seconds: float = 2.0,
+    timeout: float = 60,
+) -> BulkResult:
+    """
+    Write (key, document) pairs in one _bulk request. For the backfill (#378),
+    not the live write path.
+
+    Unlike index_document this raises: a backfill that cannot reach the domain
+    should stop, not skip. Retries throttling (429) and gateway errors, both for
+    the whole request and for items the cluster rejected under load; other
+    per-item errors (e.g. mapping conflicts) are returned in BulkResult.failed.
+    """
+    result = BulkResult()
+    pending = [prepare_document(key, doc) for key, doc in documents]
+    url = f"{endpoint}/_bulk"
+    auth = _auth_for(endpoint)
+
+    for attempt in range(1, max_attempts + 1):
+        body = "".join(
+            json.dumps({"index": {"_index": index, "_id": safe_key}}) + "\n" + json.dumps(doc) + "\n"
+            for safe_key, doc in pending
+        )
+        resp = requests.post(
+            url, data=body.encode(), headers={"Content-Type": "application/x-ndjson"}, auth=auth, timeout=timeout
+        )
+        if resp.status_code in _RETRYABLE_STATUS and attempt < max_attempts:
+            time.sleep(backoff_seconds * 2 ** (attempt - 1))
+            continue
+        resp.raise_for_status()
+
+        retry = []
+        for (safe_key, doc), item in zip(pending, resp.json()["items"], strict=True):
+            outcome = item["index"]
+            if outcome.get("status", 500) < 300:
+                result.indexed += 1
+            elif outcome.get("status") == 429 and attempt < max_attempts:
+                retry.append((safe_key, doc))
+            else:
+                result.failed.append((safe_key, json.dumps(outcome.get("error"))[:500]))
+        if not retry:
+            return result
+        pending = retry
+        time.sleep(backoff_seconds * 2 ** (attempt - 1))
+
+    raise RuntimeError(f"_bulk still failing after {max_attempts} attempts: HTTP {resp.status_code}")
 
 
 def search(

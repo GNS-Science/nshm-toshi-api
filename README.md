@@ -61,6 +61,16 @@ Failed index writes log `ES_INDEX_FAILURE` and trigger a CloudWatch alarm, which
 emails via the SNS topic in stack output `IndexingAlarmTopicArn`. Add the email
 subscription by hand in the SNS console after a stage's first deploy.
 
+### Backfilling the search index
+
+`scripts/backfill_search_index.py` re-indexes objects from DynamoDB and legacy S3.
+It is a dry run unless `--execute` is given, and safe to re-run.
+
+```bash
+uv run python scripts/backfill_search_index.py --stage prod                    # counts only
+uv run python scripts/backfill_search_index.py --stage prod --execute --endpoint https://<domain-endpoint>
+```
+
 ## Smoketest
 
 in your `.env` file

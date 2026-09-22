@@ -1,0 +1,127 @@
+"""
+Rebuild the search index from the object stores (#378, #230).
+
+The live write path indexes one object per mutation. Nothing re-indexes in
+bulk, so objects written while indexing was broken (2026-06 onwards) and the
+legacy S3-only objects that were never indexed (#230) are missing from weka
+search. This module walks every object and writes it with the same key and
+document shape the live path uses, so it is safe to re-run: each write
+overwrites the document with the same _id.
+
+Sources:
+  - DynamoDB: every item in the Thing/File/Table tables for a stage.
+  - Legacy S3: {store}Data/{id}/object.json for ids below FIRST_DYNAMO_ID.
+    Ids at or above the watermark live in DynamoDB, which is authoritative.
+
+Driven by scripts/backfill_search_index.py.
+"""
+
+import json
+import logging
+from collections import Counter
+from collections.abc import Iterator
+from dataclasses import dataclass, field
+from typing import Any
+
+from .dynamo import _decompress_file_relations, _file_table, _table_table, _thing_table
+from .s3 import _is_pre_dynamo_file_id
+from .search import bulk_index
+
+log = logging.getLogger(__name__)
+
+STORES = ("Thing", "File", "Table")
+
+_TABLE_FOR = {"Thing": _thing_table, "File": _file_table, "Table": _table_table}
+
+
+def _normalise(store: str, object_id: str, data: dict) -> tuple[str, dict]:
+    # Same shape get_thing / get_file / get_table return, which is what the
+    # live write path indexes.
+    data["object_id"] = object_id
+    if store == "File":
+        _decompress_file_relations(data)
+    return f"{store}Data_{object_id}", data
+
+
+def iter_dynamo_documents(dynamodb, store: str, stage: str) -> Iterator[tuple[str, dict]]:
+    """Yield (es_key, document) for every item in one DynamoDB table."""
+    table = _TABLE_FOR[store](dynamodb, stage)
+    kwargs: dict[str, Any] = {}
+    while True:
+        resp = table.scan(**kwargs)
+        for item in resp.get("Items", []):
+            yield _normalise(store, item["object_id"], json.loads(item["object_content"]))
+        last = resp.get("LastEvaluatedKey")
+        if not last:
+            return
+        kwargs["ExclusiveStartKey"] = last
+
+
+def iter_legacy_documents(s3, bucket: str, store: str) -> Iterator[tuple[str, dict]]:
+    """Yield (es_key, document) for every legacy S3 object below FIRST_DYNAMO_ID."""
+    prefix = f"{store}Data/"
+    paginator = s3.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="/"):
+        for cp in page.get("CommonPrefixes", []):
+            object_id = cp["Prefix"][len(prefix) :].rstrip("/")
+            if not _is_pre_dynamo_file_id(object_id):
+                continue
+            try:
+                body = s3.get_object(Bucket=bucket, Key=f"{prefix}{object_id}/object.json")["Body"].read()
+            except s3.exceptions.NoSuchKey:
+                log.warning("legacy %s/%s has no object.json; skipped", store, object_id)
+                continue
+            yield _normalise(store, object_id, json.loads(body))
+
+
+@dataclass
+class BackfillStats:
+    seen: Counter = field(default_factory=Counter)  # (source, store, clazz_name) -> count
+    skipped_before_since: int = 0
+    indexed: int = 0
+    failed: list[tuple[str, str]] = field(default_factory=list)
+
+
+def run_backfill(
+    sources: list[tuple[str, str, Iterator[tuple[str, dict]]]],
+    endpoint: str | None,
+    index: str,
+    since: str | None = None,
+    batch_size: int = 500,
+    execute: bool = False,
+    on_batch=None,
+) -> BackfillStats:
+    """
+    Walk each (source, store, documents) and, if execute, bulk-write them.
+
+    With execute=False nothing is written and endpoint is not contacted: the
+    stats are a count of what would be indexed. since (ISO date) keeps only
+    documents whose `created` is on or after it; documents without `created`
+    are kept, since there is no way to tell they are not missing.
+    """
+    stats = BackfillStats()
+    for source, store, documents in sources:
+        batch: list[tuple[str, dict]] = []
+        for key, doc in documents:
+            created = doc.get("created")
+            if since and isinstance(created, str) and created[: len(since)] < since:
+                stats.skipped_before_since += 1
+                continue
+            stats.seen[(source, store, doc.get("clazz_name") or "?")] += 1
+            if not execute:
+                continue
+            batch.append((key, doc))
+            if len(batch) >= batch_size:
+                _flush(batch, endpoint, index, stats, on_batch)
+                batch = []
+        if execute and batch:
+            _flush(batch, endpoint, index, stats, on_batch)
+    return stats
+
+
+def _flush(batch, endpoint, index, stats: BackfillStats, on_batch) -> None:
+    result = bulk_index(batch, endpoint=endpoint, index=index)
+    stats.indexed += result.indexed
+    stats.failed.extend(result.failed)
+    if on_batch:
+        on_batch(stats, batch[-1][0])
