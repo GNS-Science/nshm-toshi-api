@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+ - **Search indexing restored (#378).** Since the Strawberry cut-over (test 2026-06-12, prod 2026-06-17) the `graphql` Lambda had no `ES_ENDPOINT`, so every index write went to `localhost:9200` and failed silently — weka search has been missing everything created since. `ES_ENDPOINT`, `ES_INDEX` and `ES_REGION` are wired onto the `graphql` function again (prod only; test has no domain after #377), and requests to the AWS domain are SigV4-signed with the Lambda role. Objects created before this fix are backfilled separately.
+ - Non-2xx responses from Elasticsearch are now treated as indexing failures (previously a 403 counted as success).
+
+### Changed
+ - **`ES_ENDPOINT` unset now means indexing is off**, instead of defaulting to `http://localhost:9200`. Local dev and smoketests must set `ES_ENDPOINT=http://localhost:9200` in `.env` (added to `.env.example`).
+
+### Added
+ - Indexing failures are logged at ERROR with the marker `ES_INDEX_FAILURE`. A CloudWatch metric filter + alarm on that marker notifies a new SNS topic (stack output `IndexingAlarmTopicArn`); the email subscription is added by hand in the SNS console.
+ - `graphql_api/tests/test_serverless_config.py`: CI guard that fails if the `graphql` function's ES wiring, the test-only exclusion, the ES IAM grant or the alarm/marker pairing goes missing from `serverless.yml`.
+
 ## [0.7.2] - 2026-07-29
 
 ### Fixed
