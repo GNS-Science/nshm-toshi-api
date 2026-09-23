@@ -171,6 +171,7 @@ def bulk_index(
     per-item errors (e.g. mapping conflicts) are returned in BulkResult.failed.
     """
     result = BulkResult()
+    # Already-prepared pairs come back through the 413 split; prepare only raw input.
     pending = [prepare_document(key, doc) for key, doc in documents if is_indexable(doc)]
     if not pending:
         return result
@@ -185,6 +186,20 @@ def bulk_index(
         resp = requests.post(
             url, data=body.encode(), headers={"Content-Type": "application/x-ndjson"}, auth=auth, timeout=timeout
         )
+        if resp.status_code == 413:
+            # Batch over the domain's max request size. Halve and retry; a single
+            # document that still will not fit is recorded, not retried forever.
+            if len(pending) == 1:
+                result.failed.append((pending[0][0], "413 Request Entity Too Large (single document)"))
+                return result
+            half = len(pending) // 2
+            for part in (pending[:half], pending[half:]):
+                part_result = bulk_index(
+                    part, endpoint, index, max_attempts=max_attempts, backoff_seconds=backoff_seconds, timeout=timeout
+                )
+                result.indexed += part_result.indexed
+                result.failed.extend(part_result.failed)
+            return result
         if resp.status_code in _RETRYABLE_STATUS and attempt < max_attempts:
             time.sleep(backoff_seconds * 2 ** (attempt - 1))
             continue
