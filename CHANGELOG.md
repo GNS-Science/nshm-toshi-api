@@ -4,6 +4,7 @@
 
 ### Fixed
  - Search indexing restored on prod (#378). The `graphql` Lambda had no `ES_ENDPOINT` since the Strawberry cut-over, so new objects were missing from weka search.
+ - Legacy objects are indexable again (#230). Records from 2021-22 store `parents`/`children`/`files` as bare id strings, which ES rejects against the object mapping for those fields; they are now normalised to the modern `{"parent_id": …}` shape at index time. The index also needs `ignore_malformed` on `id` — see README — since legacy ids carry a suffix and the field is mapped as a long.
 
 ### Changed
  - Unset `ES_ENDPOINT` now disables indexing instead of defaulting to localhost. Local dev must set `ES_ENDPOINT=http://localhost:9200`.

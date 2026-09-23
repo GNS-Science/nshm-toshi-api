@@ -72,6 +72,28 @@ def _auth_for(endpoint: str) -> AWS4Auth | None:
     return _aws_auth() if host.endswith(".es.amazonaws.com") else None
 
 
+# Fields the index maps as objects, and the key a bare id takes in the modern
+# shape. Objects from 2021-22 store these as plain id strings — e.g.
+# "parents": ["9674zU9VY"] rather than [{"parent_id": "9674zU9VY"}] — which ES
+# rejects with "tried to parse field [null] as object, but found a concrete
+# value". That is why the legacy objects in #230 never made it into the index.
+_ID_KEY_FOR_LIST = {
+    "parents": "parent_id",
+    "children": "child_id",
+    "files": "file_id",
+    "relations": "id",
+    "predecessors": "id",
+}
+
+
+def _coerce_legacy_id_lists(doc: dict) -> None:
+    """Rewrite bare id strings in object-mapped lists into the modern shape."""
+    for name, id_key in _ID_KEY_FOR_LIST.items():
+        value = doc.get(name)
+        if isinstance(value, list) and any(not isinstance(item, dict) for item in value):
+            doc[name] = [item if isinstance(item, dict) else {id_key: str(item)} for item in value]
+
+
 def prepare_document(key: str, document: dict) -> tuple[str, dict]:
     """Return the (ES _id, body) that index_document and bulk_index write."""
     doc = dict(document)
@@ -80,6 +102,8 @@ def prepare_document(key: str, document: dict) -> tuple[str, dict]:
     # list and string across documents. Matches original search_manager.py:48-57.
     if doc.get("clazz_name") == "File" and isinstance(doc.get("relations"), str):
         doc["relations_compressed"] = doc.pop("relations")
+
+    _coerce_legacy_id_lists(doc)
 
     return key.replace("/", "_"), doc
 

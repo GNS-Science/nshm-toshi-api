@@ -87,6 +87,28 @@ def _check_index_exists(endpoint: str, index: str) -> None:
         sys.exit(f"index {index!r} not found at {endpoint} (HTTP {resp.status_code}); refusing to create it")
 
 
+def _check_id_mapping(endpoint: str, index: str) -> None:
+    """
+    Legacy ids carry a suffix ("10001HzGWM"), but the index maps `id` as a long,
+    so every such document is rejected with mapper_parsing_exception. weka reads
+    `id` from _source to build result links, so the field has to stay — set
+    ignore_malformed instead, which keeps it in _source and out of the index.
+    This lives only in the live index; a rebuilt index needs it again.
+    """
+    resp = requests.get(f"{endpoint}/{index}/_mapping/field/id", auth=search._auth_for(endpoint), timeout=30)
+    resp.raise_for_status()
+    for index_body in resp.json().values():
+        mapping = index_body.get("mappings", {}).get("id", {}).get("mapping", {}).get("id", {})
+        if mapping.get("type") == "long" and not mapping.get("ignore_malformed"):
+            sys.exit(
+                f"{index}: field `id` is mapped as long without ignore_malformed — documents with suffixed "
+                f"legacy ids will be rejected. Set it first:\n"
+                f"  PUT {index}/_mapping  {{\"properties\": {{\"id\": {{\"type\": \"long\", "
+                f"\"ignore_malformed\": true}}}}}}\n"
+                f"See README 'Backfilling the search index'."
+            )
+
+
 def main(argv=None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     args = _parse_args(argv)
@@ -112,6 +134,7 @@ def main(argv=None) -> int:
 
     if args.execute:
         _check_index_exists(args.endpoint, args.index)
+        _check_id_mapping(args.endpoint, args.index)
         log.info("writing to %s/%s", args.endpoint, args.index)
     else:
         log.info("DRY RUN — nothing will be written (add --execute)")

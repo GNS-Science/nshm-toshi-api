@@ -114,3 +114,47 @@ def test_bulk_of_only_excluded_classes_makes_no_request(requests_mock):
         [("ThingData_1", {"clazz_name": "OpenquakeHazardConfig"})], endpoint=LOCAL_EP, index=INDEX
     )
     assert result.indexed == 0 and requests_mock.call_count == 0
+
+
+# ── legacy shapes (#230) ──────────────────────────────────────────────────────
+# Objects from 2021-22 store parents/children/files as bare id strings. ES maps
+# those fields as objects and rejects the document, which is why they are absent
+# from the index. Fixtures are real prod records (ThingData/10005y9Zn, 10001HzGWM).
+
+
+def test_bare_id_lists_become_objects():
+    _, doc = search.prepare_document(
+        "ThingData_10005y9Zn",
+        {
+            "clazz_name": "RuptureGenerationTask",
+            "parents": ["947PkKMv"],
+            "files": ["3152svdMW", "3198EQUfp"],
+        },
+    )
+    assert doc["parents"] == [{"parent_id": "947PkKMv"}]
+    assert doc["files"] == [{"file_id": "3152svdMW"}, {"file_id": "3198EQUfp"}]
+
+
+def test_modern_shape_is_untouched():
+    files = [{"file_id": "24889.0SN88A", "file_role": "read"}]
+    parents = [{"parent_id": "9674zU9VY", "parent_clazz": "GeneralTask"}]
+    _, doc = search.prepare_document(
+        "ThingData_10001HzGWM", {"clazz_name": "AutomationTask", "files": files, "parents": parents}
+    )
+    assert doc["files"] == files
+    assert doc["parents"] == parents
+
+
+def test_mixed_list_coerces_only_the_bare_entries():
+    _, doc = search.prepare_document(
+        "ThingData_1", {"clazz_name": "AutomationTask", "files": ["3152svdMW", {"file_id": "x", "file_role": "write"}]}
+    )
+    assert doc["files"] == [{"file_id": "3152svdMW"}, {"file_id": "x", "file_role": "write"}]
+
+
+def test_file_relations_coerced_after_decompression_hack():
+    _, doc = search.prepare_document("FileData_1", {"clazz_name": "File", "relations": ["9674zU9VY"]})
+    assert doc["relations"] == [{"id": "9674zU9VY"}]
+    _, compressed = search.prepare_document("FileData_2", {"clazz_name": "File", "relations": "compressed-blob"})
+    assert compressed["relations_compressed"] == "compressed-blob"
+    assert "relations" not in compressed
