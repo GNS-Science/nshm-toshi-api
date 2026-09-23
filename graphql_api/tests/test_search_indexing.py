@@ -158,3 +158,32 @@ def test_file_relations_coerced_after_decompression_hack():
     _, compressed = search.prepare_document("FileData_2", {"clazz_name": "File", "relations": "compressed-blob"})
     assert compressed["relations_compressed"] == "compressed-blob"
     assert "relations" not in compressed
+
+
+# ── id in _source (#388) ──────────────────────────────────────────────────────
+# weka links search results from _source.id and falls back to the ES _id when it
+# is missing, producing GeneralTask:ThingData_100578FGXyy. Graphene wrote `id`
+# into every body; the Strawberry write path only sets `object_id`.
+
+
+def test_id_is_added_from_object_id():
+    _, doc = search.prepare_document("ThingData_100578FGXyy", {"clazz_name": "GeneralTask", "object_id": "100578FGXyy"})
+    assert doc["id"] == "100578FGXyy"
+
+
+def test_existing_id_is_kept():
+    _, doc = search.prepare_document(
+        "ThingData_10001HzGWM", {"clazz_name": "AutomationTask", "id": "10001HzGWM", "object_id": "10001HzGWM"}
+    )
+    assert doc["id"] == "10001HzGWM"
+
+
+def test_created_thing_is_indexed_with_id(gql_context, monkeypatch):
+    from graphql_api.data import dynamo
+
+    indexed = {}
+    monkeypatch.setattr(dynamo, "index_document", lambda key, doc: indexed.update({key: doc}))
+    object_id = dynamo.create_thing(gql_context["dynamodb"], "GeneralTask", {"title": "t"})["object_id"]
+
+    _, doc = search.prepare_document(*next(iter(indexed.items())))
+    assert doc["id"] == object_id

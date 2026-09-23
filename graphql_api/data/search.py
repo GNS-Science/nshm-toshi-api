@@ -105,6 +105,12 @@ def prepare_document(key: str, document: dict) -> tuple[str, dict]:
 
     _coerce_legacy_id_lists(doc)
 
+    # weka builds result links from _source.id, falling back to the ES _id
+    # ("ThingData_...") when it is absent (#388). Graphene wrote `id` into every
+    # body; the Strawberry path only sets object_id.
+    if "id" not in doc and doc.get("object_id"):
+        doc["id"] = doc["object_id"]
+
     return key.replace("/", "_"), doc
 
 
