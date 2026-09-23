@@ -29,7 +29,13 @@ import boto3
 import requests
 
 from graphql_api.data import search
-from graphql_api.data.backfill import STORES, iter_dynamo_documents, iter_legacy_documents, run_backfill
+from graphql_api.data.backfill import (
+    STORES,
+    BackfillStats,
+    iter_dynamo_documents,
+    iter_legacy_documents,
+    run_backfill,
+)
 
 log = logging.getLogger("backfill")
 
@@ -52,6 +58,11 @@ def _parse_args(argv):
     p.add_argument("--endpoint", help="Elasticsearch domain URL (required with --execute)")
     p.add_argument("--index", default="toshi_index_mapped")
     p.add_argument("--batch-size", type=int, default=500)
+    p.add_argument("--max-batch-bytes", type=int, default=5_000_000, help="split _bulk requests above this size")
+    p.add_argument("--limit", type=int, help="stop after this many documents (use for a quick probe run)")
+    p.add_argument(
+        "--max-failures", type=int, default=1000, help="stop once this many documents are rejected (0 = never)"
+    )
     p.add_argument("--failures-file", default="backfill-failures.jsonl")
     p.add_argument("--execute", action="store_true", help="write to Elasticsearch (default: dry run)")
     p.add_argument(
@@ -74,6 +85,28 @@ def _check_index_exists(endpoint: str, index: str) -> None:
     resp = requests.head(f"{endpoint}/{index}", auth=search._auth_for(endpoint), timeout=30)
     if resp.status_code != 200:
         sys.exit(f"index {index!r} not found at {endpoint} (HTTP {resp.status_code}); refusing to create it")
+
+
+def _check_id_mapping(endpoint: str, index: str) -> None:
+    """
+    Legacy ids carry a suffix ("10001HzGWM"), but the index maps `id` as a long,
+    so every such document is rejected with mapper_parsing_exception. weka reads
+    `id` from _source to build result links, so the field has to stay — set
+    ignore_malformed instead, which keeps it in _source and out of the index.
+    This lives only in the live index; a rebuilt index needs it again.
+    """
+    resp = requests.get(f"{endpoint}/{index}/_mapping/field/id", auth=search._auth_for(endpoint), timeout=30)
+    resp.raise_for_status()
+    for index_body in resp.json().values():
+        mapping = index_body.get("mappings", {}).get("id", {}).get("mapping", {}).get("id", {})
+        if mapping.get("type") == "long" and not mapping.get("ignore_malformed"):
+            sys.exit(
+                f"{index}: field `id` is mapped as long without ignore_malformed — documents with suffixed "
+                f"legacy ids will be rejected. Set it first:\n"
+                f"  PUT {index}/_mapping  {{\"properties\": {{\"id\": {{\"type\": \"long\", "
+                f"\"ignore_malformed\": true}}}}}}\n"
+                f"See README 'Backfilling the search index'."
+            )
 
 
 def main(argv=None) -> int:
@@ -101,6 +134,7 @@ def main(argv=None) -> int:
 
     if args.execute:
         _check_index_exists(args.endpoint, args.index)
+        _check_id_mapping(args.endpoint, args.index)
         log.info("writing to %s/%s", args.endpoint, args.index)
     else:
         log.info("DRY RUN — nothing will be written (add --execute)")
@@ -121,17 +155,31 @@ def main(argv=None) -> int:
             len(stats.failed),
         )
 
-    stats = run_backfill(
-        sources,
-        endpoint=args.endpoint,
-        index=args.index,
-        since=args.since,
-        clazz=set(args.clazz) if args.clazz else None,
-        min_id=args.min_id,
-        batch_size=args.batch_size,
-        execute=args.execute,
-        on_progress=progress,
-    )
+    stats = BackfillStats()
+    try:
+        run_backfill(
+            sources,
+            endpoint=args.endpoint,
+            index=args.index,
+            since=args.since,
+            clazz=set(args.clazz) if args.clazz else None,
+            min_id=args.min_id,
+            batch_size=args.batch_size,
+            max_batch_bytes=args.max_batch_bytes,
+            limit=args.limit,
+            max_failures=args.max_failures or None,
+            execute=args.execute,
+            on_progress=progress,
+            stats=stats,
+        )
+    finally:
+        # stats is ours, so failures survive an abort — they are the only record
+        # of why documents were rejected.
+        if stats.failed:
+            with open(args.failures_file, "w") as f:
+                for key, reason in stats.failed:
+                    f.write(json.dumps({"_id": key, "error": reason}) + "\n")
+            log.error("%d failures written to %s", len(stats.failed), args.failures_file)
 
     print("\nsource  store  clazz_name                          count")
     for (source, store, clazz), n in sorted(stats.seen.items()):
@@ -146,9 +194,6 @@ def main(argv=None) -> int:
     if args.execute:
         print(f"indexed: {stats.indexed}   failed: {len(stats.failed)}")
         if stats.failed:
-            with open(args.failures_file, "w") as f:
-                for key, reason in stats.failed:
-                    f.write(json.dumps({"_id": key, "error": reason}) + "\n")
             print(f"failures written to {args.failures_file}")
             return 1
     return 0

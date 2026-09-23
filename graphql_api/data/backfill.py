@@ -114,9 +114,13 @@ def run_backfill(
     clazz: set[str] | None = None,
     min_id: int | None = None,
     batch_size: int = 500,
+    max_batch_bytes: int = 5_000_000,
+    limit: int | None = None,
+    max_failures: int | None = 1000,
     execute: bool = False,
     on_progress=None,
     progress_every: int = 10_000,
+    stats: "BackfillStats | None" = None,
 ) -> BackfillStats:
     """
     Walk each (source, store, documents) and, if execute, bulk-write them.
@@ -130,9 +134,10 @@ def run_backfill(
     (undated File objects are selected this way — see numeric_id).
     on_progress(stats, source, store) is called every progress_every documents read.
     """
-    stats = BackfillStats()
+    stats = stats if stats is not None else BackfillStats()
     for source, store, documents in sources:
         batch: list[tuple[str, dict]] = []
+        batch_bytes = 0
         for n, (key, doc) in enumerate(documents):
             if on_progress and n and n % progress_every == 0:  # n documents read so far
                 on_progress(stats, source, store)
@@ -160,18 +165,39 @@ def run_backfill(
                 stats.skipped_before_since += 1
                 continue
             stats.seen[(source, store, doc.get("clazz_name") or "?")] += 1
+            reached_limit = limit is not None and sum(stats.seen.values()) >= limit
             if not execute:
+                if reached_limit:
+                    break
                 continue
             batch.append((key, doc))
-            if len(batch) >= batch_size:
-                _flush(batch, endpoint, index, stats)
-                batch = []
+            # A document's own size varies hugely (a Table carries its rows), so
+            # cap the request by bytes as well as count: the domain rejects an
+            # oversized _bulk body with 413.
+            batch_bytes += len(json.dumps(doc))
+            if len(batch) >= batch_size or batch_bytes >= max_batch_bytes or reached_limit:
+                _flush(batch, endpoint, index, stats, max_failures)
+                batch, batch_bytes = [], 0
+            if reached_limit:
+                break
         if execute and batch:
-            _flush(batch, endpoint, index, stats)
+            _flush(batch, endpoint, index, stats, max_failures)
+        if limit is not None and sum(stats.seen.values()) >= limit:
+            break
     return stats
 
 
-def _flush(batch, endpoint, index, stats: BackfillStats) -> None:
+def _flush(batch, endpoint, index, stats: BackfillStats, max_failures: int | None = None) -> None:
     result = bulk_index(batch, endpoint=endpoint, index=index)
     stats.indexed += result.indexed
+    # Surface the first failures as they happen: a run that dies later must not
+    # take the only record of why documents were rejected with it.
+    for key, reason in result.failed[:3]:
+        if len(stats.failed) < 10:
+            log.error("rejected %s: %s", key, reason)
     stats.failed.extend(result.failed)
+    if max_failures is not None and len(stats.failed) >= max_failures:
+        raise RuntimeError(
+            f"stopping: {len(stats.failed)} documents rejected (--max-failures). "
+            f"Last: {stats.failed[-1][0]} {stats.failed[-1][1]}"
+        )

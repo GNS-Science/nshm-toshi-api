@@ -68,6 +68,17 @@ It is a dry run unless `--execute` is given, and safe to re-run. Narrow it with
 `--source`, `--store`, `--clazz`, `--since` or `--min-id`; `--index-counts` compares
 the index against the stores. Classes in `search.NOT_INDEXED` are always skipped.
 
+The index needs `ignore_malformed` on the `id` field, or objects with suffixed
+legacy ids (`10001HzGWM`) are rejected — `id` is mapped as a long, and weka reads
+it from `_source` to build result links, so it cannot simply be dropped. It is set
+on the live prod index; **a rebuilt index needs it again**:
+
+```
+PUT toshi_index_mapped/_mapping  {"properties": {"id": {"type": "long", "ignore_malformed": true}}}
+```
+
+The script refuses to write if it is missing.
+
 ```bash
 uv run python scripts/backfill_search_index.py --stage prod                    # counts only
 uv run python scripts/backfill_search_index.py --stage prod --index-counts --endpoint https://<domain-endpoint>

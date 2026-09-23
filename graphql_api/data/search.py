@@ -72,6 +72,28 @@ def _auth_for(endpoint: str) -> AWS4Auth | None:
     return _aws_auth() if host.endswith(".es.amazonaws.com") else None
 
 
+# Fields the index maps as objects, and the key a bare id takes in the modern
+# shape. Objects from 2021-22 store these as plain id strings — e.g.
+# "parents": ["9674zU9VY"] rather than [{"parent_id": "9674zU9VY"}] — which ES
+# rejects with "tried to parse field [null] as object, but found a concrete
+# value". That is why the legacy objects in #230 never made it into the index.
+_ID_KEY_FOR_LIST = {
+    "parents": "parent_id",
+    "children": "child_id",
+    "files": "file_id",
+    "relations": "id",
+    "predecessors": "id",
+}
+
+
+def _coerce_legacy_id_lists(doc: dict) -> None:
+    """Rewrite bare id strings in object-mapped lists into the modern shape."""
+    for name, id_key in _ID_KEY_FOR_LIST.items():
+        value = doc.get(name)
+        if isinstance(value, list) and any(not isinstance(item, dict) for item in value):
+            doc[name] = [item if isinstance(item, dict) else {id_key: str(item)} for item in value]
+
+
 def prepare_document(key: str, document: dict) -> tuple[str, dict]:
     """Return the (ES _id, body) that index_document and bulk_index write."""
     doc = dict(document)
@@ -80,6 +102,8 @@ def prepare_document(key: str, document: dict) -> tuple[str, dict]:
     # list and string across documents. Matches original search_manager.py:48-57.
     if doc.get("clazz_name") == "File" and isinstance(doc.get("relations"), str):
         doc["relations_compressed"] = doc.pop("relations")
+
+    _coerce_legacy_id_lists(doc)
 
     return key.replace("/", "_"), doc
 
@@ -171,6 +195,7 @@ def bulk_index(
     per-item errors (e.g. mapping conflicts) are returned in BulkResult.failed.
     """
     result = BulkResult()
+    # Already-prepared pairs come back through the 413 split; prepare only raw input.
     pending = [prepare_document(key, doc) for key, doc in documents if is_indexable(doc)]
     if not pending:
         return result
@@ -185,6 +210,20 @@ def bulk_index(
         resp = requests.post(
             url, data=body.encode(), headers={"Content-Type": "application/x-ndjson"}, auth=auth, timeout=timeout
         )
+        if resp.status_code == 413:
+            # Batch over the domain's max request size. Halve and retry; a single
+            # document that still will not fit is recorded, not retried forever.
+            if len(pending) == 1:
+                result.failed.append((pending[0][0], "413 Request Entity Too Large (single document)"))
+                return result
+            half = len(pending) // 2
+            for part in (pending[:half], pending[half:]):
+                part_result = bulk_index(
+                    part, endpoint, index, max_attempts=max_attempts, backoff_seconds=backoff_seconds, timeout=timeout
+                )
+                result.indexed += part_result.indexed
+                result.failed.extend(part_result.failed)
+            return result
         if resp.status_code in _RETRYABLE_STATUS and attempt < max_attempts:
             time.sleep(backoff_seconds * 2 ** (attempt - 1))
             continue

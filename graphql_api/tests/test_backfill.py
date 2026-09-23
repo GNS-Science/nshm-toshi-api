@@ -19,7 +19,7 @@ import requests
 from moto import mock_aws
 
 from graphql_api.data import dynamo, search
-from graphql_api.data.backfill import iter_dynamo_documents, iter_legacy_documents, run_backfill
+from graphql_api.data.backfill import BackfillStats, iter_dynamo_documents, iter_legacy_documents, run_backfill
 
 sys.path.insert(0, str(Path(__file__).parents[2] / "scripts"))
 import backfill_search_index  # noqa: E402
@@ -358,3 +358,62 @@ def test_cluster_write_block_aborts_the_run(requests_mock, no_sleep):
     with pytest.raises(RuntimeError, match="refusing writes"):
         search.bulk_index([("ThingData_1", {})], endpoint=LOCAL_EP, index="idx")
     assert requests_mock.call_count == 1
+
+
+def test_bulk_splits_oversized_batch(requests_mock, no_sleep):
+    """The domain rejects an oversized _bulk body with 413; halve and retry."""
+    requests_mock.post(
+        f"{LOCAL_EP}/_bulk",
+        [{"status_code": 413}, {"json": _bulk_response(201)}, {"json": _bulk_response(201)}],
+    )
+    result = search.bulk_index([("ThingData_1", {}), ("ThingData_2", {})], endpoint=LOCAL_EP, index="idx")
+    assert result.indexed == 2 and result.failed == []
+    assert requests_mock.call_count == 3
+
+
+def test_single_document_too_large_is_recorded_not_retried(requests_mock, no_sleep):
+    requests_mock.post(f"{LOCAL_EP}/_bulk", status_code=413)
+    result = search.bulk_index([("ThingData_1", {})], endpoint=LOCAL_EP, index="idx")
+    assert result.indexed == 0
+    assert result.failed == [("ThingData_1", "413 Request Entity Too Large (single document)")]
+    assert requests_mock.call_count == 1
+
+
+def test_batch_is_capped_by_bytes(requests_mock):
+    requests_mock.post(f"{LOCAL_EP}/_bulk", json=_bulk_response(201))
+    docs = iter([(f"ThingData_{i}", {"clazz_name": "Table", "rows": "x" * 600}) for i in range(4)])
+    run_backfill(
+        [("dynamo", "Table", docs)],
+        endpoint=LOCAL_EP,
+        index="idx",
+        batch_size=500,
+        max_batch_bytes=500,
+        execute=True,
+    )
+    assert requests_mock.call_count == 4  # one request per document, by size
+
+
+def test_run_stops_at_max_failures_and_keeps_stats(requests_mock, no_sleep):
+    """A crash must not take the record of why documents were rejected with it."""
+    error = {"type": "mapper_parsing_exception", "reason": "nope"}
+    requests_mock.post(f"{LOCAL_EP}/_bulk", json=_bulk_response(400, 400, error=error))
+    stats = BackfillStats()
+    docs = iter([(f"ThingData_{i}", {"clazz_name": "GeneralTask"}) for i in range(10)])
+    with pytest.raises(RuntimeError, match="--max-failures"):
+        run_backfill(
+            [("dynamo", "Thing", docs)],
+            endpoint=LOCAL_EP,
+            index="idx",
+            batch_size=2,
+            max_failures=2,
+            execute=True,
+            stats=stats,
+        )
+    assert len(stats.failed) == 2
+    assert "mapper_parsing_exception" in stats.failed[0][1]
+
+
+def test_limit_stops_early():
+    docs = iter([(f"ThingData_{i}", {"clazz_name": "GeneralTask"}) for i in range(100)])
+    stats = run_backfill([("dynamo", "Thing", docs)], endpoint=None, index="idx", limit=5)
+    assert sum(stats.seen.values()) == 5
