@@ -74,6 +74,7 @@
  - CI deploy workflow uses GitHub environments (`AWS_TEST`/`AWS_PROD`) for per-stage secrets
 
 ### Security
+ - `DeletionPolicy: Retain` / `UpdateReplacePolicy: Retain` on the prod Elasticsearch domain (#379). It is a live dependency of weka that nothing in this repo references, so a `sls remove` or a replacing update would take it silently.
  - Test user credentials and client secrets kept in gitignored local files only
  - Authorizer only accepts access tokens (id tokens rejected)
 
