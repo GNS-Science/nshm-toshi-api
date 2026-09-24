@@ -4,14 +4,15 @@
 - **Stage:** prod
 - **Region:** ap-southeast-2
 - **Stack:** nzshm22-toshi-api-prod
-- **Account:** 461564345538
+- **Account:** <AWS-ACCOUNT-ID>
 
 Pre-teardown snapshot of both search backends: the managed domain declared
 in serverless.yml, and the OpenSearch Serverless collection that exists only
 in live AWS state. Read-only capture — see the script for what was run.
 
-> Secret-looking environment values are masked. Still contains account IDs and
-> endpoint hostnames — review before sharing outside the team.
+> Secret-looking environment values, the AWS account ID, endpoint hostnames and
+> IP addresses are redacted — this file is committed to a public repository.
+> See #386.
 
 ## CloudFormation stack resources
 
@@ -25,7 +26,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
     "StackResources": [
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ApiGatewayDeployment1785293071334",
             "PhysicalResourceId": "9a2h9g",
             "ResourceType": "AWS::ApiGateway::Deployment",
@@ -37,7 +38,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ApiGatewayMethodGraphqlGet",
             "PhysicalResourceId": "nzshm-ApiGa-1INIKWVV0NBA3",
             "ResourceType": "AWS::ApiGateway::Method",
@@ -49,7 +50,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ApiGatewayMethodGraphqlOptions",
             "PhysicalResourceId": "nzshm-ApiGa-16ZNQX4Y8ZGS6",
             "ResourceType": "AWS::ApiGateway::Method",
@@ -61,7 +62,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ApiGatewayMethodGraphqlPost",
             "PhysicalResourceId": "nzshm-ApiGa-UT457DF8VUWB",
             "ResourceType": "AWS::ApiGateway::Method",
@@ -73,7 +74,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ApiGatewayResourceGraphql",
             "PhysicalResourceId": "vfyf86",
             "ResourceType": "AWS::ApiGateway::Resource",
@@ -85,7 +86,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ApiGatewayRestApi",
             "PhysicalResourceId": "aihssdkef5",
             "ResourceType": "AWS::ApiGateway::RestApi",
@@ -97,7 +98,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ElasticSearchInstance",
             "PhysicalResourceId": "nzshm22-toshi-api-es-prod",
             "ResourceType": "AWS::Elasticsearch::Domain",
@@ -109,7 +110,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "GraphqlLambdaFunction",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-graphql",
             "ResourceType": "AWS::Lambda::Function",
@@ -121,7 +122,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "GraphqlLambdaPermissionApiGateway",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-GraphqlLambdaPermissionApiGateway-00GaRjkJb5FJ",
             "ResourceType": "AWS::Lambda::Permission",
@@ -133,9 +134,9 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "GraphqlLambdaVersionQuQtWvyRGB69bD4iUY0LGkiuKPKccE0Jyj1L3LvDblk",
-            "PhysicalResourceId": "arn:aws:lambda:ap-southeast-2:461564345538:function:nzshm22-toshi-api-prod-graphql:6",
+            "PhysicalResourceId": "arn:aws:lambda:ap-southeast-2:<AWS-ACCOUNT-ID>:function:nzshm22-toshi-api-prod-graphql:6",
             "ResourceType": "AWS::Lambda::Version",
             "Timestamp": "2026-07-29T02:45:35.609000+00:00",
             "ResourceStatus": "CREATE_COMPLETE",
@@ -145,7 +146,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "GraphqlLogGroup",
             "PhysicalResourceId": "/aws/lambda/nzshm22-toshi-api-prod-graphql",
             "ResourceType": "AWS::Logs::LogGroup",
@@ -157,7 +158,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "IamRoleLambdaExecution",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-ap-southeast-2-lambdaRole",
             "ResourceType": "AWS::IAM::Role",
@@ -169,7 +170,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "JwtAuthorizerApiGatewayAuthorizer",
             "PhysicalResourceId": "brdsld",
             "ResourceType": "AWS::ApiGateway::Authorizer",
@@ -181,7 +182,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "JwtAuthorizerLambdaFunction",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-jwtAuthorizer",
             "ResourceType": "AWS::Lambda::Function",
@@ -193,7 +194,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "JwtAuthorizerLambdaPermissionApiGateway",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-JwtAuthorizerLambdaPermissionApiGateway-Gw94vc1oqy6H",
             "ResourceType": "AWS::Lambda::Permission",
@@ -205,9 +206,9 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "JwtAuthorizerLambdaVersion3JQxznEQRYVpQoPR08e00ee7BkQ5MEm6TBMcbLMv9RY",
-            "PhysicalResourceId": "arn:aws:lambda:ap-southeast-2:461564345538:function:nzshm22-toshi-api-prod-jwtAuthorizer:5",
+            "PhysicalResourceId": "arn:aws:lambda:ap-southeast-2:<AWS-ACCOUNT-ID>:function:nzshm22-toshi-api-prod-jwtAuthorizer:5",
             "ResourceType": "AWS::Lambda::Version",
             "Timestamp": "2026-07-29T02:45:35.412000+00:00",
             "ResourceStatus": "CREATE_COMPLETE",
@@ -217,7 +218,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "JwtAuthorizerLogGroup",
             "PhysicalResourceId": "/aws/lambda/nzshm22-toshi-api-prod-jwtAuthorizer",
             "ResourceType": "AWS::Logs::LogGroup",
@@ -229,7 +230,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ServerlessDeploymentBucket",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-serverlessdeploymentbucket-1x2pkablsqcxi",
             "ResourceType": "AWS::S3::Bucket",
@@ -241,7 +242,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ServerlessDeploymentBucketPolicy",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-ServerlessDeploymentBucke-1KAO4F4Q99A5T",
             "ResourceType": "AWS::S3::BucketPolicy",
@@ -253,7 +254,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiAutomationClient",
             "PhysicalResourceId": "335e69ia1pf12k7a6dhf0kvf1m",
             "ResourceType": "AWS::Cognito::UserPoolClient",
@@ -265,7 +266,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiBucket",
             "PhysicalResourceId": "nzshm22-toshi-api-prod",
             "ResourceType": "AWS::S3::Bucket",
@@ -277,7 +278,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiGroupReaders",
             "PhysicalResourceId": "toshi-readers",
             "ResourceType": "AWS::Cognito::UserPoolGroup",
@@ -289,7 +290,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiGroupRunziAdmin",
             "PhysicalResourceId": "runzi-admin",
             "ResourceType": "AWS::Cognito::UserPoolGroup",
@@ -301,7 +302,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiGroupRunziBatch",
             "PhysicalResourceId": "runzi-batch",
             "ResourceType": "AWS::Cognito::UserPoolGroup",
@@ -313,7 +314,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiGroupRunziLocal",
             "PhysicalResourceId": "runzi-local",
             "ResourceType": "AWS::Cognito::UserPoolGroup",
@@ -325,7 +326,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiGroupWriters",
             "PhysicalResourceId": "toshi-writers",
             "ResourceType": "AWS::Cognito::UserPoolGroup",
@@ -337,7 +338,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiIdentityPool",
             "PhysicalResourceId": "ap-southeast-2:4dd8c37d-3a77-4bb2-8366-78b8f869bd78",
             "ResourceType": "AWS::Cognito::IdentityPool",
@@ -349,7 +350,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiIdentityPoolRoleAttachment",
             "PhysicalResourceId": "ap-southeast-2:4dd8c37d-3a77-4bb2-8366-78b8f869bd78",
             "ResourceType": "AWS::Cognito::IdentityPoolRoleAttachment",
@@ -361,9 +362,9 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiM2MSecret",
-            "PhysicalResourceId": "arn:aws:secretsmanager:ap-southeast-2:461564345538:secret:toshi-m2m-prod-nOrcpl",
+            "PhysicalResourceId": "arn:aws:secretsmanager:ap-southeast-2:<AWS-ACCOUNT-ID>:secret:toshi-m2m-prod-nOrcpl",
             "ResourceType": "AWS::SecretsManager::Secret",
             "Timestamp": "2026-06-16T23:07:19.937000+00:00",
             "ResourceStatus": "CREATE_COMPLETE",
@@ -373,7 +374,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiResourceServer",
             "PhysicalResourceId": "toshi",
             "ResourceType": "AWS::Cognito::UserPoolResourceServer",
@@ -385,7 +386,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiScientistClient",
             "PhysicalResourceId": "3thdbdiedo5q2lqbjceg7a46pa",
             "ResourceType": "AWS::Cognito::UserPoolClient",
@@ -397,7 +398,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiUserPool",
             "PhysicalResourceId": "ap-southeast-2_xas5hRD2T",
             "ResourceType": "AWS::Cognito::UserPool",
@@ -409,9 +410,9 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "ToshiUserPoolDomain",
-            "PhysicalResourceId": "toshi-461564345538-prod",
+            "PhysicalResourceId": "toshi-<AWS-ACCOUNT-ID>-prod",
             "ResourceType": "AWS::Cognito::UserPoolDomain",
             "Timestamp": "2026-06-16T23:07:25.499000+00:00",
             "ResourceStatus": "CREATE_COMPLETE",
@@ -421,7 +422,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "WarmUpPluginLowConcurrencyWarmerEventsRuleSchedule1",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-WarmUpPluginLowConcurrencyW-1OFOSD98IMN9M",
             "ResourceType": "AWS::Events::Rule",
@@ -433,7 +434,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "WarmUpPluginLowConcurrencyWarmerLambdaFunction",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-warmup-plugin-lowConcurrencyWarmer",
             "ResourceType": "AWS::Lambda::Function",
@@ -445,7 +446,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "WarmUpPluginLowConcurrencyWarmerLambdaPermissionEventsRuleSchedule1",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-WarmUpPluginLowConcurrencyWarmerLambdaPermissionEventsRuleSched-96FDXGBH9PEX",
             "ResourceType": "AWS::Lambda::Permission",
@@ -457,9 +458,9 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "WarmUpPluginLowConcurrencyWarmerLambdaVersionoJgxSQHa9SVbyAYL0b1STxRVVtekUvz7r5yQJyoPo",
-            "PhysicalResourceId": "arn:aws:lambda:ap-southeast-2:461564345538:function:nzshm22-toshi-api-prod-warmup-plugin-lowConcurrencyWarmer:6",
+            "PhysicalResourceId": "arn:aws:lambda:ap-southeast-2:<AWS-ACCOUNT-ID>:function:nzshm22-toshi-api-prod-warmup-plugin-lowConcurrencyWarmer:6",
             "ResourceType": "AWS::Lambda::Version",
             "Timestamp": "2026-06-22T02:50:12.123000+00:00",
             "ResourceStatus": "CREATE_COMPLETE",
@@ -469,7 +470,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "WarmUpPluginLowConcurrencyWarmerLogGroup",
             "PhysicalResourceId": "/aws/lambda/nzshm22-toshi-api-prod-warmup-plugin-lowConcurrencyWarmer",
             "ResourceType": "AWS::Logs::LogGroup",
@@ -481,7 +482,7 @@ $ aws cloudformation describe-stack-resources --stack-name nzshm22-toshi-api-pro
         },
         {
             "StackName": "nzshm22-toshi-api-prod",
-            "StackId": "arn:aws:cloudformation:ap-southeast-2:461564345538:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
+            "StackId": "arn:aws:cloudformation:ap-southeast-2:<AWS-ACCOUNT-ID>:stack/nzshm22-toshi-api-prod/7da89aa0-9c15-11eb-b4b7-06b6a0304954",
             "LogicalResourceId": "WarmUpPluginLowConcurrencyWarmerRole",
             "PhysicalResourceId": "nzshm22-toshi-api-prod-ap-southeast-2-lowconcurrencywarmer-role",
             "ResourceType": "AWS::IAM::Role",
@@ -587,12 +588,12 @@ $ aws opensearch list-domain-names --region ap-southeast-2
 $ aws opensearch describe-domain --domain-name nzshm22-toshi-api-es-prod --region ap-southeast-2
 {
     "DomainStatus": {
-        "DomainId": "461564345538/nzshm22-toshi-api-es-prod",
+        "DomainId": "<AWS-ACCOUNT-ID>/nzshm22-toshi-api-es-prod",
         "DomainName": "nzshm22-toshi-api-es-prod",
-        "ARN": "arn:aws:es:ap-southeast-2:461564345538:domain/nzshm22-toshi-api-es-prod",
+        "ARN": "arn:aws:es:ap-southeast-2:<AWS-ACCOUNT-ID>:domain/nzshm22-toshi-api-es-prod",
         "Created": true,
         "Deleted": false,
-        "Endpoint": "search-nzshm22-toshi-api-es-prod-cj4taqcgnefophpxzan55xeswa.ap-southeast-2.es.amazonaws.com",
+        "Endpoint": "search-nzshm22-toshi-api-es-prod-<REDACTED>.ap-southeast-2.es.amazonaws.com",
         "Processing": false,
         "UpgradeProcessing": false,
         "EngineVersion": "Elasticsearch_7.10",
@@ -622,7 +623,7 @@ $ aws opensearch describe-domain --domain-name nzshm22-toshi-api-es-prod --regio
             "Iops": 3000,
             "Throughput": 125
         },
-        "AccessPolicies": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"es:*\",\"es:ESHttpGet\"],\"Resource\":\"arn:aws:es:ap-southeast-2:461564345538:domain/nzshm22-toshi-api-es-prod/*\",\"Condition\":{\"IpAddress\":{\"aws:SourceIp\":\"121.99.75.93\"}}}]}",
+        "AccessPolicies": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"es:*\",\"es:ESHttpGet\"],\"Resource\":\"arn:aws:es:ap-southeast-2:<AWS-ACCOUNT-ID>:domain/nzshm22-toshi-api-es-prod/*\",\"Condition\":{\"IpAddress\":{\"aws:SourceIp\":\"<REDACTED-IP>\"}}}]}",
         "IPAddressType": "ipv4",
         "SnapshotOptions": {
             "AutomatedSnapshotStartHour": 0
@@ -642,11 +643,11 @@ $ aws opensearch describe-domain --domain-name nzshm22-toshi-api-es-prod --regio
         },
         "LogPublishingOptions": {
             "ES_APPLICATION_LOGS": {
-                "CloudWatchLogsLogGroupArn": "arn:aws:logs:ap-southeast-2:461564345538:log-group:/aws/OpenSearchService/domains/nzshm22-toshi-api-es-prod/application-logs",
+                "CloudWatchLogsLogGroupArn": "arn:aws:logs:ap-southeast-2:<AWS-ACCOUNT-ID>:log-group:/aws/OpenSearchService/domains/nzshm22-toshi-api-es-prod/application-logs",
                 "Enabled": true
             },
             "INDEX_SLOW_LOGS": {
-                "CloudWatchLogsLogGroupArn": "arn:aws:logs:ap-southeast-2:461564345538:log-group:/aws/OpenSearchService/domains/nzshm22-toshi-api-es-prod/index-logs",
+                "CloudWatchLogsLogGroupArn": "arn:aws:logs:ap-southeast-2:<AWS-ACCOUNT-ID>:log-group:/aws/OpenSearchService/domains/nzshm22-toshi-api-es-prod/index-logs",
                 "Enabled": true
             }
         },
@@ -753,7 +754,7 @@ $ aws opensearch describe-domain-config --domain-name nzshm22-toshi-api-es-prod 
         "Iops": 3000,
         "Throughput": 125
     },
-    "Access": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"es:*\",\"es:ESHttpGet\"],\"Resource\":\"arn:aws:es:ap-southeast-2:461564345538:domain/nzshm22-toshi-api-es-prod/*\",\"Condition\":{\"IpAddress\":{\"aws:SourceIp\":\"121.99.75.93\"}}}]}",
+    "Access": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"es:*\",\"es:ESHttpGet\"],\"Resource\":\"arn:aws:es:ap-southeast-2:<AWS-ACCOUNT-ID>:domain/nzshm22-toshi-api-es-prod/*\",\"Condition\":{\"IpAddress\":{\"aws:SourceIp\":\"<REDACTED-IP>\"}}}]}",
     "Advanced": {
         "rest.action.multi.allow_explicit_index": "true",
         "override_main_response_version": "true"
@@ -764,7 +765,7 @@ $ aws opensearch describe-domain-config --domain-name nzshm22-toshi-api-es-prod 
 ### Metric ClusterIndexWritesBlocked: nzshm22-toshi-api-es-prod
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name ClusterIndexWritesBlocked --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-prod Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
+$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name ClusterIndexWritesBlocked --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-prod Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -1372,7 +1373,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name ClusterI
 ### Metric FreeStorageSpace: nzshm22-toshi-api-es-prod
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name FreeStorageSpace --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-prod Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
+$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name FreeStorageSpace --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-prod Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -1980,7 +1981,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name FreeStor
 ### Metric SearchRate: nzshm22-toshi-api-es-prod
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name SearchRate --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-prod Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
+$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name SearchRate --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-prod Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -2588,7 +2589,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name SearchRa
 ### Metric IndexingRate: nzshm22-toshi-api-es-prod
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name IndexingRate --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-prod Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
+$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name IndexingRate --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-prod Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -3197,7 +3198,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name Indexing
 
 ```
 HTTP 200
-{"cluster_name":"461564345538:nzshm22-toshi-api-es-prod","status":"yellow","timed_out":false,"number_of_nodes":1,"number_of_data_nodes":1,"discovered_master":true,"active_primary_shards":6,"active_shards":6,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":5,"delayed_unassigned_shards":0,"number_of_pending_tasks":0,"number_of_in_flight_fetch":0,"task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":54.54545454545454}
+{"cluster_name":"<AWS-ACCOUNT-ID>:nzshm22-toshi-api-es-prod","status":"yellow","timed_out":false,"number_of_nodes":1,"number_of_data_nodes":1,"discovered_master":true,"active_primary_shards":6,"active_shards":6,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":5,"delayed_unassigned_shards":0,"number_of_pending_tasks":0,"number_of_in_flight_fetch":0,"task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":54.54545454545454}
 ```
 
 ### Index state /_cat/indices?v: nzshm22-toshi-api-es-prod
@@ -3237,12 +3238,12 @@ HTTP 200
 $ aws opensearch describe-domain --domain-name nzshm22-toshi-api-es-test --region ap-southeast-2
 {
     "DomainStatus": {
-        "DomainId": "461564345538/nzshm22-toshi-api-es-test",
+        "DomainId": "<AWS-ACCOUNT-ID>/nzshm22-toshi-api-es-test",
         "DomainName": "nzshm22-toshi-api-es-test",
-        "ARN": "arn:aws:es:ap-southeast-2:461564345538:domain/nzshm22-toshi-api-es-test",
+        "ARN": "arn:aws:es:ap-southeast-2:<AWS-ACCOUNT-ID>:domain/nzshm22-toshi-api-es-test",
         "Created": true,
         "Deleted": false,
-        "Endpoint": "search-nzshm22-toshi-api-es-test-ybx3zlp6hz2shrytj2ns4zx6bm.ap-southeast-2.es.amazonaws.com",
+        "Endpoint": "search-nzshm22-toshi-api-es-test-<REDACTED>.ap-southeast-2.es.amazonaws.com",
         "Processing": false,
         "UpgradeProcessing": false,
         "EngineVersion": "Elasticsearch_7.10",
@@ -3264,7 +3265,7 @@ $ aws opensearch describe-domain --domain-name nzshm22-toshi-api-es-test --regio
             "Iops": 3000,
             "Throughput": 125
         },
-        "AccessPolicies": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"es:*\",\"es:ESHttpGet\"],\"Resource\":\"arn:aws:es:ap-southeast-2:461564345538:domain/nzshm22-toshi-api-es-prod/*\",\"Condition\":{\"IpAddress\":{\"aws:SourceIp\":\"121.99.75.93\"}}}]}",
+        "AccessPolicies": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"es:*\",\"es:ESHttpGet\"],\"Resource\":\"arn:aws:es:ap-southeast-2:<AWS-ACCOUNT-ID>:domain/nzshm22-toshi-api-es-prod/*\",\"Condition\":{\"IpAddress\":{\"aws:SourceIp\":\"<REDACTED-IP>\"}}}]}",
         "IPAddressType": "ipv4",
         "SnapshotOptions": {},
         "CognitoOptions": {
@@ -3378,7 +3379,7 @@ $ aws opensearch describe-domain-config --domain-name nzshm22-toshi-api-es-test 
         "Iops": 3000,
         "Throughput": 125
     },
-    "Access": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"es:*\",\"es:ESHttpGet\"],\"Resource\":\"arn:aws:es:ap-southeast-2:461564345538:domain/nzshm22-toshi-api-es-prod/*\",\"Condition\":{\"IpAddress\":{\"aws:SourceIp\":\"121.99.75.93\"}}}]}",
+    "Access": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":[\"es:*\",\"es:ESHttpGet\"],\"Resource\":\"arn:aws:es:ap-southeast-2:<AWS-ACCOUNT-ID>:domain/nzshm22-toshi-api-es-prod/*\",\"Condition\":{\"IpAddress\":{\"aws:SourceIp\":\"<REDACTED-IP>\"}}}]}",
     "Advanced": {
         "indices.fielddata.cache.size": "20",
         "override_main_response_version": "false",
@@ -3391,7 +3392,7 @@ $ aws opensearch describe-domain-config --domain-name nzshm22-toshi-api-es-test 
 ### Metric ClusterIndexWritesBlocked: nzshm22-toshi-api-es-test
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name ClusterIndexWritesBlocked --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-test Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
+$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name ClusterIndexWritesBlocked --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-test Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -3999,7 +4000,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name ClusterI
 ### Metric FreeStorageSpace: nzshm22-toshi-api-es-test
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name FreeStorageSpace --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-test Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
+$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name FreeStorageSpace --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-test Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -4607,7 +4608,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name FreeStor
 ### Metric SearchRate: nzshm22-toshi-api-es-test
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name SearchRate --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-test Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
+$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name SearchRate --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-test Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -5215,7 +5216,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name SearchRa
 ### Metric IndexingRate: nzshm22-toshi-api-es-test
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name IndexingRate --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-test Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
+$ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name IndexingRate --dimensions Name=DomainName,Value=nzshm22-toshi-api-es-test Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Sum --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Sum:Sum}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -5824,7 +5825,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/ES --metric-name Indexing
 
 ```
 HTTP 200
-{"cluster_name":"461564345538:nzshm22-toshi-api-es-test","status":"yellow","timed_out":false,"number_of_nodes":1,"number_of_data_nodes":1,"discovered_master":true,"active_primary_shards":6,"active_shards":6,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":5,"delayed_unassigned_shards":0,"number_of_pending_tasks":0,"number_of_in_flight_fetch":0,"task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":54.54545454545454}
+{"cluster_name":"<AWS-ACCOUNT-ID>:nzshm22-toshi-api-es-test","status":"yellow","timed_out":false,"number_of_nodes":1,"number_of_data_nodes":1,"discovered_master":true,"active_primary_shards":6,"active_shards":6,"relocating_shards":0,"initializing_shards":0,"unassigned_shards":5,"delayed_unassigned_shards":0,"number_of_pending_tasks":0,"number_of_in_flight_fetch":0,"task_max_waiting_in_queue_millis":0,"active_shards_percent_as_number":54.54545454545454}
 ```
 
 ### Index state /_cat/indices?v: nzshm22-toshi-api-es-test
@@ -5872,7 +5873,7 @@ $ aws opensearchserverless list-collections --region ap-southeast-2
             "id": "05dg7fpjnz61wzk9jad5",
             "name": "nshm-model-serverless-poc",
             "status": "ACTIVE",
-            "arn": "arn:aws:aoss:ap-southeast-2:461564345538:collection/05dg7fpjnz61wzk9jad5",
+            "arn": "arn:aws:aoss:ap-southeast-2:<AWS-ACCOUNT-ID>:collection/05dg7fpjnz61wzk9jad5",
             "kmsKeyArn": "auto"
         }
     ]
@@ -5891,14 +5892,14 @@ $ aws opensearchserverless batch-get-collection --names nshm-model-serverless-po
             "status": "ACTIVE",
             "type": "SEARCH",
             "description": "",
-            "arn": "arn:aws:aoss:ap-southeast-2:461564345538:collection/05dg7fpjnz61wzk9jad5",
+            "arn": "arn:aws:aoss:ap-southeast-2:<AWS-ACCOUNT-ID>:collection/05dg7fpjnz61wzk9jad5",
             "kmsKeyArn": "auto",
             "standbyReplicas": "ENABLED",
             "deletionProtection": "DISABLED",
             "createdDate": 1693971414747,
             "lastModifiedDate": 1693972074302,
-            "collectionEndpoint": "https://05dg7fpjnz61wzk9jad5.ap-southeast-2.aoss.amazonaws.com",
-            "dashboardEndpoint": "https://05dg7fpjnz61wzk9jad5.ap-southeast-2.aoss.amazonaws.com/_dashboards"
+            "collectionEndpoint": "https://<REDACTED>.ap-southeast-2.aoss.amazonaws.com",
+            "dashboardEndpoint": "https://<REDACTED>.ap-southeast-2.aoss.amazonaws.com/_dashboards"
         }
     ],
     "collectionErrorDetails": []
@@ -5931,7 +5932,7 @@ OCU metrics are account-wide. Each OCU-hour here corresponds to an OCU-hour on t
 ### Metric SearchOCU: account-wide
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/AOSS --metric-name SearchOCU --dimensions Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Average --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Avg:Average}
+$ aws cloudwatch get-metric-statistics --namespace AWS/AOSS --metric-name SearchOCU --dimensions Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Average --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Avg:Average}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
@@ -6539,7 +6540,7 @@ $ aws cloudwatch get-metric-statistics --namespace AWS/AOSS --metric-name Search
 ### Metric IndexingOCU: account-wide
 
 ```
-$ aws cloudwatch get-metric-statistics --namespace AWS/AOSS --metric-name IndexingOCU --dimensions Name=ClientId,Value=461564345538 --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Average --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Avg:Average}
+$ aws cloudwatch get-metric-statistics --namespace AWS/AOSS --metric-name IndexingOCU --dimensions Name=ClientId,Value=<AWS-ACCOUNT-ID> --start-time 2026-05-24T00:00:00Z --end-time 2026-09-21T00:00:00Z --period 86400 --statistics Maximum Average --region ap-southeast-2 --query sort_by(Datapoints, &Timestamp)[].{T:Timestamp,Max:Maximum,Avg:Average}
 [
     {
         "T": "2026-05-24T12:00:00+12:00",
