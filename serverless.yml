@@ -261,6 +261,20 @@ resources:
     #   https://www.serverless.com/blog/build-geosearch-graphql-api-aws-appsync-elasticsearch
     ElasticSearchInstance:
       Type: AWS::Elasticsearch::Domain
+      # Retain first, before anything else touches this block (#379). weka reads
+      # this domain directly from the browser, and nothing in this repo
+      # references it, so nothing here will warn you if it goes.
+      #
+      # It guards two ways the resource can be destroyed: `sls remove`, and an
+      # update that replaces rather than modifies — switching Type to
+      # AWS::OpenSearchService::Domain, or renaming the domain, both create a new
+      # domain and delete the old one.
+      #
+      # These are CloudFormation attributes, not properties, so this change does
+      # not act on the live domain: the still-stale Properties below (6.2,
+      # t2.small, gp2) are not sent. Reconciling those is a separate deploy.
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         ElasticsearchVersion: 6.2
         DomainName: "${self:custom.esDomainName}"
