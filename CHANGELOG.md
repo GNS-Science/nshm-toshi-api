@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+ - Search indexing restored on prod (#378). The `graphql` Lambda had no `ES_ENDPOINT` since the Strawberry cut-over, so new objects were missing from weka search.
+ - Legacy objects are indexable again (#230). Records from 2021-22 store `parents`/`children`/`files` as bare id strings, which ES rejects against the object mapping for those fields; they are now normalised to the modern `{"parent_id": …}` shape at index time. The index also needs `ignore_malformed` on `id` — see README — since legacy ids carry a suffix and the field is mapped as a long.
+ - weka search links for objects created since the Strawberry cut-over (#388). Indexed bodies had `object_id` but no `id`, so weka linked to the ES `_id` (`GeneralTask:ThingData_…`). `id` is now set at index time; affected objects need re-indexing.
+
+### Changed
+ - Unset `ES_ENDPOINT` now disables indexing instead of defaulting to localhost. Local dev must set `ES_ENDPOINT=http://localhost:9200`.
+
+### Added
+ - `ES_INDEX_FAILURE` log marker and CloudWatch alarm on indexing failures (SNS topic in output `IndexingAlarmTopicArn`).
+ - CI test guarding the ES config in `serverless.yml`.
+ - `scripts/backfill_search_index.py`: rebuilds the search index from DynamoDB and legacy S3 objects (#378, #230).
+ - `search.NOT_INDEXED`: classes deliberately kept out of the index. `OpenquakeHazardConfig` (2.19M objects, absent since the index was rebuilt in May 2024, and no longer created) is excluded from both the live write path and the backfill.
+
 ## [0.7.2] - 2026-07-29
 
 ### Fixed

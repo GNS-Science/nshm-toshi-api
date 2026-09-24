@@ -43,10 +43,47 @@ aws_secret_access_key=MockAccessKeyId
 
 ## System configuration
 
-Configuration is managed by environment variables and `.env` files.
+Settings come from environment variables (see `.env.example` for local dev).
+Deployed values are set on the `graphql` function in `serverless.yml`:
 
- - Please see `graphql_api\config.py` for all config options
- - the file `.env.example` includes the commonly used develepment setups  
+| Variable | Purpose |
+|---|---|
+| `ES_ENDPOINT` | Elasticsearch URL. Unset = no search indexing (the case on test). |
+| `ES_INDEX` | Index name (`toshi_index_mapped`). |
+| `ES_REGION` | AWS region for signing Elasticsearch requests. |
+| `GRAPHQL_PATH` | GraphQL route (`/graphql`). |
+| `S3_BUCKET_NAME` | S3 bucket for files. |
+| `FIRST_DYNAMO_ID` | First ID for new objects (0 for smoketests, 100000 for prod). |
+
+### Search indexing alarm
+
+Failed index writes log `ES_INDEX_FAILURE` and trigger a CloudWatch alarm, which
+emails via the SNS topic in stack output `IndexingAlarmTopicArn`. Add the email
+subscription by hand in the SNS console after a stage's first deploy.
+
+### Backfilling the search index
+
+`scripts/backfill_search_index.py` re-indexes objects from DynamoDB and legacy S3.
+It is a dry run unless `--execute` is given, and safe to re-run. Narrow it with
+`--source`, `--store`, `--clazz`, `--since` or `--min-id`; `--index-counts` compares
+the index against the stores. Classes in `search.NOT_INDEXED` are always skipped.
+
+The index needs `ignore_malformed` on the `id` field, or objects with suffixed
+legacy ids (`10001HzGWM`) are rejected — `id` is mapped as a long, and weka reads
+it from `_source` to build result links, so it cannot simply be dropped. It is set
+on the live prod index; **a rebuilt index needs it again**:
+
+```
+PUT toshi_index_mapped/_mapping  {"properties": {"id": {"type": "long", "ignore_malformed": true}}}
+```
+
+The script refuses to write if it is missing.
+
+```bash
+uv run python scripts/backfill_search_index.py --stage prod                    # counts only
+uv run python scripts/backfill_search_index.py --stage prod --index-counts --endpoint https://<domain-endpoint>
+uv run python scripts/backfill_search_index.py --stage prod --execute --endpoint https://<domain-endpoint>
+```
 
 ## Smoketest
 
@@ -56,6 +93,7 @@ SLS_OFFLINE=1
 TESTING=0
 TOSHI_FIX_RANDOM_SEED=1
 FIRST_DYNAMO_ID=0 
+ES_ENDPOINT=http://localhost:9200
 ```
 then 
 
