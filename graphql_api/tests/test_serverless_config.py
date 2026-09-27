@@ -91,6 +91,17 @@ def test_role_can_write_to_domain(sls):
     assert {"es:ESHttpPut", "es:ESHttpPost"} <= actions
 
 
+def test_es_domain_is_retained(sls):
+    """
+    The prod domain must survive `sls remove` and any update that replaces it
+    (#379). weka reads it directly and nothing in this repo references it, so
+    losing it would be silent here and immediate for users.
+    """
+    domain = sls["resources"]["Resources"]["ElasticSearchInstance"]
+    assert domain.get("DeletionPolicy") == "Retain"
+    assert domain.get("UpdateReplacePolicy") == "Retain"
+
+
 def test_alarm_matches_logged_marker(sls):
     resources = sls["resources"]["Resources"]
     metric_filter = resources["IndexingFailureMetricFilter"]["Properties"]
