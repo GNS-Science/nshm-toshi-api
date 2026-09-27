@@ -48,10 +48,24 @@ def graphql_env(sls):
     return sls["functions"]["graphql"]["environment"]
 
 
+@pytest.mark.skip(
+    reason="ES_ENDPOINT and the ElasticSearchInstance resource are out of the template for the "
+    "#379 resource-import window; the follow-up PR restores both, and these guards with them."
+)
 def test_graphql_function_has_es_endpoint_from_domain(graphql_env):
     endpoint = graphql_env.get("ES_ENDPOINT")
     assert endpoint, "graphql function has no ES_ENDPOINT — indexing is off on every stage"
     assert endpoint == {"Fn::Join": ["", ["https://", {"Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]}]]}
+
+
+def test_es_endpoint_absent_during_import_window(graphql_env):
+    """
+    Deliberate, and temporary (#379): ES_ENDPOINT was a GetAtt on the detached
+    ElasticSearchInstance. While it is unset, prod indexes nothing — objects
+    created in this window need backfilling. Delete this test when the follow-up
+    PR restores ES_ENDPOINT.
+    """
+    assert "ES_ENDPOINT" not in graphql_env
 
 
 def test_graphql_function_indexes_the_live_index(sls, graphql_env):
@@ -63,6 +77,10 @@ def test_graphql_function_indexes_the_live_index(sls, graphql_env):
     assert graphql_env.get("ES_REGION")
 
 
+@pytest.mark.skip(
+    reason="ES_ENDPOINT and the ElasticSearchInstance resource are out of the template for the "
+    "#379 resource-import window; the follow-up PR restores both, and these guards with them."
+)
 def test_es_endpoint_excluded_only_on_test(sls):
     """
     ES_ENDPOINT is dropped exactly where the domain is (test), nowhere else.
@@ -91,6 +109,10 @@ def test_role_can_write_to_domain(sls):
     assert {"es:ESHttpPut", "es:ESHttpPost"} <= actions
 
 
+@pytest.mark.skip(
+    reason="ES_ENDPOINT and the ElasticSearchInstance resource are out of the template for the "
+    "#379 resource-import window; the follow-up PR restores both, and these guards with them."
+)
 def test_es_domain_is_retained(sls):
     """
     The prod domain must survive `sls remove` and any update that replaces it
