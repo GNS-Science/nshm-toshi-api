@@ -29,11 +29,24 @@ note() {
     printf '\n%s\n' "$1" >> "$OUT"
 }
 
-# Mask values of environment variables whose names look like secrets. Lambda
-# configurations carry real credentials (LEGACY_API_KEY), and this output is
-# meant to be committed.
+# Redact anything that should not land in a public repository. This output is
+# committed, and github.com/GNS-Science/nshm-toshi-api is public (#386).
+#
+#   - values of environment variables whose names look like secrets: Lambda
+#     configurations carry real credentials (LEGACY_API_KEY)
+#   - the AWS account ID
+#   - the random suffix of domain/collection endpoints, which is what makes a
+#     hostname reachable. The domain name itself is kept: it is in serverless.yml
+#   - IP addresses, e.g. the source IP in the domain's access policy
+#
+# Check new output before committing: `grep -nE '[0-9]{12}|[0-9]{1,3}(\.[0-9]{1,3}){3}'`.
 redact() {
-    sed -E 's/"([A-Z0-9_]*(KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL)[A-Z0-9_]*)": "[^"]*"/"\1": "***REDACTED***"/g'
+    sed -E \
+        -e 's/"([A-Z0-9_]*(KEY|SECRET|TOKEN|PASSWORD|CREDENTIAL)[A-Z0-9_]*)": "[^"]*"/"\1": "***REDACTED***"/g' \
+        -e "s/${ACCOUNT_ID}/<AWS-ACCOUNT-ID>/g" \
+        -e 's/(search-[a-z0-9-]+)-[a-z0-9]{26}\.([a-z0-9-]+)\.es\.amazonaws\.com/\1-<REDACTED>.\2.es.amazonaws.com/g' \
+        -e 's/[a-z0-9]{20,}\.([a-z0-9-]+)\.aoss\.amazonaws\.com/<REDACTED>.\1.aoss.amazonaws.com/g' \
+        -e 's/\b([0-9]{1,3}\.){3}[0-9]{1,3}\b/<REDACTED-IP>/g'
 }
 
 # Run a command, recording both the invocation and its output (or its error).
@@ -116,8 +129,9 @@ COST_END=$(date -u +%Y-%m-%d)
     echo "in serverless.yml, and the OpenSearch Serverless collection that exists only"
     echo "in live AWS state. Read-only capture — see the script for what was run."
     echo
-    echo "> Secret-looking environment values are masked. Still contains account IDs and"
-    echo "> endpoint hostnames — review before sharing outside the team."
+    echo "> Secret-looking environment values, the AWS account ID, endpoint hostnames and"
+    echo "> IP addresses are redacted — this file is committed to a public repository."
+    echo "> See #386."
 } >> "$OUT"
 
 # ── CloudFormation: what the stack believes it owns ──────────────────────────

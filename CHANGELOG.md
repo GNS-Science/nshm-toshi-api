@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Security
+ - Redacted the AWS account ID, domain endpoint hostnames and the access policy's source IP from the committed search-state captures, and taught `scripts/capture_search_state.sh` to redact them (#386). A test fails the build if an unredacted identifier reaches `docs/`. Note the values remain in git history.
+
 ### Fixed
  - Search indexing restored on prod (#378). The `graphql` Lambda had no `ES_ENDPOINT` since the Strawberry cut-over, so new objects were missing from weka search.
  - Legacy objects are indexable again (#230). Records from 2021-22 store `parents`/`children`/`files` as bare id strings, which ES rejects against the object mapping for those fields; they are now normalised to the modern `{"parent_id": …}` shape at index time. The index also needs `ignore_malformed` on `id` — see README — since legacy ids carry a suffix and the field is mapped as a long.
@@ -74,6 +77,7 @@
  - CI deploy workflow uses GitHub environments (`AWS_TEST`/`AWS_PROD`) for per-stage secrets
 
 ### Security
+ - `DeletionPolicy: Retain` / `UpdateReplacePolicy: Retain` on the prod Elasticsearch domain (#379). It is a live dependency of weka that nothing in this repo references, so a `sls remove` or a replacing update would take it silently.
  - Test user credentials and client secrets kept in gitignored local files only
  - Authorizer only accepts access tokens (id tokens rejected)
 
