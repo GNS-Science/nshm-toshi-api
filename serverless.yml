@@ -116,10 +116,16 @@ custom:
 
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
 
-  # NOTE: the serverless-plugin-ifelse block that excluded ElasticSearchInstance and
-  # its ES_ENDPOINT GetAtt on the test stage is gone with the resource itself, and
-  # comes back with it in the import follow-up (#379). The plugin stays in
-  # `plugins:` so that restoring it is a one-block change.
+  serverlessIfElse:
+      # Test runs without its own ES domain. Only the resource is excluded: the ES
+      # IAM statement below names the domain by constructed ARN rather than
+      # Fn::GetAtt, so it does not dangle when the resource is gone. Excluding the
+      # statement instead would need `provider.iamRoleStatements.1`, and the plugin
+      # removes with `delete`, leaving a hole in the array that serialises to null
+      # and fails validation. See #377.
+      - If: '"${self:custom.stage}" == "test"'
+        Exclude:
+          - resources.Resources.ElasticSearchInstance
 
 provider:
   name: aws
@@ -248,23 +254,46 @@ resources:
       Properties:
         BucketName: ${self:custom.s3_bucket}
 
-    # ── The prod Elasticsearch domain is deliberately NOT declared here ────────
-    # It exists, weka depends on it, and this stack no longer manages it.
+    # ── The prod search domain, as it actually is ───────────────────────────────
+    # Adopted by CloudFormation resource import (#379), not created by a deploy.
+    # These values are the live domain's, captured in
+    # docs/search-state-2026-09-21-prod.md. Keep them in step with it.
     #
-    # The template described it as it was in 2020 — Elasticsearch 6.2,
-    # t2.small.elasticsearch, gp2 10 GB — against a live 7.10 / m7g.medium.search /
-    # gp3 50 GB domain. That drift could not be corrected by editing the block:
-    # updating ElasticsearchVersion without `UpdatePolicy: EnableVersionUpgrade`
-    # means *replacement*, and DomainName is specified, so replacement is refused.
+    # Two things to know before editing:
+    #   - UpdatePolicy.EnableVersionUpgrade makes an ElasticsearchVersion change an
+    #     in-place upgrade. Without it CloudFormation attempts *replacement*, which
+    #     is refused because DomainName is set — so the deploy fails, and a
+    #     replacement that did succeed would strand the data weka reads.
+    #   - EBSOptions has no Throughput property in AWS::Elasticsearch::Domain, so
+    #     the live volume's 125 MiB/s cannot be expressed. It is the gp3 default at
+    #     3000 IOPS, so that one field stays as (benign) drift. Describing it needs
+    #     AWS::OpenSearchService::Domain, which is a migration of its own — see the
+    #     Remarks on the AWS resource reference, and #379.
     #
-    # So the resource is being re-adopted by CloudFormation resource import, with a
-    # definition that matches the live domain. Removal here is safe because the
-    # deployed template carries DeletionPolicy/UpdateReplacePolicy: Retain (#392).
-    # The next PR restores the block at live values and imports it. Nothing else
-    # references the domain: the ES IAM statement above builds its ARNs (#377).
-    #
-    # Do not re-add this resource with a plain `sls deploy` — that would create a
-    # second domain, or fail on the name. See #379.
+    # Properties the live domain has and this block deliberately does not describe:
+    # AccessPolicies, LogPublishingOptions, AdvancedOptions, SnapshotOptions,
+    # DomainEndpointOptions, EncryptionAtRestOptions, NodeToNodeEncryptionOptions.
+    # CloudFormation leaves absent properties alone; adopting them is separate work
+    # (the access policy is #379 item 3 / #386).
+    ElasticSearchInstance:
+      Type: AWS::Elasticsearch::Domain
+      DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
+      UpdatePolicy:
+        EnableVersionUpgrade: true
+      Properties:
+        ElasticsearchVersion: "7.10"
+        DomainName: "${self:custom.esDomainName}"
+        EBSOptions:
+          EBSEnabled: true
+          VolumeType: gp3
+          VolumeSize: 50
+          Iops: 3000
+        ElasticsearchClusterConfig:
+          InstanceType: m7g.medium.search
+          InstanceCount: 1
+          DedicatedMasterEnabled: false
+          ZoneAwarenessEnabled: false
 
     # ── Search indexing failure alarm (#378) ──────────────────────────────────
     # index_document() never raises, so a broken write path is otherwise silent.

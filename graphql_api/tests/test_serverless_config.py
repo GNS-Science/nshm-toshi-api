@@ -77,10 +77,6 @@ def test_graphql_function_indexes_the_live_index(sls, graphql_env):
     assert graphql_env.get("ES_REGION")
 
 
-@pytest.mark.skip(
-    reason="ES_ENDPOINT and the ElasticSearchInstance resource are out of the template for the "
-    "#379 resource-import window; the follow-up PR restores both, and these guards with them."
-)
 def test_es_endpoint_excluded_only_on_test(sls):
     """
     ES_ENDPOINT is dropped exactly where the domain is (test), nowhere else.
@@ -89,15 +85,14 @@ def test_es_endpoint_excluded_only_on_test(sls):
     resource, failing the deploy-test deploy; excluding it elsewhere turns prod
     indexing off.
     """
-    endpoint_path = "functions.graphql.environment.ES_ENDPOINT"
+    domain_path = "resources.Resources.ElasticSearchInstance"
     rules = sls["custom"]["serverlessIfElse"]
-    matching = [r for r in rules if endpoint_path in r.get("Exclude", []) + r.get("ElseExclude", [])]
-    assert len(matching) == 1, f"expected one serverlessIfElse rule excluding {endpoint_path}, found {len(matching)}"
+    matching = [r for r in rules if domain_path in r.get("Exclude", []) + r.get("ElseExclude", [])]
+    assert len(matching) == 1, f"expected one serverlessIfElse rule excluding {domain_path}, found {len(matching)}"
     [rule] = matching
     assert rule["If"] == '"${self:custom.stage}" == "test"'
-    assert endpoint_path in rule.get("Exclude", [])
-    assert endpoint_path not in rule.get("ElseExclude", [])
-    assert "resources.Resources.ElasticSearchInstance" in rule["Exclude"]
+    assert domain_path in rule.get("Exclude", [])
+    assert domain_path not in rule.get("ElseExclude", [])
 
 
 def test_role_can_write_to_domain(sls):
@@ -109,10 +104,6 @@ def test_role_can_write_to_domain(sls):
     assert {"es:ESHttpPut", "es:ESHttpPost"} <= actions
 
 
-@pytest.mark.skip(
-    reason="ES_ENDPOINT and the ElasticSearchInstance resource are out of the template for the "
-    "#379 resource-import window; the follow-up PR restores both, and these guards with them."
-)
 def test_es_domain_is_retained(sls):
     """
     The prod domain must survive `sls remove` and any update that replaces it
@@ -122,6 +113,26 @@ def test_es_domain_is_retained(sls):
     domain = sls["resources"]["Resources"]["ElasticSearchInstance"]
     assert domain.get("DeletionPolicy") == "Retain"
     assert domain.get("UpdateReplacePolicy") == "Retain"
+
+
+def test_es_domain_matches_the_live_domain(sls):
+    """
+    The template must describe the domain that exists (#379). It was wrong for six
+    years — 6.2 / t2.small / gp2 against a live 7.10 / m7g.medium / gp3 — and a
+    deploy could not correct it, which is why the resource was imported.
+
+    EnableVersionUpgrade is not decoration: without it a version change is a
+    replacement, and DomainName is set, so the deploy fails instead.
+    """
+    domain = sls["resources"]["Resources"]["ElasticSearchInstance"]
+    props = domain["Properties"]
+    assert domain["UpdatePolicy"] == {"EnableVersionUpgrade": True}
+    assert props["ElasticsearchVersion"] == "7.10"
+    assert props["ElasticsearchClusterConfig"]["InstanceType"] == "m7g.medium.search"
+    assert props["EBSOptions"] == {"EBSEnabled": True, "VolumeType": "gp3", "VolumeSize": 50, "Iops": 3000}
+    # Adopting these would change the live domain; they are not ours to set here.
+    for absent in ("AccessPolicies", "LogPublishingOptions", "AdvancedOptions", "DomainEndpointOptions"):
+        assert absent not in props
 
 
 def test_alarm_matches_logged_marker(sls):
