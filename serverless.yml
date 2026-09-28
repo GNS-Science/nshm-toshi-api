@@ -116,21 +116,10 @@ custom:
 
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
 
-  serverlessIfElse:
-      # Test runs without its own ES domain. Only the resource is excluded: the ES
-      # IAM statement below names the domain by constructed ARN rather than
-      # Fn::GetAtt, so it does not dangle when the resource is gone. Excluding the
-      # statement instead would need `provider.iamRoleStatements.1`, and the plugin
-      # removes with `delete`, leaving a hole in the array that serialises to null
-      # and fails validation. See #377.
-      #
-      # The graphql function's ES_ENDPOINT is a GetAtt on that resource, so it goes
-      # too. Unset ES_ENDPOINT means indexing is off (graphql_api/data/search.py);
-      # the other ES_* vars are inert without it. See #378.
-      - If: '"${self:custom.stage}" == "test"'
-        Exclude:
-          - resources.Resources.ElasticSearchInstance
-          - functions.graphql.environment.ES_ENDPOINT
+  # NOTE: the serverless-plugin-ifelse block that excluded ElasticSearchInstance and
+  # its ES_ENDPOINT GetAtt on the test stage is gone with the resource itself, and
+  # comes back with it in the import follow-up (#379). The plugin stays in
+  # `plugins:` so that restoring it is a one-block change.
 
 provider:
   name: aws
@@ -239,11 +228,13 @@ functions:
       FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
       # S3 IAM (s3:*) is inherited from provider.iamRoleStatements — covers
       # the s3:GetObject + s3:ListBucket needed by the read fallback paths.
-      # Search indexing (#378). Writes go straight to the domain, SigV4-signed
-      # with this function's role (es:ESHttp* in provider.iamRoleStatements) —
-      # not through the GNS proxy that weka reads through. Removed on test by
-      # custom.serverlessIfElse. graphql_api/tests/test_serverless_config.py guards these.
-      ES_ENDPOINT: {"Fn::Join": ["", ["https://", {"Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]}]]}
+      # Search indexing (#378). ES_ENDPOINT is absent for the duration of the #379
+      # import: it was a GetAtt on ElasticSearchInstance, and a GetAtt on a resource
+      # the template no longer declares fails to resolve. Unset means indexing is
+      # off (graphql_api/data/search.py), so **objects created before the follow-up
+      # PR lands will be missing from search** and need backfilling with
+      # scripts/backfill_search_index.py. Nothing is being created right now, which
+      # is the only reason this window is acceptable.
       ES_INDEX: ${self:custom.esIndex}
       ES_REGION: ${self:custom.region}
     warmup:
@@ -257,36 +248,23 @@ resources:
       Properties:
         BucketName: ${self:custom.s3_bucket}
 
-    # following on from
-    #   https://www.serverless.com/blog/build-geosearch-graphql-api-aws-appsync-elasticsearch
-    ElasticSearchInstance:
-      Type: AWS::Elasticsearch::Domain
-      # Retain first, before anything else touches this block (#379). weka reads
-      # this domain directly from the browser, and nothing in this repo
-      # references it, so nothing here will warn you if it goes.
-      #
-      # It guards two ways the resource can be destroyed: `sls remove`, and an
-      # update that replaces rather than modifies — switching Type to
-      # AWS::OpenSearchService::Domain, or renaming the domain, both create a new
-      # domain and delete the old one.
-      #
-      # These are CloudFormation attributes, not properties, so this change does
-      # not act on the live domain: the still-stale Properties below (6.2,
-      # t2.small, gp2) are not sent. Reconciling those is a separate deploy.
-      DeletionPolicy: Retain
-      UpdateReplacePolicy: Retain
-      Properties:
-        ElasticsearchVersion: 6.2
-        DomainName: "${self:custom.esDomainName}"
-        EBSOptions:
-          EBSEnabled: true
-          VolumeType: gp2
-          VolumeSize: 10
-        ElasticsearchClusterConfig:
-          InstanceType: t2.small.elasticsearch
-          InstanceCount: 1
-          DedicatedMasterEnabled: false
-          ZoneAwarenessEnabled: false
+    # ── The prod Elasticsearch domain is deliberately NOT declared here ────────
+    # It exists, weka depends on it, and this stack no longer manages it.
+    #
+    # The template described it as it was in 2020 — Elasticsearch 6.2,
+    # t2.small.elasticsearch, gp2 10 GB — against a live 7.10 / m7g.medium.search /
+    # gp3 50 GB domain. That drift could not be corrected by editing the block:
+    # updating ElasticsearchVersion without `UpdatePolicy: EnableVersionUpgrade`
+    # means *replacement*, and DomainName is specified, so replacement is refused.
+    #
+    # So the resource is being re-adopted by CloudFormation resource import, with a
+    # definition that matches the live domain. Removal here is safe because the
+    # deployed template carries DeletionPolicy/UpdateReplacePolicy: Retain (#392).
+    # The next PR restores the block at live values and imports it. Nothing else
+    # references the domain: the ES IAM statement above builds its ARNs (#377).
+    #
+    # Do not re-add this resource with a plain `sls deploy` — that would create a
+    # second domain, or fail on the name. See #379.
 
     # ── Search indexing failure alarm (#378) ──────────────────────────────────
     # index_document() never raises, so a broken write path is otherwise silent.
