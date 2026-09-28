@@ -123,9 +123,14 @@ custom:
       # statement instead would need `provider.iamRoleStatements.1`, and the plugin
       # removes with `delete`, leaving a hole in the array that serialises to null
       # and fails validation. See #377.
+      #
+      # The graphql function's ES_ENDPOINT is a GetAtt on that resource, so it goes
+      # too. Unset ES_ENDPOINT means indexing is off (graphql_api/data/search.py);
+      # the other ES_* vars are inert without it. See #378.
       - If: '"${self:custom.stage}" == "test"'
         Exclude:
           - resources.Resources.ElasticSearchInstance
+          - functions.graphql.environment.ES_ENDPOINT
 
 provider:
   name: aws
@@ -234,13 +239,11 @@ functions:
       FIRST_DYNAMO_ID: ${self:custom.first_dynamo_id}
       # S3 IAM (s3:*) is inherited from provider.iamRoleStatements — covers
       # the s3:GetObject + s3:ListBucket needed by the read fallback paths.
-      # Search indexing (#378). ES_ENDPOINT is absent for the duration of the #379
-      # import: it was a GetAtt on ElasticSearchInstance, and a GetAtt on a resource
-      # the template no longer declares fails to resolve. Unset means indexing is
-      # off (graphql_api/data/search.py), so **objects created before the follow-up
-      # PR lands will be missing from search** and need backfilling with
-      # scripts/backfill_search_index.py. Nothing is being created right now, which
-      # is the only reason this window is acceptable.
+      # Search indexing (#378). Writes go straight to the domain, SigV4-signed
+      # with this function's role (es:ESHttp* in provider.iamRoleStatements) —
+      # not through the GNS proxy that weka reads through. Removed on test by
+      # custom.serverlessIfElse. graphql_api/tests/test_serverless_config.py guards these.
+      ES_ENDPOINT: {"Fn::Join": ["", ["https://", {"Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]}]]}
       ES_INDEX: ${self:custom.esIndex}
       ES_REGION: ${self:custom.region}
     warmup:
