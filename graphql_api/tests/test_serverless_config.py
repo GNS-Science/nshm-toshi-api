@@ -134,3 +134,28 @@ def test_alarm_matches_logged_marker(sls):
     [transform] = metric_filter["MetricTransformations"]
     assert (alarm["Namespace"], alarm["MetricName"]) == (transform["MetricNamespace"], transform["MetricName"])
     assert alarm["AlarmActions"] == [{"Ref": "IndexingAlarmTopic"}]
+
+
+def test_template_values_are_ascii(sls):
+    """
+    Non-ASCII in template *values* breaks CloudFormation resource import: the CI
+    deploy mangled an em dash in an alarm description into "?", so no locally
+    generated template could match the deployed one and the import was refused
+    (#379). Comments are exempt — they never reach CloudFormation.
+    """
+    offenders = []
+
+    def walk(node, path):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                walk(v, f"{path}.{k}")
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(v, f"{path}[{i}]")
+        elif isinstance(node, str) and any(ord(c) > 127 for c in node):
+            offenders.append(f"{path}: {ascii(node)[:80]}")
+
+    for section in ("resources", "functions", "provider", "custom"):
+        walk(sls.get(section), section)
+
+    assert not offenders, "non-ASCII in template values:\n" + "\n".join(offenders)

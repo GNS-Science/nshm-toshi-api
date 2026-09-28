@@ -293,8 +293,14 @@ resources:
       Type: AWS::CloudWatch::Alarm
       Properties:
         AlarmName: ${self:custom.stack_name}-es-index-failures
+        # ASCII only. The CI deploy mangled the em dash that used to be here into
+        # "?", so the deployed template could never match a locally generated one,
+        # and a CloudFormation resource import refused to run: "You have modified
+        # resources [IndexingFailureAlarm] in your template that are not being
+        # imported". Keep template *values* ASCII; comments are free to use what
+        # they like, since they never reach CloudFormation. See #379.
         AlarmDescription: >-
-          graphql Lambda failed to write to Elasticsearch — weka search is going
+          graphql Lambda failed to write to Elasticsearch - weka search is going
           stale. Grep the graphql log group for ES_INDEX_FAILURE. See #378.
         Namespace: ${self:custom.stack_name}
         MetricName: ESIndexFailures
