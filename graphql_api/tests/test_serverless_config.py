@@ -48,24 +48,10 @@ def graphql_env(sls):
     return sls["functions"]["graphql"]["environment"]
 
 
-@pytest.mark.skip(
-    reason="ES_ENDPOINT and the ElasticSearchInstance resource are out of the template for the "
-    "#379 resource-import window; the follow-up PR restores both, and these guards with them."
-)
 def test_graphql_function_has_es_endpoint_from_domain(graphql_env):
     endpoint = graphql_env.get("ES_ENDPOINT")
     assert endpoint, "graphql function has no ES_ENDPOINT — indexing is off on every stage"
     assert endpoint == {"Fn::Join": ["", ["https://", {"Fn::GetAtt": ["ElasticSearchInstance", "DomainEndpoint"]}]]}
-
-
-def test_es_endpoint_absent_during_import_window(graphql_env):
-    """
-    Deliberate, and temporary (#379): ES_ENDPOINT was a GetAtt on the detached
-    ElasticSearchInstance. While it is unset, prod indexes nothing — objects
-    created in this window need backfilling. Delete this test when the follow-up
-    PR restores ES_ENDPOINT.
-    """
-    assert "ES_ENDPOINT" not in graphql_env
 
 
 def test_graphql_function_indexes_the_live_index(sls, graphql_env):
@@ -85,14 +71,15 @@ def test_es_endpoint_excluded_only_on_test(sls):
     resource, failing the deploy-test deploy; excluding it elsewhere turns prod
     indexing off.
     """
-    domain_path = "resources.Resources.ElasticSearchInstance"
+    endpoint_path = "functions.graphql.environment.ES_ENDPOINT"
     rules = sls["custom"]["serverlessIfElse"]
-    matching = [r for r in rules if domain_path in r.get("Exclude", []) + r.get("ElseExclude", [])]
-    assert len(matching) == 1, f"expected one serverlessIfElse rule excluding {domain_path}, found {len(matching)}"
+    matching = [r for r in rules if endpoint_path in r.get("Exclude", []) + r.get("ElseExclude", [])]
+    assert len(matching) == 1, f"expected one serverlessIfElse rule excluding {endpoint_path}, found {len(matching)}"
     [rule] = matching
     assert rule["If"] == '"${self:custom.stage}" == "test"'
-    assert domain_path in rule.get("Exclude", [])
-    assert domain_path not in rule.get("ElseExclude", [])
+    assert endpoint_path in rule.get("Exclude", [])
+    assert endpoint_path not in rule.get("ElseExclude", [])
+    assert "resources.Resources.ElasticSearchInstance" in rule["Exclude"]
 
 
 def test_role_can_write_to_domain(sls):
