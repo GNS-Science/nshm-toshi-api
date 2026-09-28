@@ -1,6 +1,6 @@
 [
   {
-    "ResourceType": "AWS::Elasticsearch::Domain",
+    "ResourceType": "AWS::OpenSearchService::Domain",
     "LogicalResourceId": "ElasticSearchInstance",
     "ResourceIdentifier": { "DomainName": "nzshm22-toshi-api-es-prod" }
   }

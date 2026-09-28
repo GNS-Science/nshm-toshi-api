@@ -256,19 +256,27 @@ resources:
 
     # ── The prod search domain, as it actually is ───────────────────────────────
     # Adopted by CloudFormation resource import (#379), not created by a deploy.
-    # These values are the live domain's, captured in
-    # docs/search-state-2026-09-21-prod.md. Keep them in step with it.
+    # Values are the live domain's, from docs/search-state-2026-09-21-prod.md.
     #
-    # Two things to know before editing:
-    #   - UpdatePolicy.EnableVersionUpgrade makes an ElasticsearchVersion change an
-    #     in-place upgrade. Without it CloudFormation attempts *replacement*, which
-    #     is refused because DomainName is set — so the deploy fails, and a
-    #     replacement that did succeed would strand the data weka reads.
-    #   - EBSOptions has no Throughput property in AWS::Elasticsearch::Domain, so
-    #     the live volume's 125 MiB/s cannot be expressed. It is the gp3 default at
-    #     3000 IOPS, so that one field stays as (benign) drift. Describing it needs
-    #     AWS::OpenSearchService::Domain, which is a migration of its own — see the
-    #     Remarks on the AWS resource reference, and #379.
+    # Type is AWS::OpenSearchService::Domain, not the AWS::Elasticsearch::Domain
+    # this stack used to declare, for two reasons:
+    #   - the legacy type cannot be imported at all: CloudFormation answers
+    #     "ResourceTypes [AWS::Elasticsearch::Domain] are not supported for Import";
+    #   - only the new type has EBSOptions.Throughput, so only it can describe this
+    #     volume completely. The legacy type would have left the live 125 MiB/s as
+    #     permanent drift.
+    #
+    # The engine does NOT change: EngineVersion takes `Elasticsearch_X.Y`, so this
+    # stays Elasticsearch 7.10. Migrating the engine to OpenSearch is separate work.
+    #
+    # The logical id stays ElasticSearchInstance despite the type change: renaming it
+    # would mean a second import, and the ES_ENDPOINT GetAtt and the test-stage
+    # exclusion both reference it by that name.
+    #
+    # UpdatePolicy.EnableVersionUpgrade makes a future EngineVersion change an
+    # in-place upgrade. Without it CloudFormation attempts *replacement*, which is
+    # refused because DomainName is set — and a replacement that did succeed would
+    # strand the data weka reads.
     #
     # Properties the live domain has and this block deliberately does not describe:
     # AccessPolicies, LogPublishingOptions, AdvancedOptions, SnapshotOptions,
@@ -276,20 +284,21 @@ resources:
     # CloudFormation leaves absent properties alone; adopting them is separate work
     # (the access policy is #379 item 3 / #386).
     ElasticSearchInstance:
-      Type: AWS::Elasticsearch::Domain
+      Type: AWS::OpenSearchService::Domain
       DeletionPolicy: Retain
       UpdateReplacePolicy: Retain
       UpdatePolicy:
         EnableVersionUpgrade: true
       Properties:
-        ElasticsearchVersion: "7.10"
+        EngineVersion: Elasticsearch_7.10
         DomainName: "${self:custom.esDomainName}"
         EBSOptions:
           EBSEnabled: true
           VolumeType: gp3
           VolumeSize: 50
           Iops: 3000
-        ElasticsearchClusterConfig:
+          Throughput: 125
+        ClusterConfig:
           InstanceType: m7g.medium.search
           InstanceCount: 1
           DedicatedMasterEnabled: false

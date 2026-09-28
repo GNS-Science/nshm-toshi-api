@@ -126,10 +126,19 @@ def test_es_domain_matches_the_live_domain(sls):
     """
     domain = sls["resources"]["Resources"]["ElasticSearchInstance"]
     props = domain["Properties"]
+    # AWS::Elasticsearch::Domain cannot be imported, and has no EBSOptions.Throughput.
+    assert domain["Type"] == "AWS::OpenSearchService::Domain"
     assert domain["UpdatePolicy"] == {"EnableVersionUpgrade": True}
-    assert props["ElasticsearchVersion"] == "7.10"
-    assert props["ElasticsearchClusterConfig"]["InstanceType"] == "m7g.medium.search"
-    assert props["EBSOptions"] == {"EBSEnabled": True, "VolumeType": "gp3", "VolumeSize": 50, "Iops": 3000}
+    # the engine is unchanged — this is still Elasticsearch 7.10
+    assert props["EngineVersion"] == "Elasticsearch_7.10"
+    assert props["ClusterConfig"]["InstanceType"] == "m7g.medium.search"
+    assert props["EBSOptions"] == {
+        "EBSEnabled": True,
+        "VolumeType": "gp3",
+        "VolumeSize": 50,
+        "Iops": 3000,
+        "Throughput": 125,
+    }
     # Adopting these would change the live domain; they are not ours to set here.
     for absent in ("AccessPolicies", "LogPublishingOptions", "AdvancedOptions", "DomainEndpointOptions"):
         assert absent not in props
