@@ -91,6 +91,24 @@ def test_role_can_write_to_domain(sls):
     assert {"es:ESHttpPut", "es:ESHttpPost"} <= actions
 
 
+def test_role_is_scoped_to_its_index(sls):
+    """
+    The domain policy defers to IAM, so this role *is* the graphql function's access
+    (#379). It indexes one index; it has no business at the domain root — no _bulk,
+    no index creation or deletion, no _cluster APIs — and no DELETE at all.
+    """
+    [statement] = [
+        s for s in sls["provider"]["iamRoleStatements"] if any(a.startswith("es:") for a in s.get("Action", []))
+    ]
+    assert set(statement["Action"]) == {"es:ESHttpPut", "es:ESHttpPost", "es:ESHttpGet"}
+    assert statement["Resource"] == [
+        {
+            "Fn::Sub": "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/"
+            "${self:custom.esDomainName}/${self:custom.esIndex}/*"
+        }
+    ]
+
+
 def test_es_domain_is_retained(sls):
     """
     The prod domain must survive `sls remove` and any update that replaces it
@@ -127,8 +145,38 @@ def test_es_domain_matches_the_live_domain(sls):
         "Throughput": 125,
     }
     # Adopting these would change the live domain; they are not ours to set here.
-    for absent in ("AccessPolicies", "LogPublishingOptions", "AdvancedOptions", "DomainEndpointOptions"):
+    for absent in ("LogPublishingOptions", "AdvancedOptions"):
         assert absent not in props
+
+
+def test_domain_refuses_anonymous_requests(sls):
+    """
+    The domain used to admit unsigned requests, with es:* (deletes included), from
+    one IP address, over plain http too (#379 item 3, #386). Every legitimate client
+    signs its requests — the graphql function, the weka gateway, operators — and each
+    was confirmed to be admitted by its own IAM policy before the rule was removed.
+
+    Principal "*" is anonymous access. Any statement that grants it, with or without
+    an IP condition, reopens the domain.
+    """
+    props = sls["resources"]["Resources"]["ElasticSearchInstance"]["Properties"]
+    statements = props["AccessPolicies"]["Statement"]
+
+    for statement in statements:
+        assert statement["Principal"] != "*"
+        assert statement["Principal"].get("AWS") != "*"
+        assert "Condition" not in statement, "an IP condition means someone expects unsigned access"
+
+    # the account root defers to IAM: only principals whose own policy allows it get in
+    [statement] = statements
+    assert statement["Effect"] == "Allow"
+    assert statement["Principal"] == {"AWS": {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}}
+    assert statement["Action"] == "es:ESHttp*"
+
+    endpoint = props["DomainEndpointOptions"]
+    assert endpoint["EnforceHTTPS"] is True
+    # pinned to the live value, so CloudFormation cannot reset it to a weaker default
+    assert endpoint["TLSSecurityPolicy"] == "Policy-Min-TLS-1-2-2019-07"
 
 
 def test_alarm_matches_logged_marker(sls):
