@@ -167,10 +167,11 @@ def test_domain_refuses_anonymous_requests(sls):
         assert statement["Principal"].get("AWS") != "*"
         assert "Condition" not in statement, "an IP condition means someone expects unsigned access"
 
-    # the account root defers to IAM: only principals whose own policy allows it get in
+    # the account (its root) defers to IAM: only principals whose own policy allows it
+    # get in. The bare account id is the form AWS stores, so drift detection agrees.
     [statement] = statements
     assert statement["Effect"] == "Allow"
-    assert statement["Principal"] == {"AWS": {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}}
+    assert statement["Principal"] == {"AWS": {"Ref": "AWS::AccountId"}}
     assert statement["Action"] == "es:ESHttp*"
 
     endpoint = props["DomainEndpointOptions"]
