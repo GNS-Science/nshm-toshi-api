@@ -150,13 +150,18 @@ provider:
       Resource:
         - ${self:custom.s3_role_resource}
         - ${self:custom.s3_role_resource}/*
-    # ES access policy
-    # modelled on https://github.com/serverless/examples/blob/master/aws-golang-dynamo-stream-to-elasticsearch/serverless.yml
+    # ES access policy (#379). This role is how the graphql function reaches the
+    # domain: its requests are SigV4-signed, and the domain policy defers to IAM.
+    # Scoped to the one index it uses, with only the methods it uses:
+    #   PUT  <index>/_doc/<id>     index_document — the live write path
+    #   POST <index>/_search       search()
+    #   GET  <index>/_search?q=    Query.search
+    # Nothing at the domain root: no _bulk (the backfill script runs with operator
+    # credentials, not this role), no index creation or deletion, no _cluster APIs.
     - Effect: Allow
       Action:
-        - es:ESHttpPost
         - es:ESHttpPut
-        - es:ESHttpHead
+        - es:ESHttpPost
         - es:ESHttpGet
       # Constructed ARNs, not Fn::GetAtt, deliberately: the test stage excludes the
       # ElasticSearchInstance resource (see custom.serverlessIfElse), and a GetAtt on
@@ -166,8 +171,7 @@ provider:
       # Serverless variable resolved by calling AWS, which would make `sls package`
       # require live credentials. Same pattern as ToshiIdentityPoolRoleAttachment below.
       Resource:
-        - Fn::Sub: arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${self:custom.esDomainName}
-        - Fn::Sub: arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${self:custom.esDomainName}/*
+        - Fn::Sub: arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${self:custom.esDomainName}/${self:custom.esIndex}/*
     -  Effect: Allow
        Action:
          - "cloudwatch:PutMetricData"
@@ -282,10 +286,25 @@ resources:
     # strand the data weka reads.
     #
     # Properties the live domain has and this block deliberately does not describe:
-    # AccessPolicies, LogPublishingOptions, AdvancedOptions, SnapshotOptions,
-    # DomainEndpointOptions, EncryptionAtRestOptions, NodeToNodeEncryptionOptions.
-    # CloudFormation leaves absent properties alone; adopting them is separate work
-    # (the access policy is #379 item 3 / #386).
+    # LogPublishingOptions, AdvancedOptions, SnapshotOptions, EncryptionAtRestOptions,
+    # NodeToNodeEncryptionOptions. CloudFormation leaves absent properties alone.
+    #
+    # Access (#379 item 3, #386). The domain used to admit *unsigned* requests, with
+    # es:* (deletes included), from one IP address, and accepted plain http. Every
+    # legitimate client signs its requests with AWS credentials and uses https:
+    #   - this service's graphql function  indexes   (provider.iamRoleStatements)
+    #   - the nshm-weka-apigw function      searches  (its own role, in that repo)
+    #   - operators running scripts/        maintain  (their own IAM permissions)
+    # Each was confirmed with `aws iam simulate-principal-policy` to be admitted by
+    # its own IAM policy, not by the IP rule, before the rule was removed.
+    #
+    # The account (its root) as principal means "defer to IAM": a principal in this
+    # account gets in only if its own IAM policy allows it. Anonymous requests are
+    # refused. What each client may do is therefore decided by its role, which is
+    # why the graphql role above is scoped to one index.
+    #
+    # TLSSecurityPolicy is pinned to the live value. Leaving it out of an explicit
+    # DomainEndpointOptions risks CloudFormation resetting it to the service default.
     ElasticSearchInstance:
       Type: AWS::OpenSearchService::Domain
       DeletionPolicy: Retain
@@ -306,6 +325,22 @@ resources:
           InstanceCount: 1
           DedicatedMasterEnabled: false
           ZoneAwarenessEnabled: false
+        AccessPolicies:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                # The bare account id is the account root: AWS stores the
+                # arn:aws:iam::<account>:root form in this shorter form, so the
+                # template uses it too — otherwise drift detection sees a difference.
+                AWS:
+                  Ref: AWS::AccountId
+              Action: es:ESHttp*
+              Resource:
+                Fn::Sub: arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${self:custom.esDomainName}/*
+        DomainEndpointOptions:
+          EnforceHTTPS: true
+          TLSSecurityPolicy: Policy-Min-TLS-1-2-2019-07
 
     # ── Search indexing failure alarm (#378) ──────────────────────────────────
     # index_document() never raises, so a broken write path is otherwise silent.
