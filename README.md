@@ -61,25 +61,28 @@ Two limits protect the API, and the account it shares, from a flood of requests:
 
 | Limit | Value | Over the limit | Set by |
 |---|---|---|---|
-| API Gateway stage throttle | 50 req/s, burst 500 | 429 | `scripts/stage_throttle.sh`, by hand |
+| API Gateway stage throttle | 50 req/s, burst 500 | 429 | `scripts/stage_throttle.sh`, run by every deploy |
 | Lambda concurrency (`graphql`, `jwtAuthorizer`) | 100 each | 5xx | `custom.reserved_concurrency` in `serverless.yml` |
 
 `nshm-toshi-client` retries both responses. The sizing rationale is in the comment
 on `reserved_concurrency` in `serverless.yml`.
 
-The stage throttle is **not deployed**: Serverless cannot set one on a REST API
-stage. It is set on the stage with operator credentials, once per stage, and
-survives redeploys. A stage that is deleted and recreated comes back at the
-account default (10,000 req/s) and needs `apply` again.
+The stage throttle is not part of the CloudFormation stack: Serverless cannot set
+one on a REST API stage. Instead the `deploy` script in `package.json` runs
+`scripts/stage_throttle.sh` after `serverless deploy`. If the throttle cannot be
+applied the deploy fails, though by then the stack itself has already updated.
+Deploy with `yarn run deploy`; a bare `serverless deploy` skips the throttle.
+
+The deploy credentials need `apigateway:GET` on `/restapis` and
+`apigateway:PATCH` on the stage.
+
+To inspect or change it by hand:
 
 ```bash
-bash scripts/stage_throttle.sh <rest-api-id> prod check      # prints [rate, burst]; expect [50.0, 500]
-bash scripts/stage_throttle.sh <rest-api-id> prod apply
-bash scripts/stage_throttle.sh <rest-api-id> prod rollback   # back to the account default
+bash scripts/stage_throttle.sh prod check      # prints rate and burst; expect 50.0 500
+bash scripts/stage_throttle.sh prod apply
+bash scripts/stage_throttle.sh prod rollback   # back to the account default
 ```
-
-`<rest-api-id>` is the id of that stage's REST API: the first label of its invoke
-URL. The script header has a command to look it up.
 
 ### Search indexing alarm
 

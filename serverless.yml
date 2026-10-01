@@ -135,8 +135,8 @@ custom:
   #
   # This does not limit the request rate. That is the stage throttle (50 req/s,
   # burst 500; over it clients get a 429), which Serverless cannot set on a REST
-  # API stage: it is applied by hand, once per stage, with
-  # scripts/stage_throttle.sh.
+  # API stage. The `deploy` script in package.json applies it after every deploy
+  # with scripts/stage_throttle.sh, and fails the deploy if it cannot.
   reserved_concurrency: 100
 
   serverlessIfElse:

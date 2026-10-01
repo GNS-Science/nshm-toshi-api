@@ -4,7 +4,7 @@
 
 ### Security
  - Redacted the AWS account ID, domain endpoint hostnames and the access policy's source IP from the committed search-state captures, and taught `scripts/capture_search_state.sh` to redact them (#386). A test fails the build if an unredacted identifier reaches `docs/`. Note the values remain in git history.
- - Rate limiting (#404). Nothing limited the API beyond the AWS account defaults, so a flood of requests could run up the bill and starve other services in the account. The `graphql` and `jwtAuthorizer` Lambdas now have a reserved concurrency of 100 each, and the API Gateway stage is throttled to 50 req/s (burst 500). The throttle is applied by hand with `scripts/stage_throttle.sh`, not by the deploy — see README. Clients over a limit get a 429 or 5xx, which `nshm-toshi-client` retries.
+ - Rate limiting (#404). Nothing limited the API beyond the AWS account defaults, so a flood of requests could run up the bill and starve other services in the account. The `graphql` and `jwtAuthorizer` Lambdas now have a reserved concurrency of 100 each, and the API Gateway stage is throttled to 50 req/s (burst 500). The throttle is not in the CloudFormation stack: `yarn run deploy` applies it with `scripts/stage_throttle.sh` after each deploy, and fails if it cannot — see README. Clients over a limit get a 429 or 5xx, which `nshm-toshi-client` retries.
 
 ### Fixed
  - Search indexing restored on prod (#378). The `graphql` Lambda had no `ES_ENDPOINT` since the Strawberry cut-over, so new objects were missing from weka search.
