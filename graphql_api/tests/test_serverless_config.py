@@ -215,3 +215,18 @@ def test_template_values_are_ascii(sls):
         walk(sls.get(section), section)
 
     assert not offenders, "non-ASCII in template values:\n" + "\n".join(offenders)
+
+
+def test_lambda_concurrency_is_capped(sls):
+    """
+    reservedConcurrency is what bounds the bill: uncapped, a flood can hold the
+    account's whole 1,000-execution pool at 4 GB each and starve every other
+    function in the account.
+
+    Both functions share one cap. Every request passes through the authorizer
+    first, so a lower cap there would throttle graphql below its own.
+    """
+    cap = sls["custom"]["reserved_concurrency"]
+    assert 0 < cap <= 200
+    for name in ("graphql", "jwtAuthorizer"):
+        assert sls["functions"][name]["reservedConcurrency"] == "${self:custom.reserved_concurrency}"

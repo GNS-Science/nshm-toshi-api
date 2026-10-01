@@ -116,6 +116,29 @@ custom:
 
   first_dynamo_id: ${env:FIRST_DYNAMO_ID, 100000}
 
+  # ── Lambda concurrency cap ──────────────────────────────────────────────────
+  # Without this the only limit is the account's pool of 1,000 concurrent Lambda
+  # executions, shared by every function - so a flood of this endpoint can hold
+  # the whole pool at 4 GB each, running up the bill and starving the rest.
+  # Lambda does not queue synchronous requests: over the cap they are rejected
+  # outright, and the client sees a 5xx.
+  #
+  # Sized against 15 months of prod traffic (to 2026-10): busiest hour 571
+  # requests, graphql peak concurrency 4. Padded for runzi campaigns of several
+  # hundred jobs starting or finishing together: 100 slots at ~140 ms a request
+  # clear about 700 req/s. nshm-toshi-client retries 429 and 5xx six times, so a
+  # brief rejection is a delay, not a failed job.
+  #
+  # The authorizer cap must not be lower than the graphql cap: every request goes
+  # through the authorizer first. Each stage reserves its own slots out of the
+  # account's 1,000.
+  #
+  # This does not limit the request rate. That is the stage throttle (50 req/s,
+  # burst 500; over it clients get a 429), which Serverless cannot set on a REST
+  # API stage: it is applied by hand, once per stage, with
+  # scripts/stage_throttle.sh.
+  reserved_concurrency: 100
+
   serverlessIfElse:
       # Test runs without its own ES domain. Only the resource is excluded: the ES
       # IAM statement below names the domain by constructed ARN rather than
@@ -197,6 +220,7 @@ functions:
     description: Validates Cognito JWTs; accepts legacy x-api-key for backward compat
     memorySize: 512
     timeout: 10
+    reservedConcurrency: ${self:custom.reserved_concurrency}
     environment:
       COGNITO_USER_POOL_ID: !Ref ToshiUserPool
       COGNITO_REGION: ${self:provider.region}
@@ -212,6 +236,7 @@ functions:
     handler: graphql_api.app.handler
     memorySize: 4096
     timeout: 30
+    reservedConcurrency: ${self:custom.reserved_concurrency}
     events:
       - http:
           path: graphql
