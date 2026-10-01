@@ -142,6 +142,8 @@ Most config comes from environment variables, read directly via `os.environ.get(
 - `FIRST_DYNAMO_ID` — starting ID for new objects (0 for smoketests, 100000 for production).
 - `ES_ENDPOINT`, `ES_INDEX`, `ES_REGION`, `GRAPHQL_PATH`, `S3_BUCKET_NAME` — wired on the `graphql` function in `serverless.yml`. `ES_ENDPOINT` is dropped on test (no domain there, #377), so indexing is off on test. Unset `ES_ENDPOINT` means indexing is off — it does not default to localhost. Requests to `*.es.amazonaws.com` are SigV4-signed with the Lambda role. `graphql_api/tests/test_serverless_config.py` guards this wiring (#378).
 - Search indexing failures never fail a mutation, but each one logs `ES_INDEX_FAILURE` at ERROR; a CloudWatch alarm on that marker notifies the `IndexingAlarmTopicArn` SNS topic (email subscription is added by hand in the console).
+- Concurrency cap: `custom.reserved_concurrency` in `serverless.yml` sets `reservedConcurrency` on both `graphql` and `jwtAuthorizer`; over the cap clients get a 5xx. Sizing rationale is in the comment there; `test_serverless_config.py` guards it.
+- Stage throttle (50 req/s, burst 500; over it clients get a 429) is not in `serverless.yml` — Serverless cannot set one on a REST API stage. It is set by hand, once per stage, with `scripts/stage_throttle.sh <rest-api-id> <stage> <check|apply|rollback>`, and has to be re-applied if a stage is ever recreated.
 
 ### Testing Fixtures
 `graphql_api/tests/conftest.py` starts DynamoDB Local and Elasticsearch 7.1.0 via `testcontainers` (Docker required), creates fresh tables per test module, and yields a `gql_context` dict for `schema.execute_sync(..., context_value=...)` calls. There is no Flask `graphql_client` — tests drive Strawberry directly.

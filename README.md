@@ -55,6 +55,32 @@ Deployed values are set on the `graphql` function in `serverless.yml`:
 | `S3_BUCKET_NAME` | S3 bucket for files. |
 | `FIRST_DYNAMO_ID` | First ID for new objects (0 for smoketests, 100000 for prod). |
 
+### Rate limiting
+
+Two limits protect the API, and the account it shares, from a flood of requests:
+
+| Limit | Value | Over the limit | Set by |
+|---|---|---|---|
+| API Gateway stage throttle | 50 req/s, burst 500 | 429 | `scripts/stage_throttle.sh`, by hand |
+| Lambda concurrency (`graphql`, `jwtAuthorizer`) | 100 each | 5xx | `custom.reserved_concurrency` in `serverless.yml` |
+
+`nshm-toshi-client` retries both responses. The sizing rationale is in the comment
+on `reserved_concurrency` in `serverless.yml`.
+
+The stage throttle is **not deployed**: Serverless cannot set one on a REST API
+stage. It is set on the stage with operator credentials, once per stage, and
+survives redeploys. A stage that is deleted and recreated comes back at the
+account default (10,000 req/s) and needs `apply` again.
+
+```bash
+bash scripts/stage_throttle.sh <rest-api-id> prod check      # prints [rate, burst]; expect [50.0, 500]
+bash scripts/stage_throttle.sh <rest-api-id> prod apply
+bash scripts/stage_throttle.sh <rest-api-id> prod rollback   # back to the account default
+```
+
+`<rest-api-id>` is the id of that stage's REST API: the first label of its invoke
+URL. The script header has a command to look it up.
+
 ### Search indexing alarm
 
 Failed index writes log `ES_INDEX_FAILURE` and trigger a CloudWatch alarm, which
