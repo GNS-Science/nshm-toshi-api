@@ -11,6 +11,7 @@ They run in CI before every deploy (deploy-aws-lambda.yaml calls the test
 workflow first).
 """
 
+import json
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ import yaml
 from graphql_api.data.search import INDEX_FAILURE_MARKER
 
 SERVERLESS_YML = Path(__file__).parents[2] / "serverless.yml"
+PACKAGE_JSON = Path(__file__).parents[2] / "package.json"
 
 
 class _CfnLoader(yaml.SafeLoader):
@@ -215,3 +217,36 @@ def test_template_values_are_ascii(sls):
         walk(sls.get(section), section)
 
     assert not offenders, "non-ASCII in template values:\n" + "\n".join(offenders)
+
+
+def test_lambda_concurrency_is_capped(sls):
+    """
+    reservedConcurrency is what bounds the bill: uncapped, a flood can hold the
+    account's whole 1,000-execution pool at 4 GB each and starve every other
+    function in the account.
+
+    Both functions share one cap. Every request passes through the authorizer
+    first, so a lower cap there would throttle graphql below its own.
+    """
+    cap = sls["custom"]["reserved_concurrency"]
+    assert 0 < cap <= 200
+    for name in ("graphql", "jwtAuthorizer"):
+        assert sls["functions"][name]["reservedConcurrency"] == "${self:custom.reserved_concurrency}"
+
+
+def test_deploy_applies_the_stage_throttle():
+    """
+    Serverless cannot set a throttle on a REST API stage, so it is not in
+    serverless.yml at all: the `deploy` script applies it after the stack deploys.
+    Drop that step and a recreated stage silently runs at the account default
+    (10,000 req/s, shared with every other API in the account).
+
+    Chained with `&&` after `serverless deploy`, so a throttle that cannot be
+    applied fails the deploy rather than passing unnoticed.
+    """
+    deploy = json.loads(PACKAGE_JSON.read_text())["scripts"]["deploy"]
+    steps = [step.strip() for step in deploy.split("&&")]
+    assert steps[0].startswith("serverless deploy")
+    assert steps[-1] == "bash scripts/stage_throttle.sh ${STAGE} apply"
+    assert ";" not in deploy and "||" not in deploy, "a failed throttle step must fail the deploy"
+    assert (PACKAGE_JSON.parent / "scripts" / "stage_throttle.sh").is_file()
