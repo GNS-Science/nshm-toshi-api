@@ -33,10 +33,10 @@
   },
   "packageManager": "yarn@4.16.0",
   "resolutions": {
-    "@hapi/content": "6.0.2",
+    "@hapi/content": "6.0.3",
     "@hapi/wreck": "18.1.2",
     "dicer": "0.3.1",
-    "velocityjs": "2.1.6",
+    "velocityjs": "2.1.7",
     "axios": "1.17.0",
     "follow-redirects": "1.16.0",
     "lodash": "4.18.1",
@@ -46,7 +46,7 @@
     "minimatch": "11.0.4",
     "s3rver/fast-xml-parser": "3.21.1",
     "glob": "14.0.3",
-    "tar": "7.5.16",
+    "tar": "7.5.22",
     "uuid": "14.0.0",
     "undici": "6.29.1"
   }

@@ -1099,12 +1099,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hapi/content@npm:6.0.2":
-  version: 6.0.2
-  resolution: "@hapi/content@npm:6.0.2"
+"@hapi/content@npm:6.0.3":
+  version: 6.0.3
+  resolution: "@hapi/content@npm:6.0.3"
   dependencies:
     "@hapi/boom": "npm:^10.0.0"
-  checksum: 10c0/64829e66d9a3dea512e273e96bf0d227b7d22db702b28eb2da1c16d98f8d8ebef6e2130f78b23d8f4e70d915892e84f3954eab2c0023b2be4b1dfef3fdcccb4f
+  checksum: 10c0/21c37bf1d6a64bb49ca84137e2a08152b95b7b51211e2163661c774e4227305f5e1092d46cee0886d81fd4b0d65b0c09bbb6c5eeb5cb5500ea3d9057f9194ed0
   languageName: node
   linkType: hard
 
@@ -3839,16 +3839,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tar@npm:7.5.16":
-  version: 7.5.16
-  resolution: "tar@npm:7.5.16"
+"tar@npm:7.5.22":
+  version: 7.5.22
+  resolution: "tar@npm:7.5.22"
   dependencies:
     "@isaacs/fs-minipass": "npm:^4.0.0"
     chownr: "npm:^3.0.0"
     minipass: "npm:^7.1.2"
     minizlib: "npm:^3.1.0"
     yallist: "npm:^5.0.0"
-  checksum: 10c0/4f37f3c4bd2ca2755fd736a5df1d573c1a868ec1b1e893346aeafa95ac510f9e2fd1469420bd866cc7904799e5bd4ac62b5d4f03fe27747d6e1e373b44505c5c
+  checksum: 10c0/1311f6be85a8157ac4c9147bae43e13923d2a1aae15e4aa1bd5239e4e03d2cf53cfe103dde7f35832fbb4c938b042856bc8e9a0afd29abd05e2d1608788c4fea
   languageName: node
   linkType: hard
 
@@ -3962,12 +3962,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"velocityjs@npm:2.1.6":
-  version: 2.1.6
-  resolution: "velocityjs@npm:2.1.6"
+"velocityjs@npm:2.1.7":
+  version: 2.1.7
+  resolution: "velocityjs@npm:2.1.7"
   dependencies:
     debug: "npm:^4.3.4"
-  checksum: 10c0/37b0c2d57340ef3ed8b8e6f47fe76dc2023a0d3aa53bb38aa72b29e5ec32f11c28b15c372fddc031993a1def87ef5cb5ff531dd147614c6806ffc1d4db77172b
+  checksum: 10c0/031ed178ce6317df0cd4333c214437bd8aa2a41b5cda7249f5e0743fd4ab550160b8a0ee0ee64147ce403c41fe37850b98324f2b56627ea928ff1421458bd1c4
   languageName: node
   linkType: hard
 
