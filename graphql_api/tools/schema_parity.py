@@ -91,7 +91,7 @@ def _extract_types(doc: DocumentNode) -> dict[str, dict]:
         if isinstance(defn, ObjectTypeDefinitionNode):
             types[name] = {
                 "kind": "object",
-                "interfaces": sorted(i.name.value for i in defn.interfaces),
+                "interfaces": sorted(i.name.value for i in (defn.interfaces or [])),
                 "fields": _fields_to_dict(defn.fields),
             }
         elif isinstance(defn, InterfaceTypeDefinitionNode):
