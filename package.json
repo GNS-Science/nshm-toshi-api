@@ -45,7 +45,7 @@
     "koa": "2.16.4",
     "minimatch": "9.0.7",
     "s3rver/fast-xml-parser": "3.21.1",
-    "glob": "13.0.6",
+    "glob": "14.0.3",
     "tar": "7.5.16",
     "uuid": "14.0.0"
   }
