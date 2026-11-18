@@ -37,6 +37,8 @@
     "minimatch": "11.0.8",
     "s3rver/fast-xml-parser": "3.21.1",
     "glob": "14.0.5",
-    "uuid": "14.0.3"
+    "uuid": "14.0.3",
+    "@aws-sdk/core/fast-xml-parser": "5.12.0",
+    "@aws-sdk/xml-builder/fast-xml-parser": "5.12.0"
   }
 }
