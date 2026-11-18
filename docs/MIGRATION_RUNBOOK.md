@@ -29,7 +29,7 @@
 
 - AWS access for the target stage (test first, then prod). IAM role assumable by GH Actions; `gh secret list --env AWS_TEST` and `--env AWS_PROD` to confirm wired secrets
 - Docker daemon running (for `testcontainers`; also for container-Lambda APIs at build time)
-- Node 22 + Yarn 4 (Berry). `corepack enable` before any `yarn install`
+- Node 24 + Yarn 4 (Berry). `corepack enable` before any `yarn install`
 - `uv` installed (`brew install uv` or equivalent)
 - Local Java only if the target API uses DynamoDB Local in tests (toshi-api does; check `tests/conftest.py` of the target sibling)
 

@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Setup
 ```bash
 uv sync        # Install Python dependencies
-yarn install          # Install Node/Serverless dependencies (requires Node 22, yarn 2/berry)
+yarn install          # Install Node/Serverless dependencies (requires Node 24, yarn 2/berry)
 yarn sls dynamodb install  # Install DynamoDB local plugin (Java required)
 ```
 
