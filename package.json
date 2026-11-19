@@ -37,7 +37,6 @@
     "brace-expansion": "2.1.7",
     "minimatch": "11.0.4",
     "glob": "14.0.3",
-    "tar": "7.5.22",
     "uuid": "14.0.0",
     "undici": "6.29.1",
     "@smithy/core": "3.38.1",
