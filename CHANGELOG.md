@@ -12,6 +12,9 @@
  - weka search links for objects created since the Strawberry cut-over (#388). Indexed bodies had `object_id` but no `id`, so weka linked to the ES `_id` (`GeneralTask:ThingData_…`). `id` is now set at index time; affected objects need re-indexing.
 
 ### Changed
+ - Deploy workflow uses Node 24 (was 22).
+ - Removed the `safety` dev dependency and the `safety scan` step from the tox `audit` env (`pip-audit` remains).
+ - deps: uv major: strawberry-graphql 0.339→0.341, nzshm-common 0.10→0.11; transitive filelock 3→4; yarn transitive pins refreshed (fast-xml-parser 5.12 for the AWS SDK, obsolete pins dropped).
  - deps: uv major: cryptography 48→50, multidict 6→7; uv minor/patch: ~86 packages (graphql-core 3.3, strawberry-graphql, pyjwt, authlib, etc.), `schema_parity` tolerates `interfaces=None`; yarn major (transitive): glob 13→14, minimatch 9→11; yarn minor/patch: serverless 4.46.0, @smithy/*, brace-expansion, undici, tar, velocityjs, @hapi/content.
  - Unset `ES_ENDPOINT` now disables indexing instead of defaulting to localhost. Local dev must set `ES_ENDPOINT=http://localhost:9200`.
 

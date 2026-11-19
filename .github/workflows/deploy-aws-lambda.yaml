@@ -19,7 +19,7 @@ jobs:
     uses: GNS-Science/nshm-github-actions/.github/workflows/deploy-to-aws-uv.yml@main
     with:
       python-version: '3.12'
-      node-version: '22'
+      node-version: '24'
       node-pkg-manager: 'yarn2'
       environment: true
       smoketest-query: 'query QueryRoot{about}'

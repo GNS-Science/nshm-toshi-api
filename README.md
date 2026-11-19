@@ -5,7 +5,7 @@ Where NSHM experiments and outputs are captured (not so old fashioned, tosh).
 
 Java is required.
 
- ```nvm current``` wanting node 22
+ ```nvm current``` wanting node 24
  
  ### ensure yarn 2
  ```
