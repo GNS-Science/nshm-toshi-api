@@ -45,7 +45,6 @@ dev = [
     "pytest",
     "requests-mock>=1.12.1,<2.0.0",
     "ruff",
-    "safety",
     "sgqlc",
     "testcontainers>=4.0",
     "tox",
