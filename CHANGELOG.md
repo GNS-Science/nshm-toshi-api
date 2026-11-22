@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.8.0] - 2026-11-23
 
 ### Security
  - Redacted the AWS account ID, domain endpoint hostnames and the access policy's source IP from the committed search-state captures, and taught `scripts/capture_search_state.sh` to redact them (#386). A test fails the build if an unredacted identifier reaches `docs/`. Note the values remain in git history.
